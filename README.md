@@ -10,3 +10,6 @@ Overview
 
 Related Work
 - twitter NER
+
+OpenCV Issues
+- there are many issues on java/python bindings with regard to coding SIFT (https://github.com/opencv/opencv/issues/5667 among others) 
