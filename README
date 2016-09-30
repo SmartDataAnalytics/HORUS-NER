@@ -1,0 +1,37 @@
+HORUS is a probabilistic named entity recognition (NER) algorithm based on image processing and multi-level machine learning. Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed to minimize the existing gap of NER on short-texts.  
+
+* horus-models
+  1. c++/python classes (java interfaces are not reliable in terms of updates)
+  2. horus machine learning models
+  3. features extraction, clustering, etc. for horus-core algorithm
+
+* Overview
+  1. to compute probability for each NER class, based on image processing
+  2. SIFT/SURF + dependency parsing as features
+  3. to find optimal theta for search engine
+
+* OpenCV Issues
+  1. there are many issues on java/python bindings with regard to coding SIFT (https://github.com/opencv/opencv/issues/5667 among others) 
+  2. matlibplot does not work on macosx if you don't create a file at /Users/[your-user]/.matplotlib/matplotlibrc and add the following line ```backend: TkAgg```
+
+* Datasets
+  1. PASCAL VOC 2007
+  2. Caltech-101 - http://www.vision.caltech.edu/Image_Datasets/Caltech101/
+  3. Flickr
+  4. 15 scene categories
+  5. Graz
+
+
+* State of the Art (short text)
+  1. Twitter NER 
+
+* Experiments
+  1. DeFacto proof's excerpt
+  2. TwitterNER x HORUS
+  3. Stanford NER x HORUS
+
+* Preliminar Results
+  - 56 images have been processed
+  - hits: 47
+  - accuracy = 0.839285714286
+
