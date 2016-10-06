@@ -38,8 +38,8 @@ int main(int argv, char **argc){
     if (argv>4)
         jarFile = argc[4];
 
-    //removes temporary outputfile, issues a warning if no file is present (usually the first time)
-    cmdLine = "del \"" + fileTemp + "\"";
+    //removes temporary outputfile
+    cmdLine = "del \"" + fileTemp + "\" >nul 2>nul";
     system(cmdLine.c_str());
 
     //run tweetnlp pos tagger
