@@ -79,3 +79,132 @@ tot_neg=13
 %neg=0.448275862069
 
 (REMIND -> check the distribution of classes for LOC and train separared models, then use DecisionTree to get the best model. 
+
+* Text Similarity Tests
+
+*********************************
+predictions model 1
+'Belo Horizonte is th' = 1 => 2
+'Angola is a country ' = 1 => 2
+'officially the Macao' = 1 => 1
+'The Amazon rainfores' = 1 => 1
+'New Zealand is an is' = 1 => 1
+'Japan is an island c' = 1 => 1
+'Bayern Munich is a G' = 2 => 3
+'Microsoft Corporatio' = 2 => 2
+'Burger King (often a' = 2 => 2
+'Starbucks Corporatio' = 2 => 2
+'SC Victoria Hamburg ' = 2 => 2
+'A strip mall is an o' = 2 => 2
+'Michael Hoffman, Dir' = 3 => 3
+'By now you must have' = 3 => 3
+'Michael Lynn Hoffman' = 3 => 3
+'Revisionist historia' = 3 => 2
+'Remember Michael Hof' = 3 => 2
+' Here is a transcrip' = 3 => 2
+accuracy is 0.666666666667
+*********************************
+predictions model 2
+'Belo Horizonte is th' = 1 => 3
+'Angola is a country ' = 1 => 1
+'officially the Macao' = 1 => 1
+'The Amazon rainfores' = 1 => 1
+'New Zealand is an is' = 1 => 1
+'Japan is an island c' = 1 => 1
+'Bayern Munich is a G' = 2 => 3
+'Microsoft Corporatio' = 2 => 2
+'Burger King (often a' = 2 => 2
+'Starbucks Corporatio' = 2 => 2
+'SC Victoria Hamburg ' = 2 => 3
+'A strip mall is an o' = 2 => 2
+'Michael Hoffman, Dir' = 3 => 3
+'By now you must have' = 3 => 3
+'Michael Lynn Hoffman' = 3 => 3
+'Revisionist historia' = 3 => 3
+'Remember Michael Hof' = 3 => 3
+' Here is a transcrip' = 3 => 3
+accuracy is 0.833333333333
+*********************************
+predictions model 3
+'Belo Horizonte is th' = 1 => 1
+'Angola is a country ' = 1 => 2
+'officially the Macao' = 1 => 1
+'The Amazon rainfores' = 1 => 3
+'New Zealand is an is' = 1 => 1
+'Japan is an island c' = 1 => 1
+'Bayern Munich is a G' = 2 => 2
+'Microsoft Corporatio' = 2 => 2
+'Burger King (often a' = 2 => 2
+'Starbucks Corporatio' = 2 => 2
+'SC Victoria Hamburg ' = 2 => 2
+'A strip mall is an o' = 2 => 2
+'Michael Hoffman, Dir' = 3 => 3
+'By now you must have' = 3 => 3
+'Michael Lynn Hoffman' = 3 => 3
+'Revisionist historia' = 3 => 2
+'Remember Michael Hof' = 3 => 2
+' Here is a transcrip' = 3 => 2
+accuracy is 0.722222222222
+*********************************
+predictions model 4
+'Belo Horizonte is th' = 1 => 1
+'Angola is a country ' = 1 => 2
+'officially the Macao' = 1 => 1
+'The Amazon rainfores' = 1 => 3
+'New Zealand is an is' = 1 => 1
+'Japan is an island c' = 1 => 1
+'Bayern Munich is a G' = 2 => 2
+'Microsoft Corporatio' = 2 => 2
+'Burger King (often a' = 2 => 2
+'Starbucks Corporatio' = 2 => 2
+'SC Victoria Hamburg ' = 2 => 2
+'A strip mall is an o' = 2 => 2
+'Michael Hoffman, Dir' = 3 => 3
+'By now you must have' = 3 => 2
+'Michael Lynn Hoffman' = 3 => 3
+'Revisionist historia' = 3 => 2
+'Remember Michael Hof' = 3 => 2
+' Here is a transcrip' = 3 => 2
+accuracy is 0.666666666667
+*********************************
+predictions model 5
+'Belo Horizonte is th' = 1 => 2
+'Angola is a country ' = 1 => 2
+'officially the Macao' = 1 => 1
+'The Amazon rainfores' = 1 => 1
+'New Zealand is an is' = 1 => 1
+'Japan is an island c' = 1 => 1
+'Bayern Munich is a G' = 2 => 2
+'Microsoft Corporatio' = 2 => 2
+'Burger King (often a' = 2 => 2
+'Starbucks Corporatio' = 2 => 2
+'SC Victoria Hamburg ' = 2 => 3
+'A strip mall is an o' = 2 => 2
+'Michael Hoffman, Dir' = 3 => 3
+'By now you must have' = 3 => 3
+'Michael Lynn Hoffman' = 3 => 3
+'Revisionist historia' = 3 => 3
+'Remember Michael Hof' = 3 => 3
+' Here is a transcrip' = 3 => 3
+accuracy is 0.833333333333
+*********************************
+predictions model 6
+'Belo Horizonte is th' = 1 => 2
+'Angola is a country ' = 1 => 1
+'officially the Macao' = 1 => 1
+'The Amazon rainfores' = 1 => 1
+'New Zealand is an is' = 1 => 1
+'Japan is an island c' = 1 => 1
+'Bayern Munich is a G' = 2 => 3
+'Microsoft Corporatio' = 2 => 2
+'Burger King (often a' = 2 => 2
+'Starbucks Corporatio' = 2 => 2
+'SC Victoria Hamburg ' = 2 => 3
+'A strip mall is an o' = 2 => 2
+'Michael Hoffman, Dir' = 3 => 3
+'By now you must have' = 3 => 3
+'Michael Lynn Hoffman' = 3 => 3
+'Revisionist historia' = 3 => 3
+'Remember Michael Hof' = 3 => 3
+' Here is a transcrip' = 3 => 3
+accuracy is 0.833333333333
