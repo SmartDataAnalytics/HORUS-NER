@@ -522,15 +522,15 @@ def cache_results(horus_matrix):
 
                 values = (term, horus.search_engine_api, 2, horus.search_engine_features_text)
                 c = conn.execute("""SELECT id
-                                         FROM HORUS_TERM_SEARCH
-                                         WHERE term = ? AND
-                                               id_search_engine = ? AND
-                                               id_search_type = ? AND
-                                               search_engine_features = ?""", values)
+                                    FROM HORUS_TERM_SEARCH
+                                    WHERE term = ? AND
+                                          id_search_engine = ? AND
+                                          id_search_type = ? AND
+                                          search_engine_features = ?""", values)
                 res = c.fetchone()
                 if res is None:
                     horus.log.debug(':: [%s] not cached yet (image)...' % term)
-                    values = (term, cterm.lastrowid, horus.search_engine_api, 2,
+                    values = (term, cterm.lastrowid if type(cterm) is not int else cterm, horus.search_engine_api, 2,
                                horus.search_engine_features_img,
                                str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), horus.search_engine_tot_resources)
                     sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
