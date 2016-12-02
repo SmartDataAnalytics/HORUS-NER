@@ -119,31 +119,29 @@ horus.log.info(':: done')
 
 def main():
 
-    op = OptionParser()
-    op.add_option("--report",
-                  action="store_true", default=True, dest="print_report",
-                  help="Print a detailed running report.")
+    op = OptionParser(usage='usage: %prog [options] arguments')
 
-    op.add_option("--text", dest="input_text",
+    op.add_option("--input_text", dest="input_text",
                   help="The text to be annotated")
 
-    op.add_option("--file",
-                  dest="input_file",
+    op.add_option("--input_file", dest="input_file",
                   help="The file to be annotated")
 
     op.add_option("--ds_format", dest="ds_format", default=0,
                   help="The format to be annotated [0 = free text (default), 1 = Ritter]")
 
-    op.add_option("--output",
-                  dest="output_file",
-                  help="The file to save HORUS annotations")
+    op.add_option("--output", dest="output_file", default="horus_out",
+                  help="The output file")
+
+    op.add_option("--output_format", dest="output_format", default="json",
+                  help="The output file type")
 
     (opts, args) = op.parse_args()
     print(__doc__)
     op.print_help()
 
-    if opts.print_report:
-        horus.log.info(HorusCore.get_report())
+    if not opts.input_text and not opts.input_file:
+        op.error('inform either an [input_text] or [input_file] as parameter!')
 
     horus_matrix = []
     horus.log.info(':: downloading models ...')
@@ -212,17 +210,18 @@ def main():
     header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG",
               "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX", "TOT_TX_LOC", "TOT_TX_ORG",
               "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS"]
-    # export to JSON
-    with open(horus.horus_final_data_json, 'wb') as outfile:
-        json.dump(horus_matrix, outfile)
-    # export to CSV
-    horus_csv = open(horus.horus_final_data_csv, 'wb')
-    wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
-    wr.writerow(header)
-    wr.writerows(horus_matrix)
 
     if int(opts.ds_format) == 0:
         print_annotated_sentence(horus_matrix)
+
+    if opts.output_format == 'json':
+        with open(opts.output_file + '.json', 'wb') as outfile:
+            json.dump(horus_matrix, outfile)
+    elif opts.output_format == 'csv':
+        horus_csv = open(opts.output_file + '.csv', 'wb')
+        wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
+        wr.writerow(header)
+        wr.writerows(horus_matrix)
 
     horus.log.info(':: output file created')
     horus.log.info(':: HORUS - finished')

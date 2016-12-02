@@ -2,7 +2,7 @@
 
 ```python
 
-python main.py --text="what's up jck, gonna go 2 nyc!" --ds_format=0
+python main.py --input_text="whitney houston has been honored at nyc" --ds_format=0 --output_format="csv"
 
 python main.py --file="sentences.txt" --ds_format=0
 

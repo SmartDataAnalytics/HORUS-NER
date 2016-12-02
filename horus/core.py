@@ -73,8 +73,6 @@ class HorusCore:
         self.cache_img_folder = parser.get('cache', 'img_folder')
 
         self.dataset_ritter = parser.get('dataset', 'ds_ritter')
-        self.horus_final_data_csv = parser.get('dataset', 'horus_final_data_csv')
-        self.horus_final_data_json = parser.get('dataset', 'horus_final_data_json')
 
         self.models_location_theta = parser.get('models-param', 'location_theta')
         self.models_distance_theta = parser.get('models-param', 'distance_theta')
