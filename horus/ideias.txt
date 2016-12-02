@@ -1,0 +1,18 @@
+- try to map 'is a' relationship: se X is a Y, entao a distribuicao de Y tem que ser similar a de X, logo, para 'orlando is a great city', nos derivamos que P(orlando) = P(city) se, e somente se, a distribuicao do histograma de P(city) ~ P(orlando).
+
+
+id, word, indicator_per indicator_org 
+"2"	"Diego"	"1"	"1"
+"4"	"Esteves"	"7"	"1"
+"6"	"Diego Esteves"	"5"	"0"
+"16"	"microsoft"	"0"	"7"
+"18"	"americanas"	"0"	"2"
+"20"	"leipzig"	"0"	"0"
+"22"	"jens"	"8"	"1"
+"24"	"l"	"0"	"7"
+"26"	"jens l"	"4"	"0"
+
+
+--text="what's up jck, gonna go 2 nyc!" --ds=1
+
+
