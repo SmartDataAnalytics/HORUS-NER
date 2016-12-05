@@ -1,7 +1,10 @@
 ## Boosting NER
-#### HORUS is meta-algorithm for Named Entity Recognition (NER) based on image processing and multi-level machine learning. It aims at boosting NER task by adding <i>apriori</i> information to the pipeline. Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed (specially) short-texts.  
+HORUS is meta-algorithm for Named Entity Recognition (NER) based on image processing and multi-level machine learning. It aims at boosting NER task by adding <i>apriori</i> information to the pipeline. 
 
-![example](http://dne5.com/whitney_example_peq.png)
+Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed (specially) for short-texts.  
+<p align="center">
+<img src=http://dne5.com/whitney_example_peq.png />
+</p>
 
 ## Setup
 - setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
