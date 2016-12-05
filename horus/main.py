@@ -39,7 +39,7 @@ from optparse import OptionParser
 from time import gmtime, strftime
 import requests
 from nltk.tokenize import sent_tokenize
-from bingAPI1 import bing_api
+from bingAPI1 import bing_api, bing_api2
 from nltk.tag.stanford import StanfordPOSTagger
 
 from django.core.validators import URLValidator
@@ -130,7 +130,7 @@ def main():
     op.add_option("--ds_format", dest="ds_format", default=0,
                   help="The format to be annotated [0 = free text (default), 1 = Ritter]")
 
-    op.add_option("--output", dest="output_file", default="horus_out",
+    op.add_option("--output_file", dest="output_file", default="horus_out",
                   help="The output file")
 
     op.add_option("--output_format", dest="output_format", default="json",
@@ -178,21 +178,20 @@ def main():
             horus.log.info(':: loading Ritter ds')
             sent_tokenize_list = process_ritter_ds(opts.input_file)
 
-    horus.log.info(':: done! start to cache %s sentence(s)' % str(len(sent_tokenize_list)))
+    horus.log.info(':: caching %s sentence(s)' % str(len(sent_tokenize_list)))
     # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
     horus_matrix = cache_sentence(int(opts.ds_format), sent_tokenize_list)
-    horus.log.info(':: done! sentences cached...')
+    horus.log.info(':: done!')
 
     horus.log.info(':: caching results...')
     cache_results(horus_matrix)
-    horus.log.info(':: caching done!')
-
-    horus.log.debug(':: horus_matrix ' + str(horus_matrix))
+    horus.log.info(':: done!')
 
     #  updating horus matrix
     # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
     # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
     # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
+    horus.log.info(':: detecting objects...')
     for item in horus_matrix:
         if item[4] == 'NOUN' or item[7] == 1:
             horus.log.debug(item)
@@ -200,11 +199,12 @@ def main():
             item.extend(metadata)
         else:
             item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
+    horus.log.info(':: done!')
     conn.close()
 
-    #  updating compounds
+    horus.log.info(':: updating compounds...')
     update_compound_predictions(horus_matrix)
+    horus.log.info(':: done!')
 
     # horus.log.info(horus_matrix)
     header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG",
@@ -214,6 +214,7 @@ def main():
     if int(opts.ds_format) == 0:
         print_annotated_sentence(horus_matrix)
 
+    horus.log.info(':: exporting metadata...')
     if opts.output_format == 'json':
         with open(opts.output_file + '.json', 'wb') as outfile:
             json.dump(horus_matrix, outfile)
@@ -222,8 +223,8 @@ def main():
         wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
         wr.writerow(header)
         wr.writerows(horus_matrix)
+    horus.log.info(':: done!')
 
-    horus.log.info(':: output file created')
     horus.log.info(':: HORUS - finished')
 
 
@@ -251,7 +252,7 @@ def print_annotated_sentence(horus_matrix):
 
 def cache_sentence_ritter(sentence_list):
     horus_matrix = []
-    horus.log.info(':: caching Ritter dataset...:')
+    horus.log.debug(':: caching Ritter dataset...:')
     i_sent, i_word = 1, 1
     compound, prev_tag = '', ''
     sent_with_ner = 0
@@ -300,14 +301,14 @@ def cache_sentence_ritter(sentence_list):
         i_sent += 1
         i_word = 1
 
-    horus.log.info(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+    horus.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                  % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     return horus_matrix
 
 
 def tokenize_and_pos(sentence, tagset=''):
-    horus.log.info(':: processing sentence: ' + sentence)
+    horus.log.debug(':: processing sentence: ' + sentence)
     tokens = nltk.word_tokenize(sentence)
     horus.log.debug('---------- ' + str(tokens))
     tagged = nltk.pos_tag(tokens, tagset=tagset)
@@ -326,7 +327,7 @@ def cache_sentence_free_text(sentence_list):
 
     i_sent, i_word = 1, 1
     horus_matrix = []
-    horus.log.info(':: chunking pattern ...')
+    horus.log.debug(':: chunking pattern ...')
     pattern = "NP:{<NN|NNP|NNS|NNPS>+}"
     cp = nltk.RegexpParser(pattern)
     compounds = '|'
@@ -420,9 +421,11 @@ def download_image_local(image_url, image_type, thumbs_url, thumbs_type, term_id
 
 def cache_results(horus_matrix):
     try:
-        horus.log.debug(':: horus_matrix: ' + str(horus_matrix))
+        auxc = 1
+        horus.log.info(':: caching horus_matrix: ' + str(len(horus_matrix)))
 
         for item in horus_matrix:
+            horus.log.info(':: item %s - %s ' % (str(auxc), str(len(horus_matrix))))
             term = item[3]
             if item[4] == 'NOUN' or item[7] == 1:
                 horus.log.debug(':: caching [%s] ...' % term)
@@ -434,6 +437,7 @@ def cache_results(horus_matrix):
                 c.execute(sql, (term,))
                 res_term = c.fetchone()
                 if res_term is None:
+                    horus.log.info(':: [%s] has not been cached before!' % term)
                     cterm = conn.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
                 else:
                     cterm = res_term[0]
@@ -451,7 +455,7 @@ def cache_results(horus_matrix):
                 c.execute(sql, values)
                 res = c.fetchone()
                 if res is None:
-                    horus.log.info(':: [%s] not cached yet (text)...' % term)
+                    horus.log.info(':: [%s] caching - text' % term)
                     values = (term, cterm.lastrowid, horus.search_engine_api, 1,
                               horus.search_engine_features_text,
                               str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
@@ -465,7 +469,7 @@ def cache_results(horus_matrix):
                     item.extend([id_term_search])  # updating matrix
                     seq = 0
                     # get text
-                    metaquery, result = bing_api(term, api=horus.search_engine_key, source_type="Web",
+                    metaquery, result = bing_api2(term, api=horus.search_engine_key, source_type="Web",
                                                  top=horus.search_engine_tot_resources, format='json', market='en-US')
                     for web_result in result['d']['results']:
                         seq+=1
@@ -529,7 +533,7 @@ def cache_results(horus_matrix):
                                           search_engine_features = ?""", values)
                 res = c.fetchone()
                 if res is None:
-                    horus.log.debug(':: [%s] not cached yet (image)...' % term)
+                    horus.log.info(':: [%s] caching - image' % term)
                     values = (term, cterm.lastrowid if type(cterm) is not int else cterm, horus.search_engine_api, 2,
                                horus.search_engine_features_img,
                                str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), horus.search_engine_tot_resources)
@@ -541,7 +545,7 @@ def cache_results(horus_matrix):
                     item.extend([id_term_img])  # updating matrix
                     seq = 0
                     # get images
-                    metaquery, result = bing_api(item[3], api=horus.search_engine_key, source_type="Image",
+                    metaquery, result = bing_api2(item[3], api=horus.search_engine_key, source_type="Image",
                                                  top=horus.search_engine_tot_resources, format='json')
                     for web_img_result in result['d']['results']:
                         horus.log.debug(':: downloading image [%s]' % (web_img_result['Title']))
@@ -593,8 +597,7 @@ def cache_results(horus_matrix):
                     horus.log.debug(':: term %s is already cached (img)!' % term)
                     item.extend(res)  # updating matrix
 
-            horus.log.debug(':: caching completed')
-
+            auxc+=1
     except Exception as e:
         horus.log.error(':: an error has occurred: ', e)
         raise
@@ -984,12 +987,15 @@ def detect_objects(id_term_img, id_term_txt, id_ner_type, term):
         metadata.append(dist_tx_indicator)
         metadata.append(klasses[horus_tx_ner])
 
-        horus.log.info('-> TX_LOC  indicator: %f %%' % (float(y.count(1)) / len(rows)))
-        horus.log.info('-> TX_ORG  indicator: %f %%' % (float(y.count(2)) / len(rows)))
-        horus.log.info('-> TX_PER  indicator: %f %%' % (float(y.count(3)) / len(rows)))
-        horus.log.info('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
-        horus.log.info(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(rows)))
-        horus.log.info(':: most likely class -> ' + klasses[horus_tx_ner])
+        if len(rows) != 0:
+            horus.log.info('-> TX_LOC  indicator: %f %%' % (float(y.count(1)) / len(rows)))
+            horus.log.info('-> TX_ORG  indicator: %f %%' % (float(y.count(2)) / len(rows)))
+            horus.log.info('-> TX_PER  indicator: %f %%' % (float(y.count(3)) / len(rows)))
+            horus.log.info('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
+            horus.log.info(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(rows)))
+            horus.log.info(':: most likely class -> ' + klasses[horus_tx_ner])
+        else:
+            horus.log.info(':: there was a problem searching this term..please try to index it again...')
 
         # checking final NER - 14
         if metadata[4] >= int(horus.models_distance_theta):
