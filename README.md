@@ -20,6 +20,36 @@ python main.py --input_file="sentences.txt" --ds_format=0
 
 python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
 ```
+
+## Output
+```
+0. IS_ENTITY ?
+1. ID_SENT
+2. ID_WORD
+3. WORD/TERM
+4. POS_UNI
+5. POS
+6. NER
+7. COMPOUND
+8. COMPOUND_SIZE
+9. ID_TERM_TXT
+10. ID_TERM_IMG
+11. TOT_IMG
+12. TOT_CV_LOC
+13. TOT_CV_ORG
+14. TOT_CV_PER
+15. DIST_CV_I
+16. PL_CV_I
+17. CV_KLASS (y1)
+18. TOT_RESULTS_TX 
+19. TOT_TX_LOC
+20. TOT_TX_ORG
+21. TOT_TX_PER
+22. TOT_ERR_TRANS
+23. DIST_TX_I
+24. TX_KLASS (y2)
+25. HORUS_KLASS (y3)
+```    
 ## Version
 - 0.1.0 initial version
 - 0.1.1 adding text classification
