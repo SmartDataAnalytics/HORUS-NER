@@ -4,8 +4,10 @@
 ![example](http://dne5.com/whitney_example_peq.png)
 
 ## setup
-- setup [sqlite](https://sqlite.org/) database and run script to create the schema
+- setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
 - setup [openCV 3](http://docs.opencv.org/)
+- get your [BING API](https://datamarket.azure.com/dataset/bing/search)
+- set model parameters at the .ini file
 
 ## usage 
 ```python
