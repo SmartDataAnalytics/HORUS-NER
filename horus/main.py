@@ -191,15 +191,10 @@ def main():
     # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
     # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
     # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
-    horus.log.info(':: detecting objects...')
-    for item in horus_matrix:
-        if item[4] == 'NOUN' or item[7] == 1:
-            horus.log.debug(item)
-            metadata = detect_objects(item[10], item[9], 0, item[3])
-            item.extend(metadata)
-        else:
-            item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    horus.log.info(':: detecting %s objects...' % len(horus_matrix))
+    detect_objects(horus_matrix)
     horus.log.info(':: done!')
+
     conn.close()
 
     horus.log.info(':: updating compounds...')
@@ -604,30 +599,28 @@ def cache_results(horus_matrix):
 
 
 def detect_faces(img):
-    #print cv2.__version__
     try:
+        # print cv2.__version__
         face_cascade = cv2.CascadeClassifier(horus.models_cv_per)
         image = cv2.imread(img)
         if image is None:
-            raise Exception('could not load the image: ' + img)
+            horus.log.error('could not load the image: ' + img)
+            return -1
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.3,
-            minNeighbors=5,
-            # minSize=(30, 30)
-            flags=cv2.CASCADE_SCALE_IMAGE  # cv2.CV_HAAR_SCALE_IMAGE #
-        )
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5, flags=cv2.CASCADE_SCALE_IMAGE)
+        return len(faces)
+        # cv2.CV_HAAR_SCALE_IMAGE #
+        # minSize=(30, 30)
+
         ## Draw a rectangle around the faces
         # for (x, y, w, h) in faces:
         #    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
         # cv2.imshow("Faces found", image)
         # cv2.waitKey(0)
-        return len(faces)
-
 
     except Exception as error:
         horus.log.error(':: error: ' + repr(error))
+        return -1
 
 
 def bow_features(fn, ner_type):
@@ -823,187 +816,208 @@ def detect_text_klass(t1, t2, id, t1en, t2en):
         return [-1]
 
 
-def detect_objects(id_term_img, id_term_txt, id_ner_type, term):
+def detect_objects(horus_matrix):     # id_term_img, id_term_txt, id_ner_type, term
+    auxi = 0
+    toti = len(horus_matrix)
+    for item in horus_matrix:
+        auxi += 1
+        if item[4] == 'NOUN' or item[7] == 1:
 
-    tot_geral_faces = 0
-    tot_geral_logos = 0
-    tot_geral_locations = 0
-    tot_geral_pos_locations = 0
-    tot_geral_neg_locations = 0
-    T = int(horus.models_location_theta)  # location threshold
+            horus.log.info(':: processing item %d of %d' % (auxi, toti))
 
-    filesimg = []
-    metadata = []
-    with conn:
-        cursor = conn.cursor()
-        cursor.execute("""SELECT filename,
-                                 id,
-                                 processed,
-                                 nr_faces,
-                                 nr_logos,
-                                 nr_place_1,
-                                 nr_place_2,
-                                 nr_place_3,
-                                 nr_place_4,
-                                 nr_place_5,
-                                 nr_place_6,
-                                 nr_place_7,
-                                 nr_place_8,
-                                 nr_place_9,
-                                 nr_place_10
-                          FROM HORUS_SEARCH_RESULT_IMG
-                          WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_img, id_ner_type))
-        rows = cursor.fetchall()
-        tot_img = len(rows)
+            id_term_img = item[10]
+            id_term_txt = item[9]
+            id_ner_type = 0
+            term = item[3]
 
-        for row in rows:  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
-            filesimg.append((horus.cache_img_folder + row[0],
-                             row[1],
-                             row[2],
-                             row[3],
-                             row[4],
-                             row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14]))
+            tot_geral_faces = 0
+            tot_geral_logos = 0
+            tot_geral_locations = 0
+            tot_geral_pos_locations = 0
+            tot_geral_neg_locations = 0
+            T = int(horus.models_location_theta)  # location threshold
 
-    for image_term in filesimg:
-        if image_term[2] == 0 or image_term[2] is None:
-            # ----- face recognition -----
-            tot_faces = detect_faces(image_term[0])
-            if tot_faces > 0:
-                tot_geral_faces += 1
-                horus.log.debug(":: found {0} faces!".format(tot_faces))
+            filesimg = []
+            metadata = []
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute("""SELECT filename,
+                                             id,
+                                             processed,
+                                             nr_faces,
+                                             nr_logos,
+                                             nr_place_1,
+                                             nr_place_2,
+                                             nr_place_3,
+                                             nr_place_4,
+                                             nr_place_5,
+                                             nr_place_6,
+                                             nr_place_7,
+                                             nr_place_8,
+                                             nr_place_9,
+                                             nr_place_10
+                                      FROM HORUS_SEARCH_RESULT_IMG
+                                      WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_img, id_ner_type))
+                rows = cursor.fetchall()
+                tot_img = len(rows)
 
-            # ----- logo recognition -----
-            tot_logos = detect_logo(image_term[0])
-            if tot_logos[0] == 1:
-                tot_geral_logos += 1
-                horus.log.debug(":: found {0} logo(s)!".format(1))
+                for row in rows:  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
+                    filesimg.append((horus.cache_img_folder + row[0],
+                                     row[1],
+                                     row[2],
+                                     row[3],
+                                     row[4],
+                                     row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13],
+                                     row[14]))
 
-            # ----- place recognition -----
-            res = detect_place(image_term[0])
-            tot_geral_pos_locations += res.count(1)
-            tot_geral_neg_locations += (res.count(-1) * -1)
-
-            if res.count(1) >= T:
-                tot_geral_locations += 1
-                horus.log.debug(":: found {0} place(s)!".format(1))
-
-            # updating results
-            sql = """UPDATE HORUS_SEARCH_RESULT_IMG
-                     SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?,
-                         nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?,
-                         nr_place_9 = ?, nr_place_10 = ?, processed = 1
-                     WHERE id = ?"""
-            param = []
-            param.append(tot_faces)
-            param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
-            param.extend(res)
-            param.append(image_term[1])
-            cursor.execute(sql, param)
-
-        else:
-            tot_geral_faces += image_term[3]
-            tot_geral_logos += image_term[4]
-            if (image_term[5:13]).count(1) >= int(T):
-                tot_geral_locations += 1
-            tot_geral_pos_locations += image_term[5:13].count(1)
-            tot_geral_neg_locations += (image_term[5:13].count(-1) * -1)
-
-    outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
-    maxs_cv = heapq.nlargest(2, outs)
-    dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
-    place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
-
-    # 0 to 5
-    metadata.append(tot_img)
-    metadata.append(tot_geral_locations)  # 1
-    metadata.append(tot_geral_logos)  # 2
-    metadata.append(tot_geral_faces)  # 3
-    metadata.append(dist_cv_indicator)  # 4
-    metadata.append(place_cv_indicator)  # 5
-
-    horus.log.info('-------------------------------------------------------------')
-    horus.log.info(':: [checking related visual information for [%s]]' % term)
-    horus.log.info('')
-    horus.log.info('-> CV_LOC  indicator: %f %%' % (float(tot_geral_locations) / tot_img)) if tot_img > 0 else horus.log.info('-> CV_LOC  indicator: err no img retrieved')
-    horus.log.info('-> CV_ORG  indicator: %f %%' % (float(tot_geral_logos) / tot_img)) if tot_img > 0 else horus.log.info('-> CV_ORG  indicator: err no img retrieved')
-    horus.log.info('-> CV_PER  indicator: %f %%' % (float(tot_geral_faces) / tot_img)) if tot_img > 0 else horus.log.info('-> CV_PER  indicator: err no img retrieved')
-    horus.log.info('-> CV_DIST indicator: %s' % (str(dist_cv_indicator)))
-    horus.log.info('-> CV_PLC  indicator: %s' % (str(place_cv_indicator)))
-
-    # HORUS CV NER - 6 (PAREI AQUI, ESSE CORTE NAO PODE FICAR AQUI OBVIAMENTE, SENAO DIMINUI A ACURACIA AUTOMARICAMENT!
-    # MUDAR ISSO PRA UMA FUNCAO DE DECISAO SEPARADA (MAS SEMPRE ADICIONAR A PREDICAO DO HORUS_CV
-    horus_cv_ner = outs.index(max(outs)) + 1
-    if dist_cv_indicator >= int(horus.models_distance_theta):
-        metadata.append(klasses[horus_cv_ner])
-        horus.log.info(':: most likely class -> ' + klasses[horus_cv_ner])
-    else:
-        metadata.append('*')
-        horus.log.info(':: most likely class -> that\'s hard to say...')
-
-    # text classification
-    horus.log.info(':: [checking related textual information ...]')
-    y = []
-    with conn:
-        cursor = conn.cursor()
-        cursor.execute("""SELECT id, result_seq, result_title, result_description, result_title_en,
-                                 result_description_en, processed, text_klass
-                          FROM HORUS_SEARCH_RESULT_TEXT
-                          WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
-        rows = cursor.fetchall()
-        tot_err = 0
-        for row in rows:
-            if row[6] == 0 or row[6] is None:
-                ret = detect_text_klass(row[2], row[3], row[0], row[4], row[5])
-                if ret[0] != -1:
-                    y.append(ret)
-                    sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
-                             SET text_klass = %s , processed = 1 WHERE id = %s""" % (ret[0], row[0])
-                    horus.log.debug(':: ' + sql)
-                    cursor.execute(sql)
+            for image_term in filesimg:
+                if image_term[2] == 1:
+                    tot_geral_faces += image_term[3]
+                    tot_geral_logos += image_term[4]
+                    if (image_term[5:13]).count(1) >= int(T):
+                        tot_geral_locations += 1
+                    tot_geral_pos_locations += image_term[5:13].count(1)
+                    tot_geral_neg_locations += (image_term[5:13].count(-1) * -1)
                 else:
-                    tot_err += 1
+                    # ----- face recognition -----
+                    tot_faces = detect_faces(image_term[0])
+                    if tot_faces > 0:
+                        tot_geral_faces += 1
+                        horus.log.debug(":: found {0} faces!".format(tot_faces))
+
+                    # ----- logo recognition -----
+                    tot_logos = detect_logo(image_term[0])
+                    if tot_logos[0] == 1:
+                        tot_geral_logos += 1
+                        horus.log.debug(":: found {0} logo(s)!".format(1))
+
+                    # ----- place recognition -----
+                    res = detect_place(image_term[0])
+                    tot_geral_pos_locations += res.count(1)
+                    tot_geral_neg_locations += (res.count(-1) * -1)
+
+                    if res.count(1) >= T:
+                        tot_geral_locations += 1
+                        horus.log.debug(":: found {0} place(s)!".format(1))
+
+                    # updating results
+                    sql = """UPDATE HORUS_SEARCH_RESULT_IMG
+                                 SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?,
+                                     nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?,
+                                     nr_place_9 = ?, nr_place_10 = ?, processed = 1
+                                 WHERE id = ?"""
+                    param = []
+                    param.append(tot_faces)
+                    param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
+                    param.extend(res)
+                    param.append(image_term[1])
+                    cursor.execute(sql, param)
+
+            conn.commit()
+
+            outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
+            maxs_cv = heapq.nlargest(2, outs)
+            dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
+            place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
+
+            # 0 to 5
+            metadata.append(tot_img)
+            metadata.append(tot_geral_locations)  # 1
+            metadata.append(tot_geral_logos)  # 2
+            metadata.append(tot_geral_faces)  # 3
+            metadata.append(dist_cv_indicator)  # 4
+            metadata.append(place_cv_indicator)  # 5
+
+            horus.log.debug('-------------------------------------------------------------')
+            horus.log.debug(':: [checking related visual information for [%s]]' % term)
+            horus.log.debug('')
+            horus.log.debug('-> CV_LOC  indicator: %f %%' % (float(tot_geral_locations) / tot_img)) if tot_img > 0 \
+                else horus.log.debug('-> CV_LOC  indicator: err no img retrieved')
+            horus.log.debug('-> CV_ORG  indicator: %f %%' % (float(tot_geral_logos) / tot_img)) if tot_img > 0 \
+                else horus.log.debug('-> CV_ORG  indicator: err no img retrieved')
+            horus.log.debug('-> CV_PER  indicator: %f %%' % (float(tot_geral_faces) / tot_img)) if tot_img > 0 \
+                else horus.log.debug('-> CV_PER  indicator: err no img retrieved')
+            horus.log.debug('-> CV_DIST indicator: %s' % (str(dist_cv_indicator)))
+            horus.log.debug('-> CV_PLC  indicator: %s' % (str(place_cv_indicator)))
+
+            # HORUS CV NER - 6 (PAREI AQUI, ESSE CORTE NAO PODE FICAR AQUI OBVIAMENTE, SENAO DIMINUI A ACURACIA AUTOMARICAMENT!
+            # MUDAR ISSO PRA UMA FUNCAO DE DECISAO SEPARADA (MAS SEMPRE ADICIONAR A PREDICAO DO HORUS_CV
+            horus_cv_ner = outs.index(max(outs)) + 1
+            if dist_cv_indicator >= int(horus.models_distance_theta):
+                metadata.append(klasses[horus_cv_ner])
+                horus.log.debug(':: most likely class -> ' + klasses[horus_cv_ner])
             else:
-                y.append(row[7])
+                metadata.append('*')
+                horus.log.debug(':: most likely class -> that\'s hard to say...')
 
-        conn.commit()
+            # text classification
+            horus.log.debug(':: [checking related textual information ...]')
+            y = []
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute("""SELECT id, result_seq, result_title, result_description, result_title_en,
+                                             result_description_en, processed, text_klass
+                                      FROM HORUS_SEARCH_RESULT_TEXT
+                                      WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
+                rows = cursor.fetchall()
+                tot_err = 0
+                for row in rows:
+                    if row[6] == 0 or row[6] is None:
+                        ret = detect_text_klass(row[2], row[3], row[0], row[4], row[5])
+                        if ret[0] != -1:
+                            y.append(ret)
+                            sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET text_klass = %s , processed = 1
+                                     WHERE id = %s""" % (ret[0], row[0])
+                            horus.log.debug(':: ' + sql)
+                            cursor.execute(sql)
+                        else:
+                            tot_err += 1
+                    else:
+                        y.append(row[7])
 
-        gp = [y.count(1), y.count(2), y.count(3)]
-        horus_tx_ner = gp.index(max(gp)) + 1
+                conn.commit()
 
-        horus.log.debug(':: final textual checking statistics for term [%s] (1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (
-            term, str(y.count(1)), str(y.count(2)), str(y.count(3))))
+                gp = [y.count(1), y.count(2), y.count(3)]
+                horus_tx_ner = gp.index(max(gp)) + 1
 
-        # 7 to 11
-        metadata.append(len(rows))
-        metadata.append(y.count(1))
-        metadata.append(y.count(2))
-        metadata.append(y.count(3))
-        metadata.append(float(tot_err))
+                horus.log.debug(':: final textual checking statistics for term [%s] '
+                                '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(y.count(1)), str(y.count(2)),
+                                                                             str(y.count(3))))
+                # 7 to 11
+                metadata.append(len(rows))
+                metadata.append(y.count(1))
+                metadata.append(y.count(2))
+                metadata.append(y.count(3))
+                metadata.append(float(tot_err))
 
-        maxs_tx = heapq.nlargest(2, gp)
-        dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
+                maxs_tx = heapq.nlargest(2, gp)
+                dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
 
-        # 12, 13
-        metadata.append(dist_tx_indicator)
-        metadata.append(klasses[horus_tx_ner])
+                # 12, 13
+                metadata.append(dist_tx_indicator)
+                metadata.append(klasses[horus_tx_ner])
 
-        if len(rows) != 0:
-            horus.log.info('-> TX_LOC  indicator: %f %%' % (float(y.count(1)) / len(rows)))
-            horus.log.info('-> TX_ORG  indicator: %f %%' % (float(y.count(2)) / len(rows)))
-            horus.log.info('-> TX_PER  indicator: %f %%' % (float(y.count(3)) / len(rows)))
-            horus.log.info('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
-            horus.log.info(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(rows)))
-            horus.log.info(':: most likely class -> ' + klasses[horus_tx_ner])
+                if len(rows) != 0:
+                    horus.log.debug('-> TX_LOC  indicator: %f %%' % (float(y.count(1)) / len(rows)))
+                    horus.log.debug('-> TX_ORG  indicator: %f %%' % (float(y.count(2)) / len(rows)))
+                    horus.log.debug('-> TX_PER  indicator: %f %%' % (float(y.count(3)) / len(rows)))
+                    horus.log.debug('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
+                    horus.log.debug(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(rows)))
+                    horus.log.debug(':: most likely class -> ' + klasses[horus_tx_ner])
+                else:
+                    horus.log.debug(':: there was a problem searching this term..please try to index it again...')
+
+                # checking final NER - 14
+                if metadata[4] >= int(horus.models_distance_theta):
+                    metadata.append(metadata[6])  # CV is the final decision
+                else:
+                    metadata.append(metadata[13])  # TX is the final decision
+
+            item.extend(metadata)
         else:
-            horus.log.info(':: there was a problem searching this term..please try to index it again...')
+            item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-        # checking final NER - 14
-        if metadata[4] >= int(horus.models_distance_theta):
-            metadata.append(metadata[6])  # CV is the final decision
-        else:
-            metadata.append(metadata[13])  # TX is the final decision
-
-        return metadata
+    return horus_matrix
 
 
 def update_compound_predictions(horus_matrix):

@@ -6,7 +6,7 @@ import logging
 import csv
 import pandas as pd
 import numpy as np
-from horus.core import HorusCore
+from core import HorusCore
 from sklearn.metrics import confusion_matrix
 
 
