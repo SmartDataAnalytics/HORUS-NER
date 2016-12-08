@@ -1,224 +1,56 @@
-HORUS is a probabilistic named entity recognition (NER) algorithm based on image processing and multi-level machine learning. Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed to minimize the existing gap of NER on short-texts.  
+## Boosting NER
+HORUS is meta-algorithm for Named Entity Recognition (NER) based on image processing and multi-level machine learning. It aims at boosting NER task by adding <i>apriori</i> information to the pipeline. 
 
-![example](http://dne5.com/whitney_example_peq.png)
+Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed (specially) for short-texts.  
+<p align="center">
+<img src=http://dne5.com/whitney_example_peq.png />
+</p>
 
-* horus-models
-  1. c++/python classes (java interfaces are not reliable in terms of updates)
-  2. horus machine learning models
-  3. features extraction, clustering, etc. for horus-core algorithm
+## Setup
+- setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
+- setup [openCV 3](http://docs.opencv.org/)
+- get your [Microsoft Bing API](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API](https://datamarket.azure.com/developer/applications/register)
+- set model parameters at the .ini file
 
-* Overview
-  1. to compute probability for each NER class, based on image processing
-  2. SIFT/SURF + dependency parsing as features
-  3. to find optimal theta for search engine
+## Usage 
+```python
+python main.py --input_text="whitney houston has been honored at nyc" --ds_format=0 --output_format="csv"
 
-* OpenCV Issues
-  1. there are many issues on java/python bindings with regard to coding SIFT (https://github.com/opencv/opencv/issues/5667 among others) 
-  2. matlibplot does not work on macosx if you don't create a file at /Users/[your-user]/.matplotlib/matplotlibrc and add the following line ```backend: TkAgg```
+python main.py --input_file="sentences.txt" --ds_format=0
 
-Ritter et al., 2011 (ANNIE NER pipelines x Twitter specific approach)
-    System         Precision Recall  F1
-    --------------- Newswire -------------
-    ANNIE            78%      74%   77%
-    Stanford          -        -    89%
-    -------------- Microblog --------------
-    ANNIE            47%      83%   60%
-    TwitIE           77%      83%   80%
-    Stanford         59%      32%   41%
-    Stanford-twitter 54%      45%   49%
-    Ritter           73%      49%   59%
-    
-* Datasets
-  1. PASCAL VOC 2007
-  2. Caltech-101 - http://www.vision.caltech.edu/Image_Datasets/Caltech101/
-  3. Flickr
-  4. 15 scene categories
-  5. Graz
+python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
+```
 
-
-* State of the Art (short text)
-  1. Twitter NER 
-
-* Experiments
-  1. DeFacto proof's excerpt
-  2. TwitterNER x HORUS
-  3. Stanford NER x HORUS
-
-* Preliminar Results
-  - 56 images have been processed
-  - hits: 47
-  - accuracy = 0.839285714286
-
-* Experiments
-- Logo -> Logo
-tot files=320
-tot_pos=252
-tot_neg=68
-%pos=0.7875
-%neg=0.2125
-
-- Logo -> Others
-tot files=20
-tot_pos=2
-tot_neg=18
-tot pos=0
-%pos=0.1
-%neg=0.9
-
-tot files=29
-tot_pos=1
-tot_neg=28
-%pos=0.0344827586207
-%neg=0.965517241379
-
-tot files=17
-tot_pos=1
-tot_neg=16
-%pos=0.0588235294118
-%neg=0.941176470588
-
-tot files=34
-tot_pos=2
-tot_neg=32
-%pos=0.0588235294118
-%neg=0.941176470588
-
-================================
-LOC
-- saving predictions...
-tot files=29
-tot_pos=16
-tot_neg=13
-%pos=0.551724137931
-%neg=0.448275862069
-
-(REMIND -> check the distribution of classes for LOC and train separared models, then use DecisionTree to get the best model. 
-
-* Text Similarity Tests
-
-*********************************
-predictions model 1
-'Belo Horizonte is th' = 1 => 2
-'Angola is a country ' = 1 => 2
-'officially the Macao' = 1 => 1
-'The Amazon rainfores' = 1 => 1
-'New Zealand is an is' = 1 => 1
-'Japan is an island c' = 1 => 1
-'Bayern Munich is a G' = 2 => 3
-'Microsoft Corporatio' = 2 => 2
-'Burger King (often a' = 2 => 2
-'Starbucks Corporatio' = 2 => 2
-'SC Victoria Hamburg ' = 2 => 2
-'A strip mall is an o' = 2 => 2
-'Michael Hoffman, Dir' = 3 => 3
-'By now you must have' = 3 => 3
-'Michael Lynn Hoffman' = 3 => 3
-'Revisionist historia' = 3 => 2
-'Remember Michael Hof' = 3 => 2
-' Here is a transcrip' = 3 => 2
-accuracy is 0.666666666667
-*********************************
-predictions model 2
-'Belo Horizonte is th' = 1 => 3
-'Angola is a country ' = 1 => 1
-'officially the Macao' = 1 => 1
-'The Amazon rainfores' = 1 => 1
-'New Zealand is an is' = 1 => 1
-'Japan is an island c' = 1 => 1
-'Bayern Munich is a G' = 2 => 3
-'Microsoft Corporatio' = 2 => 2
-'Burger King (often a' = 2 => 2
-'Starbucks Corporatio' = 2 => 2
-'SC Victoria Hamburg ' = 2 => 3
-'A strip mall is an o' = 2 => 2
-'Michael Hoffman, Dir' = 3 => 3
-'By now you must have' = 3 => 3
-'Michael Lynn Hoffman' = 3 => 3
-'Revisionist historia' = 3 => 3
-'Remember Michael Hof' = 3 => 3
-' Here is a transcrip' = 3 => 3
-accuracy is 0.833333333333
-*********************************
-predictions model 3
-'Belo Horizonte is th' = 1 => 1
-'Angola is a country ' = 1 => 2
-'officially the Macao' = 1 => 1
-'The Amazon rainfores' = 1 => 3
-'New Zealand is an is' = 1 => 1
-'Japan is an island c' = 1 => 1
-'Bayern Munich is a G' = 2 => 2
-'Microsoft Corporatio' = 2 => 2
-'Burger King (often a' = 2 => 2
-'Starbucks Corporatio' = 2 => 2
-'SC Victoria Hamburg ' = 2 => 2
-'A strip mall is an o' = 2 => 2
-'Michael Hoffman, Dir' = 3 => 3
-'By now you must have' = 3 => 3
-'Michael Lynn Hoffman' = 3 => 3
-'Revisionist historia' = 3 => 2
-'Remember Michael Hof' = 3 => 2
-' Here is a transcrip' = 3 => 2
-accuracy is 0.722222222222
-*********************************
-predictions model 4
-'Belo Horizonte is th' = 1 => 1
-'Angola is a country ' = 1 => 2
-'officially the Macao' = 1 => 1
-'The Amazon rainfores' = 1 => 3
-'New Zealand is an is' = 1 => 1
-'Japan is an island c' = 1 => 1
-'Bayern Munich is a G' = 2 => 2
-'Microsoft Corporatio' = 2 => 2
-'Burger King (often a' = 2 => 2
-'Starbucks Corporatio' = 2 => 2
-'SC Victoria Hamburg ' = 2 => 2
-'A strip mall is an o' = 2 => 2
-'Michael Hoffman, Dir' = 3 => 3
-'By now you must have' = 3 => 2
-'Michael Lynn Hoffman' = 3 => 3
-'Revisionist historia' = 3 => 2
-'Remember Michael Hof' = 3 => 2
-' Here is a transcrip' = 3 => 2
-accuracy is 0.666666666667
-*********************************
-predictions model 5
-'Belo Horizonte is th' = 1 => 2
-'Angola is a country ' = 1 => 2
-'officially the Macao' = 1 => 1
-'The Amazon rainfores' = 1 => 1
-'New Zealand is an is' = 1 => 1
-'Japan is an island c' = 1 => 1
-'Bayern Munich is a G' = 2 => 2
-'Microsoft Corporatio' = 2 => 2
-'Burger King (often a' = 2 => 2
-'Starbucks Corporatio' = 2 => 2
-'SC Victoria Hamburg ' = 2 => 3
-'A strip mall is an o' = 2 => 2
-'Michael Hoffman, Dir' = 3 => 3
-'By now you must have' = 3 => 3
-'Michael Lynn Hoffman' = 3 => 3
-'Revisionist historia' = 3 => 3
-'Remember Michael Hof' = 3 => 3
-' Here is a transcrip' = 3 => 3
-accuracy is 0.833333333333
-*********************************
-predictions model 6
-'Belo Horizonte is th' = 1 => 2
-'Angola is a country ' = 1 => 1
-'officially the Macao' = 1 => 1
-'The Amazon rainfores' = 1 => 1
-'New Zealand is an is' = 1 => 1
-'Japan is an island c' = 1 => 1
-'Bayern Munich is a G' = 2 => 3
-'Microsoft Corporatio' = 2 => 2
-'Burger King (often a' = 2 => 2
-'Starbucks Corporatio' = 2 => 2
-'SC Victoria Hamburg ' = 2 => 3
-'A strip mall is an o' = 2 => 2
-'Michael Hoffman, Dir' = 3 => 3
-'By now you must have' = 3 => 3
-'Michael Lynn Hoffman' = 3 => 3
-'Revisionist historia' = 3 => 3
-'Remember Michael Hof' = 3 => 3
-' Here is a transcrip' = 3 => 3
-accuracy is 0.833333333333
+## Output
+```
+0. IS_ENTITY ?
+1. ID_SENT
+2. ID_WORD
+3. WORD/TERM
+4. POS_UNI
+5. POS
+6. NER
+7. COMPOUND
+8. COMPOUND_SIZE
+9. ID_TERM_TXT
+10. ID_TERM_IMG
+11. TOT_IMG
+12. TOT_CV_LOC
+13. TOT_CV_ORG
+14. TOT_CV_PER
+15. DIST_CV_I
+16. PL_CV_I
+17. CV_KLASS (y1)
+18. TOT_RESULTS_TX 
+19. TOT_TX_LOC
+20. TOT_TX_ORG
+21. TOT_TX_PER
+22. TOT_ERR_TRANS
+23. DIST_TX_I
+24. TX_KLASS (y2)
+25. HORUS_KLASS (y3)
+```    
+## Version
+- 0.1.0 initial version
+- 0.1.1 adding text classification
+- 0.1.2 adding map detection
