@@ -8,7 +8,7 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 
 ## Setup
 - setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
-- setup [openCV 3.1.0](http://docs.opencv.org/)
+- setup [openCV 3.1.0](http://docs.opencv.org/) or use [anaconda](https://anaconda.org/menpo/opencv3)
 - get your [Microsoft Bing API](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API](https://datamarket.azure.com/developer/applications/register)
 - set model parameters at the .ini file
 
