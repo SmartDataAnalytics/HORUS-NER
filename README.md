@@ -6,15 +6,18 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 <img src=http://dne5.com/whitney_example_peq.png />
 </p>
 
-## Setup
+## Easy Setup
 - setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
-- setup [openCV 3.1.0](http://docs.opencv.org/) or use [anaconda](https://anaconda.org/menpo/opencv3)
 - get your [Microsoft Bing API](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API](https://datamarket.azure.com/developer/applications/register)
-- set model parameters at the .ini file
+- configure the parameters at the .ini file (rename _horus_dist.ini_ to _horus.ini_)
+- setup [anaconda](https://anaconda.org/) and import our _requirements.txt_ file :-) 
+```python 
+conda create -n new environment --file requirements.txt
+```
 
 ## Usage 
 ```python
-python main.py --input_text="whitney houston has been honored at nyc" --ds_format=0 --output_format="csv"
+python main.py --input_text="whitney houston has been honored in nyc" --ds_format=0 --output_format="csv"
 
 python main.py --input_file="sentences.txt" --ds_format=0
 
