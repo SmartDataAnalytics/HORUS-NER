@@ -12,7 +12,7 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 - configure the parameters at the .ini file (rename _horus_dist.ini_ to _horus.ini_)
 - setup [anaconda](https://anaconda.org/) and import our _requirements.txt_ file :-) 
 ```python 
-conda create -n new environment --file requirements.txt
+conda env create -f environment.yml 
 ```
 
 ## Usage 

@@ -50,6 +50,7 @@ from langdetect import detect
 from core import HorusCore
 
 print cv2.__version__
+cv2.ocl.setUseOpenCL(False)
 
 horus = HorusCore('horus.ini')
 english_vocab = None
@@ -66,7 +67,7 @@ translator = Translator(horus.translation_id, horus.translation_secret)
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 tfidf_transformer = TfidfTransformer()
 
-
+cv2.ocl.setUseOpenCL(False)
 detect = cv2.xfeatures2d.SIFT_create()
 extract = cv2.xfeatures2d.SIFT_create()
 flann_params = dict(algorithm=1, trees=5)
