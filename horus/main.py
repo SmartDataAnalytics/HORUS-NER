@@ -146,9 +146,14 @@ def main():
         op.error('inform either an [input_text] or [input_file] as parameter!')
 
     horus_matrix = []
-    horus.log.info(':: downloading models ...')
+    horus.log.info(':: downloading NLTK models ...')
     nltk.download('averaged_perceptron_tagger')
     nltk.download('maxent_ne_chunker')
+    nltk.download('punkt')
+    nltk.download('universal_tagset')
+    nltk.download('words')
+    horus.log.info(':: done!')
+
 
     #horus.log.info(':: loading english vocabulary ...')
     #english_vocab = set(w.lower() for w in nltk.corpus.words.words())
