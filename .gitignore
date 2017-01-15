@@ -6,3 +6,5 @@ horus/core.pyc
 horus/horus.ini
 horus/horus.log
 horus/*.pyc
+.DS_Store
+horus/.DS_Store
