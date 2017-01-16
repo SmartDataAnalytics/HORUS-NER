@@ -47,11 +47,11 @@ from django.core.exceptions import ValidationError
 import cv2
 from langdetect import detect
 
-from core import HorusCore
+from config import HorusConfig
 
 print cv2.__version__
 
-horus = HorusCore()
+horus = HorusConfig()
 english_vocab = None
 ner_ritter = ['B-company', 'B-person', 'I-person', 'B-geo-loc', 'I-company', 'I-geo-loc']
 

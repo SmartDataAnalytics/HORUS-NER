@@ -1,0 +1,115 @@
+2017-01-16 21:49:58,056 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:49:58,056 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 21:49:58,057 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:49:58,057 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 21:49:58,057 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 21:49:58,058 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 21:49:58,058 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 21:49:58,066 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 21:49:58,074 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 21:49:58,799 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 21:50:03,208 [MainThread  ] [INFO ]  :: done!
+2017-01-16 21:50:03,208 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 21:50:03,208 [MainThread  ] [INFO ]  :: done
+2017-01-16 21:53:57,603 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:53:57,603 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 21:53:57,603 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:53:57,603 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 21:53:57,603 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 21:53:57,605 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 21:53:57,606 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 21:53:57,617 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 21:53:57,626 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 21:53:58,318 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 21:53:58,925 [MainThread  ] [INFO ]  :: done!
+2017-01-16 21:53:58,925 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 21:53:58,925 [MainThread  ] [INFO ]  :: done
+2017-01-16 21:54:59,282 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:54:59,282 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 21:54:59,282 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:54:59,282 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 21:54:59,282 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 21:54:59,283 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 21:54:59,284 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 21:54:59,292 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 21:54:59,297 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 21:55:00,059 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 21:55:00,564 [MainThread  ] [INFO ]  :: done!
+2017-01-16 21:55:00,564 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 21:55:00,565 [MainThread  ] [INFO ]  :: done
+2017-01-16 21:56:34,260 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:56:34,260 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 21:56:34,260 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:56:34,260 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 21:56:34,260 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 21:56:34,261 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 21:56:34,262 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 21:56:34,270 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 21:56:34,275 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 21:56:34,982 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 21:56:36,129 [MainThread  ] [INFO ]  :: done!
+2017-01-16 21:56:36,129 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 21:56:36,129 [MainThread  ] [INFO ]  :: done
+2017-01-16 21:59:18,569 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:59:18,569 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 21:59:18,569 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:59:18,569 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 21:59:18,569 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 21:59:18,570 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 21:59:18,571 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 21:59:18,580 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 21:59:18,585 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 21:59:19,387 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 21:59:22,702 [MainThread  ] [INFO ]  :: done!
+2017-01-16 21:59:22,702 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 21:59:22,702 [MainThread  ] [INFO ]  :: done
+2017-01-16 21:59:45,209 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:59:45,209 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 21:59:45,210 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 21:59:45,210 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 21:59:45,210 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 21:59:45,211 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 21:59:45,211 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 21:59:45,220 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 21:59:45,224 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 21:59:45,963 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 21:59:50,306 [MainThread  ] [INFO ]  :: done!
+2017-01-16 21:59:50,306 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 21:59:50,307 [MainThread  ] [INFO ]  :: done
+2017-01-16 22:13:45,577 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 22:13:45,577 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 22:13:45,577 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 22:13:45,577 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 22:13:45,577 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 22:13:45,578 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 22:13:45,579 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 22:13:45,588 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 22:13:45,593 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 22:13:46,351 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 22:13:48,322 [MainThread  ] [INFO ]  :: done!
+2017-01-16 22:13:48,322 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 22:13:48,322 [MainThread  ] [INFO ]  :: done
+2017-01-16 22:15:33,342 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 22:15:33,342 [MainThread  ] [INFO ]  ::                     HORUS NER 0.1 alpha                      ::
+2017-01-16 22:15:33,342 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-16 22:15:33,342 [MainThread  ] [INFO ]  :: loading components...
+2017-01-16 22:15:33,342 [MainThread  ] [INFO ]  :: loading horus ORG model
+2017-01-16 22:15:33,343 [MainThread  ] [INFO ]  :: loading horus ORG vocabulary
+2017-01-16 22:15:33,343 [MainThread  ] [INFO ]  :: loading horus LOC models
+2017-01-16 22:15:33,352 [MainThread  ] [INFO ]  :: loading horus ORG vocabularies
+2017-01-16 22:15:33,356 [MainThread  ] [INFO ]  :: loading horus text analysis model
+2017-01-16 22:15:34,074 [MainThread  ] [INFO ]  :: checking NLTK models ...
+2017-01-16 22:15:34,546 [MainThread  ] [INFO ]  :: done!
+2017-01-16 22:15:34,546 [MainThread  ] [INFO ]  :: connecting to horus db...
+2017-01-16 22:15:34,546 [MainThread  ] [INFO ]  :: done
+2017-01-16 22:15:41,522 [CP Server Th] [INFO ]  :: processing text
+2017-01-16 22:15:41,522 [CP Server Th] [INFO ]  :: text: 
+2017-01-16 22:15:41,522 [CP Server Th] [INFO ]  :: tokenizing sentences ...
+2017-01-16 22:15:41,569 [CP Server Th] [INFO ]  :: processing 0 sentence(s).
+2017-01-16 22:15:41,569 [CP Server Th] [INFO ]  :: caching 0 sentence(s)
+2017-01-16 22:15:41,571 [CP Server Th] [INFO ]  :: done!
+2017-01-16 22:15:41,572 [CP Server Th] [INFO ]  :: caching results...
+2017-01-16 22:15:41,572 [CP Server Th] [INFO ]  :: caching horus_matrix: 0
+2017-01-16 22:15:41,572 [CP Server Th] [INFO ]  :: done!
+2017-01-16 22:15:41,572 [CP Server Th] [INFO ]  :: detecting 0 objects...
+2017-01-16 22:15:41,572 [CP Server Th] [INFO ]  :: done!

@@ -5,7 +5,7 @@ import logging
 import configparser
 import pkg_resources
 
-class HorusCore:
+class HorusConfig:
     def __init__(self):
         ini_file = pkg_resources.resource_filename('resource', "horus.ini")
 
