@@ -114,10 +114,108 @@ voc_loc_10 = joblib.load(horus.models_cv_loc_10_dict)
 horus.log.info(':: loading horus text analysis model')
 text_checking_model = joblib.load(horus.models_text)
 
+horus.log.info(':: checking NLTK models ...')
 
+try:
+    nltk.data.find('averaged_perceptron_tagger.zip')
+except LookupError:
+    nltk.download('averaged_perceptron_tagger')
+
+try:
+    nltk.data.find('punkt.zip')
+except LookupError:
+    nltk.download('punkt')
+
+try:
+    nltk.data.find('maxent_ne_chunker.zip')
+except LookupError:
+    nltk.download('maxent_ne_chunker')
+
+try:
+    nltk.data.find('universal_tagset.zip')
+except LookupError:
+    nltk.download('universal_tagset')
+
+try:
+    nltk.data.find('words.zip')
+except LookupError:
+    nltk.download('words')
+
+horus.log.info(':: done!')
 horus.log.info(':: connecting to horus db...')
 conn = sqlite3.connect(horus.database_db)
 horus.log.info(':: done')
+
+
+def annotate(input_text, input_file, ds_format, output_file, output_format):
+
+    # 0 = text (parameter of reading file) / 1 = ritter
+    if int(ds_format) == 0:
+        text = ''
+        if input_text is not None:
+            text = input_text.strip('"\'')
+            horus.log.info(':: processing text')
+        elif input_file is not None:
+            f = open(input_file, 'r')
+            text = f.readlines()
+            horus.log.info(':: processing input file')
+        else:
+            raise Exception("err: missing text to be annotated")
+        sent_tokenize_list = process_input_text(text)
+
+    elif int(ds_format) == 1:  # ritter
+        if input_file is None:
+            raise Exception("Provide an input file (ritter format) to be annotated")
+        else:
+            horus.log.info(':: loading Ritter ds')
+            sent_tokenize_list = process_ritter_ds(input_file)
+
+    horus_matrix = []
+    horus.log.info(':: caching %s sentence(s)' % str(len(sent_tokenize_list)))
+    # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
+    horus_matrix = cache_sentence(int(ds_format), sent_tokenize_list)
+    horus.log.info(':: done!')
+
+    horus.log.info(':: caching results...')
+    cache_results(horus_matrix)
+    horus.log.info(':: done!')
+
+    #  updating horus matrix
+    # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
+    # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
+    # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
+    horus.log.info(':: detecting %s objects...' % len(horus_matrix))
+    detect_objects(horus_matrix)
+    horus.log.info(':: done!')
+
+    conn.close()
+
+    horus.log.info(':: updating compounds...')
+    update_compound_predictions(horus_matrix)
+    horus.log.info(':: done!')
+
+    # horus.log.info(horus_matrix)
+    header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE",
+              "ID_TERM_TXT", "ID_TERM_IMG",
+              "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX",
+              "TOT_TX_LOC", "TOT_TX_ORG",
+              "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS"]
+
+    if int(ds_format) == 0:
+        print_annotated_sentence(horus_matrix)
+
+    horus.log.info(':: exporting metadata...')
+    if output_format == 'json':
+        with open(output_file + '.json', 'wb') as outfile:
+            json.dump(horus_matrix, outfile)
+    elif output_format == 'csv':
+        horus_csv = open(output_file + '.csv', 'wb')
+        wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
+        wr.writerow(header)
+        wr.writerows(horus_matrix)
+    horus.log.info(':: done!')
+
+    horus.log.info(':: HORUS - finished')
 
 
 def main():
@@ -146,89 +244,9 @@ def main():
     if not opts.input_text and not opts.input_file:
         op.error('inform either an [input_text] or [input_file] as parameter!')
 
-    horus_matrix = []
-    horus.log.info(':: downloading NLTK models ...')
-    nltk.download('averaged_perceptron_tagger')
-    nltk.download('maxent_ne_chunker')
-    nltk.download('punkt')
-    nltk.download('universal_tagset')
-    nltk.download('words')
-    horus.log.info(':: done!')
-
-
-    #horus.log.info(':: loading english vocabulary ...')
-    #english_vocab = set(w.lower() for w in nltk.corpus.words.words())
-
-    # postagger_stanford_en = \
-    #    StanfordPOSTagger(model_filename=horus.model_stanford_filename, path_to_jar=horus.model_stanford_path_jar)
-    # text_tokens_stanford_en = postagger_stanford_en.tag(text.split())
-
     horus.log.info('------------------------------------------------------------------')
 
-    # 0 = text (parameter of reading file) / 1 = ritter
-    if int(opts.ds_format) == 0:
-        text = ''
-        if opts.input_text is not None:
-            text = opts.input_text.strip('"\'')
-            horus.log.info(':: processing text')
-        elif opts.input_file is not None:
-            f = open(opts.input_file, 'r')
-            text = f.readlines()
-            horus.log.info(':: processing input file')
-        else:
-            raise Exception("err: missing text to be annotated")
-        sent_tokenize_list = process_input_text(text)
-
-    elif int(opts.ds_format) == 1:  # ritter
-        if opts.input_file is None:
-            raise Exception("Provide an input file (ritter format) to be annotated")
-        else:
-            horus.log.info(':: loading Ritter ds')
-            sent_tokenize_list = process_ritter_ds(opts.input_file)
-
-    horus.log.info(':: caching %s sentence(s)' % str(len(sent_tokenize_list)))
-    # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
-    horus_matrix = cache_sentence(int(opts.ds_format), sent_tokenize_list)
-    horus.log.info(':: done!')
-
-    horus.log.info(':: caching results...')
-    cache_results(horus_matrix)
-    horus.log.info(':: done!')
-
-    #  updating horus matrix
-    # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
-    # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
-    # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
-    horus.log.info(':: detecting %s objects...' % len(horus_matrix))
-    detect_objects(horus_matrix)
-    horus.log.info(':: done!')
-
-    conn.close()
-
-    horus.log.info(':: updating compounds...')
-    update_compound_predictions(horus_matrix)
-    horus.log.info(':: done!')
-
-    # horus.log.info(horus_matrix)
-    header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG",
-              "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX", "TOT_TX_LOC", "TOT_TX_ORG",
-              "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS"]
-
-    if int(opts.ds_format) == 0:
-        print_annotated_sentence(horus_matrix)
-
-    horus.log.info(':: exporting metadata...')
-    if opts.output_format == 'json':
-        with open(opts.output_file + '.json', 'wb') as outfile:
-            json.dump(horus_matrix, outfile)
-    elif opts.output_format == 'csv':
-        horus_csv = open(opts.output_file + '.csv', 'wb')
-        wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
-        wr.writerow(header)
-        wr.writerows(horus_matrix)
-    horus.log.info(':: done!')
-
-    horus.log.info(':: HORUS - finished')
+    annotate(opts.input_text, opts.input_file, opts.ds_format, opts.output_file, opts.output_format)
 
 
 def print_annotated_sentence(horus_matrix):
