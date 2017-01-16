@@ -51,8 +51,7 @@ from core import HorusCore
 
 print cv2.__version__
 
-
-horus = HorusCore('horus/horus.ini')
+horus = HorusCore()
 english_vocab = None
 ner_ritter = ['B-company', 'B-person', 'I-person', 'B-geo-loc', 'I-company', 'I-geo-loc']
 

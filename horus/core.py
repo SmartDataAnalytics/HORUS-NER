@@ -2,12 +2,13 @@ import logging
 import os
 from ConfigParser import SafeConfigParser
 import logging
-
 import configparser
-
+import pkg_resources
 
 class HorusCore:
-    def __init__(self, ini_file):
+    def __init__(self):
+        ini_file = pkg_resources.resource_filename('resource', "horus.ini")
+
         logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
         rootLogger = logging.getLogger()
 
@@ -26,7 +27,8 @@ class HorusCore:
 
         logging.debug(':: init Horus')
         parser = SafeConfigParser()
-        rootdir = os.getcwd()
+        #rootdir = os.getcwd()
+        rootdir = pkg_resources.resource_filename('resource', 'models')
         parser.read(ini_file)
 
         self.database_db = parser.get('database', 'db_path')
