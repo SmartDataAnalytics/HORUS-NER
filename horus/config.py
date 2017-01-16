@@ -1,31 +1,11 @@
-import logging
-import os
 from ConfigParser import SafeConfigParser
-import logging
-import configparser
 import pkg_resources
+
 
 class HorusConfig:
     def __init__(self):
         ini_file = pkg_resources.resource_filename('resource', "horus.ini")
 
-        logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-        rootLogger = logging.getLogger()
-
-        fileHandler = logging.FileHandler("horus.log")
-        fileHandler.setFormatter(logFormatter)
-        fileHandler.setLevel(logging.INFO)
-        rootLogger.addHandler(fileHandler)
-
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(consoleHandler)
-
-        logging.getLogger("").setLevel(logging.DEBUG)
-
-        self.log = logging
-
-        logging.debug(':: init Horus')
         parser = SafeConfigParser()
         #rootdir = os.getcwd()
         rootdir = pkg_resources.resource_filename('resource', 'models')
