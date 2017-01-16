@@ -20,7 +20,7 @@ class HorusCore:
         consoleHandler.setFormatter(logFormatter)
         rootLogger.addHandler(consoleHandler)
 
-        logging.getLogger("").setLevel(logging.INFO)
+        logging.getLogger("").setLevel(logging.DEBUG)
 
         self.log = logging
 

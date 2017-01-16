@@ -3,6 +3,7 @@ channels: !!python/tuple
 - !!python/unicode
   'defaults'
 dependencies:
+- conda-forge::jasper=1.900.1=3
 - cycler=0.10.0=py27_0
 - decorator=4.0.10=py27_1
 - freetype=2.5.5=1
@@ -12,27 +13,29 @@ dependencies:
 - jpeg=9b=0
 - libpng=1.6.27=0
 - libtiff=4.0.6=3
-- matplotlib=1.5.3=np111py27_1
-- menpo::opencv3=3.1.0=py27_0
+- matplotlib=1.5.1=np110py27_0
 - menpo::tbb=4.3_20141023=0
 - mkl=11.3.3=0
+- msarahan::ffmpeg=2.2.4=0
+- msarahan::opencv=3.1.0=np110py27_0
+- msarahan::x264=20131217=2
 - networkx=1.11=py27_0
 - nltk=3.2.1=py27_0
-- numpy=1.11.1=py27_0
+- numpy=1.10.4=py27_2
 - openssl=1.0.2j=0
-- pandas=0.19.2=np111py27_1
+- pandas=0.18.1=np110py27_0
 - pillow=4.0.0=py27_0
 - pip=9.0.1=py27_1
 - pyparsing=2.1.4=py27_0
-- pyqt=5.6.0=py27_1
+- pyqt=4.11.4=py27_4
 - python=2.7.13=0
 - python-dateutil=2.6.0=py27_0
 - pytz=2016.10=py27_0
-- qt=5.6.2=0
+- qt=4.8.7=4
 - readline=6.2=2
-- scikit-image=0.12.3=np111py27_1
-- scikit-learn=0.17.1=np111py27_2
-- scipy=0.18.0=np111py27_0
+- scikit-image=0.12.3=np110py27_1
+- scikit-learn=0.17.1=np110py27_2
+- scipy=0.17.1=np110py27_1
 - setuptools=27.2.0=py27_0
 - sip=4.18=py27_0
 - six=1.10.0=py27_0
@@ -50,6 +53,7 @@ dependencies:
   - pipreqs==0.4.6
   - requests==2.12.4
   - textblob==0.11.1
+  - translate==2.0.0
   - urllib3==1.18.1
   - yarg==0.1.9
 prefix: /Users/esteves/anaconda/envs/horus_27_cv310
