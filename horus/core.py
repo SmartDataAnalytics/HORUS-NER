@@ -431,8 +431,8 @@ class Core(object):
                         item.extend([id_term_search])  # updating matrix
                         seq = 0
                         # get text
-                        metaquery, result = bing_api2(term, api=config.search_engine_key, source_type="Web",
-                                                     top=config.search_engine_tot_resources, format='json', market='en-US')
+                        metaquery, result = bing_api2(term, api=self.config.search_engine_key, source_type="Web",
+                                                     top=self.config.search_engine_tot_resources, format='json', market='en-US')
                         for web_result in result['d']['results']:
                             seq+=1
                             row = (id_term_search,
@@ -496,9 +496,9 @@ class Core(object):
                     res = c.fetchone()
                     if res is None:
                         self.sys.log.info(':: [%s] caching - image' % term)
-                        values = (term, cterm.lastrowid if type(cterm) is not int else cterm, config.search_engine_api, 2,
-                                   config.search_engine_features_img,
-                                   str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), config.search_engine_tot_resources)
+                        values = (term, cterm.lastrowid if type(cterm) is not int else cterm, self.config.search_engine_api, 2,
+                                   self.config.search_engine_features_img,
+                                   str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources)
                         sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
                                                                search_engine_features, query_date, query_tot_resource)
                                                  VALUES(?,?,?,?,?,?,?)"""
@@ -507,8 +507,8 @@ class Core(object):
                         item.extend([id_term_img])  # updating matrix
                         seq = 0
                         # get images
-                        metaquery, result = bing_api2(item[3], api=config.search_engine_key, source_type="Image",
-                                                     top=config.search_engine_tot_resources, format='json')
+                        metaquery, result = bing_api2(item[3], api=self.config.search_engine_key, source_type="Image",
+                                                     top=self.config.search_engine_tot_resources, format='json')
                         for web_img_result in result['d']['results']:
                             self.sys.log.debug(':: downloading image [%s]' % (web_img_result['Title']))
                             seq += 1
@@ -613,7 +613,7 @@ class Core(object):
         elif ner_type == 'LOC_10':
             self.extract_bow.setVocabulary(self.voc_loc_10)
 
-        return self.extract_bow.compute(im, detect.detect(im))
+        return self.extract_bow.compute(im, self.detect.detect(im))
 
     def detect_logo(self,img):
         f = self.bow_features(img, 'ORG_1');

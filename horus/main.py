@@ -54,6 +54,7 @@ def main():
         op.error('inform either an [input_text] or [input_file] as parameter!')
 
     horus = Core(5)
+    print horus.version_label
     ret = horus.annotate(opts.input_text, opts.input_file, opts.ds_format, opts.output_file, opts.output_format)
     print ret
 
