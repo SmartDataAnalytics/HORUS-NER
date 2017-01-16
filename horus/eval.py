@@ -6,7 +6,7 @@ import logging
 import csv
 import pandas as pd
 import numpy as np
-from config import HorusCore
+from horus.core import Core
 from sklearn.metrics import confusion_matrix
 
 
@@ -135,7 +135,7 @@ def example_analysis(horus_matrix):
     logging.info(':: number of tokens: ' + str(len(horus_matrix)))
 
 
-horus = HorusCore('horus.ini')
+horus = Core(5)
 ner_ritter_per = ['B-person', 'I-person']
 ner_ritter_org = ['B-company', 'I-company']
 ner_ritter_loc = ['B-geo-loc', 'I-geo-loc']
