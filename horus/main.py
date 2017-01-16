@@ -52,7 +52,7 @@ from core import HorusCore
 print cv2.__version__
 
 
-horus = HorusCore('horus.ini')
+horus = HorusCore('horus/horus.ini')
 english_vocab = None
 ner_ritter = ['B-company', 'B-person', 'I-person', 'B-geo-loc', 'I-company', 'I-geo-loc']
 
@@ -170,7 +170,6 @@ def annotate(input_text, input_file, ds_format, output_file, output_format):
             horus.log.info(':: loading Ritter ds')
             sent_tokenize_list = process_ritter_ds(input_file)
 
-    horus_matrix = []
     horus.log.info(':: caching %s sentence(s)' % str(len(sent_tokenize_list)))
     # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
     horus_matrix = cache_sentence(int(ds_format), sent_tokenize_list)
@@ -205,6 +204,8 @@ def annotate(input_text, input_file, ds_format, output_file, output_format):
         print_annotated_sentence(horus_matrix)
 
     horus.log.info(':: exporting metadata...')
+    if output_file == '':
+        output_file = 'noname'
     if output_format == 'json':
         with open(output_file + '.json', 'wb') as outfile:
             json.dump(horus_matrix, outfile)
@@ -213,9 +214,8 @@ def annotate(input_text, input_file, ds_format, output_file, output_format):
         wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
         wr.writerow(header)
         wr.writerows(horus_matrix)
-    horus.log.info(':: done!')
 
-    horus.log.info(':: HORUS - finished')
+    return horus_matrix
 
 
 def main():
@@ -248,6 +248,7 @@ def main():
 
     annotate(opts.input_text, opts.input_file, opts.ds_format, opts.output_file, opts.output_format)
 
+    horus.log.info(':: HORUS - finished')
 
 def print_annotated_sentence(horus_matrix):
     '''

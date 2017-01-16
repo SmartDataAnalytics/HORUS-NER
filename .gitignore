@@ -3,7 +3,7 @@
 .idea/
 /horus/horus.log
 horus/core.pyc
-horus/horus.ini
+resources/horus.ini
 horus/horus.log
 horus/*.pyc
 .DS_Store

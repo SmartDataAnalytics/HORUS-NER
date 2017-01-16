@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import json
 import web
 import horus.main
 
@@ -9,13 +10,10 @@ urls = (
 
 app = web.application(urls, globals())
 
-
 class AnnotateSentence:
-    def GET(self, user):
-    horus.main.
-	for child in root:
-		if child.attrib['id'] == user:
-		    return str(child.attrib)
+    def GET(self, sentence):
+        ret = horus.main.annotate(sentence,'',0,'','json')
+        return json.dumps(ret)
 
 if __name__ == "__main__":
     app.run()
