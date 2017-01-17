@@ -65,7 +65,7 @@ class Core(object):
     version = "0.1"
     version_label = "HORUS 0.1 alpha"
 
-    def __init__(self,trees):
+    def __init__(self,force_download,trees):
         """Return a HORUS object"""
         self.sys = SystemLog("horus.log", logging.INFO, logging.DEBUG)
         self.config = HorusConfig()
@@ -113,26 +113,31 @@ class Core(object):
         self.text_checking_model = joblib.load(self.config.models_text)
         self.conn = sqlite3.connect(self.config.database_db)
         self.horus_matrix = []
-        try:
-            nltk.data.find('averaged_perceptron_tagger.zip')
-        except LookupError:
-            nltk.download('averaged_perceptron_tagger')
-        try:
-            nltk.data.find('punkt.zip')
-        except LookupError:
-            nltk.download('punkt')
-        try:
-            nltk.data.find('maxent_ne_chunker.zip')
-        except LookupError:
-            nltk.download('maxent_ne_chunker')
-        try:
-            nltk.data.find('universal_tagset.zip')
-        except LookupError:
-            nltk.download('universal_tagset')
-        try:
-            nltk.data.find('words.zip')
-        except LookupError:
-            nltk.download('words')
+        if force_download is True:
+            try:
+                nltk.data.find('averaged_perceptron_tagger.zip')
+            except LookupError:
+                nltk.download('averaged_perceptron_tagger')
+            try:
+                nltk.data.find('punkt.zip')
+            except LookupError:
+                nltk.download('punkt')
+            try:
+                nltk.data.find('maxent_ne_chunker.zip')
+            except LookupError:
+                nltk.download('maxent_ne_chunker')
+            try:
+                nltk.data.find('universal_tagset.zip')
+            except LookupError:
+                nltk.download('universal_tagset')
+            try:
+                nltk.data.find('words.zip')
+            except LookupError:
+                nltk.download('words')
+
+    def get_cv_annotation(self):
+        x = numpy.array(self.horus_matrix)
+        return x[:, [3, 4, 12, 13, 14, 15, 16, 17]]
 
     def annotate(self, input_text, input_file, ds_format, output_file, output_format):
         # 0 = text (parameter of reading file) / 1 = ritter
@@ -175,6 +180,8 @@ class Core(object):
 
         self.conn.close()
 
+        self.sys.log.info(':: applying rules...')
+        self.update_rules_cv_predictions()
         self.sys.log.info(':: updating compounds...')
         self.update_compound_predictions()
         self.sys.log.info(':: done!')
@@ -901,15 +908,7 @@ class Core(object):
                 self.sys.log.debug('-> CV_DIST indicator: %s' % (str(dist_cv_indicator)))
                 self.sys.log.debug('-> CV_PLC  indicator: %s' % (str(place_cv_indicator)))
 
-                # HORUS CV NER - 6 (PAREI AQUI, ESSE CORTE NAO PODE FICAR AQUI OBVIAMENTE, SENAO DIMINUI A ACURACIA AUTOMARICAMENT!
-                # MUDAR ISSO PRA UMA FUNCAO DE DECISAO SEPARADA (MAS SEMPRE ADICIONAR A PREDICAO DO HORUS_CV
-                horus_cv_ner = outs.index(max(outs)) + 1
-                if dist_cv_indicator >= int(self.config.models_distance_theta):
-                    metadata.append(self.klasses[horus_cv_ner])
-                    self.sys.log.debug(':: most likely class -> ' + self.klasses[horus_cv_ner])
-                else:
-                    metadata.append('*')
-                    self.sys.log.debug(':: most likely class -> that\'s hard to say...')
+                metadata.append(self.klasses[outs.index(max(outs)) + 1])
 
                 # text classification
                 self.sys.log.debug(':: [checking related textual information ...]')
@@ -978,11 +977,26 @@ class Core(object):
             else:
                 item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
+    def update_rules_cv_predictions(self):
+        '''
+        updates the predictions based on inner rules
+        :return:
+        '''
+        self.sys.log.info(':: updating predictions based on rules')
+        for i in range(len(self.horus_matrix)):
+            # get nouns or compounds
+            if self.horus_matrix[i][4] == u'NOUN' or self.horus_matrix[i][7] == 1:
+                # do not consider classifications below a theta
+                if self.horus_matrix[i][15] < int(self.config.models_distance_theta):
+                    self.horus_matrix[i][17] = "*"
+                # ignore LOC classes having iPLC negative
+                if (self.horus_matrix[i][17] == "LOC" and self.horus_matrix[i][16] < 0 and
+                        bool(self.config.models_distance_theta_high_bias) is True):
+                    self.horus_matrix[i][17] = "*"
 
     def update_compound_predictions(self):
         '''
         updates the predictions based on the compound
-        :param horus_matrix:
         :return:
         '''
         self.sys.log.info(':: updating compounds predictions')
@@ -1070,6 +1084,6 @@ class Core(object):
                     s += token + ' '
                     w.append(token)
                     t.append(tag)
-                    if tag in ner_ritter:
+                    if tag in self.ner_ritter:
                         has3NER = 1
         return sentences

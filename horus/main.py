@@ -22,10 +22,7 @@ more info at: https://github.com/dnes85/horus-models
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
 from optparse import OptionParser
-
 from horus.core import Core
-from horus.systemlog import SystemLog
-
 
 def main():
 
@@ -53,7 +50,7 @@ def main():
     if not opts.input_text and not opts.input_file:
         op.error('inform either an [input_text] or [input_file] as parameter!')
 
-    horus = Core(5)
+    horus = Core(False, 5)
     print horus.version_label
     ret = horus.annotate(opts.input_text, opts.input_file, opts.ds_format, opts.output_file, opts.output_format)
     print ret
