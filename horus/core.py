@@ -984,15 +984,21 @@ class Core(object):
         '''
         self.sys.log.info(':: updating predictions based on rules')
         for i in range(len(self.horus_matrix)):
+            initial = self.horus_matrix[i][17]
             # get nouns or compounds
             if self.horus_matrix[i][4] == u'NOUN' or self.horus_matrix[i][7] == 1:
                 # do not consider classifications below a theta
                 if self.horus_matrix[i][15] < int(self.config.models_distance_theta):
                     self.horus_matrix[i][17] = "*"
                 # ignore LOC classes having iPLC negative
-                if (self.horus_matrix[i][17] == "LOC" and self.horus_matrix[i][16] < 0 and
-                        bool(self.config.models_distance_theta_high_bias) is True):
-                    self.horus_matrix[i][17] = "*"
+                if bool(self.config.models_distance_theta_high_bias) is True:
+                    if initial == "LOC":
+                        if self.horus_matrix[i][16] < -10:
+                            self.horus_matrix[i][17] = "*"
+                        elif self.horus_matrix[i][16] < 0 and self.horus_matrix[i][15] > 2:
+                            self.horus_matrix[i][17] = initial
+
+
 
     def update_compound_predictions(self):
         '''
