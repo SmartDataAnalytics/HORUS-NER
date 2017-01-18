@@ -15,6 +15,16 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 conda env create -f environment.yml 
 ```
 
+## Distribution
+- cd horus-models
+- python setup.py sdist
+
+```python
+cd dist/
+tar -xvf horus-0.1.tar.gz
+python horus-0.1/setup.py install
+```
+
 ## Usage 
 ```python
 python main.py --input_text="whitney houston has been honored in nyc" --ds_format=0 --output_format="csv"
