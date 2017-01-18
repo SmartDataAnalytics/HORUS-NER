@@ -1,12 +1,16 @@
 import csv
+import os
 
+import pkg_resources
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
+import definitions
 
-file1reader = csv.reader(open("/Users/dnes/Github/horus-models/horus/horus_out_ritter.csv"), delimiter=",")
+
+file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/horus_out_ritter.csv"), delimiter=",")
 header1 = file1reader.next() #header
 
 ner_ritter_per = ['B-person', 'I-person']

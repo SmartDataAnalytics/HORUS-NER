@@ -58,6 +58,8 @@ class HorusConfig:
 
         self.models_location_theta = parser.get('models-param', 'location_theta')
         self.models_distance_theta = parser.get('models-param', 'distance_theta')
+        self.models_safe_interval = parser.get('models-param', 'safe_interval')
+        self.models_limit_min_loc = parser.get('models-param', 'limit_min_loc')
         self.models_distance_theta_high_bias = parser.get('models-param', 'distance_theta_high_bias')
 
     @staticmethod

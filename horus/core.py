@@ -993,9 +993,10 @@ class Core(object):
                 # ignore LOC classes having iPLC negative
                 if bool(self.config.models_distance_theta_high_bias) is True:
                     if initial == "LOC":
-                        if self.horus_matrix[i][16] < -10:
+                        if self.horus_matrix[i][16] < int(self.config.models_limit_min_loc):
                             self.horus_matrix[i][17] = "*"
-                        elif self.horus_matrix[i][16] < 0 and self.horus_matrix[i][15] > 2:
+                        elif self.horus_matrix[i][16] < 0 and self.horus_matrix[i][15] > \
+                                int(self.config.models_safe_interval):
                             self.horus_matrix[i][17] = initial
 
 
