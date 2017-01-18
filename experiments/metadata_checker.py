@@ -1,7 +1,4 @@
 import csv
-import os
-
-import pkg_resources
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
@@ -12,12 +9,6 @@ import definitions
 
 file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/horus_out_ritter.csv"), delimiter=",")
 header1 = file1reader.next() #header
-
-ner_ritter_per = ['B-person', 'I-person']
-ner_ritter_org = ['B-company', 'I-company']
-ner_ritter_loc = ['B-geo-loc', 'I-geo-loc']
-
-ner_ritter = ['B-person', 'I-person', 'B-company', 'I-company', 'B-geo-loc', 'I-geo-loc']
 
 tot = 0
 tper, torg, tloc = 0, 0, 0
@@ -67,18 +58,18 @@ for linha in file1reader:
     else:
         yf.append(4)
 
-    if NER in ner_ritter_per:
+    if NER in definitions.NER_RITTER_PER:
         y.append(1)
-    elif NER in ner_ritter_loc:
+    elif NER in definitions.NER_RITTER_LOC:
         y.append(2)
-    elif NER in ner_ritter_org:
+    elif NER in definitions.NER_RITTER_ORG:
         y.append(3)
     else:
         y.append(4)
 
     tot+=1
-    if NER in ner_ritter:
-        if NER in ner_ritter_per:
+    if NER in definitions.NER_RITTER:
+        if NER in definitions.NER_RITTER_PER:
             tper+=1
             if CV_KLASS == 'PER':
                 tp_per_cv +=1
@@ -92,7 +83,7 @@ for linha in file1reader:
                 tp_per +=1
             else:
                 fp_per +=1
-        if NER in ner_ritter_org:
+        if NER in definitions.NER_RITTER_ORG:
             torg += 1
             if CV_KLASS == 'ORG':
                 tp_org_cv +=1
@@ -106,7 +97,7 @@ for linha in file1reader:
                 tp_org +=1
             else:
                 fp_org +=1
-        if NER in ner_ritter_loc:
+        if NER in definitions.NER_RITTER_LOC:
             tloc += 1
             if CV_KLASS == 'LOC':
                 tp_loc_cv +=1
