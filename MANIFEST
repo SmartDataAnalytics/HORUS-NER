@@ -11,4 +11,13 @@ src/components/example.py
 src/components/main.py
 src/components/systemlog.py
 src/components/translator_test.py
+src/experiments/__init__.py
+src/experiments/experiment_helper.py
+src/experiments/horus_dt_layer.py
+src/experiments/object-detection.py
+src/experiments/plots.py
+src/experiments/report.py
+src/postagger/__init__.py
 src/resource/__init__.py
+src/sift/__init__.py
+src/sift/main.py

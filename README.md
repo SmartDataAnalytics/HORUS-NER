@@ -22,7 +22,7 @@ conda env create -f environment.yml
 ```python
 cd dist/
 tar -xvf horus-0.1.tar.gz
-python horus-0.1/setup.py install
+python horus-0.1/setup.py install --record files.txt
 ```
 
 ## Usage 

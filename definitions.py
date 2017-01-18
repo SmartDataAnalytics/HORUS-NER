@@ -1,11 +1,11 @@
 import os
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-EXPERIMENTS_PATH = os.path.join(ROOT_DIR, 'experiments')
-HORUS_PATH = os.path.join(ROOT_DIR, 'components')
+EXPERIMENTS_PATH = os.path.join(ROOT_DIR, 'src/experiments')
+HORUS_PATH = os.path.join(ROOT_DIR, 'src/components')
 OUTPUT_PATH = os.path.join(ROOT_DIR, 'output')
-RESOURCES_PATH = os.path.join(ROOT_DIR, 'resource')
-DATASET_PATH = os.path.join(ROOT_DIR, 'dataset')
+RESOURCES_PATH = os.path.join(ROOT_DIR, 'src/resource')
+DATASET_PATH = os.path.join(ROOT_DIR, 'src/dataset')
 
 NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']

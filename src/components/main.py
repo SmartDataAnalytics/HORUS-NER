@@ -22,8 +22,7 @@ more info at: https://github.com/dnes85/components-models
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
 from optparse import OptionParser
-
-from src.components import Core
+from src.components.core import Core
 
 
 def main():

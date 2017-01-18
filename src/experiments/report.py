@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
-from src import definitions
+import definitions
 
 file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/experiments/ritter/EXP_000/out_exp000_0.csv"), delimiter=",")
 header1 = file1reader.next() #header
