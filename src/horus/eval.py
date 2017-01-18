@@ -1,13 +1,14 @@
-import json
-import itertools
-import numpy as np
-import matplotlib.pyplot as plt
-import logging
 import csv
-import pandas as pd
+import itertools
+import json
+import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
-from horus.core import Core
+import pandas as pd
 from sklearn.metrics import confusion_matrix
+
+from src.horus import Core
 
 
 def confusion_matrix_analysis(horus_matrix):

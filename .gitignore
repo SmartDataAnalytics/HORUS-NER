@@ -1,9 +1,9 @@
 # Created by .ignore support plugin (hsz.mobi)
 .gitignore
 .idea/
-/horus/horus.log
+/src/horus/horus.log
 horus/core.pyc
-resource/horus.ini
+src/resource/horus.ini
 horus/horus.log
 horus/*.pyc
 .DS_Store

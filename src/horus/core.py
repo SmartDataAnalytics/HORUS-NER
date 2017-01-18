@@ -21,34 +21,28 @@ more info at: https://github.com/dnes85/horus-models
 # Version: 1.0
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
-import logging
 import csv
 import heapq
-import os
 import json
-import zlib
-import numpy
-from microsofttranslator import Translator
-from textblob import TextBlob
+import logging
+import sqlite3
+from time import gmtime, strftime
+
+import cv2
 import langdetect
 import nltk
-import sqlite3
-import sys
-from optparse import OptionParser
-from time import gmtime, strftime
+import numpy
 import requests
-from nltk.tokenize import sent_tokenize
-from bingAPI1 import bing_api, bing_api2
-from nltk.tag.stanford import StanfordPOSTagger
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
-import cv2
-from langdetect import detect
-from config import HorusConfig
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from django.core.validators import URLValidator
+from microsofttranslator import Translator
+from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
+from sklearn.feature_extraction.text import TfidfTransformer
 
-from horus.systemlog import SystemLog
+from bingAPI1 import bing_api2
+from config import HorusConfig
+from src.horus import SystemLog
 
 print cv2.__version__
 

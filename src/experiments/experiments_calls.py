@@ -1,5 +1,5 @@
-import definitions
-from horus.core import Core
+from src import definitions
+from src.horus import Core
 
 horus = Core(False, 5)
 print horus.version_label

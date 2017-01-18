@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import json
-import web
-from horus.core import Core
 
+import web
+
+from src.horus import Core
 
 urls = (
     '/horus/(.*)', 'annotate'

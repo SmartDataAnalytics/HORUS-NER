@@ -22,7 +22,9 @@ more info at: https://github.com/dnes85/horus-models
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
 from optparse import OptionParser
-from horus.core import Core
+
+from src.horus import Core
+
 
 def main():
 

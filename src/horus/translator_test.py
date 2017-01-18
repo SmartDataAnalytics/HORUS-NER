@@ -1,8 +1,8 @@
-from horus.main import horus
-
 import json
-import requests
 import urllib
+
+import requests
+
 args = {
         'client_id': 'horusclientid',#your client id here
         'client_secret': 'BljqOjqstrr4Klv9VyRwAL3Fg5bOquN8rmICYZ0qsd8=',#your azure secret here
