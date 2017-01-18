@@ -15,6 +15,13 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 conda env create -f environment.yml 
 ```
 
+## Config File Parameters
+- database
+    - db_path = *path to horus database.*
+- path 
+    - root_dir = *system uses this path as root is not blank, otherwise it gets the system path.*
+- ...to be updated
+
 ## Distribution
 - cd horus-models
 - python setup.py sdist

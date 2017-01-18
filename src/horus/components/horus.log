@@ -4043,3 +4043,165 @@
 2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: done!
 2017-01-18 20:44:45,398 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
 2017-01-18 20:44:45,398 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-18 22:21:58,885 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 22:21:58,888 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 22:21:58,889 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 22:21:58,889 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 22:21:59,666 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 22:21:59,666 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 22:21:59,666 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 22:21:59,717 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 22:22:00,495 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 22:22:00,503 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:22:00,504 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 22:22:00,504 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 22:22:00,504 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 22:22:00,518 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 22:22:00,518 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 22:22:00,526 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 22:22:00,526 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 22:22:00,534 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 22:22:00,534 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 22:22:00,543 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:22:00,543 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 22:22:00,543 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 22:22:00,847 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-18 22:22:00,984 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,771 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc4 in position 0: ordinal not in range(128)
+2017-01-18 22:22:01,772 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,772 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,773 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xcb in position 0: ordinal not in range(128)
+2017-01-18 22:22:01,774 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,775 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,776 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,777 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,778 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:01,778 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-18 22:22:01,915 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-18 22:22:02,107 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:02,109 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc3 in position 0: ordinal not in range(128)
+2017-01-18 22:22:02,109 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:02,110 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:02,111 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:02,112 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 22:22:02,112 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:02,112 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:22:02,113 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 22:22:02,114 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 22:22:02,114 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: done
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-18 22:22:02,115 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-18 22:55:21,023 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 22:55:21,026 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 22:55:21,026 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 22:55:21,027 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 22:55:21,798 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 22:55:21,798 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 22:55:21,798 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 22:55:21,845 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 22:55:22,669 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 22:55:22,674 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:55:22,674 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 22:55:22,674 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 22:55:22,674 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 22:55:22,685 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 22:55:22,685 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 22:55:22,695 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 22:55:22,696 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 22:55:22,704 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 22:55:22,704 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 22:55:22,712 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:55:22,712 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 22:55:22,712 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 22:55:22,832 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-18 22:55:23,006 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,703 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc4 in position 0: ordinal not in range(128)
+2017-01-18 22:55:23,704 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,704 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,705 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xcb in position 0: ordinal not in range(128)
+2017-01-18 22:55:23,706 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,706 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,707 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,707 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,707 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,707 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-18 22:55:23,829 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-18 22:55:23,988 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,989 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc3 in position 0: ordinal not in range(128)
+2017-01-18 22:55:23,990 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,991 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,991 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,993 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 22:55:23,995 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,996 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 22:55:23,997 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 22:55:23,998 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 22:55:23,998 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:55:23,999 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-18 22:55:23,999 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-18 22:55:24,000 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-18 22:55:24,000 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-18 22:55:24,000 [MainThread  ] [INFO ]  :: done
+2017-01-18 22:55:24,000 [MainThread  ] [INFO ]  :: done!
+2017-01-18 22:55:24,000 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-18 22:55:24,000 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-19 00:03:39,755 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-19 00:03:39,758 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-19 00:03:39,759 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-19 00:03:39,759 [MainThread  ] [INFO ]  :: loading components...
+2017-01-19 00:03:40,536 [MainThread  ] [INFO ]  :: processing text
+2017-01-19 00:03:40,536 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-19 00:03:40,536 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-19 00:03:40,583 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-19 00:03:41,352 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-19 00:03:41,356 [MainThread  ] [INFO ]  :: done!
+2017-01-19 00:03:41,356 [MainThread  ] [INFO ]  :: caching results...
+2017-01-19 00:03:41,356 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-19 00:03:41,356 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-19 00:03:41,368 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-19 00:03:41,369 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-19 00:03:41,376 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-19 00:03:41,377 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-19 00:03:41,385 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-19 00:03:41,385 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-19 00:03:41,393 [MainThread  ] [INFO ]  :: done!
+2017-01-19 00:03:41,393 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-19 00:03:41,393 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-19 00:03:41,520 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-19 00:03:41,717 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,392 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc4 in position 0: ordinal not in range(128)
+2017-01-19 00:03:42,393 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,393 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,394 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xcb in position 0: ordinal not in range(128)
+2017-01-19 00:03:42,394 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,395 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,395 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,396 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,396 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,396 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-19 00:03:42,517 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-19 00:03:42,676 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,677 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc3 in position 0: ordinal not in range(128)
+2017-01-19 00:03:42,678 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,680 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,681 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,682 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-19 00:03:42,683 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,685 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-19 00:03:42,686 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-19 00:03:42,688 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-19 00:03:42,688 [MainThread  ] [INFO ]  :: done!
+2017-01-19 00:03:42,689 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-19 00:03:42,689 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-19 00:03:42,689 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-19 00:03:42,689 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-19 00:03:42,690 [MainThread  ] [INFO ]  :: done
+2017-01-19 00:03:42,690 [MainThread  ] [INFO ]  :: done!
+2017-01-19 00:03:42,690 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-19 00:03:42,690 [MainThread  ] [INFO ]  :: exporting metadata...

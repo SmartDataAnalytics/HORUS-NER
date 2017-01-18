@@ -40,9 +40,9 @@ from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
 
-import definitions
 from bingAPI1 import bing_api2
 from config import HorusConfig
+from horus import definitions
 from horus.components.systemlog import SystemLog
 
 print cv2.__version__
@@ -57,8 +57,8 @@ class Core(object):
     """
 
     # static methods
-    version = "0.1"
-    version_label = "HORUS 0.1 alpha"
+    version = "0.1.3"
+    version_label = "HORUS 0.1.3"
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""

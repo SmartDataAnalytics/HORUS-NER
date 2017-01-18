@@ -9,9 +9,11 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
-import definitions
+from horus import definitions
+from horus.components.config import HorusConfig
 
-file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/experiments/ritter/EXP_000/out_exp000_0.csv"), delimiter=",")
+config = HorusConfig()
+file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_0.csv"), delimiter=",")
 header1 = file1reader.next() #header
 
 tot = 0

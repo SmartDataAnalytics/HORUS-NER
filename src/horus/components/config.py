@@ -18,6 +18,9 @@ class HorusConfig:
                     rootdir = pkg_resources.resource_filename('horus.resource', 'models')
 
                     self.database_db = parser.get('database', 'db_path')
+                    self.root_dir = parser.get('path', 'root_dir')
+                    self.output_path = parser.get('path', 'output_path')
+                    self.dataset_path = parser.get('path', 'dataset_path')
 
                     self.models_cv_loc1 = rootdir + parser.get('models-cv', 'horus_loc_1')
                     self.models_cv_loc2 = rootdir + parser.get('models-cv', 'horus_loc_2')
