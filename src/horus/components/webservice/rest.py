@@ -3,7 +3,7 @@ import json
 
 import web
 
-from src.components import Core
+from horus.components import Core
 
 urls = (
     '/components/(.*)', 'annotate'

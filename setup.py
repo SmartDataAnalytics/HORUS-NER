@@ -1,15 +1,12 @@
 from distutils.core import setup
-setup(name='horus-dist',
-      version='0.1',
+
+setup(name='horusner',
+      version='0.2',
       description='HORUS Framework',
       author='Diego Esteves',
       author_email='diegoesteves@gmail.com',
       url='http://dnes85.github.io/horus-models/',
-      packages=['src','components','experiments','postagger','resource','sift'],
-      package_dir={'src': 'src/',
-                   'components': 'src/components/',
-                   'experiments': 'src/experiments/',
-                   'postagger': 'src/postagger/',
-                   'resource': 'src/resource/',
-                   'sift': 'src/sift/'},
+      package_dir={'horusner': 'src/horus'},
+      packages=['horusner', 'horusner.components', 'horusner.experiments', 'horusner.postagger',
+                'horusner.resource', 'horusner.sift'],
       )

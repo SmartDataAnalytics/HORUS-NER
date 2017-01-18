@@ -34,38 +34,38 @@ for linha in file1reader:
     TX_KLASS = linha[24]
     HORUS_KLASS = linha[25]
 
-    if CV_KLASS == 'PER':
+    if CV_KLASS == 'LOC':
         ycv.append(1)
-    elif CV_KLASS == 'LOC':
-        ycv.append(2)
     elif CV_KLASS == 'ORG':
+        ycv.append(2)
+    elif CV_KLASS == 'PER':
         ycv.append(3)
     else:
         ycv.append(4)
 
-    if TX_KLASS == 'PER':
+    if TX_KLASS == 'LOC':
         ytx.append(1)
-    elif TX_KLASS == 'LOC':
-        ytx.append(2)
     elif TX_KLASS == 'ORG':
+        ytx.append(2)
+    elif TX_KLASS == 'PER':
         ytx.append(3)
     else:
         ytx.append(4)
 
-    if HORUS_KLASS == 'PER':
+    if HORUS_KLASS == 'LOC':
         yf.append(1)
-    elif HORUS_KLASS == 'LOC':
-        yf.append(2)
     elif HORUS_KLASS == 'ORG':
+        yf.append(2)
+    elif HORUS_KLASS == 'PER':
         yf.append(3)
     else:
         yf.append(4)
 
-    if NER in definitions.NER_RITTER_PER:
+    if NER in definitions.NER_RITTER_LOC:
         y.append(1)
-    elif NER in definitions.NER_RITTER_LOC:
-        y.append(2)
     elif NER in definitions.NER_RITTER_ORG:
+        y.append(2)
+    elif NER in definitions.NER_RITTER_PER:
         y.append(3)
     else:
         y.append(4)

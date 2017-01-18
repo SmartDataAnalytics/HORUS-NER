@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 
-from src.components import Core
+from horus.components import Core
 
 
 def confusion_matrix_analysis(horus_matrix):

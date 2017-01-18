@@ -3862,3 +3862,184 @@
 2017-01-18 00:02:04,603 [MainThread  ] [INFO ]  :: done!
 2017-01-18 00:02:04,603 [MainThread  ] [INFO ]  :: sentence:  petropolis/NOUN/NN/LOC is/VERB/VBZ/0 more/ADV/RBR/0 relaxing/ADJ/JJ/0 than/ADP/IN/0 bangu/NOUN/NN/LOC
 2017-01-18 00:02:04,603 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-18 20:27:38,887 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:27:39,207 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 20:27:39,408 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:27:39,861 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 20:28:39,010 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 20:28:39,011 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 20:28:39,011 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 20:28:39,083 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 20:28:39,988 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 20:28:40,002 [MainThread  ] [INFO ]  :: caching sentence: diego esteves lives in rio de janeiro
+2017-01-18 20:28:40,005 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:28:40,006 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 20:28:40,006 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 20:28:40,007 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 20:28:40,020 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 20:28:40,020 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 20:28:40,023 [MainThread  ] [INFO ]  :: [lives] has not been cached before!
+2017-01-18 20:28:40,027 [MainThread  ] [INFO ]  :: [lives] caching - text
+2017-01-18 20:28:46,344 [MainThread  ] [INFO ]  :: [lives] caching - image
+2017-01-18 20:28:53,132 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 20:28:53,133 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 20:28:53,145 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 20:28:53,146 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 20:28:53,148 [MainThread  ] [INFO ]  :: [janeiro] has not been cached before!
+2017-01-18 20:28:53,156 [MainThread  ] [INFO ]  :: [janeiro] caching - text
+2017-01-18 20:28:54,396 [MainThread  ] [INFO ]  :: [janeiro] caching - image
+2017-01-18 20:28:57,504 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:28:57,505 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 20:28:57,506 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 20:28:57,668 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-18 20:29:09,366 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:09,391 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc4 in position 0: ordinal not in range(128)
+2017-01-18 20:29:09,468 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:09,530 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:12,276 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xcb in position 0: ordinal not in range(128)
+2017-01-18 20:29:12,319 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:12,371 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:12,437 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:12,804 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:12,850 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:12,851 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-18 20:29:12,995 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-18 20:29:28,985 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:29,326 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc3 in position 0: ordinal not in range(128)
+2017-01-18 20:29:29,446 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:29,781 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:30,194 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:30,606 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 20:29:30,956 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:31,019 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:29:31,232 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 20:29:31,577 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 20:29:31,579 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:29:31,582 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-18 20:29:31,583 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-18 20:29:31,584 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-18 20:29:31,585 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-18 20:29:31,585 [MainThread  ] [INFO ]  :: done
+2017-01-18 20:29:31,585 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:29:31,586 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-18 20:29:31,587 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-18 20:43:02,861 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:43:02,861 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 20:43:02,862 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:43:02,862 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 20:43:03,666 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 20:43:03,666 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 20:43:03,666 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 20:43:03,712 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 20:43:04,443 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 20:43:04,446 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:43:04,446 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 20:43:04,446 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 20:43:04,446 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 20:43:04,456 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 20:43:04,456 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 20:43:04,464 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 20:43:04,465 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 20:43:04,474 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 20:43:04,474 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 20:43:04,483 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:43:04,484 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 20:43:04,484 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 20:44:09,961 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:44:09,961 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 20:44:09,961 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:44:09,961 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 20:44:10,721 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 20:44:10,721 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 20:44:10,721 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 20:44:10,766 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 20:44:11,503 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 20:44:11,507 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:11,508 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 20:44:11,508 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 20:44:11,508 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 20:44:11,518 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 20:44:11,518 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 20:44:11,527 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 20:44:11,527 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 20:44:11,535 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 20:44:11,535 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 20:44:11,543 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:11,543 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 20:44:11,543 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 20:44:29,427 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:44:29,427 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 20:44:29,427 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:44:29,427 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 20:44:30,238 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 20:44:30,238 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 20:44:30,238 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 20:44:30,284 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 20:44:31,007 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 20:44:31,011 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:31,011 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 20:44:31,011 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 20:44:31,011 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 20:44:31,021 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 20:44:31,021 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 20:44:31,029 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 20:44:31,029 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 20:44:31,037 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 20:44:31,038 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 20:44:31,046 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:31,046 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 20:44:31,046 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 20:44:42,537 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:44:42,537 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-18 20:44:42,537 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-18 20:44:42,537 [MainThread  ] [INFO ]  :: loading components...
+2017-01-18 20:44:43,323 [MainThread  ] [INFO ]  :: processing text
+2017-01-18 20:44:43,323 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-18 20:44:43,323 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-18 20:44:43,369 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-18 20:44:44,108 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-18 20:44:44,112 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:44,113 [MainThread  ] [INFO ]  :: caching results...
+2017-01-18 20:44:44,113 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-18 20:44:44,113 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-18 20:44:44,124 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-18 20:44:44,124 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-18 20:44:44,133 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-18 20:44:44,133 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-18 20:44:44,142 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-18 20:44:44,142 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-18 20:44:44,150 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:44,150 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-18 20:44:44,150 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-18 20:44:44,277 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-18 20:44:44,458 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,094 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc4 in position 0: ordinal not in range(128)
+2017-01-18 20:44:45,094 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,095 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,095 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xcb in position 0: ordinal not in range(128)
+2017-01-18 20:44:45,096 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,097 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,097 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,098 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,098 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,098 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-18 20:44:45,218 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-18 20:44:45,385 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,387 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xc3 in position 0: ordinal not in range(128)
+2017-01-18 20:44:45,387 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,388 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,389 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,390 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 20:44:45,391 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,391 [MainThread  ] [ERROR]  :: Error: format not found
+2017-01-18 20:44:45,393 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 20:44:45,395 [MainThread  ] [ERROR]  :: Error: 'ascii' codec can't decode byte 0xe2 in position 0: ordinal not in range(128)
+2017-01-18 20:44:45,395 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: done
+2017-01-18 20:44:45,397 [MainThread  ] [INFO ]  :: done!
+2017-01-18 20:44:45,398 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-18 20:44:45,398 [MainThread  ] [INFO ]  :: exporting metadata...

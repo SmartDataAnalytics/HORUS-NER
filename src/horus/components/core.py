@@ -40,9 +40,10 @@ from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
 
+import definitions
 from bingAPI1 import bing_api2
 from config import HorusConfig
-from src.components.systemlog import SystemLog
+from horus.components.systemlog import SystemLog
 
 print cv2.__version__
 
@@ -70,11 +71,6 @@ class Core(object):
         self.sys.log.info(':: loading components...')
 
         self.english_vocab = None
-        self.ner_ritter = ['B-company', 'B-person', 'I-person', 'B-geo-loc', 'I-company', 'I-geo-loc']
-        self.ner_ritter_per = ['B-person', 'I-person']
-        self.ner_ritter_org = ['B-company', 'I-company']
-        self.ner_ritter_loc = ['B-geo-loc', 'I-geo-loc']
-        self.klasses = {1: "LOC", 2: "ORG", 3: "PER"}
         self.translator = Translator(self.config.translation_id, self.config.translation_secret)
         self.tfidf_transformer = TfidfTransformer()
         self.detect = cv2.xfeatures2d.SIFT_create()
@@ -241,7 +237,7 @@ class Core(object):
                 sent_with_ner += 1
                 for tag in sent[3]:  # list of NER tags
                     word = sent[2][i_word - 1]
-                    if tag in self.ner_ritter:  # only desired tags
+                    if tag in definitions.NER_RITTER:  # only desired tags
                         if prev_tag.replace('B-', '').replace('I-', '') == tag.replace('B-', '').replace('I-', ''):
                             compound += prev_word + ' ' + word + ' '
                     prev_word = word
@@ -265,7 +261,7 @@ class Core(object):
 
             i_word = 1
             for k in range(len(sent[2])): # list of NER tags
-                is_entity = 1 if sent[3] in self.ner_ritter else 0
+                is_entity = 1 if sent[3] in definitions.NER_RITTER else 0
                 self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
                 if is_entity:
@@ -902,7 +898,7 @@ class Core(object):
                 self.sys.log.debug('-> CV_DIST indicator: %s' % (str(dist_cv_indicator)))
                 self.sys.log.debug('-> CV_PLC  indicator: %s' % (str(place_cv_indicator)))
 
-                metadata.append(self.klasses[outs.index(max(outs)) + 1])
+                metadata.append(definitions.KLASSES[outs.index(max(outs)) + 1])
 
                 # text classification
                 self.sys.log.debug(':: [checking related textual information ...]')
@@ -949,7 +945,7 @@ class Core(object):
 
                     # 12, 13
                     metadata.append(dist_tx_indicator)
-                    metadata.append(self.klasses[horus_tx_ner])
+                    metadata.append(definitions.KLASSES[horus_tx_ner])
 
                     if len(rows) != 0:
                         self.sys.log.debug('-> TX_LOC  indicator: %f %%' % (float(y.count(1)) / len(rows)))
@@ -957,7 +953,7 @@ class Core(object):
                         self.sys.log.debug('-> TX_PER  indicator: %f %%' % (float(y.count(3)) / len(rows)))
                         self.sys.log.debug('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
                         self.sys.log.debug(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(rows)))
-                        self.sys.log.debug(':: most likely class -> ' + self.klasses[horus_tx_ner])
+                        self.sys.log.debug(':: most likely class -> ' + definitions.KLASSES[horus_tx_ner])
                     else:
                         self.sys.log.debug(':: there was a problem searching this term..please try to index it again...')
 
@@ -1085,6 +1081,6 @@ class Core(object):
                     s += token + ' '
                     w.append(token)
                     t.append(tag)
-                    if tag in self.ner_ritter:
+                    if tag in definitions.NER_RITTER:
                         has3NER = 1
         return sentences

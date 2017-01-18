@@ -1,6 +1,6 @@
 import sqlite3
 
-from src.components.config import HorusCore
+from horus.components import HorusCore
 
 print sqlite3.version
 print sqlite3.sqlite_version
