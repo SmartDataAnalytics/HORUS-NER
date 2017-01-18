@@ -8,3 +8,4 @@ horus/horus.log
 horus/*.pyc
 .DS_Store
 horus/.DS_Store
+/dist/
