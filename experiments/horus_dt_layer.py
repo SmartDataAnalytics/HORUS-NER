@@ -20,7 +20,7 @@ ner_ritter_per = ['B-person', 'I-person']
 ner_ritter_org = ['B-company', 'I-company']
 ner_ritter_loc = ['B-geo-loc', 'I-geo-loc']
 
-file1reader = csv.reader(open("/Users/dnes/Github/horus-models/horus/horus_out_ritter.csv"), delimiter=",")
+file1reader = csv.reader(open("/Users/dnes/Github/horus-models/horus/out_exp000_0.csv"), delimiter=",")
 header1 = file1reader.next()
 
 features = []

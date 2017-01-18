@@ -4,12 +4,13 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
+from sklearn.metrics import classification_report
 import definitions
 import pandas as pd
 import numpy as np
 
 
-file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/horus_out_ritter.csv"), delimiter=",")
+file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/experiments/ritter/EXP_000/out_exp000_0.csv"), delimiter=",")
 header1 = file1reader.next() #header
 
 tot = 0
@@ -84,21 +85,7 @@ for linha in file1reader:
                 tp_per +=1
             else:
                 fp_per +=1
-        if NER in definitions.NER_RITTER_ORG:
-            torg += 1
-            if CV_KLASS == 'ORG':
-                tp_org_cv +=1
-            else:
-                fp_org_cv +=1
-            if TX_KLASS == 'ORG':
-                tp_org_tx +=1
-            else:
-                fp_org_tx +=1
-            if HORUS_KLASS == 'ORG':
-                tp_org +=1
-            else:
-                fp_org +=1
-        if NER in definitions.NER_RITTER_LOC:
+        elif NER in definitions.NER_RITTER_LOC:
             tloc += 1
             if CV_KLASS == 'LOC':
                 tp_loc_cv +=1
@@ -112,6 +99,20 @@ for linha in file1reader:
                 tp_loc +=1
             else:
                 fp_loc +=1
+        elif NER in definitions.NER_RITTER_ORG:
+            torg += 1
+            if CV_KLASS == 'ORG':
+                tp_org_cv += 1
+            else:
+                fp_org_cv += 1
+            if TX_KLASS == 'ORG':
+                tp_org_tx += 1
+            else:
+                fp_org_tx += 1
+            if HORUS_KLASS == 'ORG':
+                tp_org += 1
+            else:
+                fp_org += 1
     else:
         if CV_KLASS == 'PER':
             fp_per_cv +=1
@@ -156,22 +157,22 @@ print '--LOC', l, ("%.3f" % (l/float(df.size)))
 print '--ORG', o, ("%.3f" % (o/float(df.size)))
 print '--NON', nn, ("%.3f" % (nn/float(df.size)))
 print '-----------------------------------------------------'
-print ':: Precision (PER, ORG, LOC, OTHERS)'
+print ':: Precision (PER, LOC, ORG, OTHERS)'
 print '--CV', precision_score(y, ycv, average=None)
 print '--TX', precision_score(y, ytx, average=None)
 print '--FI', precision_score(y, yf, average=None)
 print '-----------------------------------------------------'
-print ':: Recall (PER, ORG, LOC, OTHERS)'
+print ':: Recall (PER, LOC, ORG, OTHERS)'
 print '--CV', recall_score(y, ycv, average=None)
 print '--TX', recall_score(y, ytx, average=None)
 print '--FI', recall_score(y, yf, average=None)
 print '-----------------------------------------------------'
-print ':: F-measure (PER, ORG, LOC, OTHERS)'
+print ':: F-measure (PER, LOC, ORG, OTHERS)'
 print '--CV', f1_score(y, ycv, average=None)
 print '--TX', f1_score(y, ytx, average=None)
 print '--FI', f1_score(y, yf, average=None)
 print '-----------------------------------------------------'
-print ':: Accuracy (PER, ORG, LOC)'
+print ':: Accuracy (PER, LOC, ORG)'
 print '--CV', accuracy_score(y, ycv, normalize=True)
 print '--TX', accuracy_score(y, ytx, normalize=True)
 print '--FI', accuracy_score(y, yf, normalize=True)
@@ -181,3 +182,5 @@ print '--CV', confusion_matrix(y, ycv)
 print '--TX', confusion_matrix(y, ytx)
 print '--FI', confusion_matrix(y, yf)
 print '-----------------------------------------------------'
+target_names = ['PER', 'LOC', 'ORG', 'NON']
+print(classification_report(y, ycv, target_names=target_names, digits=3))

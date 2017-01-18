@@ -67,7 +67,7 @@ class Core(object):
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""
-        self.sys = SystemLog("horus.log", logging.INFO, logging.DEBUG)
+        self.sys = SystemLog("horus.log", logging.INFO, logging.INFO)
         self.config = HorusConfig()
 
         self.sys.log.info('------------------------------------------------------------------')
