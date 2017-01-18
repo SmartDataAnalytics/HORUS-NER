@@ -4,7 +4,7 @@ import pkg_resources
 
 class HorusConfig:
     def __init__(self):
-        ini_file = pkg_resources.resource_filename('resource', "horus.ini")
+        ini_file = pkg_resources.resource_filename('resource', "components.ini")
 
         parser = SafeConfigParser()
         #rootdir = os.getcwd()

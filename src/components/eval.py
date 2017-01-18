@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 
-from src.horus import Core
+from src.components import Core
 
 
 def confusion_matrix_analysis(horus_matrix):
@@ -154,14 +154,14 @@ newList = [[each_list[i] for i in list1] for each_list in list2]
 # word_term, Y, klass_cv, klass_txt, final_klass
 horus_light = [[each_list[i] for i in [3,4,13,20,21]] for each_list in horus_matrix]
 
-hmetalight = open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/horus/cache/horus_out_light.csv', 'wb')
+hmetalight = open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/components/cache/horus_out_light.csv', 'wb')
 wr = csv.writer(hmetalight, quoting=csv.QUOTE_ALL)
 wr.writerows(horus_light)
 
-#with open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/horus/cache/horus_out_light.json', 'wb') as outfile1:
+#with open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/components/cache/horus_out_light.json', 'wb') as outfile1:
 #    json.dump(horus_light, outfile1)
 
-#with open(horus.horus_final_data_csv, 'rb') as f:
+#with open(components.horus_final_data_csv, 'rb') as f:
 #    reader = csv.reader(f)
 #    # next(reader) # hack to ignore the header
 #    horus_matrix = list(reader)

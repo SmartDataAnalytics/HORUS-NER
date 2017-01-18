@@ -1,10 +1,11 @@
 from distutils.core import setup
-setup(name='definitions',
+setup(name='horus',
       version='0.1',
       description='HORUS basic metadata',
       author='Diego Esteves',
       author_email='diegoesteves@gmail.com',
-      py_modules=['definitions'],
-      packages=['horus', 'experiments'],
-      package_dir={'horus': 'src/horus', 'experiments': 'src/experiments'},
+      packages=['src','components','resource'],
+      package_dir={'src': 'src/',
+                   'components': 'src/components/',
+                   'resource': 'src/resource/'},
       )

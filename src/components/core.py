@@ -13,7 +13,7 @@ sites, blogs and etc..
 It is a simplistic approach based on multi-level machine
 learning combined with computer vision techniques.
 
-more info at: https://github.com/dnes85/horus-models
+more info at: https://github.com/dnes85/components-models
 
 """
 
@@ -42,7 +42,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 
 from bingAPI1 import bing_api2
 from config import HorusConfig
-from src.horus import SystemLog
+from src.components.systemlog import SystemLog
 
 print cv2.__version__
 
@@ -61,7 +61,7 @@ class Core(object):
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""
-        self.sys = SystemLog("horus.log", logging.INFO, logging.INFO)
+        self.sys = SystemLog("components.log", logging.INFO, logging.INFO)
         self.config = HorusConfig()
 
         self.sys.log.info('------------------------------------------------------------------')
@@ -164,7 +164,7 @@ class Core(object):
         self.cache_results()
         self.sys.log.info(':: done!')
 
-        #  updating horus matrix
+        #  updating components matrix
         # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
         # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
         # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
@@ -206,7 +206,7 @@ class Core(object):
 
     def print_annotated_sentence(self):
         '''
-        read the horus matrix and prints the annotated sentences
+        read the components matrix and prints the annotated sentences
         :param horus_matrix:
         :return: output of annotated sentence
         '''
@@ -258,7 +258,7 @@ class Core(object):
 
             # processing tokens
 
-            #  transforming to horus matrix
+            #  transforming to components matrix
             # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
             # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
             # 8 = compound_size
@@ -326,7 +326,7 @@ class Core(object):
                         compounds += compound[:len(compound) - 1] + '|'
                     compound = ''
 
-            #  transforming to horus matrix
+            #  transforming to components matrix
             # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
             # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
             # 8 = compound_size
@@ -406,7 +406,7 @@ class Core(object):
                         cterm = res_term[0]
 
                     # check if term (text) has been cached before
-                    # in case horus is extended to accept more than 1 search engine, this table should also
+                    # in case components is extended to accept more than 1 search engine, this table should also
                     # have it defined
                     values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text)
                     sql = """SELECT id
@@ -716,7 +716,7 @@ class Core(object):
             t1final = t1
             t2final = t2
 
-            # need to save to horus db
+            # need to save to components db
             if t1en is None:
                 lt1 = langdetect.detect(t1)
                 if lt1 != 'en':

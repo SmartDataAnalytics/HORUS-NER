@@ -3,10 +3,10 @@ import json
 
 import web
 
-from src.horus import Core
+from src.components import Core
 
 urls = (
-    '/horus/(.*)', 'annotate'
+    '/components/(.*)', 'annotate'
 )
 
 app = web.application(urls, globals())

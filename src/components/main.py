@@ -13,7 +13,7 @@ sites, blogs and etc..
 It is a simplistic approach based on multi-level machine
 learning combined with computer vision techniques.
 
-more info at: https://github.com/dnes85/horus-models
+more info at: https://github.com/dnes85/components-models
 
 """
 
@@ -23,7 +23,7 @@ more info at: https://github.com/dnes85/horus-models
 # License: BSD 3 clause
 from optparse import OptionParser
 
-from src.horus import Core
+from src.components import Core
 
 
 def main():

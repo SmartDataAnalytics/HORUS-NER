@@ -1,13 +1,13 @@
 import sqlite3
 
-from src.horus.config import HorusCore
+from src.components.config import HorusCore
 
 print sqlite3.version
 print sqlite3.sqlite_version
 
 CONST_CREATE_DB_ZERO = True
 
-horus = HorusCore('../horus.ini')
+horus = HorusCore('../components.ini')
 print 'connecting to file ' + horus.database_db
 conn = sqlite3.connect(horus.database_db)  # or use :memory: to put it in RAM
 cursor = conn.cursor()
