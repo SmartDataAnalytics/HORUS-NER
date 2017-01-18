@@ -5,6 +5,8 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 import definitions
+import pandas as pd
+import numpy as np
 
 
 file1reader = csv.reader(open(definitions.OUTPUT_PATH + "/horus_out_ritter.csv"), delimiter=",")
@@ -22,8 +24,7 @@ fp_per_tx, fp_org_tx, fp_loc_tx = 0, 0, 0
 tp_per, tp_org, tp_loc = 0, 0, 0
 fp_per, fp_org, fp_loc = 0, 0, 0
 
-y = []
-ycv, ytx, yf = [],[],[]
+y, ycv, ytx, yf = [], [],[],[]
 for linha in file1reader:
 
     NER = linha[6]
@@ -141,49 +142,42 @@ print fp_per_cv, fp_per_cv/float(tot_others), fp_org_cv, fp_org_cv/float(tot_oth
 print fp_per_tx, fp_per_tx/float(tot_others), fp_org_tx, fp_org_tx/float(tot_others), fp_loc_tx, fp_loc_tx/float(tot_others)
 print fp_per, fp_per/float(tot_others), fp_org, fp_org/float(tot_others), fp_loc, fp_loc/float(tot_others)
 
-#print ':: Precision (PER, ORG, LOC)'
-#print '-- CV', tp_per_cv / float(tp_per_cv + fp_per_cv), \
-#      tp_org_cv / float(tp_org_cv + fp_org_cv), \
-#      tp_loc_cv / float(tp_loc_cv + fp_loc_cv)
-#print '-- TX', tp_per_tx / float(tp_per_tx + fp_per_tx), \
-#      tp_org_tx / float(tp_org_tx + fp_org_tx), \
-#      tp_loc_tx / float(tp_loc_tx + fp_loc_tx)
-#print '-- FI', tp_per / float(tp_per + fp_per), \
-#      tp_org / float(tp_org + fp_org), \
-#      tp_loc / float(tp_loc + fp_loc)
-#print ':: Recall (PER, ORG, LOC)'
-#print '-- CV', tp_per_cv / float(tp_per_cv + fn_per_cv), \
-#      tp_org_cv / float(tp_org_cv + fp_org_cv), \
-#      tp_loc_cv / float(tp_loc_cv + fp_loc_cv)
-#print '-- TX', tp_per_tx / float(tp_per_tx + fp_per_tx), \
-#      tp_org_tx / float(tp_org_tx + fp_org_tx), \
-#      tp_loc_tx / float(tp_loc_tx + fp_loc_tx)
-#print '-- FI', tp_per / float(tp_per + fp_per), \
-#      tp_org / float(tp_org + fp_org), \
-#      tp_loc / float(tp_loc + fp_loc)
 
+#yt = np.asarray(y).T.tolist()
+df = pd.DataFrame(y, columns=["klass"])
+
+print ':: Data Distribution'
+p = len(np.where(df["klass"] == 1)[0])
+l = len(np.where(df["klass"] == 2)[0])
+o = len(np.where(df["klass"] == 3)[0])
+nn = len(np.where(df["klass"] == 4)[0])
+print '--PER', p, ("%.3f" % (p/float(df.size)))
+print '--LOC', l, ("%.3f" % (l/float(df.size)))
+print '--ORG', o, ("%.3f" % (o/float(df.size)))
+print '--NON', nn, ("%.3f" % (nn/float(df.size)))
+print '-----------------------------------------------------'
 print ':: Precision (PER, ORG, LOC, OTHERS)'
 print '--CV', precision_score(y, ycv, average=None)
 print '--TX', precision_score(y, ytx, average=None)
 print '--FI', precision_score(y, yf, average=None)
-
+print '-----------------------------------------------------'
 print ':: Recall (PER, ORG, LOC, OTHERS)'
 print '--CV', recall_score(y, ycv, average=None)
 print '--TX', recall_score(y, ytx, average=None)
 print '--FI', recall_score(y, yf, average=None)
-
+print '-----------------------------------------------------'
 print ':: F-measure (PER, ORG, LOC, OTHERS)'
 print '--CV', f1_score(y, ycv, average=None)
 print '--TX', f1_score(y, ytx, average=None)
 print '--FI', f1_score(y, yf, average=None)
-
+print '-----------------------------------------------------'
 print ':: Accuracy (PER, ORG, LOC)'
 print '--CV', accuracy_score(y, ycv, normalize=True)
 print '--TX', accuracy_score(y, ytx, normalize=True)
 print '--FI', accuracy_score(y, yf, normalize=True)
-
+print '-----------------------------------------------------'
 print ':: Confusion Matrix'
 print '--CV', confusion_matrix(y, ycv)
 print '--TX', confusion_matrix(y, ytx)
 print '--FI', confusion_matrix(y, yf)
-
+print '-----------------------------------------------------'
