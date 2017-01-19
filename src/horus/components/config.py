@@ -67,6 +67,7 @@ class HorusConfig:
                     self.models_safe_interval = parser.get('models-param', 'safe_interval')
                     self.models_limit_min_loc = parser.get('models-param', 'limit_min_loc')
                     self.models_distance_theta_high_bias = parser.get('models-param', 'distance_theta_high_bias')
+                    self.models_pos_tag_lib = int(parser.get('models-param', 'pos_tag_lib'))
 
                     fine = True
 

@@ -44,6 +44,7 @@ import definitions
 from bingAPI1 import bing_api2
 from config import HorusConfig
 from horus.components.systemlog import SystemLog
+from horus.postagger import CMUTweetTagger
 
 print cv2.__version__
 
@@ -230,7 +231,7 @@ class Core(object):
         compound_ok = 0
         for sent in sentence_list:
 
-            self.sys.log.debug(':: processing sentence: ' + sent[1])
+            self.sys.log.info(':: processing sentence: ' + sent[1])
 
             # processing compounds
             if sent[0] == 1:
@@ -262,6 +263,7 @@ class Core(object):
             i_word = 1
             for k in range(len(sent[2])): # list of NER tags
                 is_entity = 1 if sent[3] in definitions.NER_RITTER else 0
+
                 self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
                 if is_entity:
@@ -274,13 +276,17 @@ class Core(object):
         self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                      % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
-
-    def tokenize_and_pos(self,sentence, tagset=''):
-        self.sys.log.debug(':: processing sentence: ' + sentence)
-        tokens = nltk.word_tokenize(sentence)
-        self.sys.log.debug('---------- ' + str(tokens))
-        tagged = nltk.pos_tag(tokens, tagset=tagset)
-        return tokens, tagged
+    def tokenize_and_pos(self, sentence):
+        if self.config.models_pos_tag_lib == 1:
+            tokens = sentence
+            if type(sentence) is not list:
+                tokens = nltk.word_tokenize(sentence)
+            tagged = nltk.pos_tag(tokens)
+            return tokens, tagged, nltk.pos_tag(tokens, tagset="universal")
+        elif self.config.models_pos_tag_lib == 2:
+            if type(sentence) is not list:
+                return self.tokenize_and_pos_twitter([sentence])
+            return self.tokenize_and_pos_twitter_list(sentence)
 
     def cache_sentence(self,sentence_format, sentence_list):
         if sentence_format == 0:
@@ -292,7 +298,13 @@ class Core(object):
 
         i_sent, i_word = 1, 1
         self.sys.log.debug(':: chunking pattern ...')
-        pattern = "NP:{<NN|NNP|NNS|NNPS>+}"
+        pattern = """
+                NP:
+                   {<JJ>*<NN|NNS|NNP|NNPS><CC>*<NN|NNS|NNP|NNPS>+}
+                   {<NN|NNS|NNP|NNPS><IN>*<NN|NNS|NNP|NNPS>+}
+                   {<JJ>*<NN|NNS|NNP|NNPS>+}
+                   {<NN|NNP|NNS|NNPS>+}
+                """
         cp = nltk.RegexpParser(pattern)
         compounds = '|'
 
@@ -1011,7 +1023,7 @@ class Core(object):
                         self.horus_matrix[i + k][25] = y
         self.sys.log.info(':: done')
 
-    def process_input_text(self,text):
+    def process_input_text(self, text):
         self.sys.log.info(':: text: ' + text)
         self.sys.log.info(':: tokenizing sentences ...')
         sent_tokenize_list = sent_tokenize(text)
@@ -1022,9 +1034,8 @@ class Core(object):
         pos = []
         hasNER = -1
         for sentence in sent_tokenize_list:
-            tokens = nltk.word_tokenize(sentence)
-            pos_universal = nltk.pos_tag(tokens, tagset='universal')
-            chunked = nltk.ne_chunk(nltk.pos_tag(tokens))
+            tokens, pos_taggers, pos_universal = self.tokenize_and_pos(sentence)
+            chunked = nltk.ne_chunk(pos_taggers)
             for ch in chunked:
                 if type(ch) is nltk.Tree:
                     w.append(ch[0][0])
@@ -1083,4 +1094,74 @@ class Core(object):
                     t.append(tag)
                     if tag in definitions.NER_RITTER:
                         has3NER = 1
-        return sentences
+
+        #just in case of tweetNLP
+        if self.config.models_pos_tag_lib == 2:
+            #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
+            list_shell = []
+            for item in sentences:
+                list_shell.append(item[1])
+            self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
+            tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
+            cache_sentences = []
+            index = 0
+            for item in sentences:
+                _pos = zip(*pos[index])[1]
+                _pos_uni = zip(*pos_uni[index])[1]
+                cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni)])
+                index +=1
+            return cache_sentences
+        else:
+            return sentences
+
+    def tokenize_and_pos_twitter(self, text):
+        tokens = []
+        tagged = []
+        pos_universal = []
+        pos_token_tag_sentence = CMUTweetTagger.runtagger_parse(text)
+
+        for sequence_tag in pos_token_tag_sentence:
+            for token_tag in sequence_tag:
+                tokens.append(token_tag[0])
+                tagged.append(self.convert_cmu_tags(token_tag[1]))
+                pos_universal.append(self.convert_cmu_tags(token_tag[1], tagset="universal"))
+        return tokens, zip(tokens, tagged), zip(tokens, pos_universal)
+
+    def tokenize_and_pos_twitter_list(self, text):
+        token_list = []
+        tagged_list = []
+        pos_universal_list = []
+        pos_token_tag_sentence = CMUTweetTagger.runtagger_parse(text)
+
+        for sequence_tag in pos_token_tag_sentence:
+            tokens = []
+            tagged = []
+            pos_universal = []
+            for token_tag in sequence_tag:
+                tokens.append(token_tag[0])
+                tagged.append(self.convert_cmu_tags(token_tag[1]))
+                pos_universal.append(self.convert_cmu_tags(token_tag[1], tagset="universal"))
+
+            token_list.append(tokens)
+            tagged_list.append(zip(tokens, tagged))
+            pos_universal_list.append(zip(tokens, pos_universal))
+        return token_list, tagged_list, pos_universal_list
+
+    def convert_cmu_tags(self, tag, tagset=None):
+        if tagset == "universal":
+            return self.convert_cmu_to_universal_tags(tag)
+        return self.convert_cmu_to_peen_tags(tag)
+
+    @staticmethod
+    def convert_cmu_to_peen_tags(cmu_tag):
+        for item in definitions.CMU_PENN_TAGS:
+            if item[0] == cmu_tag:
+                return item[1]
+        return cmu_tag
+
+    @staticmethod
+    def convert_cmu_to_universal_tags(cmu_tag):
+        for item in definitions.CMU_UNI_TAGS:
+            if item[0] == cmu_tag:
+                return item[1]
+        return "X"
