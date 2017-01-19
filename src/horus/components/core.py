@@ -181,7 +181,7 @@ class Core(object):
                   "ID_TERM_TXT", "ID_TERM_IMG",
                   "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX",
                   "TOT_TX_LOC", "TOT_TX_ORG",
-                  "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS"]
+                  "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
 
         if int(ds_format) == 0:
             self.print_annotated_sentence()
