@@ -13,7 +13,7 @@ from horus import definitions
 from horus.components.config import HorusConfig
 
 config = HorusConfig()
-file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_0.csv"), delimiter=",")
+file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv"), delimiter=",")
 header1 = file1reader.next() #header
 
 tot = 0
@@ -159,31 +159,38 @@ print '--PER', p, ("%.3f" % (p/float(df.size)))
 print '--LOC', l, ("%.3f" % (l/float(df.size)))
 print '--ORG', o, ("%.3f" % (o/float(df.size)))
 print '--NON', nn, ("%.3f" % (nn/float(df.size)))
-print '-----------------------------------------------------'
-print ':: Precision (PER, LOC, ORG, OTHERS)'
+
+print ':: Precision (LOC, ORG, PER, OTHERS)'
+print '---------------------- Precision -----------------------'
 print '--CV', precision_score(y, ycv, average=None)
 print '--TX', precision_score(y, ytx, average=None)
 print '--FI', precision_score(y, yf, average=None)
-print '-----------------------------------------------------'
-print ':: Recall (PER, LOC, ORG, OTHERS)'
+print '------------------------ Recall ------------------------'
 print '--CV', recall_score(y, ycv, average=None)
 print '--TX', recall_score(y, ytx, average=None)
 print '--FI', recall_score(y, yf, average=None)
-print '-----------------------------------------------------'
-print ':: F-measure (PER, LOC, ORG, OTHERS)'
+print '-------------------------- F1 --------------------------'
 print '--CV', f1_score(y, ycv, average=None)
 print '--TX', f1_score(y, ytx, average=None)
 print '--FI', f1_score(y, yf, average=None)
-print '-----------------------------------------------------'
-print ':: Accuracy (PER, LOC, ORG)'
+print '----------------------- Accuracy -----------------------'
 print '--CV', accuracy_score(y, ycv, normalize=True)
 print '--TX', accuracy_score(y, ytx, normalize=True)
 print '--FI', accuracy_score(y, yf, normalize=True)
 print '-----------------------------------------------------'
 print ':: Confusion Matrix'
-print '--CV', confusion_matrix(y, ycv)
-print '--TX', confusion_matrix(y, ytx)
-print '--FI', confusion_matrix(y, yf)
-print '-----------------------------------------------------'
-target_names = ['PER', 'LOC', 'ORG', 'NON']
+target_names = ['LOC', 'ORG', 'PER', 'NON']
+print '--CV'
+print confusion_matrix(y, ycv)
 print(classification_report(y, ycv, target_names=target_names, digits=3))
+print '--TX'
+print confusion_matrix(y, ytx)
+print(classification_report(y, ytx, target_names=target_names, digits=3))
+print '--FI'
+print confusion_matrix(y, yf)
+print(classification_report(y, yf, target_names=target_names, digits=3))
+print '-----------------------------------------------------'
+
+
+
+

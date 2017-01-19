@@ -1,44 +1,45 @@
 import csv
-
+import pandas
 import itertools
-
 import numpy
-from sklearn import tree, preprocessing
-
-# "IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE", "ID_TERM_TXT",
-# "ID_TERM_IMG", "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS",
-# "TOT_RESULTS_TX", "TOT_TX_LOC", "TOT_TX_ORG", "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS"
+from sklearn import tree, preprocessing, ensemble
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
+from horus import definitions
+from horus.components.config import HorusConfig
 
-ner_ritter_per = ['B-person', 'I-person']
-ner_ritter_org = ['B-company', 'I-company']
-ner_ritter_loc = ['B-geo-loc', 'I-geo-loc']
-
-file1reader = csv.reader(open("/Users/dnes/Github/components-models/components/out_exp000_0.csv"), delimiter=",")
+config = HorusConfig()
+file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv"), delimiter=",")
 header1 = file1reader.next()
 
 features = []
 X, Y = [], []
 
+colnames = ['IS_ENTITY', 'ID_SENT', 'ID_WORD', 'WORD_TERM', 'POS_UNI',
+            'POS', 'NER', 'COMPOUND', 'COMPOUND_SIZE', 'ID_TERM_TXT',
+            'ID_TERM_IMG', 'TOT_IMG', 'TOT_CV_LOC', 'TOT_CV_ORG', 'TOT_CV_PER', 'DIST_CV_I',
+            'PL_CV_I', 'CV_KLASS', 'TOT_RESULTS_TX', 'TOT_TX_LOC', 'TOT_TX_ORG', 'TOT_TX_PER',
+            'TOT_ERR_TRANS', 'DIST_TX_I', 'TX_KLASS', 'HORUS_KLASS']
+
 for linha in file1reader:
-    if linha[6] in ner_ritter_per:
+    if linha[6] in definitions.NER_RITTER_PER:
         Y.append(1)
-    elif linha[6] in ner_ritter_loc:
+    elif linha[6] in definitions.NER_RITTER_LOC:
         Y.append(2)
-    elif linha[6] in ner_ritter_org:
+    elif linha[6] in definitions.NER_RITTER_ORG:
         Y.append(3)
     else:
         Y.append(4)
 
     features.append((linha[5], int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
-                    int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
-                    float(linha[22]), int(linha[23])))
+                     int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
+                     float(linha[22]), int(linha[23])))
 
 
 features = numpy.array(features)
@@ -54,11 +55,15 @@ for x in features:
 #d = dict(itertools.izip_longest(*[iter(features)] * 2, fillvalue=""))
 #X = vec.fit_transform([item[0] for item in d]).toarray()
 
-X_train, X_test, Y_train, Y_test = train_test_split(features, Y, train_size=0.50, test_size=0.50)
+X_train, X_test, Y_train, Y_test = train_test_split(features, Y, train_size=0.80, test_size=0.20)
 
-clf = tree.DecisionTreeClassifier()
-clf = clf.fit(X_train, Y_train)
-predictions = clf.predict(X_test)
+clf = tree.DecisionTreeClassifier(criterion='gini', splitter='best')
+model = clf.fit(X_train, Y_train)
+predictions = model.predict(X_test)
+
+clf2 = ensemble.RandomForestClassifier(n_estimators=16)
+model2 = clf2.fit(X_train, Y_train)
+predictions2 = model2.predict(X_test)
 
 print len(X_train), len(Y_train)
 print len(X_test), len(Y_test)
@@ -68,7 +73,14 @@ print '--FI', recall_score(Y_test, predictions, average=None)
 print '--FI', f1_score(Y_test, predictions, average=None)
 print '--FI', accuracy_score(Y_test, predictions, normalize=True)
 
+
 print '--FI', confusion_matrix(Y_test, predictions)
+target_names = ['LOC', 'ORG', 'PER', 'NON']
+print(classification_report(Y_test, predictions, target_names=target_names, digits=3))
+print(classification_report(Y_test, predictions2, target_names=target_names, digits=3))
+
+print 'media_mod1',  sum(f1_score(Y_test, predictions, average=None)[0:3])/3.0
+print 'media_mod2',  sum(f1_score(Y_test, predictions2, average=None)[0:3])/3.0
 
 
 #print Y_test

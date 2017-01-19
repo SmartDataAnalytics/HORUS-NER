@@ -9,8 +9,8 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 ## Easy Setup
 - setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
 - get your [Microsoft Bing API](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API](https://datamarket.azure.com/developer/applications/register)
-- configure the parameters at the .ini file (rename _horus_dist.ini_ to _horus.ini_)
-- setup [anaconda](https://anaconda.org/) and import our _requirements.txt_ file :-) 
+- configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
+- setup [anaconda](https://anaconda.org/) and import our _requirements.txt_ file (if you're running on linux, please check [#issue 6](https://github.com/dnes85/horus-models/issues/6)) 
 ```python 
 conda env create -f environment.yml 
 ```
