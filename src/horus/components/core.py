@@ -28,6 +28,7 @@ import logging
 import sqlite3
 from time import gmtime, strftime
 
+import chardet
 import cv2
 import langdetect
 import nltk
@@ -273,7 +274,6 @@ class Core(object):
 
         self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                      % (str(sent_with_ner), str(token_ok), str(compound_ok)))
-
 
     def tokenize_and_pos(self,sentence, tagset=''):
         self.sys.log.debug(':: processing sentence: ' + sentence)
@@ -701,8 +701,11 @@ class Core(object):
 
         self.sys.log.debug(':: text analysis component launched')
 
+
         try:
             from translate import Translator
+
+            x = self.remove_non_ascii('Tschaikowskistraße')
 
             #https://pypi.python.org/pypi/translate (alternative 1000 per day)
             #https://www.microsoft.com/en-us/translator/getstarted.aspx
@@ -773,6 +776,9 @@ class Core(object):
         except Exception as e:
             self.sys.log.error(':: Error: ' + str(e))
             return [-1]
+
+    def remove_non_ascii(self,t):
+        return "".join(i for i in t if ord(i) < 128)
 
     def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
         auxi = 0
@@ -989,8 +995,6 @@ class Core(object):
                                 int(self.config.models_safe_interval):
                             self.horus_matrix[i][17] = initial
 
-
-
     def update_compound_predictions(self):
         '''
         updates the predictions based on the compound
@@ -1049,7 +1053,6 @@ class Core(object):
             ner = []
             w = []
         return sentences
-
 
     def process_ritter_ds(self,dspath):
         '''
