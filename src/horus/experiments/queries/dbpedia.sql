@@ -55,3 +55,6 @@ WHERE { ?org rdf:type dbo:Organisation  .
       ?org dbo:abstract ?abstract .
     FILTER (lang(?abstract) = 'en')
 }
+---------------------------------------------------------------------
+--OTHERS
+---------------------------------------------------------------------
