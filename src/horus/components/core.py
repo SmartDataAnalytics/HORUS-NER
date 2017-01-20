@@ -145,12 +145,15 @@ class Core(object):
                 raise Exception("err: missing text to be annotated")
             sent_tokenize_list = self.process_input_text(text)
 
-        elif int(ds_format) == 1:  # ritter
+        elif int(ds_format) == 1 or int(ds_format) == 2:
             if input_file is None:
-                raise Exception("Provide an input file (ritter format) to be annotated")
-            else:
+                raise Exception("Provide an input file format to be annotated")
+            elif int(ds_format) == 1:
                 self.sys.log.info(':: loading Ritter ds')
                 sent_tokenize_list = self.process_ritter_ds(input_file)
+            elif int(ds_format) == 2:
+                self.sys.log.info(':: loading coNLL2003 ds')
+                sent_tokenize_list = self.processing_conll_ds(input_file)
 
         self.sys.log.info(':: caching %s sentence(s)' % str(len(sent_tokenize_list)))
         # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
@@ -276,6 +279,70 @@ class Core(object):
         self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                      % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
+    def cache_sentence_conll(self,sentence_list):
+        self.sys.log.debug(':: caching coNLL 2003 dataset...:')
+        i_sent, i_word = 1, 1
+        compound, prev_tag = '', ''
+        sent_with_ner = 0
+        token_ok = 0
+        compound_ok = 0
+        for sent in sentence_list:
+
+            self.sys.log.info(':: processing sentence: ' + sent[1])
+
+            # processing compounds
+            if sent[0] == 1:
+                sent_with_ner += 1
+                for chunck_tag in sent[6]:  # list of chunck tags
+                    word = sent[2][i_word - 1]
+                    if chunck_tag in "I-NP":  # only NP chunck
+                        if prev_tag == chunck_tag:
+                            if compound == "":
+                                compound += prev_word + ' ' + word + ' '
+                            else:
+                                compound += word + ' '
+                    elif compound != "":
+                        prev_tag = ''
+                        prev_word = ''
+                        compound_ok += 1
+                        self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1,
+                                                  len(compound.split(' '))])
+                        compound = ''
+                    prev_word = word
+                    prev_tag = chunck_tag
+                    i_word += 1
+                compound = compound[:-1]
+
+                if compound != '':
+                    compound_ok+=1
+                    self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1, len(compound.split(' '))])
+                    compound = ''
+                prev_tag = ''
+                prev_word = ''
+
+            # processing tokens
+
+            #  transforming to components matrix
+            # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
+            # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
+            # 8 = compound_size
+
+            i_word = 1
+            for k in range(len(sent[2])): # list of NER tags
+                is_entity = 1 if sent[3] in definitions.NER_CONLL else 0
+
+                self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                i_word += 1
+                if is_entity:
+                    token_ok += 1
+
+            self.db_save_sentence(sent[1], '-', '-', str(sent[3]))
+            i_sent += 1
+            i_word = 1
+
+        self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+                     % (str(sent_with_ner), str(token_ok), str(compound_ok)))
+
     def tokenize_and_pos(self, sentence):
         if self.config.models_pos_tag_lib == 1:
             tokens = sentence
@@ -293,6 +360,8 @@ class Core(object):
             self.cache_sentence_free_text(sentence_list)
         elif sentence_format == 1:
             self.cache_sentence_ritter(sentence_list)
+        elif sentence_format == 2:
+            self.cache_sentence_conll(sentence_list)
 
     def cache_sentence_free_text(self,sentence_list):
 
@@ -1114,6 +1183,43 @@ class Core(object):
         else:
             return sentences
 
+    def processing_conll_ds(self, dspath):
+        sentences = []
+        w = []
+        t = []
+        p = []
+        pu = []
+        c = []
+        s = ''
+        has3NER = -1
+        with open(dspath) as f:
+            for line in f:
+                text = line.split(' ')
+                token = text[0].replace('\n', '')
+                if token == '':
+                    if len(w) != 0:
+                        sentences.append([has3NER, s, w, t, p, pu, c])
+                        w = []
+                        t = []
+                        p = []
+                        pu = []
+                        c = []
+                        s = ''
+                        has3NER = -1
+                else:
+                    pos_tag = text[1]
+                    chunck_tag = text[2]
+                    ner_tag = text[3].replace('\n', '')
+                    s += token + ' '
+                    w.append(token)
+                    p.append(pos_tag)
+                    pu.append(self.convert_penn_to_universal_tags(pos_tag))
+                    t.append(ner_tag)
+                    c.append(chunck_tag)
+                    if ner_tag in definitions.NER_CONLL:
+                        has3NER = 1
+        return sentences
+
     def tokenize_and_pos_twitter(self, text):
         tokens = []
         tagged = []
@@ -1165,3 +1271,10 @@ class Core(object):
             if item[0] == cmu_tag:
                 return item[1]
         return "X"
+
+    @staticmethod
+    def convert_penn_to_universal_tags(penn_tag):
+        for item in definitions.PENN_UNI_TAG:
+            if item[0] == penn_tag:
+                return item[1]
+        return penn_tag
