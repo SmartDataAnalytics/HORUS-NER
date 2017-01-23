@@ -25,11 +25,11 @@ clf_names, score, training_time, test_time = results
 training_time = np.array(training_time) / np.max(training_time)
 test_time = np.array(test_time) / np.max(test_time)
 
-plt.figure(figsize=(12, 8))
+plt.figure(figsize=(12, 8), facecolor="white")
 plt.title("Text Classification: Test Performance (DBPedia - 30K abstracts)", fontweight="bold")
-plt.barh(indices, score, .4, label="F-measure", color="blue")
+plt.barh(indices, score, .4, label="F-measure", color="gray", linestyle='dashed')
 #plt.barh(indices + .3, training_time, .2, label="Training Time")
-plt.barh(indices + .6, test_time, .4, label="Test Time", color="red", edgecolor = "black")
+plt.barh(indices + .6, test_time, .4, label="Test Time", color="red", edgecolor="red")
 plt.yticks(())
 plt.legend(loc='best')
 plt.subplots_adjust(left=.25)
@@ -37,11 +37,12 @@ plt.subplots_adjust(top=.95)
 plt.subplots_adjust(bottom=.05)
 
 for i, c in zip(indices, clf_names):
-    plt.text(-.2, i, c, color='black', fontweight='bold')
+    plt.text(-.2, i, c, color='black')
 
 for i, c in zip(indices, score):
-    plt.text(c+.02, i, "%.2f" % round(c, 2), color='red')
+    plt.text(c+.02, i, "%.2f" % round(c, 2), color='black')
 
 
-plt.show()
+#plt.show()
+plt.savefig("textclass.png")
 exit(0)

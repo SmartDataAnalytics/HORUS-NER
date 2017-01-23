@@ -22,7 +22,7 @@ from sklearn.ensemble import RandomForestClassifier
 import HTMLParser
 from sklearn.externals import joblib
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
 from time import time
 
 
@@ -39,8 +39,12 @@ y_train = train['klass']
 
 print("Extracting features from the training data using a sparse vectorizer")
 t0 = time()
-vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5, stop_words='english',
-                             strip_accents='unicode', encoding='utf-8',decode_error='ignore')
+#vectorizer = TfidfVectorizer( =True, max_df=0.5, stop_words='english',
+#                             strip_accents='unicode', encoding='utf-8',decode_error='ignore')
+
+vectorizer = HashingVectorizer(stop_words='english', non_negative=True,
+                               strip_accents='unicode', encoding='utf-8', decode_error='ignore')
+
 
 X_train = vectorizer.fit_transform(train['text'])
 duration = time() - t0
@@ -163,4 +167,4 @@ results.append(benchmark(Pipeline([
   ('classification', LinearSVC())
 ])))
 
-joblib.dump(results, 'text_classification_results.pkl', compress=3)
+joblib.dump(results, 'text_classification_results2b.pkl', compress=3)
