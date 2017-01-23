@@ -1229,8 +1229,8 @@ class Core(object):
         for sequence_tag in pos_token_tag_sentence:
             for token_tag in sequence_tag:
                 tokens.append(token_tag[0])
-                tagged.append(self.convert_cmu_tags(token_tag[1]))
-                pos_universal.append(self.convert_cmu_tags(token_tag[1], tagset="universal"))
+                tagged.append(token_tag[1])
+                pos_universal.append(self.convert_penn_to_universal_tags(token_tag[1]))
         return tokens, zip(tokens, tagged), zip(tokens, pos_universal)
 
     def tokenize_and_pos_twitter_list(self, text):
@@ -1245,25 +1245,13 @@ class Core(object):
             pos_universal = []
             for token_tag in sequence_tag:
                 tokens.append(token_tag[0])
-                tagged.append(self.convert_cmu_tags(token_tag[1]))
-                pos_universal.append(self.convert_cmu_tags(token_tag[1], tagset="universal"))
+                tagged.append(token_tag[1])
+                pos_universal.append(self.convert_penn_to_universal_tags(token_tag[1]))
 
             token_list.append(tokens)
             tagged_list.append(zip(tokens, tagged))
             pos_universal_list.append(zip(tokens, pos_universal))
         return token_list, tagged_list, pos_universal_list
-
-    def convert_cmu_tags(self, tag, tagset=None):
-        if tagset == "universal":
-            return self.convert_cmu_to_universal_tags(tag)
-        return self.convert_cmu_to_peen_tags(tag)
-
-    @staticmethod
-    def convert_cmu_to_peen_tags(cmu_tag):
-        for item in definitions.CMU_PENN_TAGS:
-            if item[0] == cmu_tag:
-                return item[1]
-        return cmu_tag
 
     @staticmethod
     def convert_cmu_to_universal_tags(cmu_tag):

@@ -16,8 +16,7 @@ import definitions
 # useful (but not much).
 
 # NOTE this command is directly lifted from runTagger.sh
-RUN_TAGGER_CMD = "java -XX:ParallelGCThreads=2 -Xmx500m -jar " + definitions.POS_TAGGER_PATH + "/ark-tweet-nlp-0.3.2.jar"
-
+RUN_TAGGER_CMD = "java -XX:ParallelGCThreads=2 -Xmx500m -jar " + definitions.POS_TAGGER_PATH + "/ark-tweet-nlp-0.3.2.jar --model " + definitions.POS_TAGGER_PATH + "/models/model.ritter_ptb_alldata_fixed.20130723"
 
 def _split_results(rows):
     """Parse the tab-delimited returned lines, modified from: https://github.com/brendano/ark-tweet-nlp/blob/master/scripts/show.py"""
