@@ -937,11 +937,16 @@ class Core(object):
                     for row in rows:
                         if row[6] == 0 or row[6] is None:
                             ret = self.detect_text_klass(row[2], row[3], row[0], row[4], row[5])
-                            #TODO: parei aqui: precisa atualizar com as 5 classes!
                             if ret[0] != -1:
                                 y.append(ret)
-                                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET text_klass = %s , processed = 1
-                                         WHERE id = %s""" % (ret[0], row[0])
+                                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
+                                         SET processed = 1,
+                                             text_1_klass = %s,
+                                             text_2_klass = %s,
+                                             text_3_klass = %s,
+                                             text_4_klass = %s,
+                                             text_5_klass = %s
+                                         WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], row[0])
                                 self.sys.log.debug(':: ' + sql)
                                 cursor.execute(sql)
                             else:
