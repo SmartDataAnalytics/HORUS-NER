@@ -4360,3 +4360,193 @@
 2017-01-19 20:29:47,981 [MainThread  ] [INFO ]  :: detecting 7 objects...
 2017-01-19 20:29:47,981 [MainThread  ] [INFO ]  :: processing item 1 of 7
 2017-01-19 20:29:48,097 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-23 23:51:46,779 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-23 23:51:46,782 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-23 23:51:46,782 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-23 23:51:46,782 [MainThread  ] [INFO ]  :: loading components...
+2017-01-23 23:52:15,142 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-23 23:52:15,142 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-23 23:52:15,142 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-23 23:52:15,143 [MainThread  ] [INFO ]  :: loading components...
+2017-01-23 23:52:19,213 [MainThread  ] [INFO ]  :: processing text
+2017-01-23 23:52:19,213 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-23 23:52:19,213 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-23 23:52:19,259 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-23 23:52:20,007 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-23 23:52:35,502 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-23 23:52:35,502 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-23 23:52:35,502 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-23 23:52:35,502 [MainThread  ] [INFO ]  :: loading components...
+2017-01-23 23:52:39,236 [MainThread  ] [INFO ]  :: processing text
+2017-01-23 23:52:39,236 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-23 23:52:39,236 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-23 23:52:39,283 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-23 23:52:40,133 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-23 23:52:40,168 [MainThread  ] [INFO ]  :: done!
+2017-01-23 23:52:40,168 [MainThread  ] [INFO ]  :: caching results...
+2017-01-23 23:52:40,168 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-23 23:52:40,168 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-23 23:52:40,284 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-23 23:52:40,284 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-23 23:52:40,293 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-23 23:52:40,293 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-23 23:52:40,302 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-23 23:52:40,303 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-23 23:52:40,311 [MainThread  ] [INFO ]  :: done!
+2017-01-23 23:52:40,312 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-23 23:52:40,312 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-23 23:52:41,277 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-23 23:52:42,363 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-23 23:52:42,472 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-23 23:52:49,486 [MainThread  ] [INFO ]  :: done!
+2017-01-23 23:52:49,486 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-23 23:52:49,486 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-23 23:52:49,486 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-23 23:52:49,487 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-23 23:52:49,487 [MainThread  ] [INFO ]  :: done
+2017-01-23 23:52:49,487 [MainThread  ] [INFO ]  :: done!
+2017-01-23 23:52:49,487 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-23 23:52:49,487 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 00:00:26,755 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:00:26,755 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:00:26,755 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:00:26,756 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:00:43,987 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:00:43,987 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-24 00:00:43,988 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:00:44,041 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:00:44,786 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:00:44,796 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:00:44,796 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:00:44,797 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-24 00:00:44,797 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-24 00:00:44,809 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-24 00:00:44,809 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-24 00:00:44,819 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-24 00:00:44,819 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-24 00:00:44,827 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-24 00:00:44,827 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-24 00:00:44,836 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:00:44,836 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-24 00:00:44,837 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-24 00:07:14,635 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:07:14,636 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:07:14,636 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:07:14,636 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:07:32,376 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:07:32,376 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-24 00:07:32,376 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:07:32,428 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:07:33,182 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:07:33,191 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:07:33,191 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:07:33,192 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-24 00:07:33,192 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-24 00:07:33,203 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-24 00:07:33,203 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-24 00:07:33,212 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-24 00:07:33,212 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-24 00:07:33,224 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-24 00:07:33,224 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-24 00:07:33,234 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:07:33,235 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-24 00:07:33,235 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-24 00:15:11,848 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:15:11,848 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:15:11,848 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:15:11,848 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:15:15,788 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:15:15,788 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-24 00:15:15,788 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:15:15,843 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:15:16,669 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:15:16,673 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:15:16,673 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:15:16,673 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-24 00:15:16,673 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-24 00:15:16,684 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-24 00:15:16,684 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-24 00:15:16,693 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-24 00:15:16,693 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-24 00:15:16,704 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-24 00:15:16,704 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-24 00:15:16,712 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:15:16,712 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-24 00:15:16,712 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-24 00:15:54,446 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:15:54,447 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:15:54,447 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:15:54,447 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:15:58,050 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:15:58,050 [MainThread  ] [INFO ]  :: text: diego esteves lives in rio de janeiro
+2017-01-24 00:15:58,050 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:15:58,095 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:15:58,938 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:15:58,942 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:15:58,943 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:15:58,943 [MainThread  ] [INFO ]  :: caching horus_matrix: 7
+2017-01-24 00:15:58,943 [MainThread  ] [INFO ]  :: item 1 - 7 
+2017-01-24 00:15:58,954 [MainThread  ] [INFO ]  :: item 2 - 7 
+2017-01-24 00:15:58,954 [MainThread  ] [INFO ]  :: item 3 - 7 
+2017-01-24 00:15:58,963 [MainThread  ] [INFO ]  :: item 4 - 7 
+2017-01-24 00:15:58,963 [MainThread  ] [INFO ]  :: item 5 - 7 
+2017-01-24 00:15:58,971 [MainThread  ] [INFO ]  :: item 6 - 7 
+2017-01-24 00:15:58,971 [MainThread  ] [INFO ]  :: item 7 - 7 
+2017-01-24 00:15:58,979 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:15:58,979 [MainThread  ] [INFO ]  :: detecting 7 objects...
+2017-01-24 00:15:58,979 [MainThread  ] [INFO ]  :: processing item 1 of 7
+2017-01-24 00:15:59,099 [MainThread  ] [INFO ]  :: processing item 3 of 7
+2017-01-24 00:15:59,275 [MainThread  ] [INFO ]  :: processing item 5 of 7
+2017-01-24 00:15:59,391 [MainThread  ] [INFO ]  :: processing item 7 of 7
+2017-01-24 00:15:59,522 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: done
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 lives/NOUN/NNS/LOC in/ADP/IN/0 rio/NOUN/NN/LOC de/ADP/IN/0 janeiro/NOUN/NN/LOC
+2017-01-24 00:15:59,523 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 00:17:21,131 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:17:21,132 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:17:21,132 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:17:21,132 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:17:39,490 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:17:39,490 [MainThread  ] [INFO ]  :: text: rafael peres likes rock!
+2017-01-24 00:17:39,491 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:17:39,541 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:17:40,469 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:17:40,481 [MainThread  ] [INFO ]  :: caching sentence: rafael peres likes rock!
+2017-01-24 00:17:40,484 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:17:40,485 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:17:40,485 [MainThread  ] [INFO ]  :: caching horus_matrix: 6
+2017-01-24 00:17:40,485 [MainThread  ] [INFO ]  :: item 1 - 6 
+2017-01-24 00:17:40,488 [MainThread  ] [INFO ]  :: [rafael peres] has not been cached before!
+2017-01-24 00:17:40,494 [MainThread  ] [INFO ]  :: [rafael peres] caching - text
+2017-01-24 00:17:41,490 [MainThread  ] [INFO ]  :: [rafael peres] caching - image
+2017-01-24 00:17:53,054 [MainThread  ] [INFO ]  :: item 2 - 6 
+2017-01-24 00:17:53,056 [MainThread  ] [INFO ]  :: [rafael] has not been cached before!
+2017-01-24 00:17:53,060 [MainThread  ] [INFO ]  :: [rafael] caching - text
+2017-01-24 00:17:53,993 [MainThread  ] [INFO ]  :: [rafael] caching - image
+2017-01-24 00:17:55,923 [MainThread  ] [INFO ]  :: item 3 - 6 
+2017-01-24 00:17:55,925 [MainThread  ] [INFO ]  :: [peres] has not been cached before!
+2017-01-24 00:17:55,929 [MainThread  ] [INFO ]  :: [peres] caching - text
+2017-01-24 00:17:56,811 [MainThread  ] [INFO ]  :: [peres] caching - image
+2017-01-24 00:17:58,880 [MainThread  ] [INFO ]  :: item 4 - 6 
+2017-01-24 00:17:58,881 [MainThread  ] [INFO ]  :: item 5 - 6 
+2017-01-24 00:17:58,891 [MainThread  ] [INFO ]  :: item 6 - 6 
+2017-01-24 00:17:58,892 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:17:58,892 [MainThread  ] [INFO ]  :: detecting 6 objects...
+2017-01-24 00:17:58,893 [MainThread  ] [INFO ]  :: processing item 1 of 6
+2017-01-24 00:24:50,710 [MainThread  ] [INFO ]  :: processing item 2 of 6
+2017-01-24 00:26:05,532 [MainThread  ] [INFO ]  :: processing item 3 of 6
+2017-01-24 00:26:15,092 [MainThread  ] [INFO ]  :: processing item 5 of 6
+2017-01-24 00:26:15,380 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:26:15,382 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 00:26:15,383 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 00:26:15,384 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 00:26:15,384 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 00:26:15,385 [MainThread  ] [INFO ]  :: done
+2017-01-24 00:26:15,386 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:26:15,387 [MainThread  ] [INFO ]  :: sentence:  rafael/NOUN/NN/PER peres/NOUN/NNS/PER likes/VERB/VBZ/0 rock/NOUN/NN/LOC !/././0
+2017-01-24 00:26:15,388 [MainThread  ] [INFO ]  :: exporting metadata...

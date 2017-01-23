@@ -938,36 +938,36 @@ class Core(object):
                     for row in rows:
                         if row[6] == 0 or row[6] is None:
                             ret = self.detect_text_klass(row[2], row[3], row[0], row[4], row[5])
-                            if ret[0] != -1:
-                                y.append(ret)
-                                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
-                                         SET processed = 1,
-                                             text_1_klass = %s,
-                                             text_2_klass = %s,
-                                             text_3_klass = %s,
-                                             text_4_klass = %s,
-                                             text_5_klass = %s
-                                         WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], row[0])
-                                self.sys.log.debug(':: ' + sql)
-                                cursor.execute(sql)
-                            else:
+                            y.append(ret)
+                            sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
+                                     SET processed = 1,
+                                         text_1_klass = %s,
+                                         text_2_klass = %s,
+                                         text_3_klass = %s,
+                                         text_4_klass = %s,
+                                         text_5_klass = %s
+                                     WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], row[0])
+                            self.sys.log.debug(':: ' + sql)
+                            cursor.execute(sql)
+                            if ret[0] == -1 or ret[1] == -1 or ret[2] == -1 or ret[3] == -1 or ret[4] == -1:
                                 tot_err += 1
                         else:
-                            y.append(row[7])
+                            y.append(row[7:12])
 
                     self.conn.commit()
 
-                    gp = [y.count(1), y.count(2), y.count(3)]
+                    yy = numpy.array(y)
+                    gp = [numpy.count_nonzero(yy == 1), numpy.count_nonzero(yy == 2), numpy.count_nonzero(yy == 3)]
                     horus_tx_ner = gp.index(max(gp)) + 1
 
                     self.sys.log.debug(':: final textual checking statistics for term [%s] '
-                                    '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(y.count(1)), str(y.count(2)),
-                                                                                 str(y.count(3))))
+                                    '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(gp[0]),
+                                                                                           str(gp[1]), str(gp[2])))
                     # 7 to 11
                     metadata.append(len(rows))
-                    metadata.append(y.count(1))
-                    metadata.append(y.count(2))
-                    metadata.append(y.count(3))
+                    metadata.append(gp[0])
+                    metadata.append(gp[1])
+                    metadata.append(gp[2])
                     metadata.append(float(tot_err))
 
                     maxs_tx = heapq.nlargest(2, gp)
