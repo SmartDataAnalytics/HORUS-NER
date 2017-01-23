@@ -296,7 +296,7 @@ class Core(object):
                 for chunck_tag in sent[6]:  # list of chunck tags
                     word = sent[2][i_word - 1]
                     if chunck_tag in "I-NP":  # only NP chunck
-                        if prev_tag == chunck_tag:
+                        if prev_tag.replace('I-NP', 'NP').replace('B-NP', 'NP') == chunck_tag.replace('I-NP', 'NP').replace('B-NP', 'NP'):
                             if compound == "":
                                 compound += prev_word + ' ' + word + ' '
                             else:
@@ -305,6 +305,7 @@ class Core(object):
                         prev_tag = ''
                         prev_word = ''
                         compound_ok += 1
+                        compound = compound[:-1]
                         self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1,
                                                   len(compound.split(' '))])
                         compound = ''
