@@ -101,7 +101,13 @@ class Core(object):
         self.voc_loc_8 = joblib.load(self.config.models_cv_loc_8_dict)
         self.voc_loc_9 = joblib.load(self.config.models_cv_loc_9_dict)
         self.voc_loc_10 = joblib.load(self.config.models_cv_loc_10_dict)
-        self.text_checking_model = joblib.load(self.config.models_text)
+
+        self.text_checking_model_1 = joblib.load(self.config.models_1_text)
+        self.text_checking_model_2 = joblib.load(self.config.models_2_text)
+        self.text_checking_model_3 = joblib.load(self.config.models_3_text)
+        self.text_checking_model_4 = joblib.load(self.config.models_4_text)
+        self.text_checking_model_5 = joblib.load(self.config.models_5_text)
+
         self.conn = sqlite3.connect(self.config.database_db)
         self.horus_matrix = []
         if force_download is True:
@@ -701,19 +707,21 @@ class Core(object):
 
         self.sys.log.debug(':: text analysis component launched')
 
-
         try:
+
             from translate import Translator
 
-            x = self.remove_non_ascii('Tschaikowskistraße')
+            t1 = self.remove_non_ascii(t1)
+            t2 = self.remove_non_ascii(t2)
+
+            t1final = t1
+            t2final = t1
 
             #https://pypi.python.org/pypi/translate (alternative 1000 per day)
             #https://www.microsoft.com/en-us/translator/getstarted.aspx
             #https://github.com/openlabs/Microsoft-Translator-Python-API
 
             c = self.conn.cursor()
-            t1final = t1
-            t2final = t2
 
             # need to save to components db
             if t1en is None:
@@ -764,9 +772,15 @@ class Core(object):
                 t2final = t2en
 
             c.close()
+
             docs = ["{} {}".format(t1final, t2final)]
-            predicted = self.text_checking_model.predict(docs)
-            return predicted
+            predictions = [self.text_checking_model_1.predict(docs)[0],
+                           self.text_checking_model_2.predict(docs)[0],
+                           self.text_checking_model_3.predict(docs)[0],
+                           self.text_checking_model_4.predict(docs)[0],
+                           self.text_checking_model_5.predict(docs)[0]]
+
+            return predictions
 
             #blob = TextBlob(t2)
             #t22 = blob.translate(to='en')
@@ -778,7 +792,10 @@ class Core(object):
             return [-1]
 
     def remove_non_ascii(self,t):
-        return "".join(i for i in t if ord(i) < 128)
+        import string
+        printable = set(string.printable)
+        temp = filter(lambda x: x in printable, t)
+        return "".join(i for i in temp if ord(i) < 128)
 
     def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
         auxi = 0
@@ -920,6 +937,7 @@ class Core(object):
                     for row in rows:
                         if row[6] == 0 or row[6] is None:
                             ret = self.detect_text_klass(row[2], row[3], row[0], row[4], row[5])
+                            #TODO: parei aqui: precisa atualizar com as 5 classes!
                             if ret[0] != -1:
                                 y.append(ret)
                                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET text_klass = %s , processed = 1

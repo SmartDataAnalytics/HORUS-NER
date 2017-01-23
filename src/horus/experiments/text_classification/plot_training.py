@@ -4,20 +4,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.externals import joblib
 
-r = joblib.load('text_classification_results.pkl')
+c = joblib.load('text_classification_kNN.pkl')
+print c.predict(['Pitchero, a U.K. startup that makes it easy for amateur and grassroots online, has scored 3.1 millions'])[0]
+exit(0)
+name = 'text_classification_results_k_all'
+
+r = joblib.load(str(name) + '.pkl')
 
 results = []
-i = 0
+aux = 0
 code = {'SGDClassifier': 'SGD', 'RandomForestClassifier': 'Random Forest',
         'KNeighboarsClassifier': 'K-Neighboars', 'PassiveAggressiveClassifier': 'Passive Aggressive',
         'RidgeClassifier': 'Ridge'}
 #trans = string.maketrans(*["".join(x) for x in zip(*code.items())])
 
 for temp in r:
-    if i not in (13, 9, 5):
+    if aux not in (13, 9, 5):
         clas = temp[0].replace('Classifier', '')
         results.append([clas, temp[1], temp[2], temp[3]])
-    i+=1
+    aux+=1
 
 indices = np.arange(len(results))
 results = [[x[i] for x in results] for i in range(4)]
@@ -26,8 +31,8 @@ training_time = np.array(training_time) / np.max(training_time)
 test_time = np.array(test_time) / np.max(test_time)
 
 plt.figure(figsize=(12, 8), facecolor="white")
-plt.title("Text Classification: Test Performance (DBPedia - 30K abstracts)", fontweight="bold")
-plt.barh(indices, score, .4, label="F-measure", color="gray", linestyle='dashed')
+plt.title("Text Classification - Performance for DBPedia dataset", fontweight="bold")
+plt.barh(indices, score, .4, label="F-measure", color="gray", edgecolor="gray") #linestyle='dashed'
 #plt.barh(indices + .3, training_time, .2, label="Training Time")
 plt.barh(indices + .6, test_time, .4, label="Test Time", color="red", edgecolor="red")
 plt.yticks(())
@@ -44,5 +49,5 @@ for i, c in zip(indices, score):
 
 
 #plt.show()
-plt.savefig("textclass.png")
+plt.savefig(str(name) + '.png')
 exit(0)

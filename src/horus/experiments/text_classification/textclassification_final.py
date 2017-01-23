@@ -25,6 +25,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
 from time import time
 
+name_export = 'text_classification_results_k_all'
 
 target_names = ['LOC', 'ORG', 'PER']
 MODELS_TEXT_DIR = '/Users/esteves/Github/horus-models/src/horus/resource/models/horus/text/'
@@ -39,11 +40,12 @@ y_train = train['klass']
 
 print("Extracting features from the training data using a sparse vectorizer")
 t0 = time()
-#vectorizer = TfidfVectorizer( =True, max_df=0.5, stop_words='english',
-#                             strip_accents='unicode', encoding='utf-8',decode_error='ignore')
+vectorizer = TfidfVectorizer(sublinear_tf=True, lowercase=True, max_df=0.5, stop_words='english',
+                             strip_accents='unicode', encoding='utf-8',decode_error='ignore')
 
-vectorizer = HashingVectorizer(stop_words='english', non_negative=True,
-                               strip_accents='unicode', encoding='utf-8', decode_error='ignore')
+#holds in-memory, thus better for big datasets
+#vectorizer = HashingVectorizer(stop_words='english', non_negative=True,
+#                               strip_accents='unicode', encoding='utf-8', decode_error='ignore')
 
 
 X_train = vectorizer.fit_transform(train['text'])
@@ -79,7 +81,7 @@ print("done in %fs" % (duration))
 
 print("Extracting %d best features by a chi-squared test" % 100)
 t0 = time()
-ch2 = SelectKBest(chi2, k=100)
+ch2 = SelectKBest(chi2, k='all')
 X_train = ch2.fit_transform(X_train, y_train)
 X_test = ch2.transform(X_test)
 print("done in %fs" % (time() - t0))
@@ -88,17 +90,25 @@ def trim(s):
     """Trim string to fit on terminal (assuming 80-column display)"""
     return s if len(s) <= 80 else s[:77] + "..."
 
-def benchmark(clf):
+def benchmark(clf, name):
     print('_' * 80)
     print("Training: ")
     print(clf)
     t0 = time()
-    clf.fit(X_train, y_train)
+
+    mod = Pipeline([('vectorizer', vectorizer),
+                    ('chi', ch2),
+                    ('model', clf)])
+    clf = mod.fit(train['text'], train['klass'])
+
+    #clf.fit(X_train, y_train)
+    joblib.dump(clf, 'text_classification_' + name + '.pkl', compress=3)
     train_time = time() - t0
     print("train time: %0.3fs" % train_time)
 
     t0 = time()
-    pred = clf.predict(X_test)
+    #pred = clf.predict(X_test)
+    pred = clf.predict(dffinal.abstract.tolist())
     test_time = time() - t0
     print("test time:  %0.3fs" % test_time)
 
@@ -128,35 +138,33 @@ for clf, name in (
         (RandomForestClassifier(n_estimators=100), "Random forest")):
     print('=' * 80)
     print(name)
-    results.append(benchmark(clf))
+    results.append(benchmark(clf, name))
 
 for penalty in ["l2", "l1"]:
     print('=' * 80)
     print("%s penalty" % penalty.upper())
     # Train Liblinear model
-    results.append(benchmark(LinearSVC(loss='l2', penalty=penalty,
-                                            dual=False, tol=1e-3)))
+    results.append(benchmark(LinearSVC(loss='l2', penalty=penalty, dual=False, tol=1e-3), 'LinearSVC'))
 
     # Train SGD model
-    results.append(benchmark(SGDClassifier(alpha=.0001, n_iter=50,
-                                           penalty=penalty)))
+    results.append(benchmark(SGDClassifier(alpha=.0001, n_iter=50, penalty=penalty), 'SGDClassifier_L1L2'))
 
 # Train SGD with Elastic Net penalty
 print('=' * 80)
 print("Elastic-Net penalty")
 results.append(benchmark(SGDClassifier(alpha=.0001, n_iter=50,
-                                       penalty="elasticnet")))
+                                       penalty="elasticnet"), 'SGDClassifier_Elasticnet'))
 
 # Train NearestCentroid without threshold
 print('=' * 80)
 print("NearestCentroid (aka Rocchio classifier)")
-results.append(benchmark(NearestCentroid()))
+results.append(benchmark(NearestCentroid(), 'NearestCentroid'))
 
 # Train sparse Naive Bayes classifiers
 print('=' * 80)
 print("Naive Bayes")
-results.append(benchmark(MultinomialNB(alpha=.01)))
-results.append(benchmark(BernoulliNB(alpha=.01)))
+results.append(benchmark(MultinomialNB(alpha=.01), 'MultinomialNB'))
+results.append(benchmark(BernoulliNB(alpha=.01), 'BernoulliNB'))
 
 print('=' * 80)
 print("LinearSVC with L1-based feature selection")
@@ -165,6 +173,9 @@ print("LinearSVC with L1-based feature selection")
 results.append(benchmark(Pipeline([
   ('feature_selection', LinearSVC(penalty="l1", dual=False, tol=1e-3)),
   ('classification', LinearSVC())
-])))
+]), 'LinearSVC_pipeline'))
 
-joblib.dump(results, 'text_classification_results2b.pkl', compress=3)
+print 'Exporting models'
+
+print 'Exporting results'
+joblib.dump(results, str(name_export) + '.pkl', compress=3)

@@ -47,7 +47,12 @@ class HorusConfig:
                     self.models_cv_org = rootdir + parser.get('models-cv', 'horus_org')
                     self.models_cv_org_dict = rootdir + parser.get('models-cv', 'horus_org_voc')
                     self.models_cv_per = rootdir + parser.get('models-cv', 'horus_per')
-                    self.models_text = rootdir + parser.get('models-text', 'horus_textchecking')
+
+                    self.models_1_text = rootdir + parser.get('models-text', 'horus_textchecking_1')
+                    self.models_2_text = rootdir + parser.get('models-text', 'horus_textchecking_2')
+                    self.models_3_text = rootdir + parser.get('models-text', 'horus_textchecking_3')
+                    self.models_4_text = rootdir + parser.get('models-text', 'horus_textchecking_4')
+                    self.models_5_text = rootdir + parser.get('models-text', 'horus_textchecking_5')
 
                     self.model_stanford_filename = rootdir + parser.get('model-stanford', 'model_filename')
                     self.model_stanford_path_jar = rootdir + parser.get('model-stanford', 'path_to_jar')
