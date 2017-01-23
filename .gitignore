@@ -9,3 +9,13 @@ horus/*.pyc
 .DS_Store
 horus/.DS_Store
 /dist/
+/src/horus/components/horus.log
+src/__init__.pyc
+src/horus/__init__.pyc
+src/horus/components/__init__.pyc
+src/horus/components/bingAPI1.pyc
+src/horus/components/config.pyc
+src/horus/components/core.pyc
+src/horus/components/systemlog.pyc
+src/horus/definitions.pyc
+src/horus/resource/__init__.pyc
