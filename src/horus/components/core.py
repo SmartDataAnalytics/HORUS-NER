@@ -467,7 +467,7 @@ class Core(object):
             for item in self.horus_matrix:
                 self.sys.log.info(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
                 term = item[3]
-                if item[4] == 'NOUN' or item[7] == 1:
+                if (item[4] == 'NOUN' or item[4] == 'PROPN') or item[7] == 1:
                     self.sys.log.debug(':: caching [%s] ...' % term)
                     c = self.conn.cursor()
 
