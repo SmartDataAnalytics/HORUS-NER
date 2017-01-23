@@ -4550,3 +4550,115 @@
 2017-01-24 00:26:15,386 [MainThread  ] [INFO ]  :: done!
 2017-01-24 00:26:15,387 [MainThread  ] [INFO ]  :: sentence:  rafael/NOUN/NN/PER peres/NOUN/NNS/PER likes/VERB/VBZ/0 rock/NOUN/NN/LOC !/././0
 2017-01-24 00:26:15,388 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 00:30:59,594 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:30:59,594 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:30:59,594 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:30:59,594 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:31:03,096 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:31:03,096 [MainThread  ] [INFO ]  :: text: diego esteves é um estudante de doutorado na universidade de leipzig
+2017-01-24 00:31:03,096 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:31:03,149 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:31:03,913 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:31:03,919 [MainThread  ] [INFO ]  :: caching sentence: diego esteves é um estudante de doutorado na universidade de leipzig
+2017-01-24 00:31:03,920 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:31:03,920 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:31:03,920 [MainThread  ] [INFO ]  :: caching horus_matrix: 11
+2017-01-24 00:31:03,920 [MainThread  ] [INFO ]  :: item 1 - 11 
+2017-01-24 00:31:03,931 [MainThread  ] [INFO ]  :: item 2 - 11 
+2017-01-24 00:31:03,931 [MainThread  ] [INFO ]  :: item 3 - 11 
+2017-01-24 00:31:03,933 [MainThread  ] [INFO ]  :: [é] has not been cached before!
+2017-01-24 00:31:03,937 [MainThread  ] [INFO ]  :: [é] caching - text
+2017-01-24 00:31:06,167 [MainThread  ] [INFO ]  :: [é] caching - image
+2017-01-24 00:31:08,421 [MainThread  ] [INFO ]  :: item 4 - 11 
+2017-01-24 00:31:08,421 [MainThread  ] [INFO ]  :: item 5 - 11 
+2017-01-24 00:31:08,423 [MainThread  ] [INFO ]  :: [estudante] has not been cached before!
+2017-01-24 00:31:08,426 [MainThread  ] [INFO ]  :: [estudante] caching - text
+2017-01-24 00:31:09,352 [MainThread  ] [INFO ]  :: [estudante] caching - image
+2017-01-24 00:31:14,192 [MainThread  ] [INFO ]  :: item 6 - 11 
+2017-01-24 00:31:14,192 [MainThread  ] [INFO ]  :: item 7 - 11 
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: item 8 - 11 
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: item 9 - 11 
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: item 10 - 11 
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: item 11 - 11 
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: detecting 11 objects...
+2017-01-24 00:31:14,193 [MainThread  ] [INFO ]  :: processing item 1 of 11
+2017-01-24 00:31:14,322 [MainThread  ] [INFO ]  :: processing item 3 of 11
+2017-01-24 00:31:26,958 [MainThread  ] [INFO ]  :: processing item 5 of 11
+2017-01-24 00:31:41,530 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: done
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: sentence:  diego/NOUN/NN/LOC esteves/VERB/VBZ/0 é/NOUN/NNP/ORG um/ADJ/JJ/0 estudante/NOUN/NN/PER de/ADP/IN/0 doutorado/X/FW/0 na/X/FW/0 universidade/X/FW/0 de/X/FW/0 leipzig/X/FW/0
+2017-01-24 00:31:41,531 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 00:34:47,663 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:34:47,663 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:34:47,663 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:34:47,663 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:34:51,290 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:34:51,290 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 00:34:51,290 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:34:51,337 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:34:52,087 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:34:52,115 [MainThread  ] [INFO ]  :: caching sentence: james walker was born in california and loves surfing
+2017-01-24 00:34:52,117 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:34:52,117 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:34:52,117 [MainThread  ] [INFO ]  :: caching horus_matrix: 10
+2017-01-24 00:34:52,118 [MainThread  ] [INFO ]  :: item 1 - 10 
+2017-01-24 00:34:52,127 [MainThread  ] [INFO ]  :: [james walker] has not been cached before!
+2017-01-24 00:34:52,170 [MainThread  ] [INFO ]  :: [james walker] caching - text
+2017-01-24 00:34:53,440 [MainThread  ] [INFO ]  :: [james walker] caching - image
+2017-01-24 00:35:02,262 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:35:02,262 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 00:35:02,262 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 00:35:02,263 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 00:35:07,270 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 00:35:07,270 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 00:35:07,271 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 00:35:07,317 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 00:35:08,060 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 00:35:08,064 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:35:08,064 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 00:35:08,065 [MainThread  ] [INFO ]  :: caching horus_matrix: 10
+2017-01-24 00:35:08,065 [MainThread  ] [INFO ]  :: item 1 - 10 
+2017-01-24 00:35:08,080 [MainThread  ] [INFO ]  :: [james walker] caching - image
+2017-01-24 00:35:11,167 [MainThread  ] [INFO ]  :: item 2 - 10 
+2017-01-24 00:35:11,169 [MainThread  ] [INFO ]  :: [james] has not been cached before!
+2017-01-24 00:35:11,173 [MainThread  ] [INFO ]  :: [james] caching - text
+2017-01-24 00:35:12,075 [MainThread  ] [INFO ]  :: [james] caching - image
+2017-01-24 00:35:15,090 [MainThread  ] [INFO ]  :: item 3 - 10 
+2017-01-24 00:35:15,092 [MainThread  ] [INFO ]  :: [walker] has not been cached before!
+2017-01-24 00:35:15,096 [MainThread  ] [INFO ]  :: [walker] caching - text
+2017-01-24 00:35:16,105 [MainThread  ] [INFO ]  :: [walker] caching - image
+2017-01-24 00:35:29,045 [MainThread  ] [INFO ]  :: item 4 - 10 
+2017-01-24 00:35:29,046 [MainThread  ] [INFO ]  :: item 5 - 10 
+2017-01-24 00:35:29,046 [MainThread  ] [INFO ]  :: item 6 - 10 
+2017-01-24 00:35:29,046 [MainThread  ] [INFO ]  :: item 7 - 10 
+2017-01-24 00:35:29,047 [MainThread  ] [INFO ]  :: [california] has not been cached before!
+2017-01-24 00:35:29,052 [MainThread  ] [INFO ]  :: [california] caching - text
+2017-01-24 00:35:29,985 [MainThread  ] [INFO ]  :: [california] caching - image
+2017-01-24 00:35:31,545 [MainThread  ] [INFO ]  :: item 8 - 10 
+2017-01-24 00:35:31,546 [MainThread  ] [INFO ]  :: item 9 - 10 
+2017-01-24 00:35:31,547 [MainThread  ] [INFO ]  :: [loves] has not been cached before!
+2017-01-24 00:35:31,551 [MainThread  ] [INFO ]  :: [loves] caching - text
+2017-01-24 00:35:32,504 [MainThread  ] [INFO ]  :: [loves] caching - image
+2017-01-24 00:35:34,834 [MainThread  ] [INFO ]  :: item 10 - 10 
+2017-01-24 00:35:34,834 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:35:34,834 [MainThread  ] [INFO ]  :: detecting 10 objects...
+2017-01-24 00:35:34,834 [MainThread  ] [INFO ]  :: processing item 1 of 10
+2017-01-24 00:35:52,070 [MainThread  ] [INFO ]  :: processing item 2 of 10
+2017-01-24 00:35:56,155 [MainThread  ] [INFO ]  :: processing item 3 of 10
+2017-01-24 00:36:08,649 [MainThread  ] [INFO ]  :: processing item 7 of 10
+2017-01-24 00:36:15,732 [MainThread  ] [INFO ]  :: processing item 9 of 10
+2017-01-24 00:36:25,954 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:36:25,954 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 00:36:25,954 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: done
+2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: done!
+2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: sentence:  james/NOUN/NNS/PER walker/NOUN/NN/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/NOUN/NN/LOC and/CONJ/CC/0 loves/NOUN/NNS/ORG surfing/VERB/VBG/0
+2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: exporting metadata...
