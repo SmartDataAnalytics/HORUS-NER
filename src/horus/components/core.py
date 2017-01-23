@@ -929,7 +929,8 @@ class Core(object):
                 with self.conn:
                     cursor = self.conn.cursor()
                     cursor.execute("""SELECT id, result_seq, result_title, result_description, result_title_en,
-                                                 result_description_en, processed, text_klass
+                                                 result_description_en, processed, text_1_klass, text_2_klass,
+                                                 text_3_klass, text_4_klass, text_5_klass
                                           FROM HORUS_SEARCH_RESULT_TEXT
                                           WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()

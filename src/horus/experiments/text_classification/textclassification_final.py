@@ -93,22 +93,25 @@ def trim(s):
 def benchmark(clf, name):
     print('_' * 80)
     print("Training: ")
+    print name
     print(clf)
     t0 = time()
 
-    mod = Pipeline([('vectorizer', vectorizer),
-                    ('chi', ch2),
-                    ('model', clf)])
-    clf = mod.fit(train['text'], train['klass'])
+    #mod = Pipeline([('vectorizer', vectorizer),
+    #                ('chi', ch2),
+    #                (str(name), clf)])
+    #clf = mod.fit(train['text'], train['klass'])
+    #pred = clf.predict(dffinal.abstract.tolist())
+    # joblib.dump(clf, 'text_classification_' + name + '.pkl', compress=3)
 
-    #clf.fit(X_train, y_train)
-    joblib.dump(clf, 'text_classification_' + name + '.pkl', compress=3)
+    clf.fit(X_train, y_train)
+
     train_time = time() - t0
     print("train time: %0.3fs" % train_time)
 
     t0 = time()
-    #pred = clf.predict(X_test)
-    pred = clf.predict(dffinal.abstract.tolist())
+    pred = clf.predict(X_test)
+
     test_time = time() - t0
     print("test time:  %0.3fs" % test_time)
 

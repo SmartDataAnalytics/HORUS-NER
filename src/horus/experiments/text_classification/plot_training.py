@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.externals import joblib
 
-c = joblib.load('text_classification_kNN.pkl')
-print c.predict(['Pitchero, a U.K. startup that makes it easy for amateur and grassroots online, has scored 3.1 millions'])[0]
-exit(0)
+#c = joblib.load('text_classification_kNN.pkl')
+#print c.predict(['Pitchero, a U.K. startup that makes it easy for amateur and grassroots online, has scored 3.1 millions'])[0]
+#exit(0)
 name = 'text_classification_results_k_all'
 
 r = joblib.load(str(name) + '.pkl')
