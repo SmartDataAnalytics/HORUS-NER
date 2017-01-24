@@ -64,7 +64,7 @@ class Core(object):
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""
-        self.sys = SystemLog("horus.log", logging.INFO, logging.INFO)
+        self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
 
         self.sys.log.info('------------------------------------------------------------------')
@@ -884,7 +884,7 @@ class Core(object):
         toti = len(self.horus_matrix)
         for item in self.horus_matrix:
             auxi += 1
-            if item[4] == 'NOUN' or item[7] == 1:
+            if (item[4] == 'NOUN' or item[4] == 'PROPN') or item[7] == 1:
 
                 self.sys.log.info(':: processing item %d of %d' % (auxi, toti))
 

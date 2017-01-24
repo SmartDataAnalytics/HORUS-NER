@@ -4720,3 +4720,67 @@
 2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: done!
 2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: sentence:  james/PROPN/NNP/PER walker/PROPN/NNP/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/PROPN/NNP/0 and/CONJ/CC/0 loves/VERB/VBZ/0 surfing/VERB/VBG/0
 2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 13:42:26,690 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 13:42:26,690 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 13:42:26,690 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 13:42:26,690 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 13:42:30,731 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 13:42:30,731 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 13:42:30,731 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 13:42:30,797 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 13:42:33,141 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 13:42:33,141 [MainThread  ] [DEBUG]  :: chunking pattern ...
+2017-01-24 13:42:33,146 [MainThread  ] [DEBUG]  :: sentence is already cached
+2017-01-24 13:42:33,147 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:42:33,147 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 13:42:33,147 [MainThread  ] [INFO ]  :: caching horus_matrix: 10
+2017-01-24 13:42:33,147 [MainThread  ] [INFO ]  :: item 1 - 10 
+2017-01-24 13:42:33,147 [MainThread  ] [DEBUG]  :: caching [james walker] ...
+2017-01-24 13:42:33,155 [MainThread  ] [DEBUG]  :: term james walker is already cached (text)!
+2017-01-24 13:42:33,158 [MainThread  ] [DEBUG]  :: term james walker is already cached (img)!
+2017-01-24 13:42:33,159 [MainThread  ] [INFO ]  :: item 2 - 10 
+2017-01-24 13:42:33,159 [MainThread  ] [DEBUG]  :: caching [james] ...
+2017-01-24 13:42:33,164 [MainThread  ] [DEBUG]  :: term james is already cached (text)!
+2017-01-24 13:42:33,167 [MainThread  ] [DEBUG]  :: term james is already cached (img)!
+2017-01-24 13:42:33,167 [MainThread  ] [INFO ]  :: item 3 - 10 
+2017-01-24 13:42:33,167 [MainThread  ] [DEBUG]  :: caching [walker] ...
+2017-01-24 13:42:33,172 [MainThread  ] [DEBUG]  :: term walker is already cached (text)!
+2017-01-24 13:42:33,176 [MainThread  ] [DEBUG]  :: term walker is already cached (img)!
+2017-01-24 13:42:33,176 [MainThread  ] [INFO ]  :: item 4 - 10 
+2017-01-24 13:42:33,176 [MainThread  ] [INFO ]  :: item 5 - 10 
+2017-01-24 13:42:33,176 [MainThread  ] [INFO ]  :: item 6 - 10 
+2017-01-24 13:42:33,176 [MainThread  ] [INFO ]  :: item 7 - 10 
+2017-01-24 13:42:33,176 [MainThread  ] [DEBUG]  :: caching [california] ...
+2017-01-24 13:42:33,182 [MainThread  ] [DEBUG]  :: term california is already cached (text)!
+2017-01-24 13:42:33,185 [MainThread  ] [DEBUG]  :: term california is already cached (img)!
+2017-01-24 13:42:33,185 [MainThread  ] [INFO ]  :: item 8 - 10 
+2017-01-24 13:42:33,185 [MainThread  ] [INFO ]  :: item 9 - 10 
+2017-01-24 13:42:33,185 [MainThread  ] [INFO ]  :: item 10 - 10 
+2017-01-24 13:42:33,185 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:42:33,185 [MainThread  ] [INFO ]  :: detecting 10 objects...
+2017-01-24 13:42:33,186 [MainThread  ] [INFO ]  :: processing item 1 of 10
+2017-01-24 13:42:33,236 [MainThread  ] [DEBUG]  -------------------------------------------------------------
+2017-01-24 13:42:33,236 [MainThread  ] [DEBUG]  :: [checking related visual information for [james walker]]
+2017-01-24 13:42:33,236 [MainThread  ] [DEBUG]  
+2017-01-24 13:42:33,237 [MainThread  ] [DEBUG]  -> CV_LOC  indicator: 0.000000 %
+2017-01-24 13:42:33,237 [MainThread  ] [DEBUG]  -> CV_ORG  indicator: 0.000000 %
+2017-01-24 13:42:33,237 [MainThread  ] [DEBUG]  -> CV_PER  indicator: 1.000000 %
+2017-01-24 13:42:33,237 [MainThread  ] [DEBUG]  -> CV_DIST indicator: 10
+2017-01-24 13:42:33,237 [MainThread  ] [DEBUG]  -> CV_PLC  indicator: -60
+2017-01-24 13:42:33,237 [MainThread  ] [DEBUG]  :: [checking related textual information ...]
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  :: final textual checking statistics for term [james walker] (1-LOC = 1, 2-ORG = 2 and 3-PER = 47)
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  -> TX_LOC  indicator: 0.000000 %
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  -> TX_ORG  indicator: 0.000000 %
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  -> TX_PER  indicator: 0.000000 %
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  -> TX_DIST indicator: 45
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  :: number of trans. errors -> 0 over 10
+2017-01-24 13:42:33,296 [MainThread  ] [DEBUG]  :: most likely class -> PER
+2017-01-24 13:42:33,296 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: done
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: sentence:  james/PROPN/NNP/PER walker/PROPN/NNP/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/PROPN/NNP/0 and/CONJ/CC/0 loves/VERB/VBZ/0 surfing/VERB/VBG/0
+2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: exporting metadata...
