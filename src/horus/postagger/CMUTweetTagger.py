@@ -8,7 +8,7 @@ results will contain a list of lists (one per tweet) of triples, each triple rep
 """
 import subprocess
 import shlex
-import definitions
+from horus import definitions
 
 # The only relavent source I've found is here:
 # http://m1ked.com/post/12304626776/pos-tagger-for-twitter-successfully-implemented-in

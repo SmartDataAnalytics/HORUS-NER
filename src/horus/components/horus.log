@@ -4662,3 +4662,11 @@
 2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: done!
 2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: sentence:  james/NOUN/NNS/PER walker/NOUN/NN/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/NOUN/NN/LOC and/CONJ/CC/0 loves/NOUN/NNS/ORG surfing/VERB/VBG/0
 2017-01-24 00:36:25,955 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 12:00:35,903 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 12:00:35,903 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 12:00:35,903 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 12:00:35,903 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 12:00:39,554 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 12:00:39,554 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 12:00:39,554 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 12:00:39,603 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
