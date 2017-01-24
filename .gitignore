@@ -19,3 +19,5 @@ src/horus/components/core.pyc
 src/horus/components/systemlog.pyc
 src/horus/definitions.pyc
 src/horus/resource/__init__.pyc
+src/horus/postagger/CMUTweetTagger.pyc
+src/horus/postagger/__init__.pyc
