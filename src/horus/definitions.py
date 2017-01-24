@@ -7,12 +7,12 @@ if config.root_dir == '':
 else:
     ROOT_DIR = config.root_dir
 
-EXPERIMENTS_PATH = os.path.join(ROOT_DIR, 'experiments')
-HORUS_PATH = os.path.join(ROOT_DIR, 'components')
-RESOURCES_PATH = os.path.join(ROOT_DIR, 'resource')
+EXPERIMENTS_PATH = os.path.join(ROOT_DIR, 'src/horus/experiments')
+HORUS_PATH = os.path.join(ROOT_DIR, 'src/horus/components')
+RESOURCES_PATH = os.path.join(ROOT_DIR, 'src/horus/resource')
 OUTPUT_PATH = os.path.join(ROOT_DIR, 'output')
 DATASET_PATH = os.path.join(ROOT_DIR, 'data/dataset')
-POS_TAGGER_PATH = os.path.join(ROOT_DIR, 'postagger')
+POS_TAGGER_PATH = os.path.join(ROOT_DIR, 'src/horus/postagger')
 
 
 NER_RITTER_PER = ['B-person', 'I-person']

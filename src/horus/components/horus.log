@@ -4670,3 +4670,53 @@
 2017-01-24 12:00:39,554 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
 2017-01-24 12:00:39,554 [MainThread  ] [INFO ]  :: tokenizing sentences ...
 2017-01-24 12:00:39,603 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 12:15:50,522 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 12:15:50,523 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 12:15:50,523 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 12:15:50,523 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 12:15:54,100 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 12:15:54,100 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 12:15:54,100 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 12:15:54,150 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 12:17:34,347 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 12:17:34,348 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 12:17:34,348 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 12:17:34,349 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 12:17:54,781 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 12:18:00,104 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 12:18:00,771 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 12:18:27,200 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 13:28:06,821 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 13:28:06,824 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 13:28:06,824 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 13:28:06,824 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 13:28:10,334 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 13:28:10,335 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 13:28:10,335 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 13:28:10,385 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 13:28:12,596 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 13:28:12,609 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:28:12,609 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 13:28:12,609 [MainThread  ] [INFO ]  :: caching horus_matrix: 10
+2017-01-24 13:28:12,609 [MainThread  ] [INFO ]  :: item 1 - 10 
+2017-01-24 13:28:12,623 [MainThread  ] [INFO ]  :: item 2 - 10 
+2017-01-24 13:28:12,633 [MainThread  ] [INFO ]  :: item 3 - 10 
+2017-01-24 13:28:12,645 [MainThread  ] [INFO ]  :: item 4 - 10 
+2017-01-24 13:28:12,645 [MainThread  ] [INFO ]  :: item 5 - 10 
+2017-01-24 13:28:12,645 [MainThread  ] [INFO ]  :: item 6 - 10 
+2017-01-24 13:28:12,645 [MainThread  ] [INFO ]  :: item 7 - 10 
+2017-01-24 13:28:12,653 [MainThread  ] [INFO ]  :: item 8 - 10 
+2017-01-24 13:28:12,653 [MainThread  ] [INFO ]  :: item 9 - 10 
+2017-01-24 13:28:12,653 [MainThread  ] [INFO ]  :: item 10 - 10 
+2017-01-24 13:28:12,653 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:28:12,653 [MainThread  ] [INFO ]  :: detecting 10 objects...
+2017-01-24 13:28:12,654 [MainThread  ] [INFO ]  :: processing item 1 of 10
+2017-01-24 13:28:12,777 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:28:12,777 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: done
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: done!
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: sentence:  james/PROPN/NNP/PER walker/PROPN/NNP/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/PROPN/NNP/0 and/CONJ/CC/0 loves/VERB/VBZ/0 surfing/VERB/VBG/0
+2017-01-24 13:28:12,778 [MainThread  ] [INFO ]  :: exporting metadata...
