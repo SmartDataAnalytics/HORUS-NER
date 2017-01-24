@@ -59,8 +59,8 @@ class Core(object):
     """
 
     # static methods
-    version = "0.1.3"
-    version_label = "HORUS 0.1.3"
+    version = "0.1.4"
+    version_label = "HORUS 0.1.4"
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""
@@ -1159,7 +1159,7 @@ class Core(object):
             w = []
         return sentences
 
-    def process_ritter_ds(self,dspath):
+    def process_ritter_ds(self, dspath):
         '''
         return a set of sentences
         :param dspath: path to Ritter dataset

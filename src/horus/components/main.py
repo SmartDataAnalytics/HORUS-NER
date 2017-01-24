@@ -38,7 +38,7 @@ def main():
                   help="The file to be annotated")
 
     op.add_option("--ds_format", dest="ds_format", default=0,
-                  help="The format to be annotated [0 = free text (default), 1 = Ritter]")
+                  help="The format to be annotated [0 = input text (default), 1 = Ritter, 2 = CoNNL]")
 
     op.add_option("--output_file", dest="output_file", default="horus_out",
                   help="The output file")

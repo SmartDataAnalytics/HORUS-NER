@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 
-from horus.components import Core
+from horus.components.core import Core
+from horus import definitions
 
 
 def confusion_matrix_analysis(horus_matrix):
@@ -80,7 +81,7 @@ def example_analysis(horus_matrix):
             #        item[13] = 'ORG'
             #    else:
             #        item[13] = 'PER'
-            if item[4] in ner_ritter_per:
+            if item[4] in definitions.NER_RITTER_PER:
                 tot_per += 1
                 if item[13] == 'PER':
                     hit_per += 1
@@ -88,7 +89,7 @@ def example_analysis(horus_matrix):
                     hit_per_tx += 1
                 if item[21] == 'PER':
                     hit_per_final += 1
-            elif item[4] in ner_ritter_loc:
+            elif item[4] in definitions.NER_RITTER_LOC:
                 tot_loc += 1
                 if item[13] == 'LOC':
                     hit_loc += 1
@@ -96,7 +97,7 @@ def example_analysis(horus_matrix):
                     hit_loc_tx += 1
                 if item[21] == 'LOC':
                     hit_loc_final += 1
-            elif item[4] in ner_ritter_org:
+            elif item[4] in definitions.NER_RITTER_ORG:
                 tot_org += 1
                 if item[13] == 'ORG':
                     hit_org += 1
@@ -136,27 +137,22 @@ def example_analysis(horus_matrix):
     logging.info(':: number of tokens: ' + str(len(horus_matrix)))
 
 
-horus = Core(5)
-ner_ritter_per = ['B-person', 'I-person']
-ner_ritter_org = ['B-company', 'I-company']
-ner_ritter_loc = ['B-geo-loc', 'I-geo-loc']
-ner_ritter = []
-ner_ritter.extend(ner_ritter_per)
-ner_ritter.extend(ner_ritter_org)
-ner_ritter.extend(ner_ritter_loc)
+horus = Core(False, 5)
 
-with open(horus.horus_final_data_json) as json_data:
-    horus_matrix = json.load(json_data)
+horus_matrix = csv.reader(open('/Users/esteves/Github/horus-models/output/out.csv'), delimiter=",")
+horus_matrix.next()
 
-list1 = [0 ,2]
-list2=[["abc", 1, "def"], ["ghi", 2, "wxy"]]
-newList = [[each_list[i] for i in list1] for each_list in list2]
-# word_term, Y, klass_cv, klass_txt, final_klass
-horus_light = [[each_list[i] for i in [3,4,13,20,21]] for each_list in horus_matrix]
 
-hmetalight = open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/components/cache/horus_out_light.csv', 'wb')
-wr = csv.writer(hmetalight, quoting=csv.QUOTE_ALL)
-wr.writerows(horus_light)
+    #horus_matrix = json.load(fi)
+
+#list1 = [0 ,2]
+#list2=[["abc", 1, "def"], ["ghi", 2, "wxy"]]
+#newList = [[each_list[i] for i in list1] for each_list in list2]
+## word_term, Y, klass_cv, klass_txt, final_klass
+#horus_light = [[each_list[i] for i in [3,4,13,20,21]] for each_list in horus_matrix]
+#hmetalight = open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/components/cache/horus_out_light.csv', 'wb')
+#wr = csv.writer(hmetalight, quoting=csv.QUOTE_ALL)
+#wr.writerows(horus_light)
 
 #with open('/Users/dnes/Dropbox/Doutorado_Alemanha/#Papers/#DeFacto Files/components/cache/horus_out_light.json', 'wb') as outfile1:
 #    json.dump(horus_light, outfile1)

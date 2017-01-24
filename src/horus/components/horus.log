@@ -4784,3 +4784,146 @@
 2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: done!
 2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: sentence:  james/PROPN/NNP/PER walker/PROPN/NNP/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/PROPN/NNP/0 and/CONJ/CC/0 loves/VERB/VBZ/0 surfing/VERB/VBG/0
 2017-01-24 13:42:33,297 [MainThread  ] [INFO ]  :: exporting metadata...
+2017-01-24 13:57:01,744 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 13:57:01,744 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 13:57:01,745 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 13:57:01,745 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:04:56,203 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:04:56,203 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:04:56,203 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:04:56,203 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:05:34,561 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:05:34,561 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:05:34,561 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:05:34,561 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:06:44,875 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:06:44,875 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:06:44,876 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:06:44,876 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:09:57,974 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:09:57,974 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:09:57,974 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:09:57,974 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:18:22,344 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:18:22,344 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:18:22,344 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:18:22,345 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:21:33,775 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:21:33,776 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:21:33,776 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:21:33,776 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:24:20,313 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:24:20,317 [MainThread  ] [INFO ]  ::                            HORUS                             ::
+2017-01-24 14:24:20,318 [MainThread  ] [INFO ]  ------------------------------------------------------------------
+2017-01-24 14:24:20,318 [MainThread  ] [INFO ]  :: loading components...
+2017-01-24 14:24:24,063 [MainThread  ] [INFO ]  :: processing text
+2017-01-24 14:24:24,063 [MainThread  ] [INFO ]  :: text: james walker was born in california and loves surfing
+2017-01-24 14:24:24,063 [MainThread  ] [INFO ]  :: tokenizing sentences ...
+2017-01-24 14:24:24,112 [MainThread  ] [INFO ]  :: processing 1 sentence(s).
+2017-01-24 14:24:26,250 [MainThread  ] [INFO ]  :: caching 1 sentence(s)
+2017-01-24 14:24:26,251 [MainThread  ] [DEBUG]  :: chunking pattern ...
+2017-01-24 14:24:26,261 [MainThread  ] [DEBUG]  :: sentence is already cached
+2017-01-24 14:24:26,261 [MainThread  ] [INFO ]  :: done!
+2017-01-24 14:24:26,261 [MainThread  ] [INFO ]  :: caching results...
+2017-01-24 14:24:26,261 [MainThread  ] [INFO ]  :: caching horus_matrix: 10
+2017-01-24 14:24:26,261 [MainThread  ] [INFO ]  :: item 1 - 10 
+2017-01-24 14:24:26,261 [MainThread  ] [DEBUG]  :: caching [james walker] ...
+2017-01-24 14:24:26,269 [MainThread  ] [DEBUG]  :: term james walker is already cached (text)!
+2017-01-24 14:24:26,272 [MainThread  ] [DEBUG]  :: term james walker is already cached (img)!
+2017-01-24 14:24:26,273 [MainThread  ] [INFO ]  :: item 2 - 10 
+2017-01-24 14:24:26,273 [MainThread  ] [DEBUG]  :: caching [james] ...
+2017-01-24 14:24:26,278 [MainThread  ] [DEBUG]  :: term james is already cached (text)!
+2017-01-24 14:24:26,281 [MainThread  ] [DEBUG]  :: term james is already cached (img)!
+2017-01-24 14:24:26,282 [MainThread  ] [INFO ]  :: item 3 - 10 
+2017-01-24 14:24:26,282 [MainThread  ] [DEBUG]  :: caching [walker] ...
+2017-01-24 14:24:26,286 [MainThread  ] [DEBUG]  :: term walker is already cached (text)!
+2017-01-24 14:24:26,290 [MainThread  ] [DEBUG]  :: term walker is already cached (img)!
+2017-01-24 14:24:26,290 [MainThread  ] [INFO ]  :: item 4 - 10 
+2017-01-24 14:24:26,290 [MainThread  ] [INFO ]  :: item 5 - 10 
+2017-01-24 14:24:26,290 [MainThread  ] [INFO ]  :: item 6 - 10 
+2017-01-24 14:24:26,290 [MainThread  ] [INFO ]  :: item 7 - 10 
+2017-01-24 14:24:26,290 [MainThread  ] [DEBUG]  :: caching [california] ...
+2017-01-24 14:24:26,295 [MainThread  ] [DEBUG]  :: term california is already cached (text)!
+2017-01-24 14:24:26,299 [MainThread  ] [DEBUG]  :: term california is already cached (img)!
+2017-01-24 14:24:26,299 [MainThread  ] [INFO ]  :: item 8 - 10 
+2017-01-24 14:24:26,299 [MainThread  ] [INFO ]  :: item 9 - 10 
+2017-01-24 14:24:26,300 [MainThread  ] [INFO ]  :: item 10 - 10 
+2017-01-24 14:24:26,300 [MainThread  ] [INFO ]  :: done!
+2017-01-24 14:24:26,300 [MainThread  ] [INFO ]  :: detecting 10 objects...
+2017-01-24 14:24:26,300 [MainThread  ] [INFO ]  :: processing item 1 of 10
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  -------------------------------------------------------------
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  :: [checking related visual information for [james walker]]
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  -> CV_LOC  indicator: 0.000000 %
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  -> CV_ORG  indicator: 0.000000 %
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  -> CV_PER  indicator: 1.000000 %
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  -> CV_DIST indicator: 10
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  -> CV_PLC  indicator: -60
+2017-01-24 14:24:26,351 [MainThread  ] [DEBUG]  :: [checking related textual information ...]
+2017-01-24 14:24:26,412 [MainThread  ] [DEBUG]  :: final textual checking statistics for term [james walker] (1-LOC = 1, 2-ORG = 2 and 3-PER = 47)
+2017-01-24 14:24:26,412 [MainThread  ] [DEBUG]  -> TX_LOC  indicator: 0.000000 %
+2017-01-24 14:24:26,412 [MainThread  ] [DEBUG]  -> TX_ORG  indicator: 0.000000 %
+2017-01-24 14:24:26,412 [MainThread  ] [DEBUG]  -> TX_PER  indicator: 0.000000 %
+2017-01-24 14:24:26,412 [MainThread  ] [DEBUG]  -> TX_DIST indicator: 45
+2017-01-24 14:24:26,412 [MainThread  ] [DEBUG]  :: number of trans. errors -> 0 over 10
+2017-01-24 14:24:26,413 [MainThread  ] [DEBUG]  :: most likely class -> PER
+2017-01-24 14:24:26,413 [MainThread  ] [INFO ]  :: processing item 2 of 10
+2017-01-24 14:24:26,461 [MainThread  ] [DEBUG]  -------------------------------------------------------------
+2017-01-24 14:24:26,463 [MainThread  ] [DEBUG]  :: [checking related visual information for [james]]
+2017-01-24 14:24:26,463 [MainThread  ] [DEBUG]  
+2017-01-24 14:24:26,464 [MainThread  ] [DEBUG]  -> CV_LOC  indicator: 0.200000 %
+2017-01-24 14:24:26,464 [MainThread  ] [DEBUG]  -> CV_ORG  indicator: 0.000000 %
+2017-01-24 14:24:26,464 [MainThread  ] [DEBUG]  -> CV_PER  indicator: 0.700000 %
+2017-01-24 14:24:26,464 [MainThread  ] [DEBUG]  -> CV_DIST indicator: 5
+2017-01-24 14:24:26,464 [MainThread  ] [DEBUG]  -> CV_PLC  indicator: -46
+2017-01-24 14:24:26,464 [MainThread  ] [DEBUG]  :: [checking related textual information ...]
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  :: final textual checking statistics for term [james] (1-LOC = 4, 2-ORG = 23 and 3-PER = 23)
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  -> TX_LOC  indicator: 0.000000 %
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  -> TX_ORG  indicator: 0.000000 %
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  -> TX_PER  indicator: 0.000000 %
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  -> TX_DIST indicator: 0
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  :: number of trans. errors -> 0 over 10
+2017-01-24 14:24:26,589 [MainThread  ] [DEBUG]  :: most likely class -> ORG
+2017-01-24 14:24:26,589 [MainThread  ] [INFO ]  :: processing item 3 of 10
+2017-01-24 14:24:26,641 [MainThread  ] [DEBUG]  -------------------------------------------------------------
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  :: [checking related visual information for [walker]]
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  -> CV_LOC  indicator: 0.000000 %
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  -> CV_ORG  indicator: 0.400000 %
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  -> CV_PER  indicator: 0.000000 %
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  -> CV_DIST indicator: 4
+2017-01-24 14:24:26,642 [MainThread  ] [DEBUG]  -> CV_PLC  indicator: -80
+2017-01-24 14:24:26,643 [MainThread  ] [DEBUG]  :: [checking related textual information ...]
+2017-01-24 14:24:26,737 [MainThread  ] [DEBUG]  :: final textual checking statistics for term [walker] (1-LOC = 2, 2-ORG = 19 and 3-PER = 29)
+2017-01-24 14:24:26,737 [MainThread  ] [DEBUG]  -> TX_LOC  indicator: 0.000000 %
+2017-01-24 14:24:26,737 [MainThread  ] [DEBUG]  -> TX_ORG  indicator: 0.000000 %
+2017-01-24 14:24:26,737 [MainThread  ] [DEBUG]  -> TX_PER  indicator: 0.000000 %
+2017-01-24 14:24:26,738 [MainThread  ] [DEBUG]  -> TX_DIST indicator: 10
+2017-01-24 14:24:26,738 [MainThread  ] [DEBUG]  :: number of trans. errors -> 0 over 10
+2017-01-24 14:24:26,738 [MainThread  ] [DEBUG]  :: most likely class -> PER
+2017-01-24 14:24:26,738 [MainThread  ] [INFO ]  :: processing item 7 of 10
+2017-01-24 14:24:26,801 [MainThread  ] [DEBUG]  -------------------------------------------------------------
+2017-01-24 14:24:26,801 [MainThread  ] [DEBUG]  :: [checking related visual information for [california]]
+2017-01-24 14:24:26,801 [MainThread  ] [DEBUG]  
+2017-01-24 14:24:26,802 [MainThread  ] [DEBUG]  -> CV_LOC  indicator: 0.300000 %
+2017-01-24 14:24:26,802 [MainThread  ] [DEBUG]  -> CV_ORG  indicator: 0.200000 %
+2017-01-24 14:24:26,802 [MainThread  ] [DEBUG]  -> CV_PER  indicator: 0.000000 %
+2017-01-24 14:24:26,802 [MainThread  ] [DEBUG]  -> CV_DIST indicator: 1
+2017-01-24 14:24:26,802 [MainThread  ] [DEBUG]  -> CV_PLC  indicator: -34
+2017-01-24 14:24:26,802 [MainThread  ] [DEBUG]  :: [checking related textual information ...]
+2017-01-24 14:24:26,863 [MainThread  ] [DEBUG]  :: final textual checking statistics for term [california] (1-LOC = 6, 2-ORG = 35 and 3-PER = 9)
+2017-01-24 14:24:26,863 [MainThread  ] [DEBUG]  -> TX_LOC  indicator: 0.000000 %
+2017-01-24 14:24:26,863 [MainThread  ] [DEBUG]  -> TX_ORG  indicator: 0.000000 %
+2017-01-24 14:24:26,863 [MainThread  ] [DEBUG]  -> TX_PER  indicator: 0.000000 %
+2017-01-24 14:24:26,864 [MainThread  ] [DEBUG]  -> TX_DIST indicator: 26
+2017-01-24 14:24:26,864 [MainThread  ] [DEBUG]  :: number of trans. errors -> 0 over 10
+2017-01-24 14:24:26,864 [MainThread  ] [DEBUG]  :: most likely class -> ORG
+2017-01-24 14:24:26,864 [MainThread  ] [INFO ]  :: done!
+2017-01-24 14:24:26,864 [MainThread  ] [INFO ]  :: applying rules...
+2017-01-24 14:24:26,864 [MainThread  ] [INFO ]  :: updating predictions based on rules
+2017-01-24 14:24:26,865 [MainThread  ] [INFO ]  :: updating compounds...
+2017-01-24 14:24:26,865 [MainThread  ] [INFO ]  :: updating compounds predictions
+2017-01-24 14:24:26,865 [MainThread  ] [INFO ]  :: done
+2017-01-24 14:24:26,865 [MainThread  ] [INFO ]  :: done!
+2017-01-24 14:24:26,865 [MainThread  ] [INFO ]  :: sentence:  james/PROPN/NNP/PER walker/PROPN/NNP/PER was/VERB/VBD/0 born/VERB/VBN/0 in/ADP/IN/0 california/PROPN/NNP/LOC and/CONJ/CC/0 loves/VERB/VBZ/0 surfing/VERB/VBG/0
+2017-01-24 14:24:26,865 [MainThread  ] [INFO ]  :: exporting metadata...
