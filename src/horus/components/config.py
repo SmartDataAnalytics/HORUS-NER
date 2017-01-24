@@ -69,12 +69,14 @@ class HorusConfig:
                     self.cache_img_folder = parser.get('cache', 'img_folder')
 
                     self.dataset_ritter = parser.get('dataset', 'ds_ritter')
+                    self.dataset_conll = parser.get('dataset', 'ds_conll')
 
                     self.models_location_theta = parser.get('models-param', 'location_theta')
                     self.models_distance_theta = parser.get('models-param', 'distance_theta')
                     self.models_safe_interval = parser.get('models-param', 'safe_interval')
                     self.models_limit_min_loc = parser.get('models-param', 'limit_min_loc')
                     self.models_distance_theta_high_bias = parser.get('models-param', 'distance_theta_high_bias')
+                    self.models_pos_tag_lib = int(parser.get('models-param', 'pos_tag_lib'))
 
                     fine = True
 
