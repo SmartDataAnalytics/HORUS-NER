@@ -1,4 +1,4 @@
-from horus.components import Core
+from horus.components.core import Core
 
 horus = Core(False, 5)
 print horus.version_label
