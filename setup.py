@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='horusner',
-      version='0.1.3',
+      version='0.1.4',
       description='HORUS Framework',
       author='Diego Esteves',
       author_email='diegoesteves@gmail.com',

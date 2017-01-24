@@ -21,11 +21,13 @@ more info at: https://github.com/dnes85/components-models
 # Version: 1.0
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
+import codecs
 import csv
 import heapq
 import json
 import logging
 import sqlite3
+import string
 from time import gmtime, strftime
 
 import chardet
@@ -34,6 +36,7 @@ import langdetect
 import nltk
 import numpy
 import requests
+import unicodedata
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from microsofttranslator import Translator
@@ -181,8 +184,8 @@ class Core(object):
 
         self.conn.close()
 
-        self.sys.log.info(':: applying rules...')
-        self.update_rules_cv_predictions()
+        #self.sys.log.info(':: applying rules...')
+        #self.update_rules_cv_predictions()
         self.sys.log.info(':: updating compounds...')
         self.update_compound_predictions()
         self.sys.log.info(':: done!')
@@ -385,30 +388,31 @@ class Core(object):
         compounds = '|'
 
         for sent in sentence_list:
-            #tokens, tagged = tokenize_and_pos(sent[1])
-            #self.sys.log.info(':: tags: ' + str(tagged))
-            ## entities = nltk.chunk.ne_chunk(tagged)
-
             #  add compounds of given sentence
-
             aux = 0
             toparse = []
             for obj in sent[2]:
                 toparse.append(tuple([obj, sent[4][aux]]))
                 aux+=1
             t = cp.parse(toparse)
-            i_word = 1
+
+            i_word = 0
             for item in t:
-                is_entity = 1 if (sent[0] == 1 and sent[3][i_word - 1] != 'O') else -1
-                if type(item) is nltk.Tree:  # that's a compound
-                    compound = ''
-                    for tk in item:
-                        compound += tk[0] + ' '
-                        i_word += 1
-                    if len(item) > 1:
-                        self.horus_matrix.append([is_entity, i_sent, i_word - len(item), compound[:len(compound) - 1], '', '', '', 1, len(item)])
+                if type(item) is nltk.Tree:
+                    is_entity = 1 if (sent[0] == 1 and sent[3][i_word - 1] != 'O') else -1
+                    i_word += len(item)
+                    if len(item) > 1:  # that's a compound
+                        compound = ''
+                        for tk in item:
+                            compound += tk[0] + ' '
+
+                        self.horus_matrix.append([is_entity, i_sent, i_word - len(item) + 1,
+                                                  compound[:len(compound) - 1], '', '', '', 1, len(item)])
                         compounds += compound[:len(compound) - 1] + '|'
-                    compound = ''
+                        compound = ''
+                else:
+                    i_word += 1
+
 
             #  transforming to components matrix
             # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
@@ -787,14 +791,29 @@ class Core(object):
 
     def detect_text_klass(self,t1, t2, id, t1en, t2en):
 
+        from translate import Translator
         self.sys.log.debug(':: text analysis component launched')
 
         try:
 
-            from translate import Translator
+            ret_error = [-1, -1, -1, -1, -1]
 
-            t1 = self.remove_non_ascii(t1)
-            t2 = self.remove_non_ascii(t2)
+            if isinstance(t1, str):
+                t1 = unicode(t1, "utf-8")
+            if isinstance(t2, str):
+                t2 = unicode(t2, "utf-8")
+
+            #print t1.encode("utf-8")
+            #print t2.encode("utf-8")
+
+            #t1 = t1.decode('utf-8')
+            #t2 = t2.decode('utf-8')
+
+            #content = unicode(t1.strip(codecs.BOM_UTF8), 'utf-8')
+
+            #print self.remove_accents(t1)
+            #t1 = self.remove_non_ascii(t1)
+            #t2 = self.remove_non_ascii(t2)
 
             t1final = t1
             t2final = t1
@@ -818,13 +837,12 @@ class Core(object):
                             t1final = translator2.translate(t1)
                         except Exception as e2:
                             self.sys.log.error(':: Error at service 2: ' + str(e2))
-                            return [-1]
+                            return ret_error
                             # updating
 
-                t1final = 'u'+t1final # .encode('ascii', 'ignore')
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
                          SET result_title_en = ? WHERE id = ?"""
-                c.execute(sql, (t1final, id))
+                c.execute(sql, (t1final.encode("utf-8"), id))
                 self.conn.commit()
             else:
                 t1final = t1en
@@ -841,21 +859,19 @@ class Core(object):
                             t2final = translator2.translate(t2)
                         except Exception as e2:
                             self.sys.log.error(':: Error at service 2: ' + str(e2))
-                            return [-1]
+                            return ret_error
                             # updating
 
-                #t2final = t2final.encode('ascii', 'ignore')
-                t2final = 'u'+t2final
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
                                 SET result_description_en = ? WHERE id = ?"""
-                c.execute(sql, (t2final, id))
+                c.execute(sql, (t2final.encode("utf-8"), id))
                 self.conn.commit()
             else:
                 t2final = t2en
 
             c.close()
 
-            docs = ["{} {}".format(t1final, t2final)]
+            docs = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
             predictions = [self.text_checking_model_1.predict(docs)[0],
                            self.text_checking_model_2.predict(docs)[0],
                            self.text_checking_model_3.predict(docs)[0],
@@ -871,13 +887,17 @@ class Core(object):
 
         except Exception as e:
             self.sys.log.error(':: Error: ' + str(e))
-            return [-1]
+            return ret_error
 
-    def remove_non_ascii(self,t):
+    def remove_accents(self, data):
+        return ' '.join(x for x in unicodedata.normalize('NFKD', data) if x in string.ascii_letters).lower()
+
+    def remove_non_ascii(self, t):
         import string
         printable = set(string.printable)
         temp = filter(lambda x: x in printable, t)
-        return "".join(i for i in temp if ord(i) < 128)
+        return temp
+        #return "".join(i for i in temp if ord(i) < 128)
 
     def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
         auxi = 0
@@ -1029,7 +1049,7 @@ class Core(object):
                                          text_4_klass = %s,
                                          text_5_klass = %s
                                      WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], row[0])
-                            self.sys.log.debug(':: ' + sql)
+                            #self.sys.log.debug(':: ' + sql)
                             cursor.execute(sql)
                             if ret[0] == -1 or ret[1] == -1 or ret[2] == -1 or ret[3] == -1 or ret[4] == -1:
                                 tot_err += 1
@@ -1060,9 +1080,9 @@ class Core(object):
                     metadata.append(definitions.KLASSES[horus_tx_ner])
 
                     if len(rows) != 0:
-                        self.sys.log.debug('-> TX_LOC  indicator: %f %%' % (float(y.count(1)) / len(rows)))
-                        self.sys.log.debug('-> TX_ORG  indicator: %f %%' % (float(y.count(2)) / len(rows)))
-                        self.sys.log.debug('-> TX_PER  indicator: %f %%' % (float(y.count(3)) / len(rows)))
+                        self.sys.log.debug('-> TX_LOC  indicator: %f %%' % (float(gp[0]) / (len(rows)) * 5.0)) #division by current number of classifiers = 5
+                        self.sys.log.debug('-> TX_ORG  indicator: %f %%' % (float(gp[1]) / (len(rows)) * 5.0))
+                        self.sys.log.debug('-> TX_PER  indicator: %f %%' % (float(gp[2]) / (len(rows)) * 5.0))
                         self.sys.log.debug('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
                         self.sys.log.debug(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(rows)))
                         self.sys.log.debug(':: most likely class -> ' + definitions.KLASSES[horus_tx_ner])
@@ -1088,7 +1108,8 @@ class Core(object):
         for i in range(len(self.horus_matrix)):
             initial = self.horus_matrix[i][17]
             # get nouns or compounds
-            if self.horus_matrix[i][4] == u'NOUN' or self.horus_matrix[i][7] == 1:
+            if self.horus_matrix[i][4] == 'NOUN' or \
+                            self.horus_matrix[i][4] == 'PROPN' or self.horus_matrix[i][7] == 1:
                 # do not consider classifications below a theta
                 if self.horus_matrix[i][15] < int(self.config.models_distance_theta):
                     self.horus_matrix[i][17] = "*"
@@ -1104,22 +1125,27 @@ class Core(object):
     def update_compound_predictions(self):
         '''
         updates the predictions based on the compound
+        #  updating components matrix
+        # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
+        # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
+        # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
         :return:
         '''
         self.sys.log.info(':: updating compounds predictions')
-        i_sent = None
-        i_first_word = None
+        i_y, i_sent, i_first_word, i_c_size = [], [], [], []
         for i in range(len(self.horus_matrix)):
             if self.horus_matrix[i][7] == 1:
-                y = self.horus_matrix[i][25]
-                i_sent = self.horus_matrix[i][1]
-                i_first_word = self.horus_matrix[i][2]
-                c_size = int(self.horus_matrix[i][8])
-            if self.horus_matrix[i][7] == 0 and i_sent is not None:
-                if self.horus_matrix[i][1] == i_sent and self.horus_matrix[i][2] == i_first_word:
-                    for k in range(c_size):
-                        self.horus_matrix[i + k][25] = y
-        self.sys.log.info(':: done')
+                i_y.append(self.horus_matrix[i][25])
+                i_sent.append(self.horus_matrix[i][1])
+                i_first_word.append(self.horus_matrix[i][2])
+                i_c_size.append(int(self.horus_matrix[i][8]))
+            if self.horus_matrix[i][7] == 0:
+                for z in range(len(i_y)):
+                    if i_sent[z] == self.horus_matrix[i][1] and \
+                                    i_first_word[z] == self.horus_matrix[i][2]:
+                        for k in range(i_c_size[z]):
+                            self.horus_matrix[i+k][25] = i_y[z]
+        self.sys.log.info(':: alles klar!')
 
     def process_input_text(self, text):
         self.sys.log.info(':: text: ' + text)
