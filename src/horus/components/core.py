@@ -28,6 +28,7 @@ import logging
 import sqlite3
 from time import gmtime, strftime
 
+import chardet
 import cv2
 import langdetect
 import nltk
@@ -40,9 +41,9 @@ from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
 
-import definitions
 from bingAPI1 import bing_api2
 from config import HorusConfig
+from horus import definitions
 from horus.components.systemlog import SystemLog
 from horus.postagger import CMUTweetTagger
 
@@ -58,8 +59,8 @@ class Core(object):
     """
 
     # static methods
-    version = "0.1"
-    version_label = "HORUS 0.1 alpha"
+    version = "0.1.3"
+    version_label = "HORUS 0.1.3"
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""
@@ -101,7 +102,13 @@ class Core(object):
         self.voc_loc_8 = joblib.load(self.config.models_cv_loc_8_dict)
         self.voc_loc_9 = joblib.load(self.config.models_cv_loc_9_dict)
         self.voc_loc_10 = joblib.load(self.config.models_cv_loc_10_dict)
-        self.text_checking_model = joblib.load(self.config.models_text)
+
+        self.text_checking_model_1 = joblib.load(self.config.models_1_text)
+        self.text_checking_model_2 = joblib.load(self.config.models_2_text)
+        self.text_checking_model_3 = joblib.load(self.config.models_3_text)
+        self.text_checking_model_4 = joblib.load(self.config.models_4_text)
+        self.text_checking_model_5 = joblib.load(self.config.models_5_text)
+
         self.conn = sqlite3.connect(self.config.database_db)
         self.horus_matrix = []
         if force_download is True:
@@ -185,7 +192,7 @@ class Core(object):
                   "ID_TERM_TXT", "ID_TERM_IMG",
                   "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX",
                   "TOT_TX_LOC", "TOT_TX_ORG",
-                  "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS"]
+                  "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
 
         if int(ds_format) == 0:
             self.print_annotated_sentence()
@@ -266,7 +273,6 @@ class Core(object):
             i_word = 1
             for k in range(len(sent[2])): # list of NER tags
                 is_entity = 1 if sent[3] in definitions.NER_RITTER else 0
-
                 self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
                 if is_entity:
@@ -783,15 +789,20 @@ class Core(object):
         self.sys.log.debug(':: text analysis component launched')
 
         try:
+
             from translate import Translator
+
+            t1 = self.remove_non_ascii(t1)
+            t2 = self.remove_non_ascii(t2)
+
+            t1final = t1
+            t2final = t1
 
             #https://pypi.python.org/pypi/translate (alternative 1000 per day)
             #https://www.microsoft.com/en-us/translator/getstarted.aspx
             #https://github.com/openlabs/Microsoft-Translator-Python-API
 
             c = self.conn.cursor()
-            t1final = t1
-            t2final = t2
 
             # need to save to components db
             if t1en is None:
@@ -842,9 +853,15 @@ class Core(object):
                 t2final = t2en
 
             c.close()
+
             docs = ["{} {}".format(t1final, t2final)]
-            predicted = self.text_checking_model.predict(docs)
-            return predicted
+            predictions = [self.text_checking_model_1.predict(docs)[0],
+                           self.text_checking_model_2.predict(docs)[0],
+                           self.text_checking_model_3.predict(docs)[0],
+                           self.text_checking_model_4.predict(docs)[0],
+                           self.text_checking_model_5.predict(docs)[0]]
+
+            return predictions
 
             #blob = TextBlob(t2)
             #t22 = blob.translate(to='en')
@@ -854,6 +871,12 @@ class Core(object):
         except Exception as e:
             self.sys.log.error(':: Error: ' + str(e))
             return [-1]
+
+    def remove_non_ascii(self,t):
+        import string
+        printable = set(string.printable)
+        temp = filter(lambda x: x in printable, t)
+        return "".join(i for i in temp if ord(i) < 128)
 
     def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
         auxi = 0
@@ -987,7 +1010,8 @@ class Core(object):
                 with self.conn:
                     cursor = self.conn.cursor()
                     cursor.execute("""SELECT id, result_seq, result_title, result_description, result_title_en,
-                                                 result_description_en, processed, text_klass
+                                                 result_description_en, processed, text_1_klass, text_2_klass,
+                                                 text_3_klass, text_4_klass, text_5_klass
                                           FROM HORUS_SEARCH_RESULT_TEXT
                                           WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()
@@ -995,30 +1019,36 @@ class Core(object):
                     for row in rows:
                         if row[6] == 0 or row[6] is None:
                             ret = self.detect_text_klass(row[2], row[3], row[0], row[4], row[5])
-                            if ret[0] != -1:
-                                y.append(ret)
-                                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET text_klass = %s , processed = 1
-                                         WHERE id = %s""" % (ret[0], row[0])
-                                self.sys.log.debug(':: ' + sql)
-                                cursor.execute(sql)
-                            else:
+                            y.append(ret)
+                            sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
+                                     SET processed = 1,
+                                         text_1_klass = %s,
+                                         text_2_klass = %s,
+                                         text_3_klass = %s,
+                                         text_4_klass = %s,
+                                         text_5_klass = %s
+                                     WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], row[0])
+                            self.sys.log.debug(':: ' + sql)
+                            cursor.execute(sql)
+                            if ret[0] == -1 or ret[1] == -1 or ret[2] == -1 or ret[3] == -1 or ret[4] == -1:
                                 tot_err += 1
                         else:
-                            y.append(row[7])
+                            y.append(row[7:12])
 
                     self.conn.commit()
 
-                    gp = [y.count(1), y.count(2), y.count(3)]
+                    yy = numpy.array(y)
+                    gp = [numpy.count_nonzero(yy == 1), numpy.count_nonzero(yy == 2), numpy.count_nonzero(yy == 3)]
                     horus_tx_ner = gp.index(max(gp)) + 1
 
                     self.sys.log.debug(':: final textual checking statistics for term [%s] '
-                                    '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(y.count(1)), str(y.count(2)),
-                                                                                 str(y.count(3))))
+                                    '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(gp[0]),
+                                                                                           str(gp[1]), str(gp[2])))
                     # 7 to 11
                     metadata.append(len(rows))
-                    metadata.append(y.count(1))
-                    metadata.append(y.count(2))
-                    metadata.append(y.count(3))
+                    metadata.append(gp[0])
+                    metadata.append(gp[1])
+                    metadata.append(gp[2])
                     metadata.append(float(tot_err))
 
                     maxs_tx = heapq.nlargest(2, gp)
@@ -1069,8 +1099,6 @@ class Core(object):
                         elif self.horus_matrix[i][16] < 0 and self.horus_matrix[i][15] > \
                                 int(self.config.models_safe_interval):
                             self.horus_matrix[i][17] = initial
-
-
 
     def update_compound_predictions(self):
         '''
@@ -1129,7 +1157,6 @@ class Core(object):
             ner = []
             w = []
         return sentences
-
 
     def process_ritter_ds(self,dspath):
         '''

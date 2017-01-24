@@ -23,12 +23,13 @@ more info at: https://github.com/dnes85/components-models
 # License: BSD 3 clause
 from optparse import OptionParser
 
-from horus.components.core import Core
+from src.horus.components.core import Core
 
 
 def main():
 
-    op = OptionParser(usage='usage: %prog [options] arguments')
+    op = OptionParser(usage='usage: %prog [options] arguments (example: main.py --input_text="diego esteves was born in'
+                            ' rio de janeiro" --ds_format=0 --output_file="out"--output_format="csv"')
 
     op.add_option("--input_text", dest="input_text",
                   help="The text to be annotated")
