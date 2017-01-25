@@ -1198,9 +1198,10 @@ class Core(object):
         has3NER = -1
         with open(dspath) as f:
             for line in f:
-                token = line.split('\t')[0]
-                tag = line.split('\t')[1].replace('\r','').replace('\n','')
-                if token == '':
+                if line.strip() != '':
+                    token = line.split('\t')[0]
+                    tag = line.split('\t')[1].replace('\r','').replace('\n','')
+                if line.strip() == '':
                     if len(w) != 0:
                         pos_uni = nltk.pos_tag(w, tagset='universal')
                         pos = nltk.pos_tag(w)

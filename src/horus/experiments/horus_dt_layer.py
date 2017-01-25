@@ -15,7 +15,7 @@ from horus import definitions
 from horus.components.config import HorusConfig
 
 config = HorusConfig()
-file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv"), delimiter=",")
+file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_3.csv"), delimiter=",")
 header1 = file1reader.next()
 
 features = []
