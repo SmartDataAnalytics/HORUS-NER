@@ -354,14 +354,14 @@ class Core(object):
         self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                      % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
-    def tokenize_and_pos(self, sentence):
-        if self.config.models_pos_tag_lib == 1:
+    def tokenize_and_pos(self, sentence, annotator_id):
+        if annotator_id == 1:
             tokens = sentence
             if type(sentence) is not list:
                 tokens = nltk.word_tokenize(sentence)
             tagged = nltk.pos_tag(tokens)
             return tokens, tagged, nltk.pos_tag(tokens, tagset="universal")
-        elif self.config.models_pos_tag_lib == 2:
+        elif annotator_id == 2:
             if type(sentence) is not list:
                 return self.tokenize_and_pos_twitter([sentence])
             return self.tokenize_and_pos_twitter_list(sentence)
@@ -1186,6 +1186,28 @@ class Core(object):
             w = []
         return sentences
 
+    def get_tokens_pos_and_pos_uni(self, sentence, annotator_id):
+        ret_tokens, ret_pos, ret_pos_uni = [], [], []
+        if annotator_id == 2:
+            #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
+            list_shell = [sentence]
+            self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
+            tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
+        elif annotator_id == 1:
+            w = nltk.word_tokenize(sentence)
+            pos_uni = nltk.pos_tag(w, tagset='universal')
+            pos = nltk.pos_tag(w)
+            _pos = zip(*pos)[1]
+            _pos_uni = zip(*pos_uni)[1]
+
+        return tokens, pos, pos_uni
+
+    def sentence_cached_before(self, sentence):
+        c = self.conn.execute("""SELECT sentence, has_NER, tags_real_ner, #parei aqui!!!!
+                                 FROM HORUS_SENTENCES
+                                 WHERE sentence = ?""", sentence)
+        return c.fetchone()
+
     def process_ritter_ds(self, dspath):
         '''
         return a set of sentences
@@ -1205,19 +1227,29 @@ class Core(object):
                     tag = line.split('\t')[1].replace('\r','').replace('\n','')
                 if line.strip() == '':
                     if len(w) != 0:
-                        pos_uni = nltk.pos_tag(w, tagset='universal')
-                        pos = nltk.pos_tag(w)
-                        _pos = zip(*pos)[1]
-                        _pos_uni = zip(*pos_uni)[1]
-                        #stanford NER
-                        nerstantags = stan.stanford_ner.tag(s.split())
-                        nerstantags = numpy.array(nerstantags)
-                        #append features
-                        sentences.append([has3NER, s, w, t, list(_pos), list(_pos_uni), nerstantags[:,1].tolist()])
-                        w = []
-                        t = []
-                        s = ''
-                        has3NER = -1
+                        # that' a sentence, check if cached!
+                        cache_sent = self.sentence_cached_before(s)
+                        if len(cache_sent) > 0:
+                            sentences.append(cache_sent)
+                        else:
+                            # stanford
+                            tokens_st, pos_st, pos_uni_st = self.get_tokens_pos_and_pos_uni(s, 1)
+                            # twitterNLP
+                            tokens_twe, pos_twe, pos_uni_twe = self.get_tokens_pos_and_pos_uni(s, 2)
+                            # stanford NER
+                            nerstantags = stan.stanford_ner.tag(s.split())
+                            nerstantags = numpy.array(nerstantags)
+                            # saving to database
+                            self.db_save_sentence([has3NER, s, w,
+                                                   tokens_st, pos_st, pos_uni_st,
+                                                   tokens_twe, pos_twe, pos_uni_twe,
+                                                   nerstantags[:, 1].tolist()])
+                            sentences.append(sent)
+
+                            w = []
+                            t = []
+                            s = ''
+                            has3NER = -1
                 else:
                     s += token + ' '
                     w.append(token)
