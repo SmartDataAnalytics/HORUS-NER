@@ -48,6 +48,7 @@ from bingAPI1 import bing_api2
 from config import HorusConfig
 from horus import definitions
 from horus.components.systemlog import SystemLog
+from horus.components.util.ner_annotators import NERAnnotators
 from horus.postagger import CMUTweetTagger
 
 print cv2.__version__
@@ -71,7 +72,7 @@ class Core(object):
         self.config = HorusConfig()
 
         self.sys.log.info('------------------------------------------------------------------')
-        self.sys.log.info('::                            HORUS                             ::')
+        self.sys.log.info('::                       HORUS ' + self.version + '                            ::')
         self.sys.log.info('------------------------------------------------------------------')
         self.sys.log.info(':: loading components...')
 
@@ -1197,6 +1198,7 @@ class Core(object):
         s = ''
         has3NER = -1
         with open(dspath) as f:
+            stan = NERAnnotators()
             for line in f:
                 if line.strip() != '':
                     token = line.split('\t')[0]
@@ -1207,7 +1209,11 @@ class Core(object):
                         pos = nltk.pos_tag(w)
                         _pos = zip(*pos)[1]
                         _pos_uni = zip(*pos_uni)[1]
-                        sentences.append([has3NER, s, w, t, list(_pos), list(_pos_uni)])
+                        #stanford NER
+                        nerstantags = stan.stanford_ner.tag(s.split())
+                        nerstantags = numpy.array(nerstantags)
+                        #append features
+                        sentences.append([has3NER, s, w, t, list(_pos), list(_pos_uni), nerstantags[:,1].tolist()])
                         w = []
                         t = []
                         s = ''
@@ -1232,7 +1238,7 @@ class Core(object):
             for item in sentences:
                 _pos = zip(*pos[index])[1]
                 _pos_uni = zip(*pos_uni[index])[1]
-                cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni)])
+                cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni), item[6]])
                 index +=1
             return cache_sentences
         else:
