@@ -48,11 +48,9 @@ from bingAPI1 import bing_api2
 from config import HorusConfig
 from horus import definitions
 from horus.components.systemlog import SystemLog
-from horus.components.util.ner_annotators import NERAnnotators
-from horus.postagger import CMUTweetTagger
+from horus.components.util.nlp_tools import NLPTools
 
-print cv2.__version__
-
+#print cv2.__version__
 
 class Core(object):
     """ Description:
@@ -75,7 +73,7 @@ class Core(object):
         self.sys.log.info('::                       HORUS ' + self.version + '                            ::')
         self.sys.log.info('------------------------------------------------------------------')
         self.sys.log.info(':: loading components...')
-
+        self.tools = NLPTools()
         self.english_vocab = None
         self.translator = Translator(self.config.translation_id, self.config.translation_secret)
         self.tfidf_transformer = TfidfTransformer()
@@ -161,7 +159,7 @@ class Core(object):
                 raise Exception("Provide an input file format to be annotated")
             elif int(ds_format) == 1:
                 self.sys.log.info(':: loading Ritter ds')
-                sent_tokenize_list = self.process_ritter_ds(input_file)
+                sent_tokenize_list = self.process_ds_conll_format(input_file, 'ritter')
             elif int(ds_format) == 2:
                 self.sys.log.info(':: loading coNLL2003 ds')
                 sent_tokenize_list = self.processing_conll_ds(input_file)
@@ -355,16 +353,17 @@ class Core(object):
                      % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     def tokenize_and_pos(self, sentence, annotator_id):
-        if annotator_id == 1:
-            tokens = sentence
-            if type(sentence) is not list:
-                tokens = nltk.word_tokenize(sentence)
-            tagged = nltk.pos_tag(tokens)
-            return tokens, tagged, nltk.pos_tag(tokens, tagset="universal")
+        # NLTK
+        if annotator_id == 0:
+            return self.tools.tokenize_and_pos_nltk(sentence)
+        # Stanford
+        elif annotator_id == 1:
+            return self.tools.tokenize_and_pos_stanford(sentence)
+        # TwitterNLP
         elif annotator_id == 2:
             if type(sentence) is not list:
-                return self.tokenize_and_pos_twitter([sentence])
-            return self.tokenize_and_pos_twitter_list(sentence)
+                return self.tools.tokenize_and_pos_twitter([sentence])
+            return self.tools.tokenize_and_pos_twitter_list(sentence)
 
     def cache_sentence(self,sentence_format, sentence_list):
         if sentence_format == 0:
@@ -441,23 +440,22 @@ class Core(object):
             self.sys.log.info(':: caching sentence: ' + sent[1][0])
             #buffer(zlib.compress
             #row = (str(sent), str(tagged), str(compound), str(tokens))
-            row = (sent[0], corpus, sent[1][0], sent[1][1], sent[1][2],
-                   str(sent[2][0]), str(sent[2][1]), str(sent[2][2]),
-                   str(sent[3][0]), str(sent[3][1]), str(sent[3][2]),
-                   str(sent[4][0]), str(sent[4][1]), str(sent[4][2]),
-                   str(sent[5][0]), str(sent[5][1]), str(sent[5][2]))
+            sentence = [sent[0], corpus, sent[1][0], sent[1][1], sent[1][2],
+                   json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]),
+                   json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]),
+                   json.dumps(sent[4][0]), json.dumps(sent[4][1]), json.dumps(sent[4][2]),
+                   json.dumps(sent[5][0]), json.dumps(sent[5][1]), json.dumps(sent[5][2])]
+            #row = (sentence)
             sql = """INSERT INTO HORUS_SENTENCES(sentence_has_NER, corpus_name,
-                          sentence, same_tokenization_stanford, same_tokenization_tweetNLP,
-                          corpus_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
-                          corpus_ner_y, annotator_stanford_ner, annotator_tweetNLP_ner,
-                          corpus_pos_y, annotator_stanford_pos, annotator_tweetNLP_pos,
-                          corpus_pos_uni_y, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal)
-                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
-            self.sys.log.debug(sql)
-            id = c.execute(sql, row)
+                          sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
+                          corpus_tokens, annotator_nltk_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
+                          corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
+                          corpus_pos_y, annotator_nltk_pos, annotator_stanford_pos, annotator_tweetNLP_pos,
+                          corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal)
+                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+            id = c.execute(sql, sentence)
             self.conn.commit()
             id = id.lastrowid
-            self.sys.log.debug(':: done: ' + sent[1][0])
         else:
             self.sys.log.debug(':: sentence is already cached')
             id = res[0]
@@ -1210,26 +1208,26 @@ class Core(object):
         """
         sent = []
         c = self.conn.execute("""SELECT sentence_has_NER,
-                          sentence, same_tokenization_stanford, same_tokenization_tweetNLP,
-                          corpus_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
-                          corpus_ner_y, annotator_stanford_ner, annotator_tweetNLP_ner,
-                          corpus_pos_y, annotator_stanford_pos, annotator_tweetNLP_pos,
-                          corpus_pos_uni_y, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
+                          sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
+                          corpus_tokens, annotator_nltk_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
+                          corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
+                          corpus_pos_y, annotator_nltk_pos, annotator_stanford_pos, annotator_tweetNLP_pos,
+                          corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
                           compounds
                                  FROM HORUS_SENTENCES
                                  WHERE corpus_name = ? and sentence = ?""", (corpus, sentence))
         ret = c.fetchone()
         if ret is not None:
             sent.append(ret[0])
-            sent.append([json.loads(ret[1:3])])
-            sent.append([json.loads(ret[4:3])])
-            sent.append([json.loads(ret[7:3])])
-            sent.append([json.loads(ret[10:3])])
-            sent.append([json.loads(ret[13:3])])
+            sent.append([ret[1], ret[2], ret[3], ret[4]])
+            sent.append([json.loads(ret[4]), json.loads(ret[5]), json.loads(ret[6]), json.loads(ret[7])])
+            sent.append([json.loads(ret[8]), json.loads(ret[9]), json.loads(ret[10]), json.loads(ret[11])])
+            sent.append([json.loads(ret[12]), json.loads(ret[13]), json.loads(ret[14]), json.loads(ret[15])])
+            sent.append([json.loads(ret[16]), json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19])])
+            sent.append(ret[20])
         return sent
 
-
-    def process_ritter_ds(self, dspath):
+    def process_ds_conll_format(self, dspath, dataset_name):
         '''
         return a set of sentences
         :param dspath: path to Ritter dataset
@@ -1244,7 +1242,6 @@ class Core(object):
             s = ''
             has3NER = -1
             with open(dspath) as f:
-                stan = NERAnnotators()
                 for line in f:
                     if line.strip() != '':
                         token = line.split('\t')[0]
@@ -1252,19 +1249,25 @@ class Core(object):
                     if line.strip() == '':
                         if len(tokens) != 0:
                             # that' a sentence, check if cached!
-                            cache_sent = self.sentence_cached_before('ritter', s)
+                            cache_sent = self.sentence_cached_before(dataset_name, s)
                             if len(cache_sent) != 0:
                                 sentences.append(cache_sent)
+                                self.sys.log.info(':: sentence already cached!')
                             else:
+                                self.sys.log.info(':: sentence is going to be cached...')
+                                _tokens_nltk, _pos_nltk, _pos_uni_nltk = self.tokenize_and_pos(s, 0)
                                 _tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 1)
                                 _tokens_twe, _pos_twe, _pos_uni_twe = self.tokenize_and_pos(s, 2)
 
+                                _pos_nltk = numpy.array(_pos_nltk)
+                                _pos_uni_nltk = numpy.array(_pos_uni_nltk)
                                 _pos_st = numpy.array(_pos_st)
                                 _pos_uni_st = numpy.array(_pos_uni_st)
-
                                 _pos_twe = numpy.array(_pos_twe)
                                 _pos_uni_twe = numpy.array(_pos_uni_twe)
 
+                                # nltk tok has the same length of corpus tok?
+                                _same_tok_nltk = (len(_tokens_nltk) == len(tokens))
 
                                 # stanford tok has the same length of corpus tok?
                                 _same_tok_stanf = (len(_tokens_st) == len(tokens))
@@ -1273,22 +1276,28 @@ class Core(object):
                                 _same_tok_tweet = (len(_tokens_twe) == len(tokens))
 
                                 # stanford NER
-                                nerstantags = stan.stanford_ner.tag(_tokens_st)
+                                nerstantags = self.tools.annotate_ner_stanford(s)
                                 nerstantags = numpy.array(nerstantags)
+
+                                #NLTK NER
+                                nernltktags = self.tools.annotate_ner_nltk(s)
+
                                 # saving to database
                                 sent = [has3NER,
-                                        [s, _same_tok_stanf, _same_tok_tweet],
-                                        [tokens, _tokens_st, _tokens_twe],
-                                        [tags_ner_y, nerstantags[:, 1].tolist(), []],
-                                        [[], _pos_st[:, 1].tolist(), _pos_twe[:, 1].tolist()],
-                                        [[], _pos_uni_st[:, 1].tolist(), _pos_uni_twe[:, 1].tolist()]]
+                                        [s, 1 if _same_tok_nltk else 0, 1 if _same_tok_stanf else 0,
+                                            1 if _same_tok_tweet else 0],
+                                        [tokens, _tokens_nltk, _tokens_st, _tokens_twe],
+                                        [tags_ner_y, nernltktags, nerstantags[:, 1].tolist(), []],
+                                        [[], _pos_nltk[:, 1].tolist(), _pos_st[:, 1].tolist(), _pos_twe[:, 1].tolist()],
+                                        [[], _pos_uni_nltk[:, 1].tolist(), _pos_uni_st[:, 1].tolist(), _pos_uni_twe[:, 1].tolist()]]
 
-                                self.db_save_sentence(sent, 'ritter')
+                                self.db_save_sentence(sent, dataset_name)
                                 sentences.append(sent)
-                                tokens = []
-                                tags_ner_y = []
-                                s = ''
-                                has3NER = -1
+
+                            tokens = []
+                            tags_ner_y = []
+                            s = ''
+                            has3NER = -1
                     else:
                         s += token + ' '
                         tokens.append(token)
@@ -1297,24 +1306,25 @@ class Core(object):
                             has3NER = 1
 
             #just in case of tweetNLP
-            if self.config.models_pos_tag_lib == 2:
-                #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
-                list_shell = []
-                for item in sentences:
-                    list_shell.append(item[1])
-                self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
-                tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
-                cache_sentences = []
-                index = 0
-                for item in sentences:
-                    _pos = zip(*pos[index])[1]
-                    _pos_uni = zip(*pos_uni[index])[1]
-                    cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni), item[6]])
-                    index +=1
-                return cache_sentences
-            else:
-                return sentences
+            #if self.config.models_pos_tag_lib == 2:
+            #    #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
+            #    list_shell = []
+            #    for item in sentences:
+            #        list_shell.append(item[1])
+            #    self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
+            #    tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
+            #    cache_sentences = []
+            #    index = 0
+            #    for item in sentences:
+            #        _pos = zip(*pos[index])[1]
+            #        _pos_uni = zip(*pos_uni[index])[1]
+            #        cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni), item[6]])
+            #        index +=1
+            #    return cache_sentences
+            #else:
+            #    return sentences
 
+            return sentences
         except Exception as error:
             print('caught this error: ' + repr(error))
 
@@ -1349,56 +1359,12 @@ class Core(object):
                     s += token + ' '
                     w.append(token)
                     p.append(pos_tag)
-                    pu.append(self.convert_penn_to_universal_tags(pos_tag))
+                    pu.append(self.tools.convert_penn_to_universal_tags(pos_tag))
                     t.append(ner_tag)
                     c.append(chunck_tag)
                     if ner_tag in definitions.NER_CONLL:
                         has3NER = 1
         return sentences
 
-    def tokenize_and_pos_twitter(self, text):
-        tokens = []
-        tagged = []
-        pos_universal = []
-        pos_token_tag_sentence = CMUTweetTagger.runtagger_parse(text)
 
-        for sequence_tag in pos_token_tag_sentence:
-            for token_tag in sequence_tag:
-                tokens.append(token_tag[0])
-                tagged.append(token_tag[1])
-                pos_universal.append(self.convert_penn_to_universal_tags(token_tag[1]))
-        return tokens, zip(tokens, tagged), zip(tokens, pos_universal)
 
-    def tokenize_and_pos_twitter_list(self, text):
-        token_list = []
-        tagged_list = []
-        pos_universal_list = []
-        pos_token_tag_sentence = CMUTweetTagger.runtagger_parse(text)
-
-        for sequence_tag in pos_token_tag_sentence:
-            tokens = []
-            tagged = []
-            pos_universal = []
-            for token_tag in sequence_tag:
-                tokens.append(token_tag[0])
-                tagged.append(token_tag[1])
-                pos_universal.append(self.convert_penn_to_universal_tags(token_tag[1]))
-
-            token_list.append(tokens)
-            tagged_list.append(zip(tokens, tagged))
-            pos_universal_list.append(zip(tokens, pos_universal))
-        return token_list, tagged_list, pos_universal_list
-
-    @staticmethod
-    def convert_cmu_to_universal_tags(cmu_tag):
-        for item in definitions.CMU_UNI_TAGS:
-            if item[0] == cmu_tag:
-                return item[1]
-        return "X"
-
-    @staticmethod
-    def convert_penn_to_universal_tags(penn_tag):
-        for item in definitions.PENN_UNI_TAG:
-            if item[0] == penn_tag:
-                return item[1]
-        return penn_tag
