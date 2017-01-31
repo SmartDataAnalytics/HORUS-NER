@@ -374,7 +374,7 @@ class Core(object):
         elif sentence_format == 2:
             self.cache_sentence_conll(sentence_list)
 
-    def cache_sentence_free_text(self,sentence_list):
+    def cache_sentence_free_text(self, sentence_list):
 
         i_sent, i_word = 1, 1
         self.sys.log.debug(':: chunking pattern ...')
@@ -429,24 +429,39 @@ class Core(object):
 
             i_sent += 1
 
-    def db_save_sentence(self,sent, tagged, compound, tokens):
+    def db_save_sentence(self, sent, corpus):
         c = self.conn.cursor()
         self.conn.text_factory = str
-        sql = """SELECT id FROM HORUS_SENTENCES WHERE sentence = ? """
-        c.execute(sql, (sent,))
-        res_sent = c.fetchone()
-        if res_sent is None:
-            self.sys.log.info(':: caching sentence: ' + sent)
+        sql = """SELECT id FROM HORUS_SENTENCES
+                 WHERE sentence = ? and corpus_name = ? """
+        c.execute(sql, (str(sent[1][0]), 'ritter'))
+        res = c.fetchone()
+        id = -1
+        if res is None:
+            self.sys.log.info(':: caching sentence: ' + sent[1][0])
             #buffer(zlib.compress
-            row = (str(sent), str(tagged), str(compound), str(tokens))
-            sql = """INSERT INTO HORUS_SENTENCES(sentence, tagged, compounds, tokens)
-                             VALUES(?,?,?,?)"""
+            #row = (str(sent), str(tagged), str(compound), str(tokens))
+            row = (sent[0], corpus, sent[1][0], sent[1][1], sent[1][2],
+                   str(sent[2][0]), str(sent[2][1]), str(sent[2][2]),
+                   str(sent[3][0]), str(sent[3][1]), str(sent[3][2]),
+                   str(sent[4][0]), str(sent[4][1]), str(sent[4][2]),
+                   str(sent[5][0]), str(sent[5][1]), str(sent[5][2]))
+            sql = """INSERT INTO HORUS_SENTENCES(sentence_has_NER, corpus_name,
+                          sentence, same_tokenization_stanford, same_tokenization_tweetNLP,
+                          corpus_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
+                          corpus_ner_y, annotator_stanford_ner, annotator_tweetNLP_ner,
+                          corpus_pos_y, annotator_stanford_pos, annotator_tweetNLP_pos,
+                          corpus_pos_uni_y, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal)
+                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
             self.sys.log.debug(sql)
-            c.execute(sql, row)
+            id = c.execute(sql, row)
             self.conn.commit()
-            self.sys.log.debug(':: done: ' + sent)
+            id = id.lastrowid
+            self.sys.log.debug(':: done: ' + sent[1][0])
         else:
             self.sys.log.debug(':: sentence is already cached')
+            id = res[0]
+        return id
 
     def download_image_local(self,image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
         val = URLValidator()
@@ -1186,27 +1201,33 @@ class Core(object):
             w = []
         return sentences
 
-    def get_tokens_pos_and_pos_uni(self, sentence, annotator_id):
-        ret_tokens, ret_pos, ret_pos_uni = [], [], []
-        if annotator_id == 2:
-            #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
-            list_shell = [sentence]
-            self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
-            tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
-        elif annotator_id == 1:
-            w = nltk.word_tokenize(sentence)
-            pos_uni = nltk.pos_tag(w, tagset='universal')
-            pos = nltk.pos_tag(w)
-            _pos = zip(*pos)[1]
-            _pos_uni = zip(*pos_uni)[1]
-
-        return tokens, pos, pos_uni
-
-    def sentence_cached_before(self, sentence):
-        c = self.conn.execute("""SELECT sentence, has_NER, tags_real_ner, #parei aqui!!!!
+    def sentence_cached_before(self, corpus, sentence):
+        """This method caches the structure of HORUS in db
+        in order to speed things up. The average pre-processing time is about to 4-5sec
+        for EACH sentence due to attached components (eg.: stanford tools). If the sentence
+        has already been cached, we load and convert strings to list, appending the content
+        directly to the matrix, thus optimizing a lot this phase.
+        """
+        sent = []
+        c = self.conn.execute("""SELECT sentence_has_NER,
+                          sentence, same_tokenization_stanford, same_tokenization_tweetNLP,
+                          corpus_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
+                          corpus_ner_y, annotator_stanford_ner, annotator_tweetNLP_ner,
+                          corpus_pos_y, annotator_stanford_pos, annotator_tweetNLP_pos,
+                          corpus_pos_uni_y, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
+                          compounds
                                  FROM HORUS_SENTENCES
-                                 WHERE sentence = ?""", sentence)
-        return c.fetchone()
+                                 WHERE corpus_name = ? and sentence = ?""", (corpus, sentence))
+        ret = c.fetchone()
+        if ret is not None:
+            sent.append(ret[0])
+            sent.append([json.loads(ret[1:3])])
+            sent.append([json.loads(ret[4:3])])
+            sent.append([json.loads(ret[7:3])])
+            sent.append([json.loads(ret[10:3])])
+            sent.append([json.loads(ret[13:3])])
+        return sent
+
 
     def process_ritter_ds(self, dspath):
         '''
@@ -1214,67 +1235,89 @@ class Core(object):
         :param dspath: path to Ritter dataset
         :return: sentence contains any entity?, sentence, words, NER tags
         '''
-        sentences = []
-        w = []
-        t = []
-        s = ''
-        has3NER = -1
-        with open(dspath) as f:
-            stan = NERAnnotators()
-            for line in f:
-                if line.strip() != '':
-                    token = line.split('\t')[0]
-                    tag = line.split('\t')[1].replace('\r','').replace('\n','')
-                if line.strip() == '':
-                    if len(w) != 0:
-                        # that' a sentence, check if cached!
-                        cache_sent = self.sentence_cached_before(s)
-                        if len(cache_sent) > 0:
-                            sentences.append(cache_sent)
-                        else:
-                            # stanford
-                            tokens_st, pos_st, pos_uni_st = self.get_tokens_pos_and_pos_uni(s, 1)
-                            # twitterNLP
-                            tokens_twe, pos_twe, pos_uni_twe = self.get_tokens_pos_and_pos_uni(s, 2)
-                            # stanford NER
-                            nerstantags = stan.stanford_ner.tag(s.split())
-                            nerstantags = numpy.array(nerstantags)
-                            # saving to database
-                            self.db_save_sentence([has3NER, s, w,
-                                                   tokens_st, pos_st, pos_uni_st,
-                                                   tokens_twe, pos_twe, pos_uni_twe,
-                                                   nerstantags[:, 1].tolist()])
-                            sentences.append(sent)
+        try:
+            sentences = []
+            # default corpus tokens
+            tokens = []
+            # correct corpus NER tags
+            tags_ner_y = []
+            s = ''
+            has3NER = -1
+            with open(dspath) as f:
+                stan = NERAnnotators()
+                for line in f:
+                    if line.strip() != '':
+                        token = line.split('\t')[0]
+                        ner = line.split('\t')[1].replace('\r','').replace('\n','')
+                    if line.strip() == '':
+                        if len(tokens) != 0:
+                            # that' a sentence, check if cached!
+                            cache_sent = self.sentence_cached_before('ritter', s)
+                            if len(cache_sent) != 0:
+                                sentences.append(cache_sent)
+                            else:
+                                _tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 1)
+                                _tokens_twe, _pos_twe, _pos_uni_twe = self.tokenize_and_pos(s, 2)
 
-                            w = []
-                            t = []
-                            s = ''
-                            has3NER = -1
-                else:
-                    s += token + ' '
-                    w.append(token)
-                    t.append(tag)
-                    if tag in definitions.NER_RITTER:
-                        has3NER = 1
+                                _pos_st = numpy.array(_pos_st)
+                                _pos_uni_st = numpy.array(_pos_uni_st)
 
-        #just in case of tweetNLP
-        if self.config.models_pos_tag_lib == 2:
-            #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
-            list_shell = []
-            for item in sentences:
-                list_shell.append(item[1])
-            self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
-            tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
-            cache_sentences = []
-            index = 0
-            for item in sentences:
-                _pos = zip(*pos[index])[1]
-                _pos_uni = zip(*pos_uni[index])[1]
-                cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni), item[6]])
-                index +=1
-            return cache_sentences
-        else:
-            return sentences
+                                _pos_twe = numpy.array(_pos_twe)
+                                _pos_uni_twe = numpy.array(_pos_uni_twe)
+
+
+                                # stanford tok has the same length of corpus tok?
+                                _same_tok_stanf = (len(_tokens_st) == len(tokens))
+
+                                # tweetNLP tok has the same length of corpus tok?
+                                _same_tok_tweet = (len(_tokens_twe) == len(tokens))
+
+                                # stanford NER
+                                nerstantags = stan.stanford_ner.tag(_tokens_st)
+                                nerstantags = numpy.array(nerstantags)
+                                # saving to database
+                                sent = [has3NER,
+                                        [s, _same_tok_stanf, _same_tok_tweet],
+                                        [tokens, _tokens_st, _tokens_twe],
+                                        [tags_ner_y, nerstantags[:, 1].tolist(), []],
+                                        [[], _pos_st[:, 1].tolist(), _pos_twe[:, 1].tolist()],
+                                        [[], _pos_uni_st[:, 1].tolist(), _pos_uni_twe[:, 1].tolist()]]
+
+                                self.db_save_sentence(sent, 'ritter')
+                                sentences.append(sent)
+                                tokens = []
+                                tags_ner_y = []
+                                s = ''
+                                has3NER = -1
+                    else:
+                        s += token + ' '
+                        tokens.append(token)
+                        tags_ner_y.append(ner)
+                        if ner in definitions.NER_RITTER:
+                            has3NER = 1
+
+            #just in case of tweetNLP
+            if self.config.models_pos_tag_lib == 2:
+                #Communicating once the shell process is opened rather than closing comms it's definitely more sensible, so I have done it...
+                list_shell = []
+                for item in sentences:
+                    list_shell.append(item[1])
+                self.sys.log.info(':: opening shell once to tweetNLP pos tagger ...')
+                tokens, pos, pos_uni = self.tokenize_and_pos(list_shell)
+                cache_sentences = []
+                index = 0
+                for item in sentences:
+                    _pos = zip(*pos[index])[1]
+                    _pos_uni = zip(*pos_uni[index])[1]
+                    cache_sentences.append([item[0], item[1], item[2], item[3], list(_pos), list(_pos_uni), item[6]])
+                    index +=1
+                return cache_sentences
+            else:
+                return sentences
+
+        except Exception as error:
+            print('caught this error: ' + repr(error))
+
 
     def processing_conll_ds(self, dspath):
         sentences = []
