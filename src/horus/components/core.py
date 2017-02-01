@@ -1275,21 +1275,22 @@ class Core(object):
                                 # tweetNLP tok has the same length of corpus tok?
                                 _same_tok_tweet = (len(_tokens_twe) == len(tokens))
 
+                                # NLTK NER
+                                nernltktags = self.tools.annotate_ner_nltk(_pos_nltk)
+
+
                                 # stanford NER
                                 nerstantags = self.tools.annotate_ner_stanford(s)
                                 nerstantags = numpy.array(nerstantags)
 
-                                #NLTK NER
-                                nernltktags = self.tools.annotate_ner_nltk(s)
-
                                 # saving to database
                                 sent = [has3NER,
-                                        [s, 1 if _same_tok_nltk else 0, 1 if _same_tok_stanf else 0,
-                                            1 if _same_tok_tweet else 0],
+                                        [s, 1 if _same_tok_nltk else 0, 1 if _same_tok_stanf else 0, 1 if _same_tok_tweet else 0],
                                         [tokens, _tokens_nltk, _tokens_st, _tokens_twe],
                                         [tags_ner_y, nernltktags, nerstantags[:, 1].tolist(), []],
                                         [[], _pos_nltk[:, 1].tolist(), _pos_st[:, 1].tolist(), _pos_twe[:, 1].tolist()],
-                                        [[], _pos_uni_nltk[:, 1].tolist(), _pos_uni_st[:, 1].tolist(), _pos_uni_twe[:, 1].tolist()]]
+                                        [[], _pos_uni_nltk[:, 1].tolist(), _pos_uni_st[:, 1].tolist(), _pos_uni_twe[:, 1].tolist()]
+                                        ]
 
                                 self.db_save_sentence(sent, dataset_name)
                                 sentences.append(sent)

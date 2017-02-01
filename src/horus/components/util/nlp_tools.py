@@ -18,9 +18,15 @@ class NLPTools(object):
         tagged = nltk.pos_tag(tokens)
         return tokens, tagged, nltk.pos_tag(tokens, tagset="universal")
 
-    def annotate_ner_nltk(self, text):
-        t = nltk.ne_chunk(text, binary=False)
-        return nltk.tree2conllstr(t)
+    def annotate_ner_nltk(self, tagged):
+        t = nltk.ne_chunk(tagged, binary=False)
+        x = nltk.tree2conllstr(t)
+        x = x.split('\n')
+        ret = []
+        for xi in x:
+            ret.append(xi.split(' ')[2])
+        return ret
+
 
     def annotate_ner_stanford(self, text):
         return self.stanford_ner.tag(text.split())
