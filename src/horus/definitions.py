@@ -19,6 +19,10 @@ NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']
 NER_RITTER_LOC = ['B-geo-loc', 'I-geo-loc']
 
+#TODO: check if we have here ALL the NOUNs!!!
+# merge of ALL noun tags, from all the POS taggers
+POS_NOUN_TAGS = ['NN', 'NNP', 'NOUN', 'NNS', 'PROPN']
+
 NER_RITTER = []
 NER_RITTER.extend(NER_RITTER_PER)
 NER_RITTER.extend(NER_RITTER_ORG)

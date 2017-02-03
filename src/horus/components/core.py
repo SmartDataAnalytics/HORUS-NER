@@ -52,6 +52,7 @@ from horus.components.util.nlp_tools import NLPTools
 
 #print cv2.__version__
 
+
 class Core(object):
     """ Description:
             A core module for config.
@@ -139,79 +140,121 @@ class Core(object):
         x = numpy.array(self.horus_matrix)
         return x[:, [3, 4, 12, 13, 14, 15, 16, 17]]
 
-    def annotate(self, input_text, input_file, ds_format, output_file, output_format):
-        # 0 = text (parameter of reading file) / 1 = ritter
-        if int(ds_format) == 0:
-            text = ''
-            if input_text is not None:
-                text = input_text.strip('"\'')
-                self.sys.log.info(':: processing text')
-            elif input_file is not None:
-                f = open(input_file, 'r')
-                text = f.readlines()
-                self.sys.log.info(':: processing input file')
-            else:
-                raise Exception("err: missing text to be annotated")
-            sent_tokenize_list = self.process_input_text(text)
-
-        elif int(ds_format) == 1 or int(ds_format) == 2:
-            if input_file is None:
-                raise Exception("Provide an input file format to be annotated")
-            elif int(ds_format) == 1:
-                self.sys.log.info(':: loading Ritter ds')
-                sent_tokenize_list = self.process_ds_conll_format(input_file, 'ritter')
-            elif int(ds_format) == 2:
-                self.sys.log.info(':: loading coNLL2003 ds')
-                sent_tokenize_list = self.processing_conll_ds(input_file)
-
-        self.sys.log.info(':: caching %s sentence(s)' % str(len(sent_tokenize_list)))
-        # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
-        self.cache_sentence(int(ds_format), sent_tokenize_list)
-        self.sys.log.info(':: done!')
-
-        self.sys.log.info(':: caching results...')
-        self.cache_results()
-        self.sys.log.info(':: done!')
-
-        #  updating components matrix
+    # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
+    #TODO: attention here! when tokenization is not the same, mapping should be done at classification level!
+    def convert_dataset_to_horus_matrix(self, sentences):
+        '''
+        converts the list to horus_matrix
         # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
-        # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
-        # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
-        self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
-        self.detect_objects()
-        self.sys.log.info(':: done!')
+        # 4 = pos_universal (deprecated) , 5 = pos,          6 = ner       , 7 = compound? ,
+        # 8 = compound_size
+        :param sentences:
+        :return:horus_matrix
+        '''
+        temp = []
+        sent_index = 0
+        for sent in sentences:
+            sent_index+=1
+            for c in range(len(sent[6][self.config.models_pos_tag_lib])):
+                is_entity = 1
+                word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
+                compound = sent[6][self.config.models_pos_tag_lib][c][1]
+                compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
+                temp.append([is_entity, sent_index, word_index_ref, compound, '', '', '', 1, compound_size])
+            word_index = 0
+            for i in range(len(sent[2])):
+                is_entity = 1 if sent[3][0][i] in definitions.NER_RITTER else 0
+                term = sent[2][self.config.models_pos_tag_lib][i]
+                tag_ner = sent[3][self.config.models_pos_tag_lib][i]
+                tag_pos = sent[self.config.models_pos_tag_lib_type][self.config.models_pos_tag_lib][i]
+                word_index+=1
+                temp.append([is_entity, sent_index, word_index, term, '', tag_pos, tag_ner, 0, 0])
+        return temp
 
-        self.conn.close()
 
-        #self.sys.log.info(':: applying rules...')
-        #self.update_rules_cv_predictions()
-        self.sys.log.info(':: updating compounds...')
-        self.update_compound_predictions()
-        self.sys.log.info(':: done!')
+    def annotate(self, input_text, input_file, ds_format, output_file, output_format):
+        try:
+            # 0 = text (parameter of reading file) / 1 = ritter
+            if int(ds_format) == 0:
+                text = ''
+                if input_text is not None:
+                    text = input_text.strip('"\'')
+                    self.sys.log.info(':: processing text')
+                elif input_file is not None:
+                    f = open(input_file, 'r')
+                    text = f.readlines()
+                    self.sys.log.info(':: processing input file')
+                else:
+                    raise Exception("err: missing text to be annotated")
+                sent_tokenize_list = self.process_input_text(text)
 
-        # self.sys.log.info(horus_matrix)
-        header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE",
-                  "ID_TERM_TXT", "ID_TERM_IMG",
-                  "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX",
-                  "TOT_TX_LOC", "TOT_TX_ORG",
-                  "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
+            elif int(ds_format) == 1 or int(ds_format) == 2:
+                if input_file is None:
+                    raise Exception("Provide an input file format to be annotated")
+                elif int(ds_format) == 1:  # Ritter
+                    self.sys.log.info(':: processing CoNLL format')
+                    sent_tokenize_list = self.process_ds_conll_format(input_file, 'ritter')
+                elif int(ds_format) == 2:  # CoNLL 2003
+                    #TODO: merge this method to above
+                    sent_tokenize_list = self.processing_conll_ds(input_file)
 
-        if int(ds_format) == 0:
-            self.print_annotated_sentence()
+            self.sys.log.info(':: %s sentence(s) cached' % str(len(sent_tokenize_list)))
 
-        self.sys.log.info(':: exporting metadata...')
-        if output_file == '':
-            output_file = 'noname'
-        if output_format == 'json':
-            with open(output_file + '.json', 'wb') as outfile:
-                json.dump(self.horus_matrix, outfile)
-        elif output_format == 'csv':
-            horus_csv = open(output_file + '.csv', 'wb')
-            wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
-            wr.writerow(header)
-            wr.writerows(self.horus_matrix)
+            self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
+            self.horus_matrix = self.convert_dataset_to_horus_matrix(sent_tokenize_list)
 
-        return self.horus_matrix
+            # update the database with compounds
+            ##TODO: this might not be necessary anymore
+            #self.sys.log.info(':: creating horus structure and updating compounds')
+            #self.create_matrix_and_compounds(sent_tokenize_list)
+            #self.sys.log.info(':: done!')
+
+            # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
+            # self.cache_sentence(int(ds_format), sent_tokenize_list)
+            #self.sys.log.info(':: done!')
+
+            self.sys.log.info(':: caching results...')
+            self.download_and_cache_results()
+            self.sys.log.info(':: done!')
+
+            self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
+            self.detect_objects()
+            self.sys.log.info(':: done!')
+
+            self.conn.close()
+
+            #self.sys.log.info(':: applying rules...')
+            #self.update_rules_cv_predictions()
+            self.sys.log.info(':: updating compounds...')
+            self.update_compound_predictions()
+            self.sys.log.info(':: done!')
+
+            # self.sys.log.info(horus_matrix)
+            header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE",
+                      "ID_TERM_TXT", "ID_TERM_IMG",
+                      "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX",
+                      "TOT_TX_LOC", "TOT_TX_ORG",
+                      "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
+
+            if int(ds_format) == 0:
+                self.print_annotated_sentence()
+
+            self.sys.log.info(':: exporting metadata...')
+            if output_file == '':
+                output_file = 'noname'
+            if output_format == 'json':
+                with open(output_file + '.json', 'wb') as outfile:
+                    json.dump(self.horus_matrix, outfile)
+            elif output_format == 'csv':
+                horus_csv = open(output_file + '.csv', 'wb')
+                wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
+                wr.writerow(header)
+                wr.writerows(self.horus_matrix)
+
+            return self.horus_matrix
+
+        except Exception as error:
+            print('caught this error: ' + repr(error))
 
     def print_annotated_sentence(self):
         '''
@@ -280,7 +323,6 @@ class Core(object):
                 if is_entity:
                     token_ok += 1
 
-            self.db_save_sentence(sent[1], '-', '-', str(sent[3]))
             i_sent += 1
             i_word = 1
 
@@ -354,27 +396,29 @@ class Core(object):
 
     def tokenize_and_pos(self, sentence, annotator_id):
         # NLTK
-        if annotator_id == 0:
+        if annotator_id == 1:
             return self.tools.tokenize_and_pos_nltk(sentence)
         # Stanford
-        elif annotator_id == 1:
+        elif annotator_id == 2:
             return self.tools.tokenize_and_pos_stanford(sentence)
         # TwitterNLP
-        elif annotator_id == 2:
+        elif annotator_id == 3:
             if type(sentence) is not list:
                 return self.tools.tokenize_and_pos_twitter([sentence])
             return self.tools.tokenize_and_pos_twitter_list(sentence)
 
     def cache_sentence(self,sentence_format, sentence_list):
-        if sentence_format == 0:
-            self.cache_sentence_free_text(sentence_list)
-        elif sentence_format == 1:
+        if sentence_format == 1:
             self.cache_sentence_ritter(sentence_list)
         elif sentence_format == 2:
             self.cache_sentence_conll(sentence_list)
 
-    def cache_sentence_free_text(self, sentence_list):
+    def update_database_compound(self, sentence_str, compounds):
+        c = self.conn.cursor()
+        sql = """UPDATE HORUS_SENTENCES SET compounds = ? WHERE sentence = ?"""
+        return c.execute(sql, (compounds, sentence_str))
 
+    def create_matrix_and_compounds(self, sentence_list):
         i_sent, i_word = 1, 1
         self.sys.log.debug(':: chunking pattern ...')
         pattern = """
@@ -391,29 +435,31 @@ class Core(object):
             #  add compounds of given sentence
             aux = 0
             toparse = []
-            for obj in sent[2]:
-                toparse.append(tuple([obj, sent[4][aux]]))
+
+            for token in sent[2][self.config.models_pos_tag_lib]:
+                toparse.append(tuple([token, sent[4][self.config.models_pos_tag_lib][aux]]))
                 aux+=1
             t = cp.parse(toparse)
 
             i_word = 0
             for item in t:
                 if type(item) is nltk.Tree:
-                    is_entity = 1 if (sent[0] == 1 and sent[3][i_word - 1] != 'O') else -1
+                    is_entity = 1 if (sent[0] == 1 and sent[3][0][i_word] != 'O') else -1
                     i_word += len(item)
                     if len(item) > 1:  # that's a compound
                         compound = ''
                         for tk in item:
                             compound += tk[0] + ' '
 
-                        self.horus_matrix.append([is_entity, i_sent, i_word - len(item) + 1,
+                        self.horus_matrix.append([is_entity, i_sent, i_word - len(item),
                                                   compound[:len(compound) - 1], '', '', '', 1, len(item)])
                         compounds += compound[:len(compound) - 1] + '|'
                         compound = ''
                 else:
                     i_word += 1
 
-
+            # update the database with compounds for given sentence
+            upd = self.update_database_compound(sent[1][0], compounds)
             #  transforming to components matrix
             # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
             # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
@@ -424,9 +470,10 @@ class Core(object):
                 self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
 
-            self.db_save_sentence(sent[1], ' '.join(sent[5]), compounds, ' '.join(sent[2]))
-
             i_sent += 1
+
+        # commit updates (compounds)
+        self.conn.commit()
 
     def db_save_sentence(self, sent, corpus):
         c = self.conn.cursor()
@@ -440,19 +487,22 @@ class Core(object):
             self.sys.log.info(':: caching sentence: ' + sent[1][0])
             #buffer(zlib.compress
             #row = (str(sent), str(tagged), str(compound), str(tokens))
-            sentence = [sent[0], corpus, sent[1][0], sent[1][1], sent[1][2],
-                   json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]),
-                   json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]),
-                   json.dumps(sent[4][0]), json.dumps(sent[4][1]), json.dumps(sent[4][2]),
-                   json.dumps(sent[5][0]), json.dumps(sent[5][1]), json.dumps(sent[5][2])]
+            # sent[6][0] is a dummy variable!
+            sentence = [sent[0], corpus, sent[1][0], sent[1][1], sent[1][2], sent[1][3],
+                   json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]), json.dumps(sent[2][3]),
+                   json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]), json.dumps(sent[3][3]),
+                   json.dumps(sent[4][0]), json.dumps(sent[4][1]), json.dumps(sent[4][2]), json.dumps(sent[4][3]),
+                   json.dumps(sent[5][0]), json.dumps(sent[5][1]), json.dumps(sent[5][2]), json.dumps(sent[5][3]),
+                   json.dumps(sent[6][1]), json.dumps(sent[6][2]), json.dumps(sent[6][3])]
             #row = (sentence)
             sql = """INSERT INTO HORUS_SENTENCES(sentence_has_NER, corpus_name,
                           sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
                           corpus_tokens, annotator_nltk_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
                           corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
                           corpus_pos_y, annotator_nltk_pos, annotator_stanford_pos, annotator_tweetNLP_pos,
-                          corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal)
-                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+                          corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
+                          annotator_nltk_compounds, annotator_stanford_compounds, annotator_tweetNLP_compounds)
+                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
             id = c.execute(sql, sentence)
             self.conn.commit()
             id = id.lastrowid
@@ -484,15 +534,14 @@ class Core(object):
                 print('-> error: ' + repr(error))
         return auxtype
 
-    def cache_results(self):
+    def download_and_cache_results(self):
         try:
             auxc = 1
-            self.sys.log.info(':: caching horus_matrix: ' + str(len(self.horus_matrix)))
-
+            self.sys.log.info(':: download and cache tokens')
             for item in self.horus_matrix:
-                self.sys.log.info(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
+                self.sys.log.debug(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
                 term = item[3]
-                if (item[4] == 'NOUN' or item[4] == 'PROPN') or item[7] == 1:
+                if (item[5] in definitions.POS_NOUN_TAGS) or item[7] == 1:
                     self.sys.log.debug(':: caching [%s] ...' % term)
                     c = self.conn.cursor()
 
@@ -512,34 +561,34 @@ class Core(object):
                     # have it defined
                     values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text)
                     sql = """SELECT id
-                             FROM HORUS_TERM_SEARCH
-                             WHERE term = ? AND
-                                   id_search_engine = ? AND
-                                   id_search_type = ? AND
-                                   search_engine_features = ?"""
+                              FROM HORUS_TERM_SEARCH
+                              WHERE term = ? AND
+                                       id_search_engine = ? AND
+                                       id_search_type = ? AND
+                                       search_engine_features = ?"""
                     c.execute(sql, values)
                     res = c.fetchone()
                     if res is None:
                         self.sys.log.info(':: [%s] caching - text' % term)
                         values = (term, cterm.lastrowid, self.config.search_engine_api, 1,
-                                  self.config.search_engine_features_text,
-                                  str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
-                                  self.config.search_engine_tot_resources)
+                                      self.config.search_engine_features_text,
+                                      str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
+                                      self.config.search_engine_tot_resources)
                         c = self.conn.execute("""INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                                                          search_engine_features, query_date,
-                                                                          query_tot_resource)
-                                                 VALUES(?, ?, ?, ?, ?, ?, ?)""", values)
+                                                                              search_engine_features, query_date,
+                                                                              query_tot_resource)
+                                                     VALUES(?, ?, ?, ?, ?, ?, ?)""", values)
 
                         id_term_search = c.lastrowid
                         item.extend([id_term_search])  # updating matrix
                         seq = 0
                         # get text
                         metaquery, result = bing_api2(term, api=self.config.search_engine_key, source_type="Web",
-                                                     top=self.config.search_engine_tot_resources, format='json', market='en-US')
+                                                         top=self.config.search_engine_tot_resources, format='json', market='en-US')
                         for web_result in result['d']['results']:
                             seq+=1
                             row = (id_term_search,
-                                   0,
+                                    0,
                                    web_result['ID'],
                                    seq,
                                    web_result['Url'],
@@ -547,18 +596,18 @@ class Core(object):
                                    web_result['Description'],
                                    '')
                             c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search,
-                                                                                    id_ner_type,
-                                                                                    search_engine_resource_id,
-                                                                                    result_seq,
-                                                                                    result_url,
-                                                                                    result_title,
-                                                                                    result_description,
-                                                                                    result_html_text)
-                                              VALUES(?,?,?,?,?,?,?,?)""", row)
+                                                                                        id_ner_type,
+                                                                                        search_engine_resource_id,
+                                                                                        result_seq,
+                                                                                        result_url,
+                                                                                        result_title,
+                                                                                        result_description,
+                                                                                        result_html_text)
+                                                  VALUES(?,?,?,?,?,?,?,?)""", row)
 
                             c.execute("""UPDATE HORUS_TERM_SEARCH
-                                              SET metaquery = '%s'
-                                              WHERE id = %s""" % (metaquery, id_term_search))
+                                                  SET metaquery = '%s'
+                                                  WHERE id = %s""" % (metaquery, id_term_search))
 
                         if seq == 0:
                             row = (id_term_search,
@@ -570,18 +619,18 @@ class Core(object):
                                    '',
                                    '')
                             c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search,
-                                                                               id_ner_type,
-                                                                               search_engine_resource_id,
-                                                                               result_seq,
-                                                                               result_url,
-                                                                               result_title,
-                                                                               result_description,
-                                                                               result_html_text)
-                                                                      VALUES(?,?,?,?,?,?,?,?)""", row)
+                                                                                   id_ner_type,
+                                                                                   search_engine_resource_id,
+                                                                                   result_seq,
+                                                                                   result_url,
+                                                                                   result_title,
+                                                                                   result_description,
+                                                                                   result_html_text)
+                                                                          VALUES(?,?,?,?,?,?,?,?)""", row)
 
                             c.execute("""UPDATE HORUS_TERM_SEARCH
-                                         SET metaquery = '%s'
-                                         WHERE id = %s""" % (metaquery, id_term_search))
+                                             SET metaquery = '%s'
+                                             WHERE id = %s""" % (metaquery, id_term_search))
 
                         self.sys.log.debug(':: term [%s] cached (text)!' % term)
                         self.conn.commit()
@@ -591,70 +640,70 @@ class Core(object):
 
                     values = (term, self.config.search_engine_api, 2, self.config.search_engine_features_text)
                     c = self.conn.execute("""SELECT id
-                                        FROM HORUS_TERM_SEARCH
-                                        WHERE term = ? AND
-                                              id_search_engine = ? AND
-                                              id_search_type = ? AND
-                                              search_engine_features = ?""", values)
+                                            FROM HORUS_TERM_SEARCH
+                                            WHERE term = ? AND
+                                                  id_search_engine = ? AND
+                                                  id_search_type = ? AND
+                                                  search_engine_features = ?""", values)
                     res = c.fetchone()
                     if res is None:
                         self.sys.log.info(':: [%s] caching - image' % term)
                         values = (term, cterm.lastrowid if type(cterm) is not int else cterm, self.config.search_engine_api, 2,
-                                   self.config.search_engine_features_img,
-                                   str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources)
+                                       self.config.search_engine_features_img,
+                                       str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources)
                         sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                                               search_engine_features, query_date, query_tot_resource)
-                                                 VALUES(?,?,?,?,?,?,?)"""
+                                                                   search_engine_features, query_date, query_tot_resource)
+                                                     VALUES(?,?,?,?,?,?,?)"""
                         c.execute(sql, values)
                         id_term_img = c.lastrowid
                         item.extend([id_term_img])  # updating matrix
                         seq = 0
                         # get images
                         metaquery, result = bing_api2(item[3], api=self.config.search_engine_key, source_type="Image",
-                                                     top=self.config.search_engine_tot_resources, format='json')
+                                                         top=self.config.search_engine_tot_resources, format='json')
                         for web_img_result in result['d']['results']:
                             self.sys.log.debug(':: downloading image [%s]' % (web_img_result['Title']))
                             seq += 1
                             auxtype = self.download_image_local(web_img_result['MediaUrl'],
-                                                 web_img_result['ContentType'],
-                                                 web_img_result['Thumbnail']['MediaUrl'],
-                                                 web_img_result['Thumbnail']['ContentType'],
-                                                 id_term_img,
-                                                 0,
-                                                 seq)
+                                                    web_img_result['ContentType'],
+                                                     web_img_result['Thumbnail']['MediaUrl'],
+                                                     web_img_result['Thumbnail']['ContentType'],
+                                                     id_term_img,
+                                                     0,
+                                                     seq)
                             self.sys.log.debug(':: caching image result ...')
                             fname = ('%s_%s_%s.%s' % (str(id_term_img),  str(0),  str(seq),  str(auxtype)))
                             row = (id_term_img,
-                                   0,
-                                   web_img_result['ID'],
-                                   seq,
-                                   web_img_result['MediaUrl'],
-                                   web_img_result['Title'],
-                                   web_img_result['ContentType'],
-                                   web_img_result['Height'],
-                                   web_img_result['Width'],
-                                   web_img_result['Thumbnail']['MediaUrl'],
-                                   web_img_result['Thumbnail']['ContentType'],
-                                   fname)
+                                    0,
+                                    web_img_result['ID'],
+                                    seq,
+                                    web_img_result['MediaUrl'],
+                                    web_img_result['Title'],
+                                    web_img_result['ContentType'],
+                                    web_img_result['Height'],
+                                    web_img_result['Width'],
+                                    web_img_result['Thumbnail']['MediaUrl'],
+                                    web_img_result['Thumbnail']['ContentType'],
+                                    fname)
 
                             sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search,
-                                                                          id_ner_type,
-                                                                          search_engine_resource_id,
-                                                                          result_seq,
-                                                                          result_media_url,
-                                                                          result_media_title,
-                                                                          result_media_content_type,
-                                                                          result_media_height,
-                                                                          result_media_width,
-                                                                          result_media_thumb_media_url,
-                                                                          result_media_thumb_media_content_type,
-                                                                          filename)
-                                              VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
+                                                                              id_ner_type,
+                                                                              search_engine_resource_id,
+                                                                              result_seq,
+                                                                              result_media_url,
+                                                                              result_media_title,
+                                                                              result_media_content_type,
+                                                                              result_media_height,
+                                                                              result_media_width,
+                                                                              result_media_thumb_media_url,
+                                                                              result_media_thumb_media_content_type,
+                                                                              filename)
+                                                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
                             c.execute(sql, row)
 
                             c.execute("""UPDATE HORUS_TERM_SEARCH
-                                              SET metaquery = '%s'
-                                              WHERE id = %s""" % (metaquery, id_term_img))
+                                                  SET metaquery = '%s'
+                                                  WHERE id = %s""" % (metaquery, id_term_img))
 
                         self.sys.log.debug(':: term [%s] cached (img)!' % term)
                         self.conn.commit()
@@ -918,7 +967,7 @@ class Core(object):
         toti = len(self.horus_matrix)
         for item in self.horus_matrix:
             auxi += 1
-            if (item[4] == 'NOUN' or item[4] == 'PROPN') or item[7] == 1:
+            if (item[5] in definitions.POS_NOUN_TAGS) or item[7] == 1:
 
                 self.sys.log.info(':: processing item %d of %d' % (auxi, toti))
 
@@ -1213,19 +1262,48 @@ class Core(object):
                           corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
                           corpus_pos_y, annotator_nltk_pos, annotator_stanford_pos, annotator_tweetNLP_pos,
                           corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
-                          compounds
+                          annotator_nltk_compounds, annotator_stanford_compounds, annotator_tweetNLP_compounds
                                  FROM HORUS_SENTENCES
                                  WHERE corpus_name = ? and sentence = ?""", (corpus, sentence))
         ret = c.fetchone()
         if ret is not None:
             sent.append(ret[0])
             sent.append([ret[1], ret[2], ret[3], ret[4]])
-            sent.append([json.loads(ret[4]), json.loads(ret[5]), json.loads(ret[6]), json.loads(ret[7])])
-            sent.append([json.loads(ret[8]), json.loads(ret[9]), json.loads(ret[10]), json.loads(ret[11])])
-            sent.append([json.loads(ret[12]), json.loads(ret[13]), json.loads(ret[14]), json.loads(ret[15])])
-            sent.append([json.loads(ret[16]), json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19])])
-            sent.append(ret[20])
+            sent.append([json.loads(ret[5]), json.loads(ret[6]), json.loads(ret[7]), json.loads(ret[8])])
+            sent.append([json.loads(ret[9]), json.loads(ret[10]), json.loads(ret[11]), json.loads(ret[12])])
+            sent.append([json.loads(ret[13]), json.loads(ret[14]), json.loads(ret[15]), json.loads(ret[16])])
+            sent.append([json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19]), json.loads(ret[20])])
+            sent.append([json.loads(ret[21]), json.loads(ret[22]), json.loads(ret[23])])
         return sent
+
+    def get_compounds(self, tokens):
+        compounds = []
+        pattern = """
+                                    NP:
+                                       {<JJ>*<NN|NNS|NNP|NNPS><CC>*<NN|NNS|NNP|NNPS>+}
+                                       {<NN|NNS|NNP|NNPS><IN>*<NN|NNS|NNP|NNPS>+}
+                                       {<JJ>*<NN|NNS|NNP|NNPS>+}
+                                       {<NN|NNP|NNS|NNPS>+}
+                                    """
+        cp = nltk.RegexpParser(pattern)
+        toparse = []
+        for token in tokens:
+            toparse.append(tuple([token[0], token[1]]))
+        t = cp.parse(toparse)
+
+        i_word = 0
+        for item in t:
+            if type(item) is nltk.Tree:
+                i_word += len(item)
+                if len(item) > 1:  # that's a compound
+                    compound = ''
+                    for tk in item:
+                        compound += tk[0] + ' '
+
+                    compounds.append([i_word - len(item), compound[:len(compound) - 1], len(item)])
+            else:
+                i_word += 1
+        return compounds
 
     def process_ds_conll_format(self, dspath, dataset_name):
         '''
@@ -1234,6 +1312,7 @@ class Core(object):
         :return: sentence contains any entity?, sentence, words, NER tags
         '''
         try:
+            # sentences
             sentences = []
             # default corpus tokens
             tokens = []
@@ -1252,12 +1331,13 @@ class Core(object):
                             cache_sent = self.sentence_cached_before(dataset_name, s)
                             if len(cache_sent) != 0:
                                 sentences.append(cache_sent)
-                                self.sys.log.info(':: sentence already cached!')
+                                self.sys.log.debug(':: sentence already cached!')
                             else:
-                                self.sys.log.info(':: sentence is going to be cached...')
-                                _tokens_nltk, _pos_nltk, _pos_uni_nltk = self.tokenize_and_pos(s, 0)
-                                _tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 1)
-                                _tokens_twe, _pos_twe, _pos_uni_twe = self.tokenize_and_pos(s, 2)
+                                self.sys.log.debug(':: sentence is going to be cached...')
+
+                                _tokens_nltk, _pos_nltk, _pos_uni_nltk = self.tokenize_and_pos(s, 1)
+                                _tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 2)
+                                _tokens_twe, _pos_twe, _pos_uni_twe = self.tokenize_and_pos(s, 3)
 
                                 _pos_nltk = numpy.array(_pos_nltk)
                                 _pos_uni_nltk = numpy.array(_pos_uni_nltk)
@@ -1278,19 +1358,26 @@ class Core(object):
                                 # NLTK NER
                                 nernltktags = self.tools.annotate_ner_nltk(_pos_nltk)
 
-
                                 # stanford NER
                                 nerstantags = self.tools.annotate_ner_stanford(s)
                                 nerstantags = numpy.array(nerstantags)
 
-                                # saving to database
+                                self.sys.log.debug(':: chunking pattern ...')
+                                comp_nltk = self.get_compounds(_pos_nltk)
+                                comp_st = self.get_compounds(_pos_st)
+                                comp_twe = self.get_compounds(_pos_twe)
+
+                                # saving to database (pos_uni_sta not implemented yet)
                                 sent = [has3NER,
                                         [s, 1 if _same_tok_nltk else 0, 1 if _same_tok_stanf else 0, 1 if _same_tok_tweet else 0],
                                         [tokens, _tokens_nltk, _tokens_st, _tokens_twe],
                                         [tags_ner_y, nernltktags, nerstantags[:, 1].tolist(), []],
                                         [[], _pos_nltk[:, 1].tolist(), _pos_st[:, 1].tolist(), _pos_twe[:, 1].tolist()],
-                                        [[], _pos_uni_nltk[:, 1].tolist(), _pos_uni_st[:, 1].tolist(), _pos_uni_twe[:, 1].tolist()]
+                                        [[], _pos_uni_nltk[:, 1].tolist(), [], _pos_uni_twe[:, 1].tolist()],
+                                        [[], comp_nltk, comp_st, comp_twe]
                                         ]
+                                #TODO: is it necessary?
+                                #self.horus_matrix.extend(sent)
 
                                 self.db_save_sentence(sent, dataset_name)
                                 sentences.append(sent)
@@ -1328,7 +1415,6 @@ class Core(object):
             return sentences
         except Exception as error:
             print('caught this error: ' + repr(error))
-
 
     def processing_conll_ds(self, dspath):
         sentences = []
