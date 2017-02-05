@@ -12,6 +12,7 @@ from horus.postagger import CMUTweetTagger
 class NLPTools(object):
 
     def tokenize_and_pos_nltk(self, text):
+        #TODO: esta trocando '' por ``
         tokens = text
         if type(text) is not list:
             tokens = nltk.word_tokenize(text.decode('utf-8'))

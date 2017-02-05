@@ -170,47 +170,54 @@ class Core(object):
         x = numpy.array(self.horus_matrix)
         return x[:, [3, 4, 12, 13, 14, 15, 16, 17]]
 
-    def get_ner_mapping2_loop(self, fixed, iter, i, t):
+    def get_ner_mapping2_loop(self, x, y, i, t):
+        # http://stackoverflow.com/questions/32185072/nltk-word-tokenize-behaviour-for-double-quotation-marks-is-confusing
+        if self.config.models_pos_tag_lib == 1:
+            if t == '``':
+                t == '"'
+            elif t == '\'\'':
+                t == '"'
         q = True
         # optimization trick
         start = 0
-        if i >= 3:
-            start = i - 3
-        elif i >= 2:
-            start = i - 2
-        elif i >= 1:
-            start = i - 1
+        if i >= 8:
+            start = i - 8
+        elif i >= 7:
+            start = i - 7
+        elif i >= 6:
+            start = i - 6
         # tries to get a single not aligned token
-        for z in range(start, len(iter)):
+        for z in range(start, len(y)):
             try:
-                af = (fixed[i + 1] if i < len(fixed) else '')
-                bf = (fixed[i - 1] if i > 0 else '')
-                ai = (iter[z + 1] if z < len(iter) else '')
-                bi = (iter[z - 1] if z > 0 else '')
-
-                if i > 0:
-                    bf = fixed[i - 1]
-                if iter[z] == t and (bf == bi or af == ai):
+                af = (x[i + 1] if i + 1 < len(x) else '')
+                bf = (x[i - 1] if i > 0 else '')
+                ai = (y[z + 1] if z + 1 < len(y) else '')
+                bi = (y[z - 1] if z > 0 else '')
+                if y[z] == t and (bf == bi or af == ai):
                     #  ok, is the correct one by value and position
-                    index_token = iter.index(iter[z])
+                    index_token = y.index(y[z])
                     q = False
                     break
             except Exception:
                 print 'that is fine...'
         # start to merge stuff and try to locate it
         merged=''
-        ntimes = len(fixed) - start
+        ntimes = len(x) - start
         while q is True:
             for slide in range(ntimes):
+                print 'slide=', slide
                 merged = ''
                 if q is False:
                     break
-                for z in range(start, len(fixed)):
-                    merged = merged + fixed[z]
+                print 'start=', start
+                print 'len(x)=', len(x)
+                for z in range(start, len(x)): #start, len(x)
+                    print 'z=', z
+                    merged = merged + x[z]
                     try:
-                        index_token = iter.index(merged)
-                        af = (fixed[i + 1] if i < len(fixed) else '')
-                        bf = (fixed[i - 1] if i > 0 else '')
+                        index_token = y.index(merged)
+                        af = (x[i + 1] if i + 1 < len(x) else '')
+                        bf = (x[i - 1] if i > 0 else '')
                         if t in merged and (af in merged or bf in merged):  # if it is merged, at least 2 MUST be included
                             q = False
                             break
@@ -222,18 +229,18 @@ class Core(object):
         return index_token
 
     def get_ner_mapping2(self, y, x, t, i):
-        if len(y) < i-1 and y[i] == t:
-                index_token = i
-        else:
-            index_token = self.get_ner_mapping2_loop(x, y, i, t)
+        if i+1 < len(y):
+            if y[i] == t:
+                return i
+        index_token = self.get_ner_mapping2_loop(x, y, i, t)
+        if index_token is None:
+            # means that we looked over all combinations in x that could exist in y
+            # if we enter here, means that it is not possible and thus, the given token t has not been
+            # tokenized in x, but in y yes! try other way around...
+            index_token = self.get_ner_mapping2_loop(y, x, i, t)
             if index_token is None:
-                # means that we looked over all combinations in x that could exist in y
-                # if we enter here, means that it is not possible and thus, the given token t has not been
-                # tokenized in x, but in y yes! try other way around...
-                index_token = self.get_ner_mapping2_loop(y, x, i, t)
-                if index_token is None:
-                    print 'it should never ever happen!!! maiden maiden!'
-                    exit(-1)
+                print 'it should never ever happen!!! maiden maiden!'
+                exit(-1)
         return index_token
 
     def get_ner_mapping(self, listy, listx, termx, itermx):
@@ -313,11 +320,11 @@ class Core(object):
                     compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
                     temp.append([is_entity, sent_index, word_index_ref, compound, '', '', '', 1, compound_size])
                 word_index = 0
-                for i in range(len(sent[2][self.config.models_pos_tag_lib]) - 1):
+                for i in range(len(sent[2][self.config.models_pos_tag_lib])):
                     print i
                     print sent_index
                     print 'a'
-                    if i==13 and sent_index==3:
+                    if i==14 and sent_index==3:
                         verqualquegr=0
                     term = sent[2][self.config.models_pos_tag_lib][i]
                     print 'b'
