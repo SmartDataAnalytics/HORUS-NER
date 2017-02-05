@@ -14,7 +14,9 @@ class NLPTools(object):
     def tokenize_and_pos_nltk(self, text):
         tokens = text
         if type(text) is not list:
-            tokens = nltk.word_tokenize(text)
+            tokens = nltk.word_tokenize(text.decode('utf-8'))
+
+        #sd = [s.decode('utf8') for s in tokens]
         tagged = nltk.pos_tag(tokens)
         return tokens, tagged, nltk.pos_tag(tokens, tagset="universal")
 
@@ -32,14 +34,17 @@ class NLPTools(object):
         return self.stanford_ner.tag(text.split())
 
     def tokenize_and_pos_stanford(self, text):
-        tokens = text.split()
-        return tokens, self.stanford_pos.tag(tokens), []
+        t = text.decode('utf-8')
+        #sd = [s.decode('utf8') for s in text.split()]
+        return t.split(), self.stanford_pos.tag(t.split()), []
 
     def tokenize_and_pos_twitter(self, text):
         tokens = []
         tagged = []
         pos_universal = []
-        pos_token_tag_sentence = CMUTweetTagger.runtagger_parse(text)
+        sd = [s.decode('utf8') for s in text.split()]
+        #[w.decode('utf8').encode(encoding='ascii', errors='replace') for w in text.split()]
+        pos_token_tag_sentence = CMUTweetTagger.runtagger_parse(sd)
 
         for sequence_tag in pos_token_tag_sentence:
             for token_tag in sequence_tag:
@@ -48,6 +53,7 @@ class NLPTools(object):
                 pos_universal.append(self.convert_penn_to_universal_tags(token_tag[1]))
         return tokens, zip(tokens, tagged), zip(tokens, pos_universal)
 
+    #TODO: is it really necessary? I just changed the other adding "split" right before...no need to [] before
     def tokenize_and_pos_twitter_list(self, text):
         token_list = []
         tagged_list = []

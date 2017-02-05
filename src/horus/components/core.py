@@ -62,8 +62,38 @@ class Core(object):
     """
 
     # static methods
-    version = "0.1.4"
-    version_label = "HORUS 0.1.4"
+    version = "0.1.5"
+    version_label = "HORUS 0.1.5"
+
+    def deletar_depois(self):
+        try:
+            c = self.conn.cursor()
+            c2 = self.conn.cursor()
+            self.conn.text_factory = str
+            sql = """SELECT id, annotator_nltk_compounds, annotator_stanford_compounds, annotator_tweetNLP_compounds
+                     FROM HORUS_SENTENCES"""
+            c.execute(sql)
+            res = c.fetchall()
+            if not res is None:
+                for reg in res:
+                    id = reg[0]
+                    u0 = json.loads(reg[1])
+                    u1 = json.loads(reg[2])
+                    u2 = json.loads(reg[3])
+                    for item in u0:
+                        item[0] = int(item[0]) + 1
+                    for item in u1:
+                        item[0] = int(item[0]) + 1
+                    for item in u2:
+                        item[0] = int(item[0]) + 1
+                    sql = """UPDATE HORUS_SENTENCES SET annotator_nltk_compounds = ?,
+                              annotator_stanford_compounds = ?, annotator_tweetNLP_compounds = ?
+                            WHERE id = ?"""
+                    c2.execute(sql, (json.dumps(u0), json.dumps(u1), json.dumps(u2), id))
+            #self.conn.commit() -> ja fiz o que tinha que fazer...
+        except Exception as e:
+            print e
+            self.conn.rollback()
 
     def __init__(self,force_download,trees):
         """Return a HORUS object"""
@@ -140,39 +170,177 @@ class Core(object):
         x = numpy.array(self.horus_matrix)
         return x[:, [3, 4, 12, 13, 14, 15, 16, 17]]
 
-    # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
-    #TODO: attention here! when tokenization is not the same, mapping should be done at classification level!
+    def get_ner_mapping2_loop(self, fixed, iter, i, t):
+        q = True
+        # optimization trick
+        start = 0
+        if i >= 3:
+            start = i - 3
+        elif i >= 2:
+            start = i - 2
+        elif i >= 1:
+            start = i - 1
+        # tries to get a single not aligned token
+        for z in range(start, len(iter)):
+            try:
+                af = (fixed[i + 1] if i < len(fixed) else '')
+                bf = (fixed[i - 1] if i > 0 else '')
+                ai = (iter[z + 1] if z < len(iter) else '')
+                bi = (iter[z - 1] if z > 0 else '')
+
+                if i > 0:
+                    bf = fixed[i - 1]
+                if iter[z] == t and (bf == bi or af == ai):
+                    #  ok, is the correct one by value and position
+                    index_token = iter.index(iter[z])
+                    q = False
+                    break
+            except Exception:
+                print 'that is fine...'
+        # start to merge stuff and try to locate it
+        merged=''
+        ntimes = len(fixed) - start
+        while q is True:
+            for slide in range(ntimes):
+                merged = ''
+                if q is False:
+                    break
+                for z in range(start, len(fixed)):
+                    merged = merged + fixed[z]
+                    try:
+                        index_token = iter.index(merged)
+                        af = (fixed[i + 1] if i < len(fixed) else '')
+                        bf = (fixed[i - 1] if i > 0 else '')
+                        if t in merged and (af in merged or bf in merged):  # if it is merged, at least 2 MUST be included
+                            q = False
+                            break
+                    except Exception:
+                        print 'that is fine...'
+                start+=1
+            if q is True:
+                return None
+        return index_token
+
+    def get_ner_mapping2(self, y, x, t, i):
+        if len(y) < i-1 and y[i] == t:
+                index_token = i
+        else:
+            index_token = self.get_ner_mapping2_loop(x, y, i, t)
+            if index_token is None:
+                # means that we looked over all combinations in x that could exist in y
+                # if we enter here, means that it is not possible and thus, the given token t has not been
+                # tokenized in x, but in y yes! try other way around...
+                index_token = self.get_ner_mapping2_loop(y, x, i, t)
+                if index_token is None:
+                    print 'it should never ever happen!!! maiden maiden!'
+                    exit(-1)
+        return index_token
+
+    def get_ner_mapping(self, listy, listx, termx, itermx):
+        index_ner_y = -1
+        try:
+            # lists are aligned
+            if listy[itermx] == listx[itermx]:
+                return itermx
+            else:
+                # simplest solution
+                for itermy in range(len(listy)-1):
+                    if listy[itermy] == termx and (listy[itermy-1] == listx[itermx-1]
+                                                    or listy[itermy+1] == listx[itermx+1]):
+                        index_ner_y = itermy
+                        break
+                if index_ner_y != -1:
+                    return index_ner_y
+                else:
+                    try:
+                        # from this point on, it' more tricky, so let' start
+                        # if t isn't there, automatically, t+1 will not be there also!
+                        # Thus, try to catch t+2, i.e.,
+                        # we gonna have t that has been tokenized in two parts
+                        # (excepting if it' about the last item)
+                        if itermx + 2 <= len(listx):
+                            next_2_term = listx[itermx + 2]
+                            listy.index(next_2_term)  # dummy var - this will raise an error in case of problems
+                        # if worked, then merging the 2 before, will make it work
+                        term_merged = termx + listx[itermx + 1]
+                        index_token = listy.index(term_merged)
+                        index_ner_y = index_token
+                    except:
+                        # checking if current is last
+                        try:
+                            term_merged = listx[itermx - 1] + termx
+                            index_token = listy.index(term_merged)
+                            index_ner_y = index_token
+                        except:  # try now i + i+1 + i+2!
+                            try:
+                                term_merged = termx + listx[itermx + 1] + listx[itermx + 2]
+                                index_token = listy.index(term_merged)
+                                index_ner_y = index_token
+                            except:
+                                # checking if current is last
+                                try:
+                                    term_merged = listx[itermx - 2] + listx[itermx - 1] + termx
+                                    index_token = listy.index(term_merged)
+                                    index_ner_y = index_token
+                                except:
+                                    print 'maiden maiden...!!!!!'
+                                    print termx, itermx
+                                    exit(-1)
+
+        except Exception as error:
+            self.sys.log.error(':: error on get ner: %s' % error)
+
+        return index_ner_y
+
     def convert_dataset_to_horus_matrix(self, sentences):
         '''
         converts the list to horus_matrix
         # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
-        # 4 = pos_universal (deprecated) , 5 = pos,          6 = ner       , 7 = compound? ,
+        # 4 = pos_universal (deprecated) , 5 = pos, 6 = ner, 7 = compound? ,
         # 8 = compound_size
         :param sentences:
         :return:horus_matrix
         '''
         temp = []
         sent_index = 0
-        for sent in sentences:
-            sent_index+=1
-            for c in range(len(sent[6][self.config.models_pos_tag_lib])):
-                is_entity = 1
-                word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
-                compound = sent[6][self.config.models_pos_tag_lib][c][1]
-                compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
-                temp.append([is_entity, sent_index, word_index_ref, compound, '', '', '', 1, compound_size])
-            word_index = 0
-            for i in range(len(sent[2])):
-                is_entity = 1 if sent[3][0][i] in definitions.NER_RITTER else 0
-                term = sent[2][self.config.models_pos_tag_lib][i]
-                tag_ner = sent[3][self.config.models_pos_tag_lib][i]
-                tag_pos = sent[self.config.models_pos_tag_lib_type][self.config.models_pos_tag_lib][i]
-                word_index+=1
-                temp.append([is_entity, sent_index, word_index, term, '', tag_pos, tag_ner, 0, 0])
+        try:
+            for sent in sentences:
+                sent_index+=1
+                for c in range(len(sent[6][self.config.models_pos_tag_lib])):
+                    is_entity = 1
+                    word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
+                    compound = sent[6][self.config.models_pos_tag_lib][c][1]
+                    compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
+                    temp.append([is_entity, sent_index, word_index_ref, compound, '', '', '', 1, compound_size])
+                word_index = 0
+                for i in range(len(sent[2][self.config.models_pos_tag_lib]) - 1):
+                    print i
+                    print sent_index
+                    print 'a'
+                    if i==13 and sent_index==3:
+                        verqualquegr=0
+                    term = sent[2][self.config.models_pos_tag_lib][i]
+                    print 'b'
+                    ind_ner = self.get_ner_mapping2(sent[2][0], sent[2][self.config.models_pos_tag_lib], term, i)
+                    print 'e'
+                    is_entity = 1 if sent[3][0][ind_ner] in definitions.NER_RITTER else 0
+                    print 'c'
+                    tag_pos = sent[self.config.models_pos_tag_lib_type][self.config.models_pos_tag_lib][i]
+                    print 'd'
+                    word_index += 1
+                    # we do not know if they have the same alignment, so test it to get the correct tag
+                    print 'f'
+                    tag_ner_y = sent[3][0][ind_ner]
+                    print 'g'
+                    temp.append([is_entity, sent_index, word_index, term, '', tag_pos, tag_ner_y, 0, 0])
+
+        except Exception as error:
+            self.sys.log.error(':: Erro! %s' % str(error))
+            exit(-1)
+
         return temp
 
-
-    def annotate(self, input_text, input_file, ds_format, output_file, output_format):
+    def annotate(self, input_text, input_file, ds_format, output_file, output_format, ds_name):
         try:
             # 0 = text (parameter of reading file) / 1 = ritter
             if int(ds_format) == 0:
@@ -192,8 +360,8 @@ class Core(object):
                 if input_file is None:
                     raise Exception("Provide an input file format to be annotated")
                 elif int(ds_format) == 1:  # Ritter
-                    self.sys.log.info(':: processing CoNLL format')
-                    sent_tokenize_list = self.process_ds_conll_format(input_file, 'ritter')
+                    self.sys.log.info(':: processing CoNLL format -> %s' % ds_name)
+                    sent_tokenize_list = self.process_ds_conll_format(input_file, ds_name)
                 elif int(ds_format) == 2:  # CoNLL 2003
                     #TODO: merge this method to above
                     sent_tokenize_list = self.processing_conll_ds(input_file)
@@ -213,44 +381,47 @@ class Core(object):
             # self.cache_sentence(int(ds_format), sent_tokenize_list)
             #self.sys.log.info(':: done!')
 
-            self.sys.log.info(':: caching results...')
-            self.download_and_cache_results()
-            self.sys.log.info(':: done!')
+            if len(self.horus_matrix) > 0:
+                self.sys.log.info(':: caching results...')
+                self.download_and_cache_results()
+                self.sys.log.info(':: done!')
 
-            self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
-            self.detect_objects()
-            self.sys.log.info(':: done!')
+                self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
+                self.detect_objects()
+                self.sys.log.info(':: done!')
+
+
+                #self.sys.log.info(':: applying rules...')
+                #self.update_rules_cv_predictions()
+                self.sys.log.info(':: updating compounds...')
+                self.update_compound_predictions()
+                self.sys.log.info(':: done!')
+
+                # self.sys.log.info(horus_matrix)
+                header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND",
+                          "COMPOUND_SIZE",
+                          "ID_TERM_TXT", "ID_TERM_IMG",
+                          "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS",
+                          "TOT_RESULTS_TX",
+                          "TOT_TX_LOC", "TOT_TX_ORG",
+                          "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
+
+                if int(ds_format) == 0:
+                    self.print_annotated_sentence()
+
+                self.sys.log.info(':: exporting metadata...')
+                if output_file == '':
+                    output_file = 'noname'
+                if output_format == 'json':
+                    with open(output_file + '.json', 'wb') as outfile:
+                        json.dump(self.horus_matrix, outfile)
+                elif output_format == 'csv':
+                    horus_csv = open(output_file + '.csv', 'wb')
+                    wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
+                    wr.writerow(header)
+                    wr.writerows(self.horus_matrix)
 
             self.conn.close()
-
-            #self.sys.log.info(':: applying rules...')
-            #self.update_rules_cv_predictions()
-            self.sys.log.info(':: updating compounds...')
-            self.update_compound_predictions()
-            self.sys.log.info(':: done!')
-
-            # self.sys.log.info(horus_matrix)
-            header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND", "COMPOUND_SIZE",
-                      "ID_TERM_TXT", "ID_TERM_IMG",
-                      "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX",
-                      "TOT_TX_LOC", "TOT_TX_ORG",
-                      "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
-
-            if int(ds_format) == 0:
-                self.print_annotated_sentence()
-
-            self.sys.log.info(':: exporting metadata...')
-            if output_file == '':
-                output_file = 'noname'
-            if output_format == 'json':
-                with open(output_file + '.json', 'wb') as outfile:
-                    json.dump(self.horus_matrix, outfile)
-            elif output_format == 'csv':
-                horus_csv = open(output_file + '.csv', 'wb')
-                wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
-                wr.writerow(header)
-                wr.writerows(self.horus_matrix)
-
             return self.horus_matrix
 
         except Exception as error:
@@ -404,7 +575,7 @@ class Core(object):
         # TwitterNLP
         elif annotator_id == 3:
             if type(sentence) is not list:
-                return self.tools.tokenize_and_pos_twitter([sentence])
+                return self.tools.tokenize_and_pos_twitter(sentence)
             return self.tools.tokenize_and_pos_twitter_list(sentence)
 
     def cache_sentence(self,sentence_format, sentence_list):
@@ -480,11 +651,11 @@ class Core(object):
         self.conn.text_factory = str
         sql = """SELECT id FROM HORUS_SENTENCES
                  WHERE sentence = ? and corpus_name = ? """
-        c.execute(sql, (str(sent[1][0]), 'ritter'))
+        c.execute(sql, (str(sent[1][0]), corpus))
         res = c.fetchone()
         id = -1
         if res is None:
-            self.sys.log.info(':: caching sentence: ' + sent[1][0])
+            self.sys.log.debug(':: caching ... ')
             #buffer(zlib.compress
             #row = (str(sent), str(tagged), str(compound), str(tokens))
             # sent[6][0] is a dummy variable!
@@ -507,7 +678,7 @@ class Core(object):
             self.conn.commit()
             id = id.lastrowid
         else:
-            self.sys.log.debug(':: sentence is already cached')
+            self.sys.log.debug(':: ... already cached')
             id = res[0]
         return id
 
@@ -1256,24 +1427,29 @@ class Core(object):
         directly to the matrix, thus optimizing a lot this phase.
         """
         sent = []
-        c = self.conn.execute("""SELECT sentence_has_NER,
-                          sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
-                          corpus_tokens, annotator_nltk_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
-                          corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
-                          corpus_pos_y, annotator_nltk_pos, annotator_stanford_pos, annotator_tweetNLP_pos,
-                          corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
-                          annotator_nltk_compounds, annotator_stanford_compounds, annotator_tweetNLP_compounds
-                                 FROM HORUS_SENTENCES
-                                 WHERE corpus_name = ? and sentence = ?""", (corpus, sentence))
-        ret = c.fetchone()
-        if ret is not None:
-            sent.append(ret[0])
-            sent.append([ret[1], ret[2], ret[3], ret[4]])
-            sent.append([json.loads(ret[5]), json.loads(ret[6]), json.loads(ret[7]), json.loads(ret[8])])
-            sent.append([json.loads(ret[9]), json.loads(ret[10]), json.loads(ret[11]), json.loads(ret[12])])
-            sent.append([json.loads(ret[13]), json.loads(ret[14]), json.loads(ret[15]), json.loads(ret[16])])
-            sent.append([json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19]), json.loads(ret[20])])
-            sent.append([json.loads(ret[21]), json.loads(ret[22]), json.loads(ret[23])])
+        try:
+            self.conn.text_factory = str
+            c = self.conn.execute("""SELECT sentence_has_NER,
+                              sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
+                              corpus_tokens, annotator_nltk_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
+                              corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
+                              corpus_pos_y, annotator_nltk_pos, annotator_stanford_pos, annotator_tweetNLP_pos,
+                              corpus_pos_uni_y, annotator_nltk_pos_universal, annotator_stanford_pos_universal, annotator_tweetNLP_pos_universal,
+                              annotator_nltk_compounds, annotator_stanford_compounds, annotator_tweetNLP_compounds
+                                     FROM HORUS_SENTENCES
+                                     WHERE corpus_name = ? and sentence = ?""", (corpus, sentence))
+            ret = c.fetchone()
+            if ret is not None:
+                sent.append(ret[0])
+                sent.append([ret[1], ret[2], ret[3], ret[4]])
+                sent.append([json.loads(ret[5]), json.loads(ret[6]), json.loads(ret[7]), json.loads(ret[8])])
+                sent.append([json.loads(ret[9]), json.loads(ret[10]), json.loads(ret[11]), json.loads(ret[12])])
+                sent.append([json.loads(ret[13]), json.loads(ret[14]), json.loads(ret[15]), json.loads(ret[16])])
+                sent.append([json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19]), json.loads(ret[20])])
+                sent.append([json.loads(ret[21]), json.loads(ret[22]), json.loads(ret[23])])
+        except Exception as e:
+            self.sys.log.error(':: an error has occurred: ', e)
+            raise
         return sent
 
     def get_compounds(self, tokens):
@@ -1300,7 +1476,7 @@ class Core(object):
                     for tk in item:
                         compound += tk[0] + ' '
 
-                    compounds.append([i_word - len(item), compound[:len(compound) - 1], len(item)])
+                    compounds.append([i_word - len(item) + 1, compound[:len(compound) - 1], len(item)])
             else:
                 i_word += 1
         return compounds
@@ -1331,9 +1507,8 @@ class Core(object):
                             cache_sent = self.sentence_cached_before(dataset_name, s)
                             if len(cache_sent) != 0:
                                 sentences.append(cache_sent)
-                                self.sys.log.debug(':: sentence already cached!')
                             else:
-                                self.sys.log.debug(':: sentence is going to be cached...')
+                                self.sys.log.debug(s)
 
                                 _tokens_nltk, _pos_nltk, _pos_uni_nltk = self.tokenize_and_pos(s, 1)
                                 _tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 2)
@@ -1411,7 +1586,7 @@ class Core(object):
             #    return cache_sentences
             #else:
             #    return sentences
-
+            self.sys.log.info(':: %s sentences processed successfully' % str(len(sentences)))
             return sentences
         except Exception as error:
             print('caught this error: ' + repr(error))
