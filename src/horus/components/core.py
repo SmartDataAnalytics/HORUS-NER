@@ -173,10 +173,9 @@ class Core(object):
     def get_ner_mapping2_loop(self, x, y, i, t):
         # http://stackoverflow.com/questions/32185072/nltk-word-tokenize-behaviour-for-double-quotation-marks-is-confusing
         if self.config.models_pos_tag_lib == 1:
-            if t == '``':
-                t == '"'
-            elif t == '\'\'':
-                t == '"'
+            if t == '``' or t == '\'\'':
+                t = u'"'
+
         q = True
         # optimization trick
         start = 0
@@ -193,36 +192,63 @@ class Core(object):
                 bf = (x[i - 1] if i > 0 else '')
                 ai = (y[z + 1] if z + 1 < len(y) else '')
                 bi = (y[z - 1] if z > 0 else '')
-                if y[z] == t and (bf == bi or af == ai):
+
+                af2pos = (x[i + 1] + x[i + 2] if i + 2 < len(x) else '')
+                bf2ant = (x[i - 2] + x[i - 1] if i > 1 else '')
+
+                fine1 = False
+                if z + 2 < len(y):
+                    fine1 = (af2pos == (y[z + 1] + y[z + 2]))
+
+                fine2 = False
+                if z + 1 < len(y):
+                    fine2 = (af2pos == (y[z + 1]))
+
+                fine3 = False
+                if z > 1:
+                    fine3 = (bf2ant == (y[z - 2] + y[z - 1]))
+
+                fine4 = False
+                if z > 0:
+                    fine4 = (bf2ant == (y[z - 1]))
+
+                p = '_'
+                if i + 1 < len(x):
+                    if x[i+1]== '\'\'':
+                        p = (t + u'"')
+                    else:
+                        p = (t + x[i+1])
+                if (y[z] == t or y[z] == p) and (bf == bi or af == ai or fine1 or fine2 or fine3 or fine4):
                     #  ok, is the correct one by value and position
                     index_token = y.index(y[z])
                     q = False
                     break
             except Exception:
-                print 'that is fine...'
+                continue
         # start to merge stuff and try to locate it
         merged=''
         ntimes = len(x) - start
         while q is True:
             for slide in range(ntimes):
-                print 'slide=', slide
                 merged = ''
                 if q is False:
                     break
-                print 'start=', start
-                print 'len(x)=', len(x)
                 for z in range(start, len(x)): #start, len(x)
-                    print 'z=', z
-                    merged = merged + x[z]
+                    xz = x[z].replace("``", u'"').replace('\'\'', u'"')
+                    merged = merged + xz
                     try:
                         index_token = y.index(merged)
                         af = (x[i + 1] if i + 1 < len(x) else '')
                         bf = (x[i - 1] if i > 0 else '')
+
+                        af = af.replace("``", u'"').replace('\'\'', u'"')
+                        bf = bf.replace("``", u'"').replace('\'\'', u'"')
+
                         if t in merged and (af in merged or bf in merged):  # if it is merged, at least 2 MUST be included
                             q = False
                             break
                     except Exception:
-                        print 'that is fine...'
+                        continue
                 start+=1
             if q is True:
                 return None
@@ -324,7 +350,7 @@ class Core(object):
                     print i
                     print sent_index
                     print 'a'
-                    if i==14 and sent_index==3:
+                    if i==32 and sent_index==72:
                         verqualquegr=0
                     term = sent[2][self.config.models_pos_tag_lib][i]
                     print 'b'
