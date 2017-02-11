@@ -21,7 +21,14 @@ NER_RITTER_LOC = ['B-geo-loc', 'I-geo-loc']
 
 #TODO: check if we have here ALL the NOUNs!!!
 # merge of ALL noun tags, from all the POS taggers
-POS_NOUN_TAGS = ['NN', 'NNP', 'NOUN', 'NNS', 'PROPN']
+
+# Penn Treebank
+POS_NOUN_PTB = ['NN', 'NNS', 'NNP', 'NNPS', 'PRP', 'PRP$']
+POS_NOUN_UNIVERSAL = ['NOUN', 'PRON', 'PROPN']
+
+POS_NOUN_TAGS = []
+POS_NOUN_TAGS.extend(POS_NOUN_PTB)
+POS_NOUN_TAGS.extend(POS_NOUN_UNIVERSAL)
 
 NER_RITTER = []
 NER_RITTER.extend(NER_RITTER_PER)
