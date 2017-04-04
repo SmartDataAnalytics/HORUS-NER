@@ -1,5 +1,4 @@
 # Created by .ignore support plugin (hsz.mobi)
-.gitignore
 .idea/
 /components/horus.log
 horus/core.pyc
@@ -21,3 +20,6 @@ src/horus/definitions.pyc
 src/horus/resource/__init__.pyc
 src/horus/postagger/CMUTweetTagger.pyc
 src/horus/postagger/__init__.pyc
+/scripts/horus.log
+src/horus/components/util/__init__.pyc
+src/horus/components/util/nlp_tools.pyc
