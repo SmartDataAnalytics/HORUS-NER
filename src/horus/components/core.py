@@ -631,7 +631,7 @@ class Core(object):
 
         return temp
 
-    def annotate(self, input_text, input_file, ds_format, output_file, output_format, ds_name):
+    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_annotation', output_format="csv", ds_name=None):
         try:
             # 0 = text (parameter of reading file) / 1 = ritter
             if int(ds_format) == 0:
@@ -713,12 +713,38 @@ class Core(object):
                 self.sys.log.info(':: done!')
 
                 # self.sys.log.info(horus_matrix)
-                header = ["IS_ENTITY?", "ID_SENT", "ID_WORD", "WORD/TERM", "POS_UNI", "POS", "NER", "COMPOUND",
-                          "COMPOUND_SIZE",
-                          "ID_TERM_TXT", "ID_TERM_IMG",
-                          "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG", "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS",
-                          "TOT_RESULTS_TX",
-                          "TOT_TX_LOC", "TOT_TX_ORG",
+                '''
+                IS_ENTITY: -1: unknown; 0: no; 1:yes
+                ID_SENT: sentence position
+                ID_WORD: term position
+                TOKEN: word or term (compound)
+                POS_UNI: annotation: universal pos tag
+                POS: annotation: pos tag
+                NER: annotation: ner (target)
+                COMPOUND: compound
+                COMPOUND_SIZE: size of compound
+                ID_TERM_TXT: id of the table of texts (internal control)
+                ID_TERM_IMG: id of the table of images (internal control)
+                TOT_IMG: total of resources (img) retrieved (top)
+                TOT_CV_LOC: number of resources classified as LOC (computer vision module)
+                TOT_CV_ORG: number of resources classified as ORG (computer vision module)
+                TOT_CV_PER: number of resources classified as PER (computer vision module)
+                DIST_CV_I: distance (subtraction) between 2 max values of (TOT_CV_LOC, TOT_CV_ORG and TOT_CV_PER) (computer vision module)
+                PL_CV_I: sum of all LOC classifiers (computer vision module)
+                CV_KLASS: target class (computer vision module)
+                TOT_RESULTS_TX: total of resources (snippets of text) retrieved (top)
+                TOT_TX_LOC: number of resources classified as LOC (text classification module)
+                TOT_TX_ORG: number of resources classified as ORG (text classification module)
+                TOT_TX_PER: number of resources classified as PER (text classification module)
+                TOT_ERR_TRANS: number of exceptions raised by the translation module (text classification module)
+                DIST_TX_I: similar to DIST_CV_I (text classification module)
+                TX_KLASS: target class (text classification module)
+                HORUS_KLASS: final target class
+                STANFORD_NER: annotation: NER Stanford
+                '''
+                header = ["IS_ENTITY", "ID_SENT", "ID_WORD", "TOKEN", "POS_UNI", "POS", "NER", "COMPOUND",
+                          "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG", "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG",
+                          "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX", "TOT_TX_LOC", "TOT_TX_ORG",
                           "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
 
                 if int(ds_format) == 0:
@@ -1661,7 +1687,7 @@ class Core(object):
         pos = []
         hasNER = -1
         for sentence in sent_tokenize_list:
-            tokens, pos_taggers, pos_universal = self.tokenize_and_pos(sentence)
+            tokens, pos_taggers, pos_universal = self.tokenize_and_pos(sentence, self.config.models_pos_tag_lib)
             chunked = nltk.ne_chunk(pos_taggers)
             for ch in chunked:
                 if type(ch) is nltk.Tree:

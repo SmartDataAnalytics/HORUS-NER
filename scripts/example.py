@@ -8,5 +8,5 @@ from horus.components.core import Core
 text = u"ronaldo".encode('utf8')
 
 horus = Core(False, 5)
-print horus.annotate(text, "", 0, "../output/out4", "csv")
+print horus.annotate(text)
 #print horus.get_cv_annotation()
