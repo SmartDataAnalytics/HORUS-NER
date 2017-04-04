@@ -15,6 +15,31 @@ import json
 # 'DisplayUrl' and 'ID' so you can do what you want!
 
 
+def bing_api5(query, key, top=10, market='en-us', safe='Moderate'):
+
+    try:
+        txts = None
+        imgs = None
+        url = 'https://api.cognitive.microsoft.com/bing/v5.0/search'
+        # query string parameters
+        payload = {'q': query, 'mkt': market, 'count': top, 'offset': 0, 'safesearch': safe}
+        # custom headers
+        headers = {'Ocp-Apim-Subscription-Key': key}
+        # make GET request
+        r = requests.get(url, params=payload, headers=headers)
+        # get JSON response
+        try:
+            txts = r.json().get('webPages', {}).get('value', {})
+            imgs = r.json().get('images', {}).get('value', {})
+        except Exception as e:
+            logging.error(':: error on retrieving search results: ', e)
+
+        return query, txts, imgs
+    except Exception as e:
+        print (':: an error has occurred: ', e)
+        return query, None
+
+
 def bing_api2(query, api, source_type="Web", top=10, format='json', market='en-US'):
 
     try:
@@ -41,8 +66,8 @@ def bing_api2(query, api, source_type="Web", top=10, format='json', market='en-U
             return query, results
 
     except Exception as e:
+        print (':: an error has occurred: ', e)
         return query, None
-        #logging.error(':: an error has occurred: ', e)
         #raise
 
 
