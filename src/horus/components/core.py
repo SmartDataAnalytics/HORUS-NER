@@ -663,8 +663,11 @@ class Core(object):
             tot_others = len(df.loc[df[0] == -1])
             self.sys.log.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
             self.sys.log.info(':: %s sentence(s) without entity' % tot_others)
-            self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
-            self.horus_matrix = self.convert_dataset_to_horus_matrix(sent_tokenize_list)
+            if ds_format!=0:
+                self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
+                self.horus_matrix = self.convert_dataset_to_horus_matrix(sent_tokenize_list)
+            ##TODO: PAREI AQUI! TEM QUE DAR UMA OLHADA PORQUE NA ANOTACAO DE SENTENCA ISOLADA NAO ESTA RETORNANDO TUDO QUE
+            ##PRECISA....COLOCAR IGUAL AO FORMATO CONLL! FALTANDO 2 OU 3 COLUNAS, SE NAO ME ENGANO...
 
             # update the database with compounds
             ##TODO: this might not be necessary anymore
