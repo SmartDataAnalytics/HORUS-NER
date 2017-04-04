@@ -1024,23 +1024,20 @@ class Core(object):
         try:
             auxc = 1
             self.sys.log.info(':: download and cache tokens')
+            c = self.conn.cursor()
             for item in self.horus_matrix:
                 term_cached = False
                 self.sys.log.debug(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
                 term = item[3]
                 if (item[5] in definitions.POS_NOUN_TAGS) or item[7] == 1:
                     self.sys.log.debug(':: caching [%s] ...' % term)
-                    c = self.conn.cursor()
-
-                    # checking if we have searched that before (might be the case of had used
-                    # different configurations, or different search engine, for instance.
                     sql = """SELECT id FROM HORUS_TERM WHERE term = ?"""
                     c.execute(sql, (term,))
                     res_term = c.fetchone()
                     if res_term is None:
                         term_cached is False
                         self.sys.log.info(':: [%s] has not been cached before!' % term)
-                        ret_id_term = self.conn.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
+                        ret_id_term = c.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
                     else:
                         term_cached is True
                         ret_id_term = res_term[0]
@@ -1073,6 +1070,11 @@ class Core(object):
                             bing_api5(term, api=self.config.search_engine_key, top=self.config.search_engine_tot_resources,
                                       market='en-US')
 
+                        '''
+                        -------------------------------------
+                        Web Sites
+                        -------------------------------------
+                        '''
                         self.sys.log.info(':: [%s] caching (web site) ->' % term)
                         values = (term, ret_id_term.lastrowid, self.config.search_engine_api, 1,
                                       self.config.search_engine_features_text, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
@@ -1086,8 +1088,8 @@ class Core(object):
                         seq = 0
                         for web_result in result_txts:
                             seq+=1
-                            row = (id_term_search, 0, web_result['ID'], seq, web_result['Url'], web_result['Title'],
-                                   web_result['Description'], '')
+                            row = (id_term_search, 0, web_result['id'], seq, web_result['displayUrl'], web_result['name'],
+                                   web_result['snippet'], '')
 
                             c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
                                          search_engine_resource_id, result_seq, result_url, result_title,
@@ -1105,7 +1107,12 @@ class Core(object):
 
                             c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s' 
                                          WHERE id = %s""" % (metaquery, id_term_search))
-                        # images
+
+                        '''
+                        -------------------------------------
+                        Images
+                        -------------------------------------
+                        '''
                         self.sys.log.info(':: [%s] caching - image' % term)
                         values = (term, ret_id_term.lastrowid if type(ret_id_term) is not int else ret_id_term, self.config.search_engine_api,
                                   2, self.config.search_engine_features_img, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
@@ -1120,15 +1127,15 @@ class Core(object):
                         for web_img_result in result_imgs:
                             self.sys.log.debug(':: downloading image [%s]' % (web_img_result['Title']))
                             seq += 1
-                            auxtype = self.download_image_local(web_img_result['MediaUrl'],
-                                      web_img_result['ContentType'], web_img_result['Thumbnail']['MediaUrl'],
-                                      web_img_result['Thumbnail']['ContentType'], id_term_img, 0, seq)
+                            auxtype = self.download_image_local(web_img_result['contentUrl'],
+                                      web_img_result['encodingFormat'], web_img_result['thumbnailUrl'],
+                                      web_img_result['encodingFormat'], id_term_img, 0, seq)
                             self.sys.log.debug(':: caching image result ...')
                             fname = ('%s_%s_%s.%s' % (str(id_term_img), str(0), str(seq), str(auxtype)))
-                            row = (id_term_img, 0, web_img_result['ID'], seq, web_img_result['MediaUrl'],
-                                   web_img_result['Title'], web_img_result['ContentType'], web_img_result['Height'],
-                                   web_img_result['Width'], web_img_result['Thumbnail']['MediaUrl'],
-                                   web_img_result['Thumbnail']['ContentType'], fname)
+                            row = (id_term_img, 0, seq, seq, web_img_result['contentUrl'],
+                                   web_img_result['name'], web_img_result['encodingFormat'], web_img_result['height'],
+                                   web_img_result['width'], web_img_result['thumbnailUrl'],
+                                   web_img_result['encodingFormat'], fname)
 
                             sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search, id_ner_type, 
                                      search_engine_resource_id, result_seq, result_media_url, result_media_title,
