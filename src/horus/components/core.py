@@ -44,7 +44,7 @@ from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
 
-from bingAPI1 import bing_api2
+from bingAPI1 import bing_api2, bing_api5
 from config import HorusConfig
 from horus import definitions
 from horus.components.systemlog import SystemLog
@@ -1025,6 +1025,7 @@ class Core(object):
             auxc = 1
             self.sys.log.info(':: download and cache tokens')
             for item in self.horus_matrix:
+                term_cached = False
                 self.sys.log.debug(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
                 term = item[3]
                 if (item[5] in definitions.POS_NOUN_TAGS) or item[7] == 1:
@@ -1037,167 +1038,113 @@ class Core(object):
                     c.execute(sql, (term,))
                     res_term = c.fetchone()
                     if res_term is None:
+                        term_cached is False
                         self.sys.log.info(':: [%s] has not been cached before!' % term)
-                        cterm = self.conn.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
+                        ret_id_term = self.conn.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
                     else:
-                        cterm = res_term[0]
+                        term_cached is True
+                        ret_id_term = res_term[0]
 
-                    # check if term (text) has been cached before
-                    # in case components is extended to accept more than 1 search engine, this table should also
-                    # have it defined
-                    values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text)
-                    sql = """SELECT id
-                              FROM HORUS_TERM_SEARCH
-                              WHERE term = ? AND
-                                       id_search_engine = ? AND
-                                       id_search_type = ? AND
-                                       search_engine_features = ?"""
-                    c.execute(sql, values)
-                    res = c.fetchone()
-                    if res is None:
-                        self.sys.log.info(':: [%s] caching - text' % term)
-                        values = (term, cterm.lastrowid, self.config.search_engine_api, 1,
-                                      self.config.search_engine_features_text,
-                                      str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
+                    if term_cached:
+                        self.sys.log.debug(':: term %s is already cached!' % term)
+                        # web site
+                        values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text)
+                        sql = """SELECT id FROM HORUS_TERM_SEARCH WHERE term = ? AND id_search_engine = ?
+                                 AND id_search_type = ? AND search_engine_features = ?"""
+                        c.execute(sql, values)
+                        res = c.fetchone()
+                        if res is None:
+                            raise Exception("err: there is a problem in the database (item cached missing txt metadata)")
+                        item.extend(res)
+
+                        # image
+                        values = (term, self.config.search_engine_api, 2, self.config.search_engine_features_text)
+                        sql = """SELECT id FROM HORUS_TERM_SEARCH WHERE term = ? AND id_search_engine = ? 
+                                 AND id_search_type = ? AND search_engine_features = ?"""
+                        c.execute(sql, values)
+                        res = c.fetchone()
+                        if res is None:
+                            raise Exception("err: there is a problem in the database (item cached missing img metadata)")
+                        item.extend(res)
+
+                    else:
+                        self.sys.log.info(':: [%s] querying the web ->' % term)
+                        metaquery, result_txts, result_imgs = \
+                            bing_api5(term, api=self.config.search_engine_key, top=self.config.search_engine_tot_resources,
+                                      market='en-US')
+
+                        self.sys.log.info(':: [%s] caching (web site) ->' % term)
+                        values = (term, ret_id_term.lastrowid, self.config.search_engine_api, 1,
+                                      self.config.search_engine_features_text, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
                                       self.config.search_engine_tot_resources)
-                        c = self.conn.execute("""INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                                                              search_engine_features, query_date,
-                                                                              query_tot_resource)
-                                                     VALUES(?, ?, ?, ?, ?, ?, ?)""", values)
-
+                        c.execute("""INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
+                                                 search_engine_features, query_date, query_tot_resource)
+                                                 VALUES(?, ?, ?, ?, ?, ?, ?)""", values)
                         id_term_search = c.lastrowid
                         item.extend([id_term_search])  # updating matrix
+
                         seq = 0
-                        # get text
-                        metaquery, result = bing_api2(term, api=self.config.search_engine_key, source_type="Web",
-                                                         top=self.config.search_engine_tot_resources, format='json', market='en-US')
-                        for web_result in result['d']['results']:
+                        for web_result in result_txts:
                             seq+=1
-                            row = (id_term_search,
-                                    0,
-                                   web_result['ID'],
-                                   seq,
-                                   web_result['Url'],
-                                   web_result['Title'],
-                                   web_result['Description'],
-                                   '')
-                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search,
-                                                                                        id_ner_type,
-                                                                                        search_engine_resource_id,
-                                                                                        result_seq,
-                                                                                        result_url,
-                                                                                        result_title,
-                                                                                        result_description,
-                                                                                        result_html_text)
-                                                  VALUES(?,?,?,?,?,?,?,?)""", row)
+                            row = (id_term_search, 0, web_result['ID'], seq, web_result['Url'], web_result['Title'],
+                                   web_result['Description'], '')
 
-                            c.execute("""UPDATE HORUS_TERM_SEARCH
-                                                  SET metaquery = '%s'
-                                                  WHERE id = %s""" % (metaquery, id_term_search))
+                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
+                                         search_engine_resource_id, result_seq, result_url, result_title,
+                                         result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""", row)
 
+                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s' 
+                                         WHERE id = %s""" % (metaquery, id_term_search))
+
+                        # term has not returned a result
                         if seq == 0:
-                            row = (id_term_search,
-                                   0,
-                                   '',
-                                   seq,
-                                   '',
-                                   '',
-                                   '',
-                                   '')
-                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search,
-                                                                                   id_ner_type,
-                                                                                   search_engine_resource_id,
-                                                                                   result_seq,
-                                                                                   result_url,
-                                                                                   result_title,
-                                                                                   result_description,
-                                                                                   result_html_text)
-                                                                          VALUES(?,?,?,?,?,?,?,?)""", row)
+                            row = (id_term_search, 0, '', seq, '', '', '', '')
+                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
+                                         search_engine_resource_id, result_seq, result_url, result_title,
+                                         result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""", row)
 
-                            c.execute("""UPDATE HORUS_TERM_SEARCH
-                                             SET metaquery = '%s'
-                                             WHERE id = %s""" % (metaquery, id_term_search))
-
-                        self.sys.log.debug(':: term [%s] cached (text)!' % term)
-                        self.conn.commit()
-                    else:
-                        item.extend(res)  # updating matrix
-                        self.sys.log.debug(':: term %s is already cached (text)!' % term)
-
-                    values = (term, self.config.search_engine_api, 2, self.config.search_engine_features_text)
-                    c = self.conn.execute("""SELECT id
-                                            FROM HORUS_TERM_SEARCH
-                                            WHERE term = ? AND
-                                                  id_search_engine = ? AND
-                                                  id_search_type = ? AND
-                                                  search_engine_features = ?""", values)
-                    res = c.fetchone()
-                    if res is None:
+                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s' 
+                                         WHERE id = %s""" % (metaquery, id_term_search))
+                        # images
                         self.sys.log.info(':: [%s] caching - image' % term)
-                        values = (term, cterm.lastrowid if type(cterm) is not int else cterm, self.config.search_engine_api, 2,
-                                       self.config.search_engine_features_img,
-                                       str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources)
+                        values = (term, ret_id_term.lastrowid if type(ret_id_term) is not int else ret_id_term, self.config.search_engine_api,
+                                  2, self.config.search_engine_features_img, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
+                                  self.config.search_engine_tot_resources)
+
                         sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                                                   search_engine_features, query_date, query_tot_resource)
-                                                     VALUES(?,?,?,?,?,?,?)"""
+                                 search_engine_features, query_date, query_tot_resource) VALUES(?,?,?,?,?,?,?)"""
                         c.execute(sql, values)
                         id_term_img = c.lastrowid
                         item.extend([id_term_img])  # updating matrix
                         seq = 0
-                        # get images
-                        metaquery, result = bing_api2(item[3], api=self.config.search_engine_key, source_type="Image",
-                                                         top=self.config.search_engine_tot_resources, format='json')
-                        for web_img_result in result['d']['results']:
+                        for web_img_result in result_imgs:
                             self.sys.log.debug(':: downloading image [%s]' % (web_img_result['Title']))
                             seq += 1
                             auxtype = self.download_image_local(web_img_result['MediaUrl'],
-                                                    web_img_result['ContentType'],
-                                                     web_img_result['Thumbnail']['MediaUrl'],
-                                                     web_img_result['Thumbnail']['ContentType'],
-                                                     id_term_img,
-                                                     0,
-                                                     seq)
+                                      web_img_result['ContentType'], web_img_result['Thumbnail']['MediaUrl'],
+                                      web_img_result['Thumbnail']['ContentType'], id_term_img, 0, seq)
                             self.sys.log.debug(':: caching image result ...')
-                            fname = ('%s_%s_%s.%s' % (str(id_term_img),  str(0),  str(seq),  str(auxtype)))
-                            row = (id_term_img,
-                                    0,
-                                    web_img_result['ID'],
-                                    seq,
-                                    web_img_result['MediaUrl'],
-                                    web_img_result['Title'],
-                                    web_img_result['ContentType'],
-                                    web_img_result['Height'],
-                                    web_img_result['Width'],
-                                    web_img_result['Thumbnail']['MediaUrl'],
-                                    web_img_result['Thumbnail']['ContentType'],
-                                    fname)
+                            fname = ('%s_%s_%s.%s' % (str(id_term_img), str(0), str(seq), str(auxtype)))
+                            row = (id_term_img, 0, web_img_result['ID'], seq, web_img_result['MediaUrl'],
+                                   web_img_result['Title'], web_img_result['ContentType'], web_img_result['Height'],
+                                   web_img_result['Width'], web_img_result['Thumbnail']['MediaUrl'],
+                                   web_img_result['Thumbnail']['ContentType'], fname)
 
-                            sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search,
-                                                                              id_ner_type,
-                                                                              search_engine_resource_id,
-                                                                              result_seq,
-                                                                              result_media_url,
-                                                                              result_media_title,
-                                                                              result_media_content_type,
-                                                                              result_media_height,
-                                                                              result_media_width,
-                                                                              result_media_thumb_media_url,
-                                                                              result_media_thumb_media_content_type,
-                                                                              filename)
-                                                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
+                            sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search, id_ner_type, 
+                                     search_engine_resource_id, result_seq, result_media_url, result_media_title,
+                                     result_media_content_type, result_media_height, result_media_width, 
+                                     result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
+                                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
                             c.execute(sql, row)
 
-                            c.execute("""UPDATE HORUS_TERM_SEARCH
-                                                  SET metaquery = '%s'
-                                                  WHERE id = %s""" % (metaquery, id_term_img))
+                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s'
+                                         WHERE id = %s""" % (metaquery, id_term_img))
 
-                        self.sys.log.debug(':: term [%s] cached (img)!' % term)
-                        self.conn.commit()
-                    else:
-                        self.sys.log.debug(':: term %s is already cached (img)!' % term)
-                        item.extend(res)  # updating matrix
-
+                            self.sys.log.debug(':: term [%s] cached (img)!' % term)
+                    # done caching
+                    self.conn.commit()
                 auxc+=1
+
         except Exception as e:
             self.sys.log.error(':: an error has occurred: ', e)
             raise
