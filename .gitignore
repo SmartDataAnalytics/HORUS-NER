@@ -23,3 +23,4 @@ src/horus/postagger/__init__.pyc
 /scripts/horus.log
 src/horus/components/util/__init__.pyc
 src/horus/components/util/nlp_tools.pyc
+/output/
