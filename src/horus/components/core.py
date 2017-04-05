@@ -594,9 +594,15 @@ class Core(object):
     def convert_dataset_to_horus_matrix(self, sentences):
         '''
         converts the list to horus_matrix
-        # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
-        # 4 = pos_universal (deprecated) , 5 = pos, 6 = ner, 7 = compound? ,
-        # 8 = compound_size
+        0 = entity (-1,0,1)
+        1 = index_sentence
+        2 = index_token
+        3 = token
+        4 = pos_universal_tag (deprecated) 
+        5 = pos_tag
+        6 = ner_tag
+        7 = compound (1-0)
+        8 = compound_size
         :param sentences:
         :return:horus_matrix
         '''
@@ -637,14 +643,15 @@ class Core(object):
             if int(ds_format) == 0:
                 text = ''
                 if input_text is not None:
-                    text = input_text.strip('"\'')
                     self.sys.log.info(':: processing text')
+                    text = input_text.strip('"\'')
                 elif input_file is not None:
+                    self.sys.log.info(':: processing input file')
                     f = open(input_file, 'r')
                     text = f.readlines()
-                    self.sys.log.info(':: processing input file')
                 else:
                     raise Exception("err: missing text to be annotated")
+
                 sent_tokenize_list = self.process_input_text(text)
 
             elif int(ds_format) == 1 or int(ds_format) == 2:
@@ -657,25 +664,21 @@ class Core(object):
                     #TODO: merge this method to above
                     sent_tokenize_list = self.processing_conll_ds(input_file)
 
-            self.sys.log.info(':: %s sentence(s) cached' % str(len(sent_tokenize_list)))
             df = pd.DataFrame(sent_tokenize_list)
-            tot_sentences_with_entity = len(df.loc[df[0] == 1])
-            tot_others = len(df.loc[df[0] == -1])
-            self.sys.log.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
-            self.sys.log.info(':: %s sentence(s) without entity' % tot_others)
             if ds_format!=0:
+                self.sys.log.info(':: %s sentence(s) cached' % str(len(sent_tokenize_list)))
+                tot_sentences_with_entity = len(df.loc[df[0] == 1])
+                tot_others = len(df.loc[df[0] == -1])
+                self.sys.log.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
+                self.sys.log.info(':: %s sentence(s) without entity' % tot_others)
                 self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
                 self.horus_matrix = self.convert_dataset_to_horus_matrix(sent_tokenize_list)
-            ##TODO: PAREI AQUI! TEM QUE DAR UMA OLHADA PORQUE NA ANOTACAO DE SENTENCA ISOLADA NAO ESTA RETORNANDO TUDO QUE
-            ##PRECISA....COLOCAR IGUAL AO FORMATO CONLL! FALTANDO 2 OU 3 COLUNAS, SE NAO ME ENGANO...
+            else:
+                self.sys.log.info(':: %s sentence(s) cached' % str(len(df[1].unique())))
+                self.horus_matrix = sent_tokenize_list
 
-            # update the database with compounds
-            ##TODO: this might not be necessary anymore
-            #self.sys.log.info(':: creating horus structure and updating compounds')
-            #self.create_matrix_and_compounds(sent_tokenize_list)
-            #self.sys.log.info(':: done!')
 
-            # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
+             # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
             # self.cache_sentence(int(ds_format), sent_tokenize_list)
             #self.sys.log.info(':: done!')
 
@@ -694,10 +697,10 @@ class Core(object):
             self.sys.log.info(':: -> ALL terms (exc. compounds): %s (%.2f)' % (a2, (a2 / float(a))))
             self.sys.log.info(':: -> ALL NNs (exc. compounds and entities): %s ' % len(pos_noun_but_not_entity))
             self.sys.log.info(':: -> PLO entities (exc. compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
-            self.sys.log.info(':: -> PLO entities correcly classified as NN (POS says is NOUN): %s (%.2f)' %
-                              (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo))))
+            self.sys.log.info(':: -> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
+                              (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo))) if len(plo)!=0 else 0)
             self.sys.log.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
-                              (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo))))
+                              (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo))) if len(plo)!=0 else 0)
 
             if len(self.horus_matrix) > 0:
                 self.sys.log.info(':: caching results...')
@@ -930,10 +933,18 @@ class Core(object):
 
     def update_database_compound(self, sentence_str, compounds):
         c = self.conn.cursor()
-        sql = """UPDATE HORUS_SENTENCES SET compounds = ? WHERE sentence = ?"""
-        return c.execute(sql, (compounds, sentence_str))
+        col = "annotator_nltk_compounds"
+        if self.config.models_pos_tag_lib == 2:
+            col = "annotator_stanford_compounds"
+        elif self.config.models_pos_tag_lib == 3:
+            col = "annotator_tweetNLP_compounds"
+        sql = """UPDATE HORUS_SENTENCES SET ? = ? WHERE sentence = ?"""
+        return c.execute(sql, (col, compounds, sentence_str))
 
     def create_matrix_and_compounds(self, sentence_list):
+
+
+
         i_sent, i_word = 1, 1
         self.sys.log.debug(':: chunking pattern ...')
         pattern = """
@@ -1064,11 +1075,11 @@ class Core(object):
                     c.execute(sql, (term,))
                     res_term = c.fetchone()
                     if res_term is None:
-                        term_cached is False
+                        term_cached = False
                         self.sys.log.info(':: [%s] has not been cached before!' % term)
                         ret_id_term = c.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
                     else:
-                        term_cached is True
+                        term_cached = True
                         ret_id_term = res_term[0]
 
                     if term_cached:
@@ -1684,38 +1695,55 @@ class Core(object):
         self.sys.log.info(':: tokenizing sentences ...')
         sent_tokenize_list = sent_tokenize(text)
         self.sys.log.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
+        horus = []
         sentences = []
-        w = []
-        ner = []
-        pos = []
+        w = ''
+        ner = ''
+        pos = ''
         hasNER = -1
+        isent = 0
+        itoken = 0
         for sentence in sent_tokenize_list:
+            isent+=1
             tokens, pos_taggers, pos_universal = self.tokenize_and_pos(sentence, self.config.models_pos_tag_lib)
+            compounds = self.get_compounds(pos_taggers)
             chunked = nltk.ne_chunk(pos_taggers)
+            if len(chunked) != len(tokens):
+                raise Exception("err: this should never happen! token arrays size mismatching")
+            if len(compounds) > 0:
+                for comp in compounds:
+                    horus.append([-1, isent, comp[0], comp[1], '', '', '', 1, comp[2]])
             for ch in chunked:
+                itoken+=1
                 if type(ch) is nltk.Tree:
-                    w.append(ch[0][0])
-                    pos.append(ch[0][1])
-                    hasNER = 1
+                    w = ch[0][0]
+                    pos = ch[0][1]
                     if ch._label == 'GPE' or ch._label == 'LOCATION':
-                        ner.append('LOC')
+                        ner = 'LOC'
                     elif ch._label == 'PERSON':
-                        ner.append('PER')
+                        ner = 'PER'
                     elif ch._label == 'ORGANIZATION':
-                        ner.append('ORG')
+                        ner = 'ORG'
                     else:
-                        ner.append('O')
+                        ner = 'O'
                 else:
-                    w.append(ch[0])
-                    pos.append(ch[1])
-                    ner.append('O')
+                    w = ch[0]
+                    pos = ch[1]
+                    ner = 'O'
 
-            _pos = list(zip(*pos_universal)[1])
-            sentences.append([hasNER, sentence, tokens, ner, pos, _pos])
-            pos = []
-            ner = []
-            w = []
-        return sentences
+                horus.append([-1, isent, itoken, tokens[itoken-1], pos_universal[itoken-1][1], pos_taggers[itoken-1][1], ner, 0, 0])
+                w = ''
+                pos = ''
+                ner = ''
+
+            #_pos = list(zip(*pos_universal)[1])
+            #sentences.append(compounds)
+            #sentences.append([hasNER, sentence, tokens, ner, pos, _pos])
+            #pos = []
+            #ner = []
+            #w = []
+            compounds = None
+        return horus
 
     def sentence_cached_before(self, corpus, sentence):
         """This method caches the structure of HORUS in db
