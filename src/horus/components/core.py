@@ -705,48 +705,41 @@ class Core(object):
             if len(self.horus_matrix) > 0:
                 self.sys.log.info(':: caching results...')
                 self.download_and_cache_results()
-                self.sys.log.info(':: done!')
-
                 self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
                 self.detect_objects()
-                self.sys.log.info(':: done!')
-
-
                 #self.sys.log.info(':: applying rules...')
                 #self.update_rules_cv_predictions()
                 self.sys.log.info(':: updating compounds...')
                 self.update_compound_predictions()
-                self.sys.log.info(':: done!')
-
                 # self.sys.log.info(horus_matrix)
                 '''
-                IS_ENTITY: -1: unknown; 0: no; 1:yes
-                ID_SENT: sentence position
-                ID_WORD: term position
-                TOKEN: word or term (compound)
-                POS_UNI: annotation: universal pos tag
-                POS: annotation: pos tag
-                NER: annotation: ner (target)
-                COMPOUND: compound
-                COMPOUND_SIZE: size of compound
-                ID_TERM_TXT: id of the table of texts (internal control)
-                ID_TERM_IMG: id of the table of images (internal control)
-                TOT_IMG: total of resources (img) retrieved (top)
-                TOT_CV_LOC: number of resources classified as LOC (computer vision module)
-                TOT_CV_ORG: number of resources classified as ORG (computer vision module)
-                TOT_CV_PER: number of resources classified as PER (computer vision module)
-                DIST_CV_I: distance (subtraction) between 2 max values of (TOT_CV_LOC, TOT_CV_ORG and TOT_CV_PER) (computer vision module)
-                PL_CV_I: sum of all LOC classifiers (computer vision module)
-                CV_KLASS: target class (computer vision module)
-                TOT_RESULTS_TX: total of resources (snippets of text) retrieved (top)
-                TOT_TX_LOC: number of resources classified as LOC (text classification module)
-                TOT_TX_ORG: number of resources classified as ORG (text classification module)
-                TOT_TX_PER: number of resources classified as PER (text classification module)
-                TOT_ERR_TRANS: number of exceptions raised by the translation module (text classification module)
-                DIST_TX_I: similar to DIST_CV_I (text classification module)
-                TX_KLASS: target class (text classification module)
-                HORUS_KLASS: final target class
-                STANFORD_NER: annotation: NER Stanford
+                    IS_ENTITY: -1: unknown; 0: no; 1:yes
+                    ID_SENT: sentence position
+                    ID_WORD: term position
+                    TOKEN: word or term (compound)
+                    POS_UNI: annotation: universal pos tag
+                    POS: annotation: pos tag
+                    NER: annotation: ner (target)
+                    COMPOUND: compound
+                    COMPOUND_SIZE: size of compound
+                    ID_TERM_TXT: id of the table of texts (internal control)
+                    ID_TERM_IMG: id of the table of images (internal control)
+                    TOT_IMG: total of resources (img) retrieved (top)
+                    TOT_CV_LOC: number of resources classified as LOC (computer vision module)
+                    TOT_CV_ORG: number of resources classified as ORG (computer vision module)
+                    TOT_CV_PER: number of resources classified as PER (computer vision module)
+                    DIST_CV_I: distance (subtraction) between 2 max values of (TOT_CV_LOC, TOT_CV_ORG and TOT_CV_PER) (computer vision module)
+                    PL_CV_I: sum of all LOC classifiers (computer vision module)
+                    CV_KLASS: target class (computer vision module)
+                    TOT_RESULTS_TX: total of resources (snippets of text) retrieved (top)
+                    TOT_TX_LOC: number of resources classified as LOC (text classification module)
+                    TOT_TX_ORG: number of resources classified as ORG (text classification module)
+                    TOT_TX_PER: number of resources classified as PER (text classification module)
+                    TOT_ERR_TRANS: number of exceptions raised by the translation module (text classification module)
+                    DIST_TX_I: similar to DIST_CV_I (text classification module)
+                    TX_KLASS: target class (text classification module)
+                    HORUS_KLASS: final target class
+                    STANFORD_NER: annotation: NER Stanford
                 '''
                 header = ["IS_ENTITY", "ID_SENT", "ID_WORD", "TOKEN", "POS_UNI", "POS", "NER", "COMPOUND",
                           "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG", "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG",
@@ -1044,17 +1037,17 @@ class Core(object):
             val(thumbs_url)
             try:
                 img_data = requests.get(thumbs_url).content
-                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, thumbs_type.split('/')[1]), 'wb') as handler:
+                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, thumbs_type), 'wb') as handler:
                     handler.write(img_data)
-                    auxtype = thumbs_type.split('/')[1]
+                    auxtype = thumbs_type
             except Exception as error:
                 print('-> error: ' + repr(error))
         except ValidationError, e:
             self.sys.log.error('No thumbs img here...', e)
             try:
                 img_data = requests.get(image_url).content
-                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, image_type.split('/')[1]), 'wb') as handler:
-                    auxtype = image_type.split('/')[1]
+                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, image_type), 'wb') as handler:
+                    auxtype = image_type
                     handler.write(img_data)
             except Exception as error:
                 print('-> error: ' + repr(error))
@@ -1107,7 +1100,7 @@ class Core(object):
                     else:
                         self.sys.log.info(':: [%s] querying the web ->' % term)
                         metaquery, result_txts, result_imgs = \
-                            bing_api5(term, api=self.config.search_engine_key, top=self.config.search_engine_tot_resources,
+                            bing_api5(term, key=self.config.search_engine_key, top=self.config.search_engine_tot_resources,
                                       market='en-US')
 
                         '''
@@ -1165,7 +1158,7 @@ class Core(object):
                         item.extend([id_term_img])  # updating matrix
                         seq = 0
                         for web_img_result in result_imgs:
-                            self.sys.log.debug(':: downloading image [%s]' % (web_img_result['Title']))
+                            self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
                             seq += 1
                             auxtype = self.download_image_local(web_img_result['contentUrl'],
                                       web_img_result['encodingFormat'], web_img_result['thumbnailUrl'],

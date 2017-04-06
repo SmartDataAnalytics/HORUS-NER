@@ -5,7 +5,7 @@ from horus.components.core import Core
 #a = [l[0].decode('utf8')]
 #print a[0]
 
-text = u"diego esteves was born in sao paulo".encode('utf8')
+text = u"ricardo lives in florida".encode('utf8')
 
 horus = Core(False, 5)
 print horus.annotate(text)
