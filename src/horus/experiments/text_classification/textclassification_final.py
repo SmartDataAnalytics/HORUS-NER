@@ -41,7 +41,7 @@ y_train = train['klass']
 print("Extracting features from the training data using a sparse vectorizer")
 t0 = time()
 vectorizer = TfidfVectorizer(sublinear_tf=True, lowercase=True, max_df=0.5, stop_words='english',
-                             strip_accents='unicode', encoding='utf-8',decode_error='ignore')
+                             strip_accents='unicode', encoding='utf-8', decode_error='ignore')
 
 #holds in-memory, thus better for big datasets
 #vectorizer = HashingVectorizer(stop_words='english', non_negative=True,
