@@ -25,3 +25,5 @@ src/horus/components/util/__init__.pyc
 src/horus/components/util/nlp_tools.pyc
 /output/
 /src/horus/test/
+src/horus/experiments/final_encoder.pkl
+src/horus/experiments/final_randomforest.pkl
