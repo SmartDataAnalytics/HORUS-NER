@@ -53,8 +53,8 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   </tr>
   <tr>
     <td>00</td>
-    <td>IS_ENTITY</td>
-    <td>(-1: unknown; 0: no; 1:yes)</td>
+    <td>IS_NAMED_ENTITY</td>
+    <td>(-1: unknown [test]; 0: no; 1:yes [training])</td>
   </tr>
   <tr>
     <td>01</td>
