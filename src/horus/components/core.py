@@ -704,68 +704,14 @@ class Core(object):
                               (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo))) if len(plo)!=0 else 0)
 
             if len(self.horus_matrix) > 0:
-                self.sys.log.info(':: caching results...')
                 self.download_and_cache_results()
-                self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
                 self.detect_objects()
-                self.sys.log.info(':: running final classifier...')
-                self.run_final_classifier()
-
-                #self.sys.log.info(':: applying rules...')
-                #self.update_rules_cv_predictions()
-                self.sys.log.info(':: updating compounds...')
                 self.update_compound_predictions()
-                # self.sys.log.info(horus_matrix)
-                '''
-                    IS_ENTITY: -1: unknown; 0: no; 1:yes
-                    ID_SENT: sentence position
-                    ID_WORD: term position
-                    TOKEN: word or term (compound)
-                    POS_UNI: annotation: universal pos tag
-                    POS: annotation: pos tag
-                    NER: annotation: ner (target)
-                    COMPOUND: compound
-                    COMPOUND_SIZE: size of compound
-                    ID_TERM_TXT: id of the table of texts (internal control)
-                    ID_TERM_IMG: id of the table of images (internal control)
-                    TOT_IMG: total of resources (img) retrieved (top)
-                    TOT_CV_LOC: number of resources classified as LOC (computer vision module)
-                    TOT_CV_ORG: number of resources classified as ORG (computer vision module)
-                    TOT_CV_PER: number of resources classified as PER (computer vision module)
-                    DIST_CV_I: distance (subtraction) between 2 max values of (TOT_CV_LOC, TOT_CV_ORG and TOT_CV_PER) (computer vision module)
-                    PL_CV_I: sum of all LOC classifiers (computer vision module)
-                    CV_KLASS: target class (computer vision module)
-                    TOT_RESULTS_TX: total of resources (snippets of text) retrieved (top)
-                    TOT_TX_LOC: number of resources classified as LOC (text classification module)
-                    TOT_TX_ORG: number of resources classified as ORG (text classification module)
-                    TOT_TX_PER: number of resources classified as PER (text classification module)
-                    TOT_ERR_TRANS: number of exceptions raised by the translation module (text classification module)
-                    DIST_TX_I: similar to DIST_CV_I (text classification module)
-                    TX_KLASS: target class (text classification module)
-                    HORUS_KLASS1: prediction without RandomForest
-                    STANFORD_NER: annotation: NER Stanford
-                    HORUS_KLASS2: prediction based on RandomForest
-                '''
-                header = ["IS_ENTITY", "ID_SENT", "ID_WORD", "TOKEN", "POS_UNI", "POS", "NER", "COMPOUND",
-                          "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG", "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG",
-                          "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX", "TOT_TX_LOC", "TOT_TX_ORG",
-                          "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER", "HORUS_KLASS1",
-                          "HORUS_KLASS2"]
-
+                self.run_final_classifier()
                 if int(ds_format) == 0:
                     self.print_annotated_sentence()
+                self.export_data(output_file, output_format)
 
-                self.sys.log.info(':: exporting metadata...')
-                if output_file == '':
-                    output_file = 'noname'
-                if output_format == 'json':
-                    with open(output_file + '.json', 'wb') as outfile:
-                        json.dump(self.horus_matrix, outfile)
-                elif output_format == 'csv':
-                    horus_csv = open(output_file + '.csv', 'wb')
-                    wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
-                    wr.writerow(header)
-                    wr.writerows(self.horus_matrix)
 
             self.conn.close()
             return self.horus_matrix
@@ -773,7 +719,22 @@ class Core(object):
         except Exception as error:
             print('caught this error: ' + repr(error))
 
+    def export_data(self, output_file, output_format):
+        self.sys.log.info(':: exporting metadata...')
+
+        if output_file == '':
+            output_file = 'noname'
+        if output_format == 'json':
+            with open(output_file + '.json', 'wb') as outfile:
+                json.dump(self.horus_matrix, outfile)
+        elif output_format == 'csv':
+            horus_csv = open(output_file + '.csv', 'wb')
+            wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
+            wr.writerow(definitions.HORUS_MATRIX_HEADER)
+            wr.writerows(self.horus_matrix)
+
     def run_final_classifier(self):
+        self.sys.log.info(':: running final classifier...')
         try:
             for index in range(len(self.horus_matrix)):
                 features = []
@@ -803,7 +764,7 @@ class Core(object):
                 features[0][0] = self.final_encoder.transform(features[0][0])
                 features[0][1] = self.final_encoder.transform(features[0][1])
                 features[0][2] = self.final_encoder.transform(features[0][2])
-                self.horus_matrix[index].append(definitions.KLASSES[self.final.predict(features)[0]])
+                self.horus_matrix[index][29] = definitions.KLASSES[self.final.predict(features)[0]]
 
         except Exception as error:
             raise error
@@ -1094,6 +1055,7 @@ class Core(object):
 
     def download_and_cache_results(self):
         try:
+            self.sys.log.info(':: caching results...')
             auxc = 1
             self.sys.log.info(':: download and cache tokens')
             c = self.conn.cursor()
@@ -1475,6 +1437,7 @@ class Core(object):
         #return "".join(i for i in temp if ord(i) < 128)
 
     def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
+        self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
         auxi = 0
         toti = len(self.horus_matrix)
         for item in self.horus_matrix:
@@ -1664,17 +1627,25 @@ class Core(object):
                     else:
                         self.sys.log.debug(':: there was a problem searching this term..please try to index it again...')
 
-                    # checking final NER - 14
-                    if metadata[4] >= int(self.config.models_distance_theta):
-                        metadata.append(metadata[6])  # CV is the final decision
-                    elif metadata[12] >= int(self.config.models_distance_theta):
-                        metadata.append(metadata[13])  # TX is the final decision
-                    else:
-                        metadata.append(definitions.KLASSES['NONE'])
+                    # checking final NER based on:
+                    #  -> theta
+                    if metadata[4] >= int(self.config.models_distance_theta): metadata.append(metadata[6])  # CV is the final decision
+                    elif metadata[12] >= int(self.config.models_distance_theta): metadata.append(metadata[13])  # TX is the final decision
+                    else: metadata.append(definitions.KLASSES[4])
+                    #  -> theta+1
+                    if metadata[4] >= (int(self.config.models_distance_theta)+1): metadata.append(metadata[6])  # CV is the final decision
+                    elif metadata[12] >= (int(self.config.models_distance_theta)+1): metadata.append(metadata[13])  # TX is the final decision
+                    else: metadata.append(definitions.KLASSES[4])
+                    #  -> theta+2
+                    if metadata[4] >= (int(self.config.models_distance_theta)+2): metadata.append(metadata[6])  # CV is the final decision
+                    elif metadata[12] >= (int(self.config.models_distance_theta)+2): metadata.append(metadata[13])  # TX is the final decision
+                    else: metadata.append(definitions.KLASSES[4])
 
+                metadata.append(definitions.KLASSES[4]) #compound classification (updated in the sequence)
+                metadata.append(definitions.KLASSES[4]) #random forest classification (updated in the sequence)
                 item.extend(metadata)
             else:
-                item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
     def update_rules_cv_predictions(self):
         '''
@@ -1701,21 +1672,13 @@ class Core(object):
 
     def update_compound_predictions(self):
         '''
-        updates the predictions based on the compound
-        #  updating components matrix
-        # 0 = is_entity?,    1 = index_sent,   2 = index_word, 3 = word/term,
-        # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
-        # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
-        :return:
-        '''
-        '''
         pre-requisite: the matrix should start with the sentence compounds at the beginning.
         '''
         self.sys.log.info(':: updating compounds predictions')
         i_y, i_sent, i_first_word, i_c_size = [], [], [], []
         for i in range(len(self.horus_matrix)):
             if self.horus_matrix[i][7] == 1:
-                i_y.append(self.horus_matrix[i][25])
+                i_y.append(self.horus_matrix[i][25]) # KLASS_1
                 i_sent.append(self.horus_matrix[i][1])
                 i_first_word.append(self.horus_matrix[i][2])
                 i_c_size.append(int(self.horus_matrix[i][8]))
@@ -1724,8 +1687,7 @@ class Core(object):
                     if i_sent[z] == self.horus_matrix[i][1] and \
                                     i_first_word[z] == self.horus_matrix[i][2]:
                         for k in range(i_c_size[z]):
-                            self.horus_matrix[i+k][25] = i_y[z]
-        self.sys.log.info(':: alles klar!')
+                            self.horus_matrix[i+k][28] = i_y[z] # KLASS_4
 
     def process_input_text(self, text):
         self.sys.log.info(':: text: ' + text)
