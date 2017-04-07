@@ -1050,13 +1050,12 @@ class Core(object):
         try:
             self.sys.log.info(':: caching results...')
             auxc = 1
-            self.sys.log.info(':: download and cache tokens')
             c = self.conn.cursor()
-            for item in self.horus_matrix:
+            for index in range(len(self.horus_matrix)):
                 term_cached = False
                 self.sys.log.debug(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
-                term = item[3]
-                if (item[5] in definitions.POS_NOUN_TAGS) or item[7] == 1:
+                term = self.horus_matrix[index][3]
+                if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
                     self.sys.log.debug(':: caching [%s] ...' % term)
                     sql = """SELECT id FROM HORUS_TERM WHERE term = ?"""
                     c.execute(sql, (term,))
@@ -1079,7 +1078,7 @@ class Core(object):
                         res = c.fetchone()
                         if res is None:
                             raise Exception("err: there is a problem in the database (item cached missing txt metadata)")
-                        item.extend(res)
+                        self.horus_matrix[index][9] = res[0]
 
                         # image
                         values = (term, self.config.search_engine_api, 2, self.config.search_engine_features_text)
@@ -1089,7 +1088,7 @@ class Core(object):
                         res = c.fetchone()
                         if res is None:
                             raise Exception("err: there is a problem in the database (item cached missing img metadata)")
-                        item.extend(res)
+                        self.horus_matrix[index][10] = res[0]
 
                     else:
                         self.sys.log.info(':: [%s] querying the web ->' % term)
@@ -1110,7 +1109,7 @@ class Core(object):
                                                  search_engine_features, query_date, query_tot_resource)
                                                  VALUES(?, ?, ?, ?, ?, ?, ?)""", values)
                         id_term_search = c.lastrowid
-                        item.extend([id_term_search])  # updating matrix
+                        self.horus_matrix[index][9] = id_term_search  # updating matrix
 
                         seq = 0
                         for web_result in result_txts:
@@ -1149,7 +1148,7 @@ class Core(object):
                                  search_engine_features, query_date, query_tot_resource) VALUES(?,?,?,?,?,?,?)"""
                         c.execute(sql, values)
                         id_term_img = c.lastrowid
-                        item.extend([id_term_img])  # updating matrix
+                        self.horus_matrix[index][10] = id_term_img  # updating matrix
                         seq = 0
                         for web_img_result in result_imgs:
                             self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
@@ -1177,8 +1176,7 @@ class Core(object):
                             self.sys.log.debug(':: term [%s] cached (img)!' % term)
                     # done caching
                     self.conn.commit()
-                else:
-                    item.extend([0, 0]) #no id img and txt from database cache
+
                 auxc+=1
 
         except Exception as e:
@@ -1435,16 +1433,16 @@ class Core(object):
         self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
         auxi = 0
         toti = len(self.horus_matrix)
-        for item in self.horus_matrix:
+        for index in range(len(self.horus_matrix)):
             auxi += 1
-            if (item[5] in definitions.POS_NOUN_TAGS) or item[7] == 1:
+            if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
 
                 self.sys.log.info(':: processing item %d of %d' % (auxi, toti))
 
-                id_term_img = item[10]
-                id_term_txt = item[9]
+                id_term_img = self.horus_matrix[index][10]
+                id_term_txt = self.horus_matrix[index][9]
                 id_ner_type = 0
-                term = item[3]
+                term = self.horus_matrix[index][3]
 
                 tot_geral_faces = 0
                 tot_geral_logos = 0
@@ -1454,7 +1452,6 @@ class Core(object):
                 T = int(self.config.models_location_theta)  # location threshold
 
                 filesimg = []
-                metadata = []
                 with self.conn:
                     cursor = self.conn.cursor()
                     cursor.execute("""SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2,
@@ -1516,12 +1513,12 @@ class Core(object):
                 place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
 
                 # 0 to 5
-                metadata.append(tot_img)
-                metadata.append(tot_geral_locations)  # 1
-                metadata.append(tot_geral_logos)  # 2
-                metadata.append(tot_geral_faces)  # 3
-                metadata.append(dist_cv_indicator)  # 4
-                metadata.append(place_cv_indicator)  # 5
+                self.horus_matrix[index][11] = tot_img
+                self.horus_matrix[index][12] = tot_geral_locations  # 1
+                self.horus_matrix[index][13] = tot_geral_logos  # 2
+                self.horus_matrix[index][14] = tot_geral_faces  # 3
+                self.horus_matrix[index][15] = dist_cv_indicator  # 4
+                self.horus_matrix[index][16] = place_cv_indicator  # 5
 
                 self.sys.log.debug('-------------------------------------------------------------')
                 self.sys.log.debug(':: [checking related visual information for [%s]]' % term)
@@ -1535,7 +1532,7 @@ class Core(object):
                 self.sys.log.debug('-> CV_DIST indicator: %s' % (str(dist_cv_indicator)))
                 self.sys.log.debug('-> CV_PLC  indicator: %s' % (str(place_cv_indicator)))
 
-                metadata.append(definitions.KLASSES[outs.index(max(outs)) + 1])
+                self.horus_matrix[index][17] = definitions.KLASSES[outs.index(max(outs)) + 1]
 
                 # text classification
                 self.sys.log.debug(':: [checking related textual information ...]')
@@ -1572,18 +1569,18 @@ class Core(object):
                                     '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(gp[0]),
                                                                                            str(gp[1]), str(gp[2])))
                     # 7 to 11
-                    metadata.append(len(rows))
-                    metadata.append(gp[0])
-                    metadata.append(gp[1])
-                    metadata.append(gp[2])
-                    metadata.append(float(tot_err))
+                    self.horus_matrix[index][18] = len(rows)
+                    self.horus_matrix[index][19] = gp[0]
+                    self.horus_matrix[index][20] = gp[1]
+                    self.horus_matrix[index][21] = gp[2]
+                    self.horus_matrix[index][22] = float(tot_err)
 
                     maxs_tx = heapq.nlargest(2, gp)
                     dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
 
                     # 12, 13
-                    metadata.append(dist_tx_indicator)
-                    metadata.append(definitions.KLASSES[horus_tx_ner])
+                    self.horus_matrix[index][23] = dist_tx_indicator
+                    self.horus_matrix[index][24] = definitions.KLASSES[horus_tx_ner]
 
                     if len(rows) != 0:
                         self.sys.log.debug('-> TX_LOC  indicator: %f %%' % (float(gp[0]) / (len(rows)) * 5.0)) #division by current number of classifiers = 5
@@ -1597,25 +1594,21 @@ class Core(object):
 
                     # checking final NER based on:
                     #  -> theta
-                    if metadata[4] >= int(self.config.models_distance_theta): metadata.append(metadata[6])  # CV is the final decision
-                    elif metadata[12] >= int(self.config.models_distance_theta): metadata.append(metadata[13])  # TX is the final decision
-                    else: metadata.append(definitions.KLASSES[4])
+                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta):
+                        self.horus_matrix[index][25] = self.horus_matrix[index][17]   # CV is the final decision
+                    elif self.horus_matrix[index][23] >= int(self.config.models_distance_theta):
+                        self.horus_matrix[index][25] = self.horus_matrix[index][24]  # TX is the final decision
                     #  -> theta+1
-                    if metadata[4] >= (int(self.config.models_distance_theta)+1): metadata.append(metadata[6])  # CV is the final decision
-                    elif metadata[12] >= (int(self.config.models_distance_theta)+1): metadata.append(metadata[13])  # TX is the final decision
-                    else: metadata.append(definitions.KLASSES[4])
+                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta)+1:
+                        self.horus_matrix[index][25] = self.horus_matrix[index][17]  # CV is the final decision
+                    elif self.horus_matrix[index][23] >= int(self.config.models_distance_theta)+1:
+                        self.horus_matrix[index][25] = self.horus_matrix[index][24]  # TX is the final decision
                     #  -> theta+2
-                    if metadata[4] >= (int(self.config.models_distance_theta)+2): metadata.append(metadata[6])  # CV is the final decision
-                    elif metadata[12] >= (int(self.config.models_distance_theta)+2): metadata.append(metadata[13])  # TX is the final decision
-                    else: metadata.append(definitions.KLASSES[4])
+                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta)+2:
+                        self.horus_matrix[index][25] = self.horus_matrix[index][17]  # CV is the final decision
+                    elif self.horus_matrix[index][23] >= int(self.config.models_distance_theta)+2:
+                        self.horus_matrix[index][25] = self.horus_matrix[index][24]  # TX is the final decision
 
-                metadata.append(definitions.KLASSES[4]) #compound classification (updated in the sequence)
-                metadata.append(definitions.KLASSES[4]) #random forest classification (updated in the sequence)
-                item.extend(metadata)
-            else:
-                item.extend([0, 0, 0, 0, 0, 0, definitions.KLASSES[4], 0, 0, 0, 0, 0, 0, definitions.KLASSES[4],
-                             definitions.KLASSES[4], definitions.KLASSES[4], definitions.KLASSES[4],
-                             definitions.KLASSES[4], definitions.KLASSES[4]])
 
     def update_rules_cv_predictions(self):
         '''
@@ -1683,13 +1676,23 @@ class Core(object):
 
             if len(compounds) > 0:
                 for comp in compounds:
-                    horus.append([-1, isent, comp[0], comp[1], '', '', '', 1, comp[2]])
+                    temp = [-1, isent, comp[0], comp[1], '', '', definitions.KLASSES[4], 1, comp[2]]
+                    temp.extend([0] * 8)
+                    temp.extend([definitions.KLASSES[4]])
+                    temp.extend([0] * 6)
+                    temp.extend([definitions.KLASSES[4]] * 18)
+                    horus.append(temp)
             for index in range(len(nerlist)):
                 if nerlist[index] == 'GPE' or nerlist[index] == 'LOCATION': ner = definitions.KLASSES[1]
                 elif nerlist[index] == 'ORGANIZATION': ner = definitions.KLASSES[2]
                 elif nerlist[index] == 'PERSON': ner = definitions.KLASSES[3]
                 else: ner = definitions.KLASSES[4]
-                horus.append([-1, isent, index+1, tokens[index], pos_universal[index][1], pos_taggers[index][1], ner, 0, 0])
+                temp = [-1, isent, index+1, tokens[index], pos_universal[index][1], pos_taggers[index][1], ner]
+                temp.extend([0] * 10)
+                temp.extend([definitions.KLASSES[4]])
+                temp.extend([0] * 6)
+                temp.extend([definitions.KLASSES[4]] * 18)
+                horus.append(temp)
 
             compounds = None
         return horus
