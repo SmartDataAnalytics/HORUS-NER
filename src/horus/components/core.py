@@ -43,7 +43,7 @@ from microsofttranslator import Translator
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
-
+from sklearn import tree, preprocessing
 from bingAPI1 import bing_api2, bing_api5
 from config import HorusConfig
 from horus import definitions
@@ -137,12 +137,13 @@ class Core(object):
         self.voc_loc_8 = joblib.load(self.config.models_cv_loc_8_dict)
         self.voc_loc_9 = joblib.load(self.config.models_cv_loc_9_dict)
         self.voc_loc_10 = joblib.load(self.config.models_cv_loc_10_dict)
-
         self.text_checking_model_1 = joblib.load(self.config.models_1_text)
         self.text_checking_model_2 = joblib.load(self.config.models_2_text)
         self.text_checking_model_3 = joblib.load(self.config.models_3_text)
         self.text_checking_model_4 = joblib.load(self.config.models_4_text)
         self.text_checking_model_5 = joblib.load(self.config.models_5_text)
+        self.final = joblib.load(self.config.model_final)
+        self.final_encoder = joblib.load(self.config.model_final_encoder)
 
         self.conn = sqlite3.connect(self.config.database_db)
         self.horus_matrix = []
@@ -707,6 +708,9 @@ class Core(object):
                 self.download_and_cache_results()
                 self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
                 self.detect_objects()
+                self.sys.log.info(':: running final classifier...')
+                self.run_final_classifier()
+
                 #self.sys.log.info(':: applying rules...')
                 #self.update_rules_cv_predictions()
                 self.sys.log.info(':: updating compounds...')
@@ -738,13 +742,15 @@ class Core(object):
                     TOT_ERR_TRANS: number of exceptions raised by the translation module (text classification module)
                     DIST_TX_I: similar to DIST_CV_I (text classification module)
                     TX_KLASS: target class (text classification module)
-                    HORUS_KLASS: final target class
+                    HORUS_KLASS1: prediction without RandomForest
                     STANFORD_NER: annotation: NER Stanford
+                    HORUS_KLASS2: prediction based on RandomForest
                 '''
                 header = ["IS_ENTITY", "ID_SENT", "ID_WORD", "TOKEN", "POS_UNI", "POS", "NER", "COMPOUND",
                           "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG", "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG",
                           "TOT_CV_PER", "DIST_CV_I", "PL_CV_I", "CV_KLASS", "TOT_RESULTS_TX", "TOT_TX_LOC", "TOT_TX_ORG",
-                          "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER"]
+                          "TOT_TX_PER", "TOT_ERR_TRANS", "DIST_TX_I", "TX_KLASS", "HORUS_KLASS", "STANFORD_NER", "HORUS_KLASS1",
+                          "HORUS_KLASS2"]
 
                 if int(ds_format) == 0:
                     self.print_annotated_sentence()
@@ -766,6 +772,41 @@ class Core(object):
 
         except Exception as error:
             print('caught this error: ' + repr(error))
+
+    def run_final_classifier(self):
+        try:
+            for index in range(len(self.horus_matrix)):
+                features = []
+                pos_bef = ''
+                pos_aft = ''
+                if index > 1:
+                    pos_bef = self.horus_matrix[index - 1][5]
+                if index + 1 < len(self.horus_matrix):
+                    pos_aft = self.horus_matrix[index + 1][5]
+
+                one_char_token = 1 if len(self.horus_matrix[index][3]) == 1 else 0
+                special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)', self.horus_matrix[index][3])) > 0 else 0
+                first_capitalized = 1 if self.horus_matrix[index][3][0].isupper() else 0
+                capitalized = 1 if self.horus_matrix[index][3].isupper() else 0
+                '''
+                    pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
+                    tx_loc; tx_org; tx_per; tx_err; tx_dist; 
+                    one_char; special_char; first_cap; cap
+                '''
+                features.append((pos_bef, self.horus_matrix[index][5], pos_aft, int(self.horus_matrix[index][12]),
+                                 int(self.horus_matrix[index][13]), int(self.horus_matrix[index][14]), int(self.horus_matrix[index][15]),
+                                 int(self.horus_matrix[index][16]), int(self.horus_matrix[index][19]), int(self.horus_matrix[index][20]),
+                                 int(self.horus_matrix[index][21]), float(self.horus_matrix[index][22]), int(self.horus_matrix[index][23]),
+                                 one_char_token, special_char, first_capitalized, capitalized))
+
+                features = numpy.array(features)
+                features[0][0] = self.final_encoder.transform(features[0][0])
+                features[0][1] = self.final_encoder.transform(features[0][1])
+                features[0][2] = self.final_encoder.transform(features[0][2])
+                self.horus_matrix[index].append(definitions.KLASSES[self.final.predict(features)[0]])
+
+        except Exception as error:
+            raise error
 
     def print_annotated_sentence(self):
         '''
@@ -935,8 +976,6 @@ class Core(object):
         return c.execute(sql, (col, compounds, sentence_str))
 
     def create_matrix_and_compounds(self, sentence_list):
-
-
 
         i_sent, i_word = 1, 1
         self.sys.log.debug(':: chunking pattern ...')

@@ -54,6 +54,9 @@ class HorusConfig:
                     self.models_4_text = rootdir + parser.get('models-text', 'horus_textchecking_4')
                     self.models_5_text = rootdir + parser.get('models-text', 'horus_textchecking_5')
 
+                    self.model_final = rootdir + parser.get('models-horus', 'horus_final')
+                    self.model_final_encoder = rootdir + parser.get('models-horus', 'horus_final_encoder')
+
                     self.model_stanford_filename = rootdir + parser.get('model-stanford', 'model_filename')
                     self.model_stanford_path_jar = rootdir + parser.get('model-stanford', 'path_to_jar')
 
