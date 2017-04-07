@@ -1654,8 +1654,7 @@ class Core(object):
                 i_c_size.append(int(self.horus_matrix[i][8]))
             if self.horus_matrix[i][7] == 0:
                 for z in range(len(i_y)):
-                    if i_sent[z] == self.horus_matrix[i][1] and \
-                                    i_first_word[z] == self.horus_matrix[i][2]:
+                    if i_sent[z] == self.horus_matrix[i][1] and i_first_word[z] == self.horus_matrix[i][2]:
                         for k in range(i_c_size[z]):
                             self.horus_matrix[i+k][28] = i_y[z] # KLASS_4
 
@@ -1665,52 +1664,33 @@ class Core(object):
         sent_tokenize_list = sent_tokenize(text)
         self.sys.log.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
         horus = []
-        sentences = []
-        w = ''
-        ner = ''
-        pos = ''
-        hasNER = -1
         isent = 0
-        itoken = 0
         for sentence in sent_tokenize_list:
             isent+=1
             tokens, pos_taggers, pos_universal = self.tokenize_and_pos(sentence, self.config.models_pos_tag_lib)
             compounds = self.get_compounds(pos_taggers)
-            chunked = nltk.ne_chunk(pos_taggers)
-            if len(chunked) != len(tokens):
+            nerlist = []
+            if self.config.models_pos_tag_lib == 1  or self.config.models_pos_tag_lib == 3:
+                nerlist = self.tools.annotate_ner_nltk(pos_taggers)
+                # TweeterNLP has no NER implemented, so we use the NLTK (hopefully the tokenization is the same!
+            elif self.config.models_pos_tag_lib == 2:
+                nerlist = self.tools.annotate_ner_stanford(pos_taggers)
+            else:
+                raise Exception("parameter for [models-param][pos_tag_lib] is not implemented!")
+
+            if len(nerlist) != len(tokens):
                 raise Exception("err: this should never happen! token arrays size mismatching")
+
             if len(compounds) > 0:
                 for comp in compounds:
                     horus.append([-1, isent, comp[0], comp[1], '', '', '', 1, comp[2]])
-            for ch in chunked:
-                itoken+=1
-                if type(ch) is nltk.Tree:
-                    w = ch[0][0]
-                    pos = ch[0][1]
-                    if ch._label == 'GPE' or ch._label == 'LOCATION':
-                        ner = 'LOC'
-                    elif ch._label == 'PERSON':
-                        ner = 'PER'
-                    elif ch._label == 'ORGANIZATION':
-                        ner = 'ORG'
-                    else:
-                        ner = 'O'
-                else:
-                    w = ch[0]
-                    pos = ch[1]
-                    ner = 'O'
+            for index in range(len(nerlist)):
+                if nerlist[index] == 'GPE' or nerlist[index] == 'LOCATION': ner = definitions.KLASSES[1]
+                elif nerlist[index] == 'ORGANIZATION': ner = definitions.KLASSES[2]
+                elif nerlist[index] == 'PERSON': ner = definitions.KLASSES[3]
+                else: ner = definitions.KLASSES[4]
+                horus.append([-1, isent, index+1, tokens[index], pos_universal[index][1], pos_taggers[index][1], ner, 0, 0])
 
-                horus.append([-1, isent, itoken, tokens[itoken-1], pos_universal[itoken-1][1], pos_taggers[itoken-1][1], ner, 0, 0])
-                w = ''
-                pos = ''
-                ner = ''
-
-            #_pos = list(zip(*pos_universal)[1])
-            #sentences.append(compounds)
-            #sentences.append([hasNER, sentence, tokens, ner, pos, _pos])
-            #pos = []
-            #ner = []
-            #w = []
             compounds = None
         return horus
 

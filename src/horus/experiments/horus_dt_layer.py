@@ -31,11 +31,6 @@ config = HorusConfig()
 features = []
 X, Y = [], []
 
-colnames = ['IS_ENTITY', 'ID_SENT', 'ID_WORD', 'WORD_TERM', 'POS_UNI', 'POS', 'NER', 'COMPOUND', 'COMPOUND_SIZE', 'ID_TERM_TXT',
-            'ID_TERM_IMG', 'TOT_IMG', 'TOT_CV_LOC', 'TOT_CV_ORG', 'TOT_CV_PER', 'DIST_CV_I', 'PL_CV_I', 'CV_KLASS', 'TOT_RESULTS_TX', 'TOT_TX_LOC',
-            'TOT_TX_ORG', 'TOT_TX_PER', 'TOT_ERR_TRANS', 'DIST_TX_I', 'TX_KLASS', 'HORUS_KLASS']
-
-
 df = pandas.read_csv(config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv", delimiter=",", skiprows=1, header=None)
 for index, linha in df.iterrows():
     pos_bef = ''
@@ -50,7 +45,7 @@ for index, linha in df.iterrows():
     elif linha[6] in definitions.NER_RITTER_PER: Y.append(3)
     else: Y.append(4)
 
-    one_char_token = 1 if len(linha[3]) ==1 else 0
+    one_char_token = 1 if len(linha[3]) == 1 else 0
     special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)',linha[3]))>0 else 0
     first_capitalized = 1 if linha[3][0].isupper() else 0
     capitalized = 1 if linha[3].isupper() else 0
