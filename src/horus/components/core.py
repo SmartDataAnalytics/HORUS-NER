@@ -1667,8 +1667,10 @@ class Core(object):
                     # checking final NER - 14
                     if metadata[4] >= int(self.config.models_distance_theta):
                         metadata.append(metadata[6])  # CV is the final decision
-                    else:
+                    elif metadata[12] >= int(self.config.models_distance_theta):
                         metadata.append(metadata[13])  # TX is the final decision
+                    else:
+                        metadata.append(definitions.KLASSES['NONE'])
 
                 item.extend(metadata)
             else:
@@ -1705,6 +1707,9 @@ class Core(object):
         # 4 = pos_universal, 5 = pos,          6 = ner       , 7 = compound? ,
         # 8 = compound_size, 9 = id_term_txt, 10 = id_term_img
         :return:
+        '''
+        '''
+        pre-requisite: the matrix should start with the sentence compounds at the beginning.
         '''
         self.sys.log.info(':: updating compounds predictions')
         i_y, i_sent, i_first_word, i_c_size = [], [], [], []
