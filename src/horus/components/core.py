@@ -678,11 +678,6 @@ class Core(object):
                 self.sys.log.info(':: %s sentence(s) cached' % str(len(df[1].unique())))
                 self.horus_matrix = sent_tokenize_list
 
-
-             # hasEntityNER (1=yes,0=dunno,-1=no), sentence, words[], tags_NER[], tags_POS[], tags_POS_UNI[]
-            # self.cache_sentence(int(ds_format), sent_tokenize_list)
-            #self.sys.log.info(':: done!')
-
             hm = pd.DataFrame(self.horus_matrix)
             self.sys.log.info(':: basic POS statistics')
             a = len(hm)  # all
@@ -708,9 +703,9 @@ class Core(object):
                 self.detect_objects()
                 self.update_compound_predictions()
                 self.run_final_classifier()
+                self.export_data(output_file, output_format)
                 if int(ds_format) == 0:
                     self.print_annotated_sentence()
-                self.export_data(output_file, output_format)
 
 
             self.conn.close()
@@ -771,22 +766,20 @@ class Core(object):
 
     def print_annotated_sentence(self):
         '''
-        read the components matrix and prints the annotated sentences
-        :param horus_matrix:
-        :return: output of annotated sentence
+        reads the components matrix and prints the annotated sentences
+        :: param horus_matrix:
+        :: return: output of annotated sentence
         '''
         x = ''
         id_sent_aux = self.horus_matrix[0][1]
-        for term in self.horus_matrix:
-            if term[7] == 0:
-                if id_sent_aux != term[1]:
-                    #self.sys.log.info(':: sentence ' + str(id_sent_aux) + ': ' + x)
+        for token in self.horus_matrix:
+            if token[7] == 0:
+                if id_sent_aux != token[1]:
                     self.sys.log.info(':: sentence: ' + x)
-                    id_sent_aux = term[1]
-                    x = ' ' + str(term[3]) + '/' + str(term[25])
+                    id_sent_aux = token[1]
+                    x = ' ' + str(token[3]) + '/' + str(token[28])
                 else:
-                    x += ' ' + str(term[3]) + '/' + str(term[4]) + '/' + str(term[5]) + '/' + str(term[25])
-                    # x += ' ' + str(term[3]) + '/' + str(term[25])
+                    x += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[28])
 
         self.sys.log.info(':: sentence: ' + x)
 
@@ -1184,6 +1177,8 @@ class Core(object):
                             self.sys.log.debug(':: term [%s] cached (img)!' % term)
                     # done caching
                     self.conn.commit()
+                else:
+                    item.extend([0, 0]) #no id img and txt from database cache
                 auxc+=1
 
         except Exception as e:
@@ -1462,34 +1457,16 @@ class Core(object):
                 metadata = []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("""SELECT filename,
-                                                 id,
-                                                 processed,
-                                                 nr_faces,
-                                                 nr_logos,
-                                                 nr_place_1,
-                                                 nr_place_2,
-                                                 nr_place_3,
-                                                 nr_place_4,
-                                                 nr_place_5,
-                                                 nr_place_6,
-                                                 nr_place_7,
-                                                 nr_place_8,
-                                                 nr_place_9,
-                                                 nr_place_10
-                                          FROM HORUS_SEARCH_RESULT_IMG
-                                          WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_img, id_ner_type))
+                    cursor.execute("""SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2,
+                                             nr_place_3, nr_place_4, nr_place_5, nr_place_6, nr_place_7, nr_place_8,
+                                             nr_place_9, nr_place_10 FROM HORUS_SEARCH_RESULT_IMG 
+                                      WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_img, id_ner_type))
                     rows = cursor.fetchall()
                     tot_img = len(rows)
 
                     for row in rows:  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
-                        filesimg.append((self.config.cache_img_folder + row[0],
-                                         row[1],
-                                         row[2],
-                                         row[3],
-                                         row[4],
-                                         row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13],
-                                         row[14]))
+                        filesimg.append((self.config.cache_img_folder + row[0], row[1], row[2], row[3], row[4], row[5],
+                                         row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14]))
 
                 for image_term in filesimg:
                     if image_term[2] == 1:
@@ -1505,13 +1482,11 @@ class Core(object):
                         if tot_faces > 0:
                             tot_geral_faces += 1
                             self.sys.log.debug(":: found {0} faces!".format(tot_faces))
-
                         # ----- logo recognition -----
                         tot_logos = self.detect_logo(image_term[0])
                         if tot_logos[0] == 1:
                             tot_geral_logos += 1
                             self.sys.log.debug(":: found {0} logo(s)!".format(1))
-
                         # ----- place recognition -----
                         res = self.detect_place(image_term[0])
                         tot_geral_pos_locations += res.count(1)
@@ -1522,11 +1497,10 @@ class Core(object):
                             self.sys.log.debug(":: found {0} place(s)!".format(1))
 
                         # updating results
-                        sql = """UPDATE HORUS_SEARCH_RESULT_IMG
-                                     SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?,
-                                         nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?,
-                                         nr_place_9 = ?, nr_place_10 = ?, processed = 1
-                                     WHERE id = ?"""
+                        sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, 
+                                 nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, 
+                                 nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, processed = 1
+                                 WHERE id = ?"""
                         param = []
                         param.append(tot_faces)
                         param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
@@ -1569,23 +1543,17 @@ class Core(object):
                 with self.conn:
                     cursor = self.conn.cursor()
                     cursor.execute("""SELECT id, result_seq, result_title, result_description, result_title_en,
-                                                 result_description_en, processed, text_1_klass, text_2_klass,
-                                                 text_3_klass, text_4_klass, text_5_klass
-                                          FROM HORUS_SEARCH_RESULT_TEXT
-                                          WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
+                                      result_description_en, processed, text_1_klass, text_2_klass, text_3_klass, 
+                                      text_4_klass, text_5_klass FROM HORUS_SEARCH_RESULT_TEXT
+                                      WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()
                     tot_err = 0
                     for row in rows:
                         if row[6] == 0 or row[6] is None:
                             ret = self.detect_text_klass(row[2], row[3], row[0], row[4], row[5])
                             y.append(ret)
-                            sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
-                                     SET processed = 1,
-                                         text_1_klass = %s,
-                                         text_2_klass = %s,
-                                         text_3_klass = %s,
-                                         text_4_klass = %s,
-                                         text_5_klass = %s
+                            sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
+                                     text_3_klass = %s, text_4_klass = %s, text_5_klass = %s
                                      WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], row[0])
                             #self.sys.log.debug(':: ' + sql)
                             cursor.execute(sql)
@@ -1645,7 +1613,9 @@ class Core(object):
                 metadata.append(definitions.KLASSES[4]) #random forest classification (updated in the sequence)
                 item.extend(metadata)
             else:
-                item.extend([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                item.extend([0, 0, 0, 0, 0, 0, definitions.KLASSES[4], 0, 0, 0, 0, 0, 0, definitions.KLASSES[4],
+                             definitions.KLASSES[4], definitions.KLASSES[4], definitions.KLASSES[4],
+                             definitions.KLASSES[4], definitions.KLASSES[4]])
 
     def update_rules_cv_predictions(self):
         '''

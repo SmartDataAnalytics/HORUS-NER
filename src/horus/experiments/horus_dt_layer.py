@@ -45,14 +45,10 @@ for index, linha in df.iterrows():
     if index + 1 < len(df):
         pos_aft = df.get_value(index+1,5)
 
-    if linha[6] in definitions.NER_RITTER_PER:
-        Y.append(3)
-    elif linha[6] in definitions.NER_RITTER_LOC:
-        Y.append(1)
-    elif linha[6] in definitions.NER_RITTER_ORG:
-        Y.append(2)
-    else:
-        Y.append(4)
+    if linha[6] in definitions.NER_RITTER_LOC: Y.append(1)
+    elif linha[6] in definitions.NER_RITTER_ORG: Y.append(2)
+    elif linha[6] in definitions.NER_RITTER_PER: Y.append(3)
+    else: Y.append(4)
 
     one_char_token = 1 if len(linha[3]) ==1 else 0
     special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)',linha[3]))>0 else 0
@@ -62,7 +58,6 @@ for index, linha in df.iterrows():
     pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
     tx_loc; tx_org; tx_per; tx_err; tx_dist; 
     one_char; special_char; first_cap; cap
-    
     '''
     features.append((pos_bef, linha[5], pos_aft, linha[3], int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
                      int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
