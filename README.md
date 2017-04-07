@@ -42,34 +42,167 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
 ```
 
 ## Output
-```
-0. IS_ENTITY ?
-1. ID_SENT
-2. ID_WORD
-3. WORD/TERM
-4. POS_UNI
-5. POS
-6. NER
-7. COMPOUND
-8. COMPOUND_SIZE
-9. ID_TERM_TXT
-10. ID_TERM_IMG
-11. TOT_IMG
-12. TOT_CV_LOC
-13. TOT_CV_ORG
-14. TOT_CV_PER
-15. DIST_CV_I
-16. PL_CV_I
-17. CV_KLASS (y1)
-18. TOT_RESULTS_TX 
-19. TOT_TX_LOC
-20. TOT_TX_ORG
-21. TOT_TX_PER
-22. TOT_ERR_TRANS
-23. DIST_TX_I
-24. TX_KLASS (y2)
-25. HORUS_KLASS (y3)
-```    
+<table>
+  <tr>
+    <th colspan="3">HORUS MATRIX</th>
+  </tr>
+  <tr>
+    <td>#</td>
+    <td>field</td>
+    <td>description</td>
+  </tr>
+  <tr>
+    <td>00</td>
+    <td>IS_ENTITY</td>
+    <td>(-1: unknown; 0: no; 1:yes)</td>
+  </tr>
+  <tr>
+    <td>01</td>
+    <td>ID_SENT</td>
+    <td>sentence position</td>
+  </tr>
+  <tr>
+    <td>02</td>
+    <td>ID_WORD</td>
+    <td>term position</td>
+  </tr>
+  <tr>
+    <td>03</td>
+    <td>TOKEN</td>
+    <td>word or term (compound)</td>
+  </tr>
+  <tr>
+    <td>04</td>
+    <td>POS_UNI</td>
+    <td>annotation: universal pos tag</td>
+  </tr>
+  <tr>
+    <td>05</td>
+    <td>POS</td>
+    <td>pos tag</td>
+  </tr>
+  <tr>
+    <td>06</td>
+    <td>NER</td>
+    <td>ner tag</td>
+  </tr>
+  <tr>
+    <td>07</td>
+    <td>COMPOUND</td>
+    <td>compound</td>
+  </tr>
+  <tr>
+    <td>08</td>
+    <td>COMPOUND_SIZE</td>
+    <td>size of compound</td>
+  </tr>
+  <tr>
+    <td>09</td>
+    <td>ID_TERM_TXT</td>
+    <td>id of the table of texts (internal control)</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>ID_TERM_IMG</td>
+    <td>id of the table of images (internal control)</td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td>TOT_IMG</td>
+    <td>total of resources (img) retrieved (top)</td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td>TOT_CV_LOC</td>
+    <td>number of resources classified as LOC (computer vision module)</td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td>TOT_CV_ORG</td>
+    <td>number of resources classified as ORG (computer vision module)</td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td>TOT_CV_PER</td>
+    <td>number of resources classified as PER (computer vision module)</td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td>DIST_CV_I</td>
+    <td>distance (subtraction) between 2 max values of (TOT_CV_LOC, TOT_CV_ORG and TOT_CV_PER) (computer vision module)</td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td>PL_CV_I</td>
+    <td>sum of all LOC classifiers (computer vision module)</td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td>CV_KLASS</td>
+    <td>max out of 3cvs</td>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td>TOT_RESULTS_TX</td>
+    <td>total of resources (snippets of text) retrieved (top)</td>
+  </tr>
+  <tr>
+    <td>19</td>
+    <td>TOT_TX_LOC</td>
+    <td>number of resources classified as LOC (text classification module)</td>
+  </tr>
+  <tr>
+    <td>20</td>
+    <td>TOT_TX_ORG</td>
+    <td>number of resources classified as ORG (text classification module)</td>
+  </tr>
+  <tr>
+    <td>21</td>
+    <td>TOT_TX_PER</td>
+    <td>number of resources classified as PER (text classification module)</td>
+  </tr>
+  <tr>
+    <td>22</td>
+    <td>TOT_ERR_TRANS</td>
+    <td>number of exceptions raised by the translation module (text classification module)</td>
+  </tr>
+  <tr>
+    <td>23</td>
+    <td>DIST_TX_I</td>
+    <td>similar to DIST_CV_I (text classification module)</td>
+  </tr>
+  <tr>
+    <td>24</td>
+    <td>TX_KLASS</td>
+    <td>max out of 3txts</td>
+  </tr>
+  <tr>
+    <td>25</td>
+    <td>KLASS_1</td>
+    <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta else 'NONE')</td>
+  </tr>
+  <tr>
+    <td>26</td>
+    <td>KLASS_2</td>
+    <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+1 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+1 else 'NONE')</td>
+  </tr>
+  <tr>
+    <td>27</td>
+    <td>KLASS_3</td>
+    <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+2 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+2 else 'NONE')</td>
+  </tr>
+  <tr>
+    <td>28</td>
+    <td>KLASS_4</td>
+    <td>Compound Update [based on KLASS_1]</td>
+  </tr>
+  <tr>
+    <td>29</td>
+    <td>KLASS_5</td>
+    <td>RandomForest Model</td>
+  </tr>
+</table>
+
 ## Version
 - 0.1.0 initial version
 - 0.1.1 adding text classification
