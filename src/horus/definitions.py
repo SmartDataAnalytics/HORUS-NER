@@ -19,6 +19,30 @@ NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']
 NER_RITTER_LOC = ['B-geo-loc', 'I-geo-loc']
 
+NER_STANFORD_PER = ['PERSON']
+NER_STANFORD_ORG = ['ORGANIZATION', 'GSP'] # GSP = geo-political social group
+NER_STANFORD_LOC = ['LOCATION']
+
+NER_NLTK_PER = ['B-PERSON', 'I-PERSON', 'PERSON']
+NER_NLTK_ORG = ['B-ORGANIZATION', 'I-ORGANIZATION', 'ORGANIZATION', 'GSP']
+NER_NLTK_LOC = ['B-LOCATION', 'I-LOCATION', 'LOCATION', 'GPE'] # GPE = geo-political entities such as city, state/province, and country
+
+
+NER_TAGS_PER = []
+NER_TAGS_PER.extend(NER_RITTER_PER)
+NER_TAGS_PER.extend(NER_STANFORD_PER)
+NER_TAGS_PER.extend(NER_NLTK_PER)
+
+NER_TAGS_ORG = []
+NER_TAGS_ORG.extend(NER_RITTER_ORG)
+NER_TAGS_ORG.extend(NER_STANFORD_ORG)
+NER_TAGS_ORG.extend(NER_NLTK_ORG)
+
+NER_TAGS_LOC = []
+NER_TAGS_LOC.extend(NER_RITTER_LOC)
+NER_TAGS_LOC.extend(NER_STANFORD_LOC)
+NER_TAGS_LOC.extend(NER_NLTK_LOC)
+
 #TODO: check if we have here ALL the NOUNs!!!
 # merge of ALL noun tags, from all the POS taggers
 
@@ -34,6 +58,12 @@ NER_RITTER = []
 NER_RITTER.extend(NER_RITTER_PER)
 NER_RITTER.extend(NER_RITTER_ORG)
 NER_RITTER.extend(NER_RITTER_LOC)
+
+NER_TAGS = []
+NER_TAGS.extend(NER_TAGS_ORG)
+NER_TAGS.extend(NER_TAGS_PER)
+NER_TAGS.extend(NER_TAGS_LOC)
+
 
 KLASSES = {1: "LOC", 2: "ORG", 3: "PER", 4: "NONE"}
 

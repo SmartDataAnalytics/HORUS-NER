@@ -595,19 +595,11 @@ class Core(object):
     def convert_dataset_to_horus_matrix(self, sentences):
         '''
         converts the list to horus_matrix
-        0 = entity (-1,0,1)
-        1 = index_sentence
-        2 = index_token
-        3 = token
-        4 = pos_universal_tag (deprecated) 
-        5 = pos_tag
-        6 = ner_tag
-        7 = compound (1-0)
-        8 = compound_size
-        :param sentences:
-        :return:horus_matrix
+        :param sentences
+        :return: horus_matrix
         '''
-        temp = []
+        self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
+        converted = []
         sent_index = 0
         try:
             for sent in sentences:
@@ -616,27 +608,60 @@ class Core(object):
                     word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
                     compound = sent[6][self.config.models_pos_tag_lib][c][1]
                     compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
-                    temp.append([1, sent_index, word_index_ref, compound, '', '', '', 1, compound_size])
+                    temp = [1, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
+                    temp.extend([0] * 8)
+                    temp.extend([definitions.KLASSES[4]])
+                    temp.extend([0] * 6)
+                    temp.extend([definitions.KLASSES[4]] * 18)
+                    converted.append(temp)
                 word_index = 0
                 starty = 0
                 for i in range(len(sent[2][self.config.models_pos_tag_lib])):
                     term = sent[2][self.config.models_pos_tag_lib][i]
-                    ind_ner = self.get_ner_mapping_simple(sent[2][0], sent[2][self.config.models_pos_tag_lib], i, starty)
-                    starty = ind_ner
+                    ind_ner_real = self.get_ner_mapping_simple(sent[2][0], sent[2][self.config.models_pos_tag_lib], i, starty)
+                    starty = ind_ner_real
                     #ind_ner = self.get_ner_mapping_slice(sent[2][0], sent[2][self.config.models_pos_tag_lib], i)
                     #ind_ner = self.get_ner_mapping2(sent[2][0], sent[2][self.config.models_pos_tag_lib], term, i)
-                    is_entity = 1 if sent[3][0][ind_ner] in definitions.NER_RITTER else 0
-                    tag_pos = sent[self.config.models_pos_tag_lib_type][self.config.models_pos_tag_lib][i]
+                    is_entity = 1 if sent[3][0][ind_ner_real] in definitions.NER_TAGS else 0
+                    tag_ner = sent[3][self.config.models_pos_tag_lib][i] if len(sent[3][self.config.models_pos_tag_lib]) > 0 else ''
+                    tag_pos = sent[4][self.config.models_pos_tag_lib][i] if len(sent[4][self.config.models_pos_tag_lib]) > 0 else ''
+                    tag_pos_uni = sent[5][self.config.models_pos_tag_lib][i] if len(sent[5][self.config.models_pos_tag_lib]) > 0 else ''
                     word_index += 1
                     # we do not know if they have the same alignment, so test it to get the correct tag
-                    tag_ner_y = sent[3][0][ind_ner]
-                    temp.append([is_entity, sent_index, word_index, term, '', tag_pos, tag_ner_y, 0, 0])
+                    tag_ner_y = sent[3][0][ind_ner_real]
+
+                    if tag_ner_y in definitions.NER_TAGS_LOC:
+                        tag_ner_y = definitions.KLASSES[1]
+                    elif tag_ner_y in definitions.NER_TAGS_ORG:
+                        tag_ner_y = definitions.KLASSES[2]
+                    elif tag_ner_y in definitions.NER_TAGS_PER:
+                        tag_ner_y = definitions.KLASSES[3]
+                    else: tag_ner_y = definitions.KLASSES[4]
+
+                    if tag_ner in definitions.NER_TAGS_LOC:
+                        tag_ner = definitions.KLASSES[1]
+                    elif tag_ner in definitions.NER_TAGS_ORG:
+                        tag_ner = definitions.KLASSES[2]
+                    elif tag_ner in definitions.NER_TAGS_PER:
+                        tag_ner = definitions.KLASSES[3]
+                    else:
+                        tag_ner = definitions.KLASSES[4]
+
+
+                    temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner]
+                    temp.extend([0] * 10)
+                    temp.extend([definitions.KLASSES[4]])
+                    temp.extend([0] * 6)
+                    temp.extend([definitions.KLASSES[4]] * 17)
+                    temp.extend([tag_ner_y])
+
+                    converted.append(temp)
 
         except Exception as error:
             self.sys.log.error(':: Erro! %s' % str(error))
             exit(-1)
 
-        return temp
+        return converted
 
     def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_annotation', output_format="csv", ds_name=None):
         try:
@@ -669,7 +694,6 @@ class Core(object):
                 tot_others = len(df.loc[df[0] == -1])
                 self.sys.log.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
                 self.sys.log.info(':: %s sentence(s) without entity' % tot_others)
-                self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
                 self.horus_matrix = self.convert_dataset_to_horus_matrix(sent_tokenize_list)
             else:
                 self.sys.log.info(':: %s sentence(s) cached' % str(len(df[1].unique())))
@@ -1680,9 +1704,9 @@ class Core(object):
                     temp.extend([definitions.KLASSES[4]] * 18)
                     horus.append(temp)
             for index in range(len(nerlist)):
-                if nerlist[index] == 'GPE' or nerlist[index] == 'LOCATION': ner = definitions.KLASSES[1]
-                elif nerlist[index] == 'ORGANIZATION': ner = definitions.KLASSES[2]
-                elif nerlist[index] == 'PERSON': ner = definitions.KLASSES[3]
+                if nerlist[index] in definitions.NER_TAGS_LOC : ner = definitions.KLASSES[1]
+                elif nerlist[index] in definitions.NER_TAGS_ORG: ner = definitions.KLASSES[2]
+                elif nerlist[index] in definitions.NER_TAGS_PER: ner = definitions.KLASSES[3]
                 else: ner = definitions.KLASSES[4]
                 temp = [-1, isent, index+1, tokens[index], pos_universal[index][1], pos_taggers[index][1], ner]
                 temp.extend([0] * 10)
