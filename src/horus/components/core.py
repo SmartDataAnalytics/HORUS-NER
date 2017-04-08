@@ -1122,6 +1122,8 @@ class Core(object):
                         Web Sites
                         -------------------------------------
                         '''
+                        if 'slow fo' in term:
+                            uu=1
                         self.sys.log.info(':: [%s] caching (web site) ->' % term)
                         values = (term, ret_id_term.lastrowid, self.config.search_engine_api, 1,
                                       self.config.search_engine_features_text, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
@@ -1142,8 +1144,7 @@ class Core(object):
                                          search_engine_resource_id, result_seq, result_url, result_title,
                                          result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""", row)
 
-                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s' 
-                                         WHERE id = %s""" % (metaquery, id_term_search))
+                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = ? WHERE id = ?""", (metaquery, id_term_search))
 
                         # term has not returned a result
                         if seq == 0:
@@ -1152,8 +1153,7 @@ class Core(object):
                                          search_engine_resource_id, result_seq, result_url, result_title,
                                          result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""", row)
 
-                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s' 
-                                         WHERE id = %s""" % (metaquery, id_term_search))
+                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = ? WHERE id = ?""", (metaquery, id_term_search))
 
                         '''
                         -------------------------------------
