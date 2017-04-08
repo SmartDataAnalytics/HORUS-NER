@@ -655,15 +655,12 @@ class Core(object):
 
                 sent_tokenize_list = self.process_input_text(text)
 
-            elif int(ds_format) == 1 or int(ds_format) == 2:
+            elif int(ds_format) == 1: #CoNLL format
                 if input_file is None:
                     raise Exception("Provide an input file format to be annotated")
-                elif int(ds_format) == 1:  # Ritter
-                    self.sys.log.info(':: processing CoNLL format -> %s' % ds_name)
-                    sent_tokenize_list = self.process_ds_conll_format(input_file, ds_name)
-                elif int(ds_format) == 2:  # CoNLL 2003
-                    #TODO: merge this method to above
-                    sent_tokenize_list = self.processing_conll_ds(input_file)
+                self.sys.log.info(':: processing CoNLL format -> %s' % ds_name)
+                sent_tokenize_list = self.process_ds_conll_format(input_file, ds_name)
+
 
             df = pd.DataFrame(sent_tokenize_list)
             if ds_format!=0:
