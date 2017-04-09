@@ -1085,6 +1085,7 @@ class Core(object):
                         term_cached = False
                         self.sys.log.info(':: [%s] has not been cached before!' % term)
                         ret_id_term = c.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
+                        ret_id_term = ret_id_term.lastrowid
                     else:
                         term_cached = True
                         ret_id_term = res_term[0]
@@ -1116,21 +1117,18 @@ class Core(object):
                         metaquery, result_txts, result_imgs = \
                             bing_api5(term, key=self.config.search_engine_key, top=self.config.search_engine_tot_resources,
                                       market='en-US')
-
                         '''
                         -------------------------------------
                         Web Sites
                         -------------------------------------
                         '''
-                        if 'slow fo' in term:
-                            uu=1
                         self.sys.log.info(':: [%s] caching (web site) ->' % term)
-                        values = (term, ret_id_term.lastrowid, self.config.search_engine_api, 1,
-                                      self.config.search_engine_features_text, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
-                                      self.config.search_engine_tot_resources)
+                        values = (term, ret_id_term, self.config.search_engine_api, 1, self.config.search_engine_features_text,
+                                  str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
+                                  len(result_txts), metaquery)
                         c.execute("""INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                                 search_engine_features, query_date, query_tot_resource)
-                                                 VALUES(?, ?, ?, ?, ?, ?, ?)""", values)
+                                     search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
+                                     VALUES(?,?,?,?,?,?,?,?,?)""", values)
                         id_term_search = c.lastrowid
                         self.horus_matrix[index][9] = id_term_search  # updating matrix
 
@@ -1144,29 +1142,17 @@ class Core(object):
                                          search_engine_resource_id, result_seq, result_url, result_title,
                                          result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""", row)
 
-                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = ? WHERE id = ?""", (metaquery, id_term_search))
-
-                        # term has not returned a result
-                        if seq == 0:
-                            row = (id_term_search, 0, '', seq, '', '', '', '')
-                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
-                                         search_engine_resource_id, result_seq, result_url, result_title,
-                                         result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""", row)
-
-                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = ? WHERE id = ?""", (metaquery, id_term_search))
-
                         '''
                         -------------------------------------
                         Images
                         -------------------------------------
                         '''
                         self.sys.log.info(':: [%s] caching - image' % term)
-                        values = (term, ret_id_term.lastrowid if type(ret_id_term) is not int else ret_id_term, self.config.search_engine_api,
-                                  2, self.config.search_engine_features_img, str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),
-                                  self.config.search_engine_tot_resources)
+                        values = (term, ret_id_term, self.config.search_engine_api, 2, self.config.search_engine_features_img,
+                                  str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources, len(result_imgs), metaquery)
 
                         sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                 search_engine_features, query_date, query_tot_resource) VALUES(?,?,?,?,?,?,?)"""
+                                 search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery) VALUES(?,?,?,?,?,?,?,?,?)"""
                         c.execute(sql, values)
                         id_term_img = c.lastrowid
                         self.horus_matrix[index][10] = id_term_img  # updating matrix
@@ -1190,10 +1176,6 @@ class Core(object):
                                      result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
                                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
                             c.execute(sql, row)
-
-                            c.execute("""UPDATE HORUS_TERM_SEARCH SET metaquery = '%s'
-                                         WHERE id = %s""" % (metaquery, id_term_img))
-
                             self.sys.log.debug(':: term [%s] cached (img)!' % term)
                     # done caching
                     self.conn.commit()

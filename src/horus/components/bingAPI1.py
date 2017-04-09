@@ -31,6 +31,7 @@ def bing_api5(query, key, top=10, market='en-us', safe='Moderate'):
         try:
             txts = r.json().get('webPages', {}).get('value', {})
             imgs = r.json().get('images', {}).get('value', {})
+
         except Exception as e:
             logging.error(':: error on retrieving search results: ', e)
 
