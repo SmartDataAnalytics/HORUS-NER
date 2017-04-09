@@ -8,5 +8,5 @@ from horus.components.core import Core
 text = u"diego esteves lives in sao paulo".encode('utf8')
 
 horus = Core(False, 5)
-print horus.annotate(text)
+horus.annotate(text)
 #print horus.get_cv_annotation()

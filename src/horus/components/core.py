@@ -729,7 +729,6 @@ class Core(object):
                 if int(ds_format) == 0:
                     self.print_annotated_sentence()
 
-
             self.conn.close()
             return self.horus_matrix
 
@@ -802,11 +801,11 @@ class Core(object):
                 if id_sent_aux != token[1]:
                     self.sys.log.info(':: sentence: ' + x)
                     id_sent_aux = token[1]
-                    x = ' ' + str(token[3]) + '/' + str(token[28])
+                    x = ' ' + str(token[3]) + '/' + str(token[39])
                 else:
-                    x += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[28])
+                    x += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[39])
 
-        self.sys.log.info(':: sentence: ' + x)
+        self.sys.log.info(':: annotated: ' + x)
 
     def cache_sentence_ritter(self,sentence_list):
         self.sys.log.debug(':: caching Ritter dataset...:')
@@ -1097,7 +1096,7 @@ class Core(object):
                         ret_id_term = res_term[0]
 
                     if term_cached: # cached, query database
-                        self.sys.log.debug(':: term %s is already cached!' % term)
+                        #self.sys.log.debug(':: term %s is already cached!' % term)
                         # web site
                         values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text)
                         sql = """SELECT id FROM HORUS_TERM_SEARCH WHERE term = ? AND id_search_engine = ?
@@ -1477,11 +1476,11 @@ class Core(object):
                         self.sys.log.debug(":: term has not returned images!")
                     limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
-                    for index in range(limit_img):  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
-                        filesimg.append((self.config.cache_img_folder + rows[index][0], rows[index][1], rows[index][2],
-                                         rows[index][3], rows[index][4], rows[index][5], rows[index][6], rows[index][7],
-                                         rows[index][8], rows[index][9], rows[index][10], rows[index][11], rows[index][12],
-                                         rows[index][13], rows[index][14]))
+                    for indeximgs in range(limit_img):  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
+                        filesimg.append((self.config.cache_img_folder + rows[indeximgs][0], rows[indeximgs][1], rows[indeximgs][2],
+                                         rows[indeximgs][3], rows[indeximgs][4], rows[indeximgs][5], rows[indeximgs][6], rows[indeximgs][7],
+                                         rows[indeximgs][8], rows[indeximgs][9], rows[indeximgs][10], rows[indeximgs][11], rows[indeximgs][12],
+                                         rows[indeximgs][13], rows[indeximgs][14]))
 
                 for image_term in filesimg:
                     if image_term[2] == 1:
@@ -1567,19 +1566,19 @@ class Core(object):
                     limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
 
                     tot_err = 0
-                    for index in range(limit_txt):
-                        if rows[index][6] == 0 or rows[index][6] is None: # not processed yet
-                            ret = self.detect_text_klass(rows[index][2], rows[index][3], rows[index][0], rows[index][4],
-                                                         rows[index][5])
+                    for itxt in range(limit_txt):
+                        if rows[itxt][6] == 0 or rows[itxt][6] is None: # not processed yet
+                            ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4],
+                                                         rows[itxt][5])
                             y.append(ret)
                             sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
                                      text_3_klass = %s, text_4_klass = %s, text_5_klass = %s
-                                     WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], rows[index][0])
+                                     WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], rows[itxt][0])
                             cursor.execute(sql)
                             if ret[0] == -1 or ret[1] == -1 or ret[2] == -1 or ret[3] == -1 or ret[4] == -1:
                                 tot_err += 1
                         else:
-                            y.append(rows[index][7:12])
+                            y.append(rows[itxt][7:12])
 
                     self.conn.commit()
 
