@@ -15,14 +15,17 @@ import json
 # 'DisplayUrl' and 'ID' so you can do what you want!
 
 
-def bing_api5(query, key, top=10, market='en-us', safe='Moderate'):
-
+def bing_api5(query, key, top=0, market='en-us', safe='Moderate'):
+    # https://msdn.microsoft.com/en-us/library/dn760794(v=bsynd.50).aspx
     try:
         txts = None
         imgs = None
         url = 'https://api.cognitive.microsoft.com/bing/v5.0/search'
         # query string parameters
-        payload = {'q': query, 'mkt': market, 'count': top, 'offset': 0, 'safesearch': safe}
+        if top != 0:
+            payload = {'q': query, 'mkt': market, 'count': top, 'offset': 0, 'safesearch': safe}
+        else:
+            payload = {'q': query, 'mkt': market, 'offset': 0, 'safesearch': safe}
         # custom headers
         headers = {'Ocp-Apim-Subscription-Key': key}
         # make GET request

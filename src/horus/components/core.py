@@ -774,10 +774,10 @@ class Core(object):
                 features.append((pos_bef, self.horus_matrix[index][5], pos_aft, int(self.horus_matrix[index][12]),
                                  int(self.horus_matrix[index][13]), int(self.horus_matrix[index][14]),
                                  int(self.horus_matrix[index][15]),
-                                 int(self.horus_matrix[index][16]), int(self.horus_matrix[index][17]),
+                                 int(self.horus_matrix[index][16]), #int(self.horus_matrix[index][17])
                                  int(self.horus_matrix[index][20]), int(self.horus_matrix[index][21]),
                                  int(self.horus_matrix[index][22]), float(self.horus_matrix[index][23]),
-                                 int(self.horus_matrix[index][24]), int(self.horus_matrix[index][25]),
+                                 int(self.horus_matrix[index][24]), #int(self.horus_matrix[index][25])
                                  one_char_token, special_char, first_capitalized, capitalized))
 
                 features = numpy.array(features)
@@ -1120,9 +1120,7 @@ class Core(object):
 
                     else: # not cached, download from the web
                         self.sys.log.info(':: [%s] querying the web ->' % term)
-                        metaquery, result_txts, result_imgs = \
-                            bing_api5(term, key=self.config.search_engine_key, top=self.config.search_engine_tot_resources,
-                                      market='en-US')
+                        metaquery, result_txts, result_imgs = bing_api5(term, key=self.config.search_engine_key, market='en-US')
                         '''
                         -------------------------------------
                         Web Sites
@@ -1446,12 +1444,13 @@ class Core(object):
             auxi += 1
             if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
 
-                self.sys.log.info(':: processing item %d of %d' % (auxi, toti))
+                term = self.horus_matrix[index][3]
+                self.sys.log.info(':: token %d of %d [%s]' % (auxi, toti, term))
 
                 id_term_img = self.horus_matrix[index][10]
                 id_term_txt = self.horus_matrix[index][9]
                 id_ner_type = 0
-                term = self.horus_matrix[index][3]
+
 
                 tot_geral_faces = 0
                 tot_geral_logos = 0
@@ -1540,24 +1539,19 @@ class Core(object):
                 self.horus_matrix[index][16] = place_cv_indicator  # 5
                 self.horus_matrix[index][17] = nr_results_img  # 5
 
-                self.sys.log.debug('-------------------------------------------------------------')
-                self.sys.log.debug(':: [checking related visual information for [%s]]' % term)
-                self.sys.log.debug('')
-                self.sys.log.debug('-> CV_LOC  indicator: %f %%' % (float(tot_geral_locations) / limit_img)) if limit_img > 0 \
-                    else self.sys.log.debug('-> CV_LOC  indicator: err no img retrieved')
-                self.sys.log.debug('-> CV_ORG  indicator: %f %%' % (float(tot_geral_logos) / limit_img)) if limit_img > 0 \
-                    else self.sys.log.debug('-> CV_ORG  indicator: err no img retrieved')
-                self.sys.log.debug('-> CV_PER  indicator: %f %%' % (float(tot_geral_faces) / limit_img)) if limit_img > 0 \
-                    else self.sys.log.debug('-> CV_PER  indicator: err no img retrieved')
-                self.sys.log.debug('-> CV_DIST indicator: %s' % (str(dist_cv_indicator)))
-                self.sys.log.debug('-> CV_PLC  indicator: %s' % (str(place_cv_indicator)))
+                self.sys.log.debug(':: CV statistics:'
+                                   '(LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)' %
+                                   (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
+                                    str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator))
 
-                self.horus_matrix[index][18] = definitions.KLASSES[outs.index(max(outs)) + 1]
+                if limit_img != 0:
+                    self.horus_matrix[index][18] = definitions.KLASSES[outs.index(max(outs)) + 1]
+                else:
+                    self.horus_matrix[index][18] = definitions.KLASSES[4]
 
                 # -----------------------------------------------------------------
                 # text classification
                 # -----------------------------------------------------------------
-                self.sys.log.debug(':: [checking related textual information ...]')
                 y = []
                 with self.conn:
                     cursor = self.conn.cursor()
@@ -1574,7 +1568,7 @@ class Core(object):
 
                     tot_err = 0
                     for index in range(limit_txt):
-                        if rows[index][6] == 0 or rows[index][6] is None:
+                        if rows[index][6] == 0 or rows[index][6] is None: # not processed yet
                             ret = self.detect_text_klass(rows[index][2], rows[index][3], rows[index][0], rows[index][4],
                                                          rows[index][5])
                             y.append(ret)
@@ -1593,9 +1587,6 @@ class Core(object):
                     gp = [numpy.count_nonzero(yy == 1), numpy.count_nonzero(yy == 2), numpy.count_nonzero(yy == 3)]
                     horus_tx_ner = gp.index(max(gp)) + 1
 
-                    self.sys.log.debug(':: final textual checking statistics for term [%s] '
-                                    '(1-LOC = %s, 2-ORG = %s and 3-PER = %s)' % (term, str(gp[0]), str(gp[1]), str(gp[2])))
-
                     self.horus_matrix[index][19] = limit_txt
                     self.horus_matrix[index][20] = gp[0]
                     self.horus_matrix[index][21] = gp[1]
@@ -1607,17 +1598,17 @@ class Core(object):
 
                     self.horus_matrix[index][24] = dist_tx_indicator
                     self.horus_matrix[index][25] = nr_results_txt
-                    self.horus_matrix[index][26] = definitions.KLASSES[horus_tx_ner]
 
-                    if len(limit_txt) != 0:
-                        self.sys.log.debug('-> TX_LOC  indicator: %f %%' % (float(gp[0]) / (len(limit_txt)) * 5.0)) #division by current number of classifiers = 5
-                        self.sys.log.debug('-> TX_ORG  indicator: %f %%' % (float(gp[1]) / (len(limit_txt)) * 5.0))
-                        self.sys.log.debug('-> TX_PER  indicator: %f %%' % (float(gp[2]) / (len(limit_txt)) * 5.0))
-                        self.sys.log.debug('-> TX_DIST indicator: %s' % (str(dist_tx_indicator)))
-                        self.sys.log.debug(':: number of trans. errors -> ' + str(tot_err) + ' over ' + str(len(limit_txt)))
-                        self.sys.log.debug(':: most likely class -> ' + definitions.KLASSES[horus_tx_ner])
+                    self.sys.log.debug(':: TX statistics:'
+                                       '(LOC=%s, ORG=%s, PER=%s, DIST=%s, ERR.TRANS=%s)' %
+                                       (str(gp[0]).zfill(2), str(gp[1]).zfill(2), str(gp[2]).zfill(2),
+                                        str(dist_tx_indicator).zfill(2), str(tot_err/float(limit_txt))))
+                    self.sys.log.debug('-------------------------------------------------------------')
+
+                    if limit_txt != 0:
+                        self.horus_matrix[index][26] = definitions.KLASSES[horus_tx_ner]
                     else:
-                        self.sys.log.debug(':: there was a problem searching this term..please try to index it again...')
+                        self.horus_matrix[index][26] = definitions.KLASSES[4]
 
                     # checking final NER based on:
                     #  -> theta
