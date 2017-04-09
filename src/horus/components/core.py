@@ -664,7 +664,7 @@ class Core(object):
 
         return converted
 
-    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_annotation', output_format="csv", ds_name=None):
+    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv", ds_name=None):
         try:
             # 0 = text (parameter of reading file) / 1 = ritter
             if int(ds_format) == 0:
@@ -711,14 +711,16 @@ class Core(object):
             pos_not_ok_plo = plo[(~plo[5].isin(definitions.POS_NOUN_TAGS))]
             pos_noun_but_not_entity = not_plo[(not_plo[5].isin(definitions.POS_NOUN_TAGS))]
 
+            self.sys.log.info(':: [basic statistics]')
             self.sys.log.info(':: -> ALL terms: %s ' % a)
-            self.sys.log.info(':: -> ALL terms (exc. compounds): %s (%.2f)' % (a2, (a2 / float(a))))
-            self.sys.log.info(':: -> ALL NNs (exc. compounds and entities): %s ' % len(pos_noun_but_not_entity))
-            self.sys.log.info(':: -> PLO entities (exc. compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
+            self.sys.log.info(':: -> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
+            self.sys.log.info(':: -> ALL NNs (no compounds nor entities): %s ' % len(pos_noun_but_not_entity))
+            self.sys.log.info(':: [test dataset statistics]')
+            self.sys.log.info(':: -> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
             self.sys.log.info(':: -> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
-                              (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo))) if len(plo)!=0 else 0)
+                              (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo)!=0 else 0))
             self.sys.log.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
-                              (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo))) if len(plo)!=0 else 0)
+                              (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo)!=0 else 0))
 
             if len(self.horus_matrix) > 0:
                 self.download_and_cache_results()
@@ -736,15 +738,15 @@ class Core(object):
             print('caught this error: ' + repr(error))
 
     def export_data(self, output_file, output_format):
-        self.sys.log.info(':: exporting metadata...')
+        self.sys.log.info(':: exporting metadata to: ' + self.config.output_path + output_file + "." + output_format)
 
         if output_file == '':
             output_file = 'noname'
         if output_format == 'json':
-            with open(output_file + '.json', 'wb') as outfile:
+            with open(self.config.output_path + output_file + '.json', 'wb') as outfile:
                 json.dump(self.horus_matrix, outfile)
         elif output_format == 'csv':
-            horus_csv = open(output_file + '.csv', 'wb')
+            horus_csv = open(self.config.output_path + output_file + '.csv', 'wb')
             wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
             wr.writerow(definitions.HORUS_MATRIX_HEADER)
             wr.writerows(self.horus_matrix)
@@ -794,18 +796,30 @@ class Core(object):
         :: param horus_matrix:
         :: return: output of annotated sentence
         '''
-        x = ''
+        x1, x2, x3, x4, x5 = '','','','',''
         id_sent_aux = self.horus_matrix[0][1]
         for token in self.horus_matrix:
             if token[7] == 0:
                 if id_sent_aux != token[1]:
-                    self.sys.log.info(':: sentence: ' + x)
                     id_sent_aux = token[1]
-                    x = ' ' + str(token[3]) + '/' + str(token[39])
+                    x1 = ' ' + str(token[3]) + '/' + str(token[36])
+                    x2 = ' ' + str(token[3]) + '/' + str(token[37])
+                    x3 = ' ' + str(token[3]) + '/' + str(token[38])
+                    x4 = ' ' + str(token[3]) + '/' + str(token[39])
+                    x5 = ' ' + str(token[3]) + '/' + str(token[40])
                 else:
-                    x += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[39])
+                    x1 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[36])
+                    x2 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[37])
+                    x3 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[38])
+                    x4 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[39])
+                    x5 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[40])
 
-        self.sys.log.info(':: annotated: ' + x)
+        self.sys.log.info(':: sentence annotated :: ')
+        self.sys.log.info(':: KLASS 1 -->: ' + x1)
+        self.sys.log.info(':: KLASS 2 -->: ' + x2)
+        self.sys.log.info(':: KLASS 3 -->: ' + x3)
+        self.sys.log.info(':: KLASS 4 -->: ' + x4)
+        self.sys.log.info(':: KLASS 5 -->: ' + x5)
 
     def cache_sentence_ritter(self,sentence_list):
         self.sys.log.debug(':: caching Ritter dataset...:')
@@ -1077,10 +1091,10 @@ class Core(object):
             c = self.conn.cursor()
             for index in range(len(self.horus_matrix)):
                 term_cached = False
-                self.sys.log.debug(':: item %s - %s ' % (str(auxc), str(len(self.horus_matrix))))
                 term = self.horus_matrix[index][3]
+                self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
                 if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
-                    self.sys.log.debug(':: caching [%s] ...' % term)
+                    #self.sys.log.debug(':: caching [%s] ...' % term)
                     sql = """SELECT id FROM HORUS_TERM WHERE term = ?"""
                     c.execute(sql, (term,))
                     res_term = c.fetchone()
@@ -1613,8 +1627,10 @@ class Core(object):
                     #  -> theta
                     if self.horus_matrix[index][15] >= int(self.config.models_distance_theta):
                         self.horus_matrix[index][36] = self.horus_matrix[index][18]   # CV is the final decision
+                        self.horus_matrix[index][39] = self.horus_matrix[index][36]   # compound prediction initial
                     elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta):
-                        self.horus_matrix[index][36] = self.horus_matrix[index][26]  # TX is the final decision
+                        self.horus_matrix[index][36] = self.horus_matrix[index][26]   # TX is the final decision
+                        self.horus_matrix[index][39] = self.horus_matrix[index][36]   # compound prediction initial
                     #  -> theta+1
                     if self.horus_matrix[index][15] >= int(self.config.models_distance_theta)+1:
                         self.horus_matrix[index][37] = self.horus_matrix[index][18]  # CV is the final decision
