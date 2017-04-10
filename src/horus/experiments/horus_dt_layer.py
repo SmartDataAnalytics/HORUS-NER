@@ -31,7 +31,9 @@ config = HorusConfig()
 features = []
 X, Y = [], []
 
-df = pandas.read_csv(config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv", delimiter=",", skiprows=1, header=None)
+#samplefile = config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv"
+samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_1.csv"
+df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None)
 for index, linha in df.iterrows():
     pos_bef = ''
     pos_aft = ''
@@ -40,9 +42,9 @@ for index, linha in df.iterrows():
     if index + 1 < len(df):
         pos_aft = df.get_value(index+1,5)
 
-    if linha[51] in definitions.NER_RITTER_LOC: Y.append(1)
-    elif linha[51] in definitions.NER_RITTER_ORG: Y.append(2)
-    elif linha[51] in definitions.NER_RITTER_PER: Y.append(3)
+    if linha[6] in definitions.NER_RITTER_LOC: Y.append(1)
+    elif linha[6] in definitions.NER_RITTER_ORG: Y.append(2)
+    elif linha[6] in definitions.NER_RITTER_PER: Y.append(3)
     else: Y.append(4)
 
     one_char_token = 1 if len(linha[3]) == 1 else 0
