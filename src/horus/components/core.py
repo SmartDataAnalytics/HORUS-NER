@@ -1615,7 +1615,7 @@ class Core(object):
                     self.sys.log.debug(':: TX statistics:'
                                        '(LOC=%s, ORG=%s, PER=%s, DIST=%s, ERR.TRANS=%s)' %
                                        (str(gp[0]).zfill(2), str(gp[1]).zfill(2), str(gp[2]).zfill(2),
-                                        str(dist_tx_indicator).zfill(2), str(tot_err/float(limit_txt))))
+                                        str(dist_tx_indicator).zfill(2), str(tot_err/float(limit_txt)) if limit_txt >0 else 0))
                     self.sys.log.debug('-------------------------------------------------------------')
 
                     if limit_txt != 0:
