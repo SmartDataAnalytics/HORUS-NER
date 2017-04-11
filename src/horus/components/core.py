@@ -97,7 +97,7 @@ class Core(object):
             print e
             self.conn.rollback()
 
-    def __init__(self,force_download,trees):
+    def __init__(self,force_download=False,trees=5):
         """Return a HORUS object"""
         self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
@@ -608,11 +608,9 @@ class Core(object):
                     word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
                     compound = sent[6][self.config.models_pos_tag_lib][c][1]
                     compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
-                    temp = [1, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
-                    temp.extend([0] * 8)
+                    temp = [0, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
+                    temp.extend(self.populate_matrix_new_columns())
                     temp.extend([definitions.KLASSES[4]])
-                    temp.extend([0] * 6)
-                    temp.extend([definitions.KLASSES[4]] * 18)
                     converted.append(temp)
                 word_index = 0
                 starty = 0
@@ -648,14 +646,8 @@ class Core(object):
                         tag_ner = definitions.KLASSES[4]
 
                     temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0] # 0-8
-                    temp.extend([0] * 9)  # 9-17
-                    temp.extend([definitions.KLASSES[4]])  # 18
-                    temp.extend([0] * 7)  # 19-25
-                    temp.extend([definitions.KLASSES[4]])  # 26
-                    temp.extend([0] * 9)  # 27-35
-                    temp.extend([definitions.KLASSES[4]] * 15)  # 36-50
+                    temp.extend(self.populate_matrix_new_columns())
                     temp.extend([tag_ner_y])
-
                     converted.append(temp)
 
         except Exception as error:
@@ -663,6 +655,16 @@ class Core(object):
             exit(-1)
 
         return converted
+
+    def populate_matrix_new_columns(self):
+        temp = [] #receives 0=8
+        temp.extend([0] * 9)  # 9-17
+        temp.extend([definitions.KLASSES[4]])  # 18
+        temp.extend([0] * 7)  # 19-25
+        temp.extend([definitions.KLASSES[4]])  # 26
+        temp.extend([0] * 9)  # 27-35
+        temp.extend([definitions.KLASSES[4]] * 15)  # 36-50
+        return temp
 
     def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv", ds_name=None):
         try:
@@ -726,7 +728,7 @@ class Core(object):
                 self.download_and_cache_results()
                 self.detect_objects()
                 self.update_compound_predictions()
-                self.run_final_classifier()
+                #self.run_final_classifier()
                 self.export_data(output_file, output_format)
                 if int(ds_format) == 0:
                     self.print_annotated_sentence()
@@ -1642,7 +1644,6 @@ class Core(object):
                     elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta)+2:
                         self.horus_matrix[index][38] = self.horus_matrix[index][26]  # TX is the final decision
 
-
     def update_rules_cv_predictions(self):
         '''
         updates the predictions based on inner rules
@@ -1710,12 +1711,8 @@ class Core(object):
             if len(compounds) > 0:
                 for comp in compounds:
                     temp = [-1, isent, comp[0], comp[1], '', '', definitions.KLASSES[4], 1, comp[2]] # 0-8
-                    temp.extend([0] * 9) #9-17
-                    temp.extend([definitions.KLASSES[4]]) #18
-                    temp.extend([0] * 7) #19-25
-                    temp.extend([definitions.KLASSES[4]]) #26
-                    temp.extend([0] * 9) #27-35
-                    temp.extend([definitions.KLASSES[4]] * 16) #36-51
+                    temp.extend(self.populate_matrix_new_columns())
+                    temp.extend([definitions.KLASSES[4]])
                     horus.append(temp)
             for index in range(len(nerlist)):
                 if nerlist[index] in definitions.NER_TAGS_LOC : ner = definitions.KLASSES[1]
@@ -1723,12 +1720,8 @@ class Core(object):
                 elif nerlist[index] in definitions.NER_TAGS_PER: ner = definitions.KLASSES[3]
                 else: ner = definitions.KLASSES[4]
                 temp = [-1, isent, index+1, tokens[index], pos_universal[index][1], pos_taggers[index][1], ner, 0, 0]
-                temp.extend([0] * 9)  # 9-17
-                temp.extend([definitions.KLASSES[4]])  # 18
-                temp.extend([0] * 7)  # 19-25
-                temp.extend([definitions.KLASSES[4]])  # 26
-                temp.extend([0] * 9)  # 27-35
-                temp.extend([definitions.KLASSES[4]] * 16)  # 36-51
+                temp.extend(self.populate_matrix_new_columns())
+                temp.extend([definitions.KLASSES[4]])
                 horus.append(temp)
 
             compounds = None

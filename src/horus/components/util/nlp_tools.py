@@ -96,4 +96,4 @@ class NLPTools(object):
         self.stanford_pos = StanfordPOSTagger(
             '/Users/esteves/Github/horus-models/src/horus/resource/models/stanford/2015-04-20/english-bidirectional-distsim.tagger',
             '/Users/esteves/Github/horus-models/src/horus/resource/models/stanford/2015-04-20/stanford-postagger.jar')
-        self.stanford_pos.java_options='-mx4096m'
+        self.stanford_pos.java_options='-mx8g'

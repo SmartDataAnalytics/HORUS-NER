@@ -31,8 +31,8 @@ config = HorusConfig()
 features = []
 X, Y = [], []
 
-#samplefile = config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv"
-samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_1.csv"
+samplefile = config.output_path + "experiments/ritter/EXP_000/out_exp000_0.csv"
+#samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_1.csv"
 df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None)
 for index, linha in df.iterrows():
     pos_bef = ''
@@ -56,7 +56,7 @@ for index, linha in df.iterrows():
     tx_loc; tx_org; tx_per; tx_err; tx_dist; 
     one_char; special_char; first_cap; cap
     '''
-    features.append((pos_bef, linha[5], pos_aft, linha[3], int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
+    features.append((pos_bef, linha[5], pos_aft, int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
                      int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
                      float(linha[22]), int(linha[23]), one_char_token, special_char, first_capitalized, capitalized))
 
@@ -70,15 +70,22 @@ pos.extend(features[:,1])
 pos.extend(features[:,2])
 pos.extend(features[:,3])
 
-le = preprocessing.LabelEncoder()
-le.fit(pos)
-__ = joblib.dump(le, 'final_encoder.pkl', compress=3)
+#le = preprocessing.LabelEncoder()
+#le.fit(pos)
+#__ = joblib.dump(le, 'final_encoder.pkl', compress=3)
+
+
+if config.models_pos_tag_lib == 1:
+    le = joblib.load(config.encoder_path + "_encoder_nltk.pkl")
+elif config.models_pos_tag_lib == 2:
+    le = joblib.load(config.encoder_path + "_encoder_stanford.pkl")
+elif config.models_pos_tag_lib == 3:
+    le = joblib.load(config.encoder_path + "_encoder_tweetnlp.pkl")
 
 for x in features:
     x[0] = le.transform(x[0])
     x[1] = le.transform(x[1])
     x[2] = le.transform(x[2])
-    x[3] = le.transform(x[3])
 
 #vec = DictVectorizer()
 #d = dict(itertools.izip_longest(*[iter(features)] * 2, fillvalue=""))
