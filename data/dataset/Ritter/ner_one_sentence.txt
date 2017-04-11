@@ -1,0 +1,22 @@
+Driving	O
+,	O
+driving	O
+,	O
+driving	O
+away	O
+to	O
+Phil	B-geo-loc
+.	O
+Tasty	O
+dinner	O
+tonight	O
+with	O
+the	O
+Society	B-other
+of	I-other
+Mining	I-other
+and	I-other
+Metallurgy	I-other
+Engineers	I-other
+.	O
+

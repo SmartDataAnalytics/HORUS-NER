@@ -31,44 +31,46 @@ config = HorusConfig()
 features = []
 X, Y = [], []
 
-samplefile = config.output_path + "experiments/ritter/EXP_000/out_exp000_0.csv"
+samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_2_tweetNLP.csv"
 #samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_1.csv"
 df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None)
 for index, linha in df.iterrows():
-    pos_bef = ''
-    pos_aft = ''
-    if index > 1:
-        pos_bef = df.get_value(index-1,5)
-    if index + 1 < len(df):
-        pos_aft = df.get_value(index+1,5)
+    if len(linha)>0 and linha[7] == 0:
+        pos_bef = ''
+        pos_aft = ''
+        if index > 0 and df.get_value(index-1,7) == 0:
+            pos_bef = df.get_value(index-1,5)
+        if index + 1 < len(df) and df.get_value(index+1,7) == 0:
+            pos_aft = df.get_value(index+1,5)
 
-    if linha[6] in definitions.NER_RITTER_LOC: Y.append(1)
-    elif linha[6] in definitions.NER_RITTER_ORG: Y.append(2)
-    elif linha[6] in definitions.NER_RITTER_PER: Y.append(3)
-    else: Y.append(4)
 
-    one_char_token = 1 if len(linha[3]) == 1 else 0
-    special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)',linha[3]))>0 else 0
-    first_capitalized = 1 if linha[3][0].isupper() else 0
-    capitalized = 1 if linha[3].isupper() else 0
-    '''
-    pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
-    tx_loc; tx_org; tx_per; tx_err; tx_dist; 
-    one_char; special_char; first_cap; cap
-    '''
-    features.append((pos_bef, linha[5], pos_aft, int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
-                     int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
-                     float(linha[22]), int(linha[23]), one_char_token, special_char, first_capitalized, capitalized))
+        if linha[6] in definitions.NER_RITTER_LOC: Y.append(1)
+        elif linha[6] in definitions.NER_RITTER_ORG: Y.append(2)
+        elif linha[6] in definitions.NER_RITTER_PER: Y.append(3)
+        else: Y.append(4)
+
+        one_char_token = 1 if len(linha[3]) == 1 else 0
+        special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)',linha[3]))>0 else 0
+        first_capitalized = 1 if linha[3][0].isupper() else 0
+        capitalized = 1 if linha[3].isupper() else 0
+        '''
+        pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
+        tx_loc; tx_org; tx_per; tx_err; tx_dist; 
+        one_char; special_char; first_cap; cap
+        '''
+        features.append((pos_bef, linha[5], pos_aft, int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
+                         int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
+                         float(linha[22]), int(linha[23]), one_char_token, special_char, first_capitalized, capitalized))
 
 
 features = numpy.array(features)
 
 
-pos = []
-pos.extend(features[:,0])
-pos.extend(features[:,1])
-pos.extend(features[:,2])
-pos.extend(features[:,3])
+#pos = []
+#pos.extend(features[:,0])
+#pos.extend(features[:,1])
+#pos.extend(features[:,2])
+#pos.extend(features[:,3])
 
 #le = preprocessing.LabelEncoder()
 #le.fit(pos)
@@ -76,13 +78,14 @@ pos.extend(features[:,3])
 
 
 if config.models_pos_tag_lib == 1:
-    le = joblib.load(config.encoder_path + "_encoder_nltk.pkl")
+    le = joblib.load(config.encoder_path + "encoder_nltk.pkl")
 elif config.models_pos_tag_lib == 2:
-    le = joblib.load(config.encoder_path + "_encoder_stanford.pkl")
+    le = joblib.load(config.encoder_path + "encoder_stanford.pkl")
 elif config.models_pos_tag_lib == 3:
-    le = joblib.load(config.encoder_path + "_encoder_tweetnlp.pkl")
+    le = joblib.load(config.encoder_path + "encoder_tweetnlp.pkl")
 
 for x in features:
+    print x[0], x[1], x[2]
     x[0] = le.transform(x[0])
     x[1] = le.transform(x[1])
     x[2] = le.transform(x[2])
