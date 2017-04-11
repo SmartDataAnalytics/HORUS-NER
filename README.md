@@ -6,11 +6,12 @@ Currently supports the identification of classical named-entity types (LOC, PER,
 <img src=http://dne5.com/whitney_example_peq.png />
 </p>
 
-## Easy Setup
-- setup [sqlite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
-- get your [Microsoft Bing API](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API](https://datamarket.azure.com/developer/applications/register)
+## Easy Setup (Python 2.7 based)
+- setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
+- get your [Microsoft Bing API Key](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
 - configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
-- setup [anaconda](https://anaconda.org/) and import our _requirements.txt_ file (if you're running on linux, please check [#issue 6](https://github.com/dnes85/horus-models/issues/6)) 
+- setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
+- setup [Anaconda](https://anaconda.org/) and import our _requirements.txt_ file (if you're running on linux, please check) 
 ```python 
 conda env create -f environment.yml 
 ```
