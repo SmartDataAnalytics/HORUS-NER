@@ -76,5 +76,3 @@ dependencies:
 - pip:
   - langdetect==1.0.1
   - translate==0.0.6
-prefix: /home/dnm/anaconda3/envs/py27
-
