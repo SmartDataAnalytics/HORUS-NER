@@ -729,6 +729,7 @@ class Core(object):
 
             if len(self.horus_matrix) > 0:
                 self.download_and_cache_results()
+                exit(0)
                 self.detect_objects()
                 self.update_compound_predictions()
                 #self.run_final_classifier()

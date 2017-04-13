@@ -32,6 +32,8 @@ def bing_api5(query, key, top=0, market='en-us', safe='Moderate'):
         r = requests.get(url, params=payload, headers=headers)
         # get JSON response
         try:
+            if r.status_code != 200:
+                raise Exception (':: problem when querying Bing! Status code = ' + r.status_code)
             txts = r.json().get('webPages', {}).get('value', {})
             imgs = r.json().get('images', {}).get('value', {})
 
