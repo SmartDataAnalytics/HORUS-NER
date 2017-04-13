@@ -90,7 +90,7 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   <tr>
     <td>07</td>
     <td>COMPOUND</td>
-    <td>compound</td>
+    <td>compound (0: no 1:yes)</td>
   </tr>
   <tr>
     <td>08</td>
@@ -110,7 +110,7 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   <tr>
     <td>11</td>
     <td>TOT_IMG</td>
-    <td>total of resources (img) retrieved (top)</td>
+    <td>total of resources (img) considered (top) = max between tot.retrieved and threshold</td>
   </tr>
   <tr>
     <td>12</td>
@@ -140,7 +140,7 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
    <tr>
     <td>17</td>
     <td>NR_RESULTS_SE_IMG</td>
-    <td>max out of 3cvs</td>
+    <td>number of images returned from search engine SE for a given term t</td>
   </tr>
   <tr>
     <td>18</td>
@@ -150,7 +150,7 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   <tr>
     <td>19</td>
     <td>TOT_RESULTS_TX</td>
-    <td>total of resources (snippets of text) retrieved (top)</td>
+    <td>total of resources (snippets of text) considered (top) = max between tot.retrieved and threshold</td>
   </tr>
   <tr>
     <td>20</td>
@@ -233,29 +233,84 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
     <td>empty</td>
   </tr>
   <tr>
-    <td>27</td>
-    <td>KLASS_1</td>
+    <td>36</td>
+    <td>KLASS_01</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta else 'NONE')</td>
   </tr>
   <tr>
-    <td>28</td>
-    <td>KLASS_2</td>
+    <td>37</td>
+    <td>KLASS_02</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+1 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+1 else 'NONE')</td>
   </tr>
   <tr>
-    <td>29</td>
-    <td>KLASS_3</td>
+    <td>38</td>
+    <td>KLASS_03</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+2 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+2 else 'NONE')</td>
   </tr>
   <tr>
-    <td>30</td>
-    <td>KLASS_4</td>
+    <td>39</td>
+    <td>KLASS_04</td>
     <td>Compound Update [based on KLASS_1]</td>
   </tr>
   <tr>
-    <td>31</td>
-    <td>KLASS_5</td>
+    <td>40</td>
+    <td>KLASS_05</td>
     <td>RandomForest Model</td>
+  </tr>
+  <tr>
+    <td>41</td>
+    <td>KLASS_06</td>
+    <td>empty</td>
+    </tr>
+  <tr>
+    <td>42</td>
+    <td>KLASS_07</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>43</td>
+    <td>KLASS_08</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>44</td>
+    <td>KLASS_09</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>45</td>
+    <td>KLASS_10</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>46</td>
+    <td>KLASS_11</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>47</td>
+    <td>KLASS_12</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>48</td>
+    <td>KLASS_13</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>49</td>
+    <td>KLASS_14</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>50</td>
+    <td>KLASS_15</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>51</td>
+    <td>KLASS_REAL</td>
+    <td>NER target</td>
   </tr>
 </table>
 
