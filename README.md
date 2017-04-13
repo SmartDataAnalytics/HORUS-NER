@@ -137,68 +137,123 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
     <td>PL_CV_I</td>
     <td>sum of all LOC classifiers (computer vision module)</td>
   </tr>
-  <tr>
+   <tr>
     <td>17</td>
-    <td>CV_KLASS</td>
+    <td>NR_RESULTS_SE_IMG</td>
     <td>max out of 3cvs</td>
   </tr>
   <tr>
     <td>18</td>
+    <td>KLASS_PREDICT_CV</td>
+    <td>max out of 3cvs</td>
+  </tr>
+  <tr>
+    <td>19</td>
     <td>TOT_RESULTS_TX</td>
     <td>total of resources (snippets of text) retrieved (top)</td>
   </tr>
   <tr>
-    <td>19</td>
+    <td>20</td>
     <td>TOT_TX_LOC</td>
     <td>number of resources classified as LOC (text classification module)</td>
   </tr>
   <tr>
-    <td>20</td>
+    <td>21</td>
     <td>TOT_TX_ORG</td>
     <td>number of resources classified as ORG (text classification module)</td>
   </tr>
   <tr>
-    <td>21</td>
+    <td>22</td>
     <td>TOT_TX_PER</td>
     <td>number of resources classified as PER (text classification module)</td>
   </tr>
   <tr>
-    <td>22</td>
+    <td>23</td>
     <td>TOT_ERR_TRANS</td>
     <td>number of exceptions raised by the translation module (text classification module)</td>
   </tr>
   <tr>
-    <td>23</td>
+    <td>24</td>
     <td>DIST_TX_I</td>
     <td>similar to DIST_CV_I (text classification module)</td>
   </tr>
   <tr>
-    <td>24</td>
+    <td>25</td>
+    <td>NR_RESULTS_SE_TX</td>
+    <td>number of web sites returned from search engine SE for a given term t</td>
+  </tr>
+  <tr>
+    <td>26</td>
     <td>TX_KLASS</td>
     <td>max out of 3txts</td>
   </tr>
   <tr>
-    <td>25</td>
+    <td>27</td>
+    <td>FEATURE_EXTRA_01</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>28</td>
+    <td>FEATURE_EXTRA_02</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>29</td>
+    <td>FEATURE_EXTRA_03</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>30</td>
+    <td>FEATURE_EXTRA_04</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>31</td>
+    <td>FEATURE_EXTRA_05</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>32</td>
+    <td>FEATURE_EXTRA_06</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>33</td>
+    <td>FEATURE_EXTRA_07</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>34</td>
+    <td>FEATURE_EXTRA_08</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>35</td>
+    <td>FEATURE_EXTRA_09</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>27</td>
     <td>KLASS_1</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta else 'NONE')</td>
   </tr>
   <tr>
-    <td>26</td>
+    <td>28</td>
     <td>KLASS_2</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+1 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+1 else 'NONE')</td>
   </tr>
   <tr>
-    <td>27</td>
+    <td>29</td>
     <td>KLASS_3</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+2 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+2 else 'NONE')</td>
   </tr>
   <tr>
-    <td>28</td>
+    <td>30</td>
     <td>KLASS_4</td>
     <td>Compound Update [based on KLASS_1]</td>
   </tr>
   <tr>
-    <td>29</td>
+    <td>31</td>
     <td>KLASS_5</td>
     <td>RandomForest Model</td>
   </tr>
