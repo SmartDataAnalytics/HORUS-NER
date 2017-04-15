@@ -58,8 +58,10 @@ class HorusConfig:
                     self.model_final = rootdir + parser.get('models-horus', 'horus_final')
                     self.model_final_encoder = rootdir + parser.get('models-horus', 'horus_final_encoder')
 
-                    self.model_stanford_filename = rootdir + parser.get('model-stanford', 'model_filename')
-                    self.model_stanford_path_jar = rootdir + parser.get('model-stanford', 'path_to_jar')
+                    self.model_stanford_filename_pos = rootdir + parser.get('model-stanford', 'model_filename_pos')
+                    self.model_stanford_path_jar_pos = rootdir + parser.get('model-stanford', 'path_to_jar_pos')
+                    self.model_stanford_filename_ner = rootdir + parser.get('model-stanford', 'model_filename_ner')
+                    self.model_stanford_path_jar_ner = rootdir + parser.get('model-stanford', 'path_to_jar_ner')
 
                     self.search_engine_api = parser.get('search-engine', 'api')
                     self.search_engine_key = parser.get('search-engine', 'key')
