@@ -90,7 +90,7 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   <tr>
     <td>07</td>
     <td>COMPOUND</td>
-    <td>compound</td>
+    <td>compound (0: no 1:yes)</td>
   </tr>
   <tr>
     <td>08</td>
@@ -110,7 +110,7 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   <tr>
     <td>11</td>
     <td>TOT_IMG</td>
-    <td>total of resources (img) retrieved (top)</td>
+    <td>total of resources (img) considered (top) = max between tot.retrieved and threshold</td>
   </tr>
   <tr>
     <td>12</td>
@@ -137,70 +137,180 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
     <td>PL_CV_I</td>
     <td>sum of all LOC classifiers (computer vision module)</td>
   </tr>
-  <tr>
+   <tr>
     <td>17</td>
-    <td>CV_KLASS</td>
-    <td>max out of 3cvs</td>
+    <td>NR_RESULTS_SE_IMG</td>
+    <td>number of images returned from search engine SE for a given term t</td>
   </tr>
   <tr>
     <td>18</td>
-    <td>TOT_RESULTS_TX</td>
-    <td>total of resources (snippets of text) retrieved (top)</td>
+    <td>KLASS_PREDICT_CV</td>
+    <td>max out of 3cvs</td>
   </tr>
   <tr>
     <td>19</td>
+    <td>TOT_RESULTS_TX</td>
+    <td>total of resources (snippets of text) considered (top) = max between tot.retrieved and threshold</td>
+  </tr>
+  <tr>
+    <td>20</td>
     <td>TOT_TX_LOC</td>
     <td>number of resources classified as LOC (text classification module)</td>
   </tr>
   <tr>
-    <td>20</td>
+    <td>21</td>
     <td>TOT_TX_ORG</td>
     <td>number of resources classified as ORG (text classification module)</td>
   </tr>
   <tr>
-    <td>21</td>
+    <td>22</td>
     <td>TOT_TX_PER</td>
     <td>number of resources classified as PER (text classification module)</td>
   </tr>
   <tr>
-    <td>22</td>
+    <td>23</td>
     <td>TOT_ERR_TRANS</td>
     <td>number of exceptions raised by the translation module (text classification module)</td>
   </tr>
   <tr>
-    <td>23</td>
+    <td>24</td>
     <td>DIST_TX_I</td>
     <td>similar to DIST_CV_I (text classification module)</td>
   </tr>
   <tr>
-    <td>24</td>
+    <td>25</td>
+    <td>NR_RESULTS_SE_TX</td>
+    <td>number of web sites returned from search engine SE for a given term t</td>
+  </tr>
+  <tr>
+    <td>26</td>
     <td>TX_KLASS</td>
     <td>max out of 3txts</td>
   </tr>
   <tr>
-    <td>25</td>
-    <td>KLASS_1</td>
+    <td>27</td>
+    <td>FEATURE_EXTRA_01</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>28</td>
+    <td>FEATURE_EXTRA_02</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>29</td>
+    <td>FEATURE_EXTRA_03</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>30</td>
+    <td>FEATURE_EXTRA_04</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>31</td>
+    <td>FEATURE_EXTRA_05</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>32</td>
+    <td>FEATURE_EXTRA_06</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>33</td>
+    <td>FEATURE_EXTRA_07</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>34</td>
+    <td>FEATURE_EXTRA_08</td>
+    <td>empty</td>
+  </tr>
+    <tr>
+    <td>35</td>
+    <td>FEATURE_EXTRA_09</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>36</td>
+    <td>KLASS_01</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta else 'NONE')</td>
   </tr>
   <tr>
-    <td>26</td>
-    <td>KLASS_2</td>
+    <td>37</td>
+    <td>KLASS_02</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+1 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+1 else 'NONE')</td>
   </tr>
   <tr>
-    <td>27</td>
-    <td>KLASS_3</td>
+    <td>38</td>
+    <td>KLASS_03</td>
     <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+2 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+2 else 'NONE')</td>
   </tr>
   <tr>
-    <td>28</td>
-    <td>KLASS_4</td>
+    <td>39</td>
+    <td>KLASS_04</td>
     <td>Compound Update [based on KLASS_1]</td>
   </tr>
   <tr>
-    <td>29</td>
-    <td>KLASS_5</td>
+    <td>40</td>
+    <td>KLASS_05</td>
     <td>RandomForest Model</td>
+  </tr>
+  <tr>
+    <td>41</td>
+    <td>KLASS_06</td>
+    <td>empty</td>
+    </tr>
+  <tr>
+    <td>42</td>
+    <td>KLASS_07</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>43</td>
+    <td>KLASS_08</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>44</td>
+    <td>KLASS_09</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>45</td>
+    <td>KLASS_10</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>46</td>
+    <td>KLASS_11</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>47</td>
+    <td>KLASS_12</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>48</td>
+    <td>KLASS_13</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>49</td>
+    <td>KLASS_14</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>50</td>
+    <td>KLASS_15</td>
+    <td>empty</td>
+  </tr>
+  <tr>
+    <td>51</td>
+    <td>KLASS_REAL</td>
+    <td>NER target</td>
   </tr>
 </table>
 
