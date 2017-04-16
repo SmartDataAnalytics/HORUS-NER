@@ -754,7 +754,8 @@ class Core(object):
             horus_csv = open(self.config.output_path + output_file + '.csv', 'wb')
             wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
             wr.writerow(definitions.HORUS_MATRIX_HEADER)
-            wr.writerows(self.horus_matrix)
+            wr.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
+            #wr.writerows(self.horus_matrix)
 
     def run_final_classifier(self):
         self.sys.log.info(':: running final classifier...')
@@ -1551,7 +1552,6 @@ class Core(object):
                 dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
                 place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
 
-                # 0 to 5
                 self.horus_matrix[index][11] = limit_img
                 self.horus_matrix[index][12] = tot_geral_locations  # 1
                 self.horus_matrix[index][13] = tot_geral_logos  # 2
@@ -1590,8 +1590,7 @@ class Core(object):
                     tot_err = 0
                     for itxt in range(limit_txt):
                         if rows[itxt][6] == 0 or rows[itxt][6] is None: # not processed yet
-                            ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4],
-                                                         rows[itxt][5])
+                            ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                             y.append(ret)
                             sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
                                      text_3_klass = %s, text_4_klass = %s, text_5_klass = %s

@@ -4,12 +4,15 @@ from nltk.tag.stanford import StanfordNERTagger
 from nltk.tag import StanfordPOSTagger
 
 from horus import definitions
+from horus.components.config import HorusConfig
 from horus.postagger import CMUTweetTagger
 #text = 'Diego Esteves works at Microsoft'
 #tag1 = st.tag(text.split())
 
 
 class NLPTools(object):
+
+    config = HorusConfig()
 
     def tokenize_and_pos_nltk(self, text):
         #TODO: esta trocando '' por ``
@@ -29,7 +32,6 @@ class NLPTools(object):
         for xi in x:
             ret.append(xi.split(' ')[2])
         return ret
-
 
     def annotate_ner_stanford(self, text):
         return self.stanford_ner.tag(text.split())
@@ -90,10 +92,6 @@ class NLPTools(object):
         return penn_tag
 
     def __init__(self):
-        self.stanford_ner = StanfordNERTagger(
-            '/Users/esteves/Github/horus-models/src/horus/resource/models/stanford/english.all.3class.distsim.crf.ser.gz',
-            '/Users/esteves/Github/horus-models/src/horus/resource/models/stanford/stanford-ner.jar')
-        self.stanford_pos = StanfordPOSTagger(
-            '/Users/esteves/Github/horus-models/src/horus/resource/models/stanford/2015-04-20/english-bidirectional-distsim.tagger',
-            '/Users/esteves/Github/horus-models/src/horus/resource/models/stanford/2015-04-20/stanford-postagger.jar')
+        self.stanford_ner = StanfordNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
+        self.stanford_pos = StanfordPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
         self.stanford_pos.java_options='-mx8g'
