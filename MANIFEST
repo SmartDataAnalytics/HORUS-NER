@@ -7,15 +7,14 @@ src/horus/components/bingAPI1.py
 src/horus/components/config.py
 src/horus/components/core.py
 src/horus/components/eval.py
-src/horus/components/example.py
 src/horus/components/main.py
 src/horus/components/systemlog.py
 src/horus/components/translator_test.py
 src/horus/experiments/__init__.py
 src/horus/experiments/experiment_helper.py
+src/horus/experiments/helper_feature_extractor.py
 src/horus/experiments/horus_dt_layer.py
 src/horus/experiments/horus_dt_layer_bkp.py
-src/horus/experiments/ner_stanford.py
 src/horus/experiments/object-detection.py
 src/horus/experiments/plots.py
 src/horus/experiments/report.py
