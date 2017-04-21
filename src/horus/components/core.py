@@ -754,8 +754,19 @@ class Core(object):
             horus_csv = open(self.config.output_path + output_file + '.csv', 'wb')
             wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
             wr.writerow(definitions.HORUS_MATRIX_HEADER)
-            wr.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
-            #wr.writerows(self.horus_matrix)
+            #wr.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
+            wr.writerows(self.horus_matrix)
+
+    def convert_unicode(s):
+        # u'abc'.encode('utf-8') -> unicode to str
+        # 'abc'.decode('utf-8') -> str to unicode
+        if isinstance(s, str):
+            return s.decode('utf8') #unicode(s, 'utf8 )
+        elif isinstance(s, unicode):
+            return s
+        else:
+            raise Exception ("that's not a string!")
+
 
     def run_final_classifier(self):
         self.sys.log.info(':: running final classifier...')

@@ -30,38 +30,70 @@ config = HorusConfig()
 
 features = []
 X, Y = [], []
+teste = []
 
-samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_2_tweetNLP.csv"
-#samplefile = config.output_path + "experiments/ritter/EXP_001/out_exp001_1.csv"
-df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None)
+samplefile = config.output_path + "experiments/EXP_001/out_exp003_wnut16_tweetNLP.csv"
+#samplefile = config.output_path + "experiments/EXP_000/out_exp000_1_ritter.csv"
+df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
 for index, linha in df.iterrows():
-    if len(linha)>0 and linha[7] == 0:
-        pos_bef = ''
-        pos_aft = ''
-        if index > 0 and df.get_value(index-1,7) == 0:
-            pos_bef = df.get_value(index-1,5)
-        if index + 1 < len(df) and df.get_value(index+1,7) == 0:
-            pos_aft = df.get_value(index+1,5)
+    #print index, linha[3]
+    if len(linha)>0:
+
+        if linha[7] == 1:
+            a=1
+        if linha[7] == 0:
+            pos_bef = ''
+            pos_aft = ''
+            if index > 0 and df.get_value(index-1,7) == 0:
+                pos_bef = df.get_value(index-1,5)
+            if index + 1 < len(df) and df.get_value(index+1,7) == 0:
+                pos_aft = df.get_value(index+1,5)
+
+            if linha[51] in definitions.NER_TAGS_LOC: Y.append(1)
+            elif linha[51] in definitions.NER_TAGS_ORG: Y.append(2)
+            elif linha[51] in definitions.NER_TAGS_PER: Y.append(3)
+            else: Y.append(4)
+
+            token = linha[3]
+            pos = linha[5]
+            one_char_token = 1 if len(token) == 1 else 0
+            special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token))>0 else 0
+            first_capitalized = 1 if token[0].isupper() else 0
+            capitalized = 1 if token.isupper() else 0
+            nr_images_returned = linha[17]
+            nr_websites_returned = linha[25]
+            hyphen = 1 if '-' in token else 0
+            cv_loc = int(linha[12])
+            cv_org = int(linha[13])
+            cv_per = int(linha[14])
+            cv_dist = int(linha[15])
+            cv_plc = int(linha[16])
+            tx_loc = int(linha[20])
+            tx_org = int(linha[21])
+            tx_per = int(linha[22])
+            tx_err = float(linha[23])
+            tx_dist = float(linha[24])
+
+            teste.append(linha[6])
+            if linha[6] in definitions.NER_TAGS_LOC: ner = definitions.KLASSES2["LOC"]
+            elif linha[6] in definitions.NER_TAGS_ORG: ner = definitions.KLASSES2["ORG"]
+            elif linha[6] in definitions.NER_TAGS_PER: ner = definitions.KLASSES2["PER"]
+            else: ner = definitions.KLASSES2["O"]
 
 
-        if linha[6] in definitions.NER_RITTER_LOC: Y.append(1)
-        elif linha[6] in definitions.NER_RITTER_ORG: Y.append(2)
-        elif linha[6] in definitions.NER_RITTER_PER: Y.append(3)
-        else: Y.append(4)
-
-        one_char_token = 1 if len(linha[3]) == 1 else 0
-        special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)',linha[3]))>0 else 0
-        first_capitalized = 1 if linha[3][0].isupper() else 0
-        capitalized = 1 if linha[3].isupper() else 0
-        '''
-        pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
-        tx_loc; tx_org; tx_per; tx_err; tx_dist; 
-        one_char; special_char; first_cap; cap
-        '''
-        features.append((pos_bef, linha[5], pos_aft, int(linha[12]), int(linha[13]), int(linha[14]), int(linha[15]),
-                         int(linha[16]), int(linha[19]), int(linha[20]), int(linha[21]),
-                         float(linha[22]), int(linha[23]), one_char_token, special_char, first_capitalized, capitalized))
-
+            '''
+            pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
+            tx_loc; tx_org; tx_per; tx_err; tx_dist; 
+            one_char; special_char; first_cap; cap
+            '''
+            features.append((pos_bef, pos, pos_aft,
+                             one_char_token, special_char, first_capitalized, hyphen,
+                             capitalized, nr_images_returned,
+                             cv_org, cv_loc, cv_per, cv_dist, cv_plc))
+                             #tx_org, tx_loc, tx_per, tx_dist, tx_err))
+print len(Y)
+print set(Y)
+print set(teste)
 
 features = numpy.array(features)
 
@@ -85,16 +117,25 @@ elif config.models_pos_tag_lib == 3:
     le = joblib.load(config.encoder_path + "encoder_tweetnlp.pkl")
 
 for x in features:
-    print x[0], x[1], x[2]
     x[0] = le.transform(x[0])
     x[1] = le.transform(x[1])
     x[2] = le.transform(x[2])
+
+config = HorusConfig()
+features_file = open(config.output_path + 'features_dt_wnut16.csv', 'wb')
+wr = csv.writer(features_file) #quoting=csv.QUOTE_ALL
+wr.writerows(features)
+
+target_file = open(config.output_path + 'features_dt_wnut16_Y.csv', 'wb')
+wr2 = csv.writer(target_file,  delimiter=";")
+for row in Y:
+    wr2.writerow([row])
 
 #vec = DictVectorizer()
 #d = dict(itertools.izip_longest(*[iter(features)] * 2, fillvalue=""))
 #X = vec.fit_transform([item[0] for item in d]).toarray()
 
-X_train, X_test, Y_train, Y_test = train_test_split(features, Y, train_size=0.70, test_size=0.30)
+X_train, X_test, Y_train, Y_test = train_test_split(features, Y, train_size=0.80, test_size=0.20)
 
 #with open("autiputi2.csv", "w") as output:
 #    writer = csv.writer(output, lineterminator='\n')
