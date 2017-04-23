@@ -5,12 +5,12 @@ from horus.components.core import Core
 #a = [l[0].decode('utf8')]
 #print a[0]
 
-#text = u"diego esteves lives in sao paulo".encode('utf8')
-text3 = 'Driving , driving , driving away to Phil . Tasty dinner tonight with the Society of Mining and Metallurgy Engineers .'
-text = u"paris hilton was once the toast of the town".encode('utf8')
-text2 = u"bullshit about airports/coffee/conferences".encode('utf8')
+text = "diego's estees-III @sajdh yo yo go!brow. ha!"
+#text = 'Driving , driving , driving away to Phil . Tasty dinner tonight with the Society of Mining and Metallurgy Engineers .'
+#text = "paris hilton was once the toast of the town"
+#text = u"bullshit about airports/coffee/conferences".encode('utf8')
 horus = Core(False, 5)
-horus.annotate(text3)
+horus.annotate(text)
 #print horus.get_cv_annotation()
 
 

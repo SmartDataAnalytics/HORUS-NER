@@ -604,6 +604,7 @@ class Core(object):
         try:
             for sent in sentences:
                 sent_index+=1
+                ipositionstartterm = 0
                 for c in range(len(sent[6][self.config.models_pos_tag_lib])):
                     word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
                     compound = sent[6][self.config.models_pos_tag_lib][c][1]
@@ -654,7 +655,24 @@ class Core(object):
                     temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0] # 0-8
                     temp.extend(self.populate_matrix_new_columns())
                     temp.extend([tag_ner_y])
+                    # that is a hack to integrate to GERBIL
+
+                    if ipositionstartterm >= len(sent[1][0]):
+                        ipositionstartterm-=1
+                    if sent[1][0][ipositionstartterm] == term[0]:
+                        if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
+                            raise Exception("GERBIL integration: error 1!")
+                    else:
+                        ipositionstartterm-=1
+                        if sent[1][0][ipositionstartterm] == term[0]:
+                            if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
+                                raise Exception("GERBIL integration: error 2!")
+                        else:
+                            raise Exception("GERBIL integration: error 3!")
+
+                    temp[27] = ipositionstartterm
                     converted.append(temp)
+                    ipositionstartterm += (len(term) + 1)
 
         except Exception as error:
             self.sys.log.error(':: Erro! %s' % str(error))
