@@ -60,6 +60,8 @@ for index, linha in df.iterrows():
             special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token))>0 else 0
             first_capitalized = 1 if token[0].isupper() else 0
             capitalized = 1 if token.isupper() else 0
+            title = 1 if token.istitle() else 0
+            digit = 1 if token.isdigit() else 0
             nr_images_returned = linha[17]
             nr_websites_returned = linha[25]
             hyphen = 1 if '-' in token else 0
@@ -80,17 +82,11 @@ for index, linha in df.iterrows():
             elif linha[6] in definitions.NER_TAGS_PER: ner = definitions.KLASSES2["PER"]
             else: ner = definitions.KLASSES2["O"]
 
-
-            '''
-            pos-1; pos; pos+1; cv_loc; cv_org; cv_per; cv_dist; cv_plc; 
-            tx_loc; tx_org; tx_per; tx_err; tx_dist; 
-            one_char; special_char; first_cap; cap
-            '''
-            features.append((pos_bef, pos, pos_aft,
+            features.append((pos_bef, pos, pos_aft, title, digit,
                              one_char_token, special_char, first_capitalized, hyphen,
                              capitalized, nr_images_returned,
-                             cv_org, cv_loc, cv_per, cv_dist, cv_plc))
-                             #tx_org, tx_loc, tx_per, tx_dist, tx_err))
+                             cv_org, cv_loc, cv_per, cv_dist, cv_plc,
+                             tx_org, tx_loc, tx_per, tx_dist, tx_err))
 print len(Y)
 print set(Y)
 print set(teste)
