@@ -89,7 +89,7 @@ corpus = [dictionary.doc2bow(doc) for doc in doc_clean]
 #
 # doc_lda_matrix = [ldamodel[doc] for doc in doc_term_matrix]
 
-numpy_matrix = gensim.matutils.corpus2dense(corpus, num_terms=len(dictionary))
+numpy_matrix = gensim.matutils.corpus2dense(corpus, num_terms=len(dictionary)).T
 X_train, X_test, y_train, y_test = train_test_split(np.array(numpy_matrix), labels, test_size=0.2, random_state=5)
 print type(X_train), type(y_train)
 svm = LinearSVC().fit(X_train, y_train)
