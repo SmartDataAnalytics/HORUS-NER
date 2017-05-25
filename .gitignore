@@ -20,10 +20,10 @@ src/horus/definitions.pyc
 src/horus/resource/__init__.pyc
 src/horus/postagger/CMUTweetTagger.pyc
 src/horus/postagger/__init__.pyc
-/scripts/horus.log
+/examples/horus.log
 src/horus/components/util/__init__.pyc
 src/horus/components/util/nlp_tools.pyc
 /output/temp/
 /src/horus/test/
-src/horus/experiments/final_encoder.pkl
-src/horus/experiments/final_randomforest.pkl
+horus/experiments/encoders/final_encoder.pkl
+horus/experiments/encoders/final_randomforest.pkl

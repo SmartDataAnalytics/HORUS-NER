@@ -15,7 +15,7 @@ from horus import definitions
 from horus.components.config import HorusConfig
 
 config = HorusConfig()
-#file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_1_NLTK.csv"), delimiter=",")
+#file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000_baseline_simple/out_exp000_1_NLTK.csv"), delimiter=",")
 #header1 = file1reader.next()
 
 features = []
@@ -27,7 +27,7 @@ colnames = ['IS_ENTITY', 'ID_SENT', 'ID_WORD', 'WORD_TERM', 'POS_UNI',
             'PL_CV_I', 'CV_KLASS', 'TOT_RESULTS_TX', 'TOT_TX_LOC', 'TOT_TX_ORG', 'TOT_TX_PER',
             'TOT_ERR_TRANS', 'DIST_TX_I', 'TX_KLASS', 'HORUS_KLASS']
 
-data = pandas.read_csv((config.output_path + "experiments/ritter/EXP_000/out_exp000_1_NLTK.csv"), sep=',',
+data = pandas.read_csv((config.output_path + "experiments/ritter/EXP_000_baseline_simple/out_exp000_1_NLTK.csv"), sep=',',
                        names=colnames, na_values=['*'], header=0,
                        dtype={"IS_ENTITY?": int, "ID_SENT": int, "ID_WORD": int, "WORD_TERM": str,
                               "POS_UNI": str, "POS": str, "NER": str, "COMPOUND": int, "COMPOUND_SIZE": int,

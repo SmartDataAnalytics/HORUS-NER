@@ -8,6 +8,11 @@ import numpy as np
 from collections import Counter
 from itertools import chain
 
+#https://de.dariah.eu/tatom/topic_model_mallet.html#topic-model-mallet
+#https://de.dariah.eu/tatom/topic_model_python.html
+#https://medium.com/@aneesha/topic-modeling-with-scikit-learn-e80d33668730
+#https://medium.com/towards-data-science/improving-the-interpretation-of-topic-models-87fd2ee3847d
+#http://miriamposner.com/blog/very-basic-strategies-for-interpreting-results-from-the-topic-modeling-tool/
 #https://www.analyticsvidhya.com/blog/2016/08/beginners-guide-to-topic-modeling-in-python/
 
 '''

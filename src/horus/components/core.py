@@ -99,7 +99,7 @@ class Core(object):
 
     def __init__(self,force_download=False,trees=5):
         """Return a HORUS object"""
-        self.sys = SystemLog("horus.log", logging.DEBUG, logging.INFO)
+        self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
 
         self.sys.log.info('------------------------------------------------------------------')
@@ -655,20 +655,19 @@ class Core(object):
                     temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0] # 0-8
                     temp.extend(self.populate_matrix_new_columns())
                     temp.extend([tag_ner_y])
-                    # that is a hack to integrate to GERBIL
-
-                    if ipositionstartterm >= len(sent[1][0]):
-                        ipositionstartterm-=1
-                    if sent[1][0][ipositionstartterm] == term[0]:
-                        if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
-                            raise Exception("GERBIL integration: error 1!")
-                    else:
-                        ipositionstartterm-=1
-                        if sent[1][0][ipositionstartterm] == term[0]:
-                            if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
-                                raise Exception("GERBIL integration: error 2!")
-                        else:
-                            raise Exception("GERBIL integration: error 3!")
+                    ## that is a hack to integrate to GERBIL
+                    #if ipositionstartterm >= len(sent[1][0]):
+                    #    ipositionstartterm-=1
+                    #if sent[1][0][ipositionstartterm] == term[0]:
+                    #    if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
+                    #        raise Exception("GERBIL integration: error 1!")
+                    #else:
+                    #    ipositionstartterm-=1
+                    #    if sent[1][0][ipositionstartterm] == term[0]:
+                    #        if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
+                    #            raise Exception("GERBIL integration: error 2!")
+                    #    else:
+                    #        raise Exception("GERBIL integration: error 3!")
 
                     temp[27] = ipositionstartterm
                     converted.append(temp)
@@ -690,7 +689,7 @@ class Core(object):
         temp.extend([definitions.KLASSES[4]] * 15)  # 36-50
         return temp
 
-    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv", ds_name=None):
+    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv", ds_name=None, token_index = 0, ner_index = 1):
         try:
             # 0 = text (parameter of reading file) / 1 = ritter
             if int(ds_format) == 0:
@@ -711,7 +710,7 @@ class Core(object):
                 if input_file is None:
                     raise Exception("Provide an input file format to be annotated")
                 self.sys.log.info(':: processing CoNLL format -> %s' % ds_name)
-                sent_tokenize_list = self.process_ds_conll_format(input_file, ds_name)
+                sent_tokenize_list = self.process_ds_conll_format(input_file, ds_name, token_index, ner_index, '')
 
             df = pd.DataFrame(sent_tokenize_list)
 
@@ -727,7 +726,7 @@ class Core(object):
             self.sys.log.info(':: basic POS statistics')
             a = len(hm)  # all
             a2 = len(hm[(hm[7] == 0)])  # all excluding compounds
-            plo = hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
+            plo =     hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
             not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]  # all PLO entities (not compound)
 
             pos_ok_plo = plo[(plo[5].isin(definitions.POS_NOUN_TAGS))]
@@ -784,7 +783,6 @@ class Core(object):
             return s
         else:
             raise Exception ("that's not a string!")
-
 
     def run_final_classifier(self):
         self.sys.log.info(':: running final classifier...')
@@ -1086,7 +1084,6 @@ class Core(object):
             self.sys.log.error(':: an error has occurred: ', e)
             raise
 
-
     def download_image_local(self,image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
         val = URLValidator()
         auxtype = None
@@ -1119,121 +1116,88 @@ class Core(object):
                 term = self.horus_matrix[index][3]
                 self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
                 if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
-                    #self.sys.log.debug(':: caching [%s] ...' % term)
-                    sql = """SELECT id FROM HORUS_TERM WHERE term = ?"""
-                    c.execute(sql, (term,))
-                    res_term = c.fetchone()
-
-                    # checking point
-                    if res_term is None:
-                        self.sys.log.info(':: [%s] has not been cached before!' % term)
-                        ret_id_term = c.execute("""INSERT INTO HORUS_TERM(term) VALUES(?)""", (term,))
-                        ret_id_term = ret_id_term.lastrowid
-                    else:
-                        ret_id_term = res_term[0]
-
-                    #we could use a flag here based on last check, but we got a database constraint failure
-                    #thus, need to check that. will be corrected next version
-                    values = (term, self.config.search_engine_api, self.config.search_engine_features_text)
-                    sql = """SELECT id, id_search_type FROM HORUS_TERM_SEARCH WHERE term = ? 
-                             AND id_search_engine = ? AND search_engine_features = ? ORDER BY id_search_type ASC"""
+                    values = (term.upper(), self.config.search_engine_api, self.config.search_engine_features_text)
+                    sql = """SELECT id, id_search_type, tot_results_returned 
+                             FROM HORUS_TERM_SEARCH 
+                             WHERE upper(term) = ? AND id_search_engine = ? AND search_engine_features = ? 
+                             ORDER BY term, id_search_type ASC LIMIT 2"""
                     c.execute(sql, values)
                     res = c.fetchall()
-                    if res is None or len(res) != 2: #just one of those is cached
-                        whatdowehave = 0 #we need to cache both
-                        if len(res) == 1:
-                            whatdowehave = res[0][1]
-                            if whatdowehave == 1:
-                                self.horus_matrix[index][9] = res[0][0]
-                            elif whatdowehave == 2:
-                                self.horus_matrix[index][10] = res[0][0]
-                            else:
-                                raise Exception("that should not happen")
-                        elif res is not None and len(res) != 0:
-                            raise Exception("that should not happen")
-
-                        self.sys.log.info(':: [%s] querying the web ->' % term)
+                    if res is None or len(res) == 0:
+                        self.sys.log.info(':: [%s] querying the web' % term)
                         metaquery, result_txts, result_imgs = bing_api5(term, key=self.config.search_engine_key, market='en-US')
-
-                        OK = False
-                        # we got image (or nothing), thus we need to cache websites (text)
-                        if whatdowehave == 2 or whatdowehave == 0:
-                            OK = True
-                            '''
-                            -------------------------------------
-                            Web Sites
-                            -------------------------------------
-                            '''
-                            self.sys.log.info(':: [%s] caching (web site) ->' % term)
-                            values = (term, ret_id_term, self.config.search_engine_api, 1, self.config.search_engine_features_text,
-                            str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
-                            len(result_txts), metaquery)
-                            c.execute("""INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
+                        '''
+                        -------------------------------------
+                        Web Sites
+                        -------------------------------------
+                        '''
+                        self.sys.log.info(':: [%s] caching (web site)' % term)
+                        values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text,
+                        str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
+                        len(result_txts), metaquery)
+                        c.execute("""INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
                                                                  search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
                                                                  VALUES(?,?,?,?,?,?,?,?,?)""", values)
-                            id_term_search = c.lastrowid
-                            self.horus_matrix[index][9] = id_term_search  # updating matrix
+                        id_term_search = c.lastrowid
+                        self.horus_matrix[index][9] = id_term_search  # updating matrix
 
-                            seq = 0
-                            for web_result in result_txts:
-                                seq += 1
-                                row = (
-                                id_term_search, 0, web_result['id'], seq, web_result['displayUrl'], web_result['name'],
-                                web_result['snippet'], '')
+                        seq = 0
+                        for web_result in result_txts:
+                            seq += 1
+                            row = (id_term_search, 0, web_result['id'], seq, web_result['displayUrl'], web_result['name'],
+                                   web_result['snippet'], '')
+                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
+                                         search_engine_resource_id, result_seq, result_url, result_title,
+                                         result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""",row)
+                        '''
+                        -------------------------------------
+                        Images
+                        -------------------------------------
+                        '''
+                        self.sys.log.info(':: [%s] caching - image' % term)
+                        values = (
+                        term, ret_id_term, self.config.search_engine_api, 2, self.config.search_engine_features_img,
+                        str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
+                        len(result_imgs), metaquery)
 
-                                c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
-                                                                     search_engine_resource_id, result_seq, result_url, result_title,
-                                                                     result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""",
-                                          row)
-                        # we got text (or nothing), thus we need to cache images
-                        if whatdowehave == 1 or whatdowehave == 0:
-                            OK = True
-                            '''
-                            -------------------------------------
-                            Images
-                            -------------------------------------
-                            '''
-                            self.sys.log.info(':: [%s] caching - image' % term)
-                            values = (
-                            term, ret_id_term, self.config.search_engine_api, 2, self.config.search_engine_features_img,
-                            str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
-                            len(result_imgs), metaquery)
-
-                            sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                                             search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery) VALUES(?,?,?,?,?,?,?,?,?)"""
-                            c.execute(sql, values)
-                            id_term_img = c.lastrowid
-                            self.horus_matrix[index][10] = id_term_img  # updating matrix
-                            seq = 0
-                            for web_img_result in result_imgs:
-                                self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
-                                seq += 1
-                                auxtype = self.download_image_local(web_img_result['contentUrl'],
+                        sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
+                                search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery) VALUES(?,?,?,?,?,?,?,?,?)"""
+                        c.execute(sql, values)
+                        id_term_img = c.lastrowid
+                        self.horus_matrix[index][10] = id_term_img  # updating matrix
+                        seq = 0
+                        for web_img_result in result_imgs:
+                            self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
+                            seq += 1
+                            auxtype = self.download_image_local(web_img_result['contentUrl'],
                                                                     web_img_result['encodingFormat'],
                                                                     web_img_result['thumbnailUrl'],
                                                                     web_img_result['encodingFormat'], id_term_img, 0, seq)
-                                self.sys.log.debug(':: caching image result ...')
-                                fname = ('%s_%s_%s.%s' % (str(id_term_img), str(0), str(seq), str(auxtype)))
-                                row = (id_term_img, 0, seq, seq, web_img_result['contentUrl'],
+                            self.sys.log.debug(':: caching image result ...')
+                            fname = ('%s_%s_%s.%s' % (str(id_term_img), str(0), str(seq), str(auxtype)))
+                            row = (id_term_img, 0, seq, seq, web_img_result['contentUrl'],
                                        web_img_result['name'], web_img_result['encodingFormat'], web_img_result['height'],
                                        web_img_result['width'], web_img_result['thumbnailUrl'],
                                        web_img_result['encodingFormat'], fname)
 
-                                sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search, id_ner_type, 
+                            sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search, id_ner_type, 
                                                                  search_engine_resource_id, result_seq, result_media_url, result_media_title,
                                                                  result_media_content_type, result_media_height, result_media_width, 
                                                                  result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
                                                                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
-                                c.execute(sql, row)
-                                self.sys.log.debug(':: term [%s] cached (img)!' % term)
-                        if OK is False:
-                            raise Exception ("that should not happen!")
-                        self.conn.commit()
-                        OK = False
+                            c.execute(sql, row)
+                            self.sys.log.debug(':: term [%s] cached (img)!' % term)
 
-                    else: #we got both
+                        self.conn.commit()
+                    else:
+                        print res
+                        if (len(res) != 2):
+                            raise Exception("that should not happen!")
+                        if ((1 or 2) not in [row[1] for row in res]):
+                            raise Exception("that should not happen auch!")
                         self.horus_matrix[index][9] = res[0][0]
                         self.horus_matrix[index][10] = res[1][0]
+
 
                 auxc+=1
 
@@ -1844,7 +1808,7 @@ class Core(object):
             self.db_save_sentence(sent, dataset_name)
             return sent
 
-    def process_ds_conll_format(self, dspath, dataset_name):
+    def process_ds_conll_format(self, dspath, dataset_name, token_index, ner_index, separator='\t'):
         '''
         return a set of sentences
         :param dspath: path to Ritter dataset
@@ -1864,8 +1828,9 @@ class Core(object):
             with open(dspath) as f:
                 for line in f:
                     if line.strip() != '':
-                        token = line.split('\t')[0]
-                        ner = line.split('\t')[1].replace('\r','').replace('\n','')
+                        if separator == '': separator = None
+                        token = line.split(separator)[token_index]
+                        ner = line.split(separator)[ner_index].replace('\r','').replace('\n','')
                     if line.strip() == '':
                         if len(tokens) != 0:
                             self.sys.log.debug(':: processing sentence %s' % str(tot_sentences))
@@ -1923,6 +1888,3 @@ class Core(object):
                     if ner_tag in definitions.NER_CONLL:
                         has3NER = 1
         return sentences
-
-
-
