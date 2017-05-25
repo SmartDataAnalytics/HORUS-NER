@@ -6,9 +6,8 @@ horus/horus.log
 .DS_Store
 horus/.DS_Store
 /dist/
-/src/horus/components/horus.log
+*.log
 *.pyc
-/scripts/horus.log
 /output/temp/
 /src/horus/test/
 build/
