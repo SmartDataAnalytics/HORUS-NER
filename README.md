@@ -189,8 +189,8 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
   </tr>
   <tr>
     <td>27</td>
-    <td>FEATURE_EXTRA_01</td>
-    <td>empty</td>
+    <td>INDEX_START_TERM</td>
+    <td>the position (1st char) of a given term at sentence level</td>
   </tr>
     <tr>
     <td>28</td>
