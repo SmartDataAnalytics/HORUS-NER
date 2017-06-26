@@ -7,6 +7,40 @@ from sklearn.externals import joblib
 from horus.components.config import HorusConfig
 from horus.components.util.nlp_tools import NLPTools
 
+def extract_all_tags_conll(config):
+    dspath = config.dataset_path + "coNLL2003/coNLL2003.eng.testa"
+    try:
+        postags_nltk, postags_nltk_u, gs = [''], [''], ['']
+        s = ''
+        isent = 0
+        tools = NLPTools()
+        with open(dspath) as f:
+            for line in f:
+                if line.strip() != '':
+                    token = line.split()[0]
+                    gs.append(line.split()[1])
+                if line.strip() == '':  # that' a sentence
+                    print isent
+                    _tokens_nltk, _pos_nltk, _pos_uni_nltk = tools.tokenize_and_pos_nltk(s)
+                    p1 = numpy.array(_pos_nltk)
+                    p2 = numpy.array(_pos_uni_nltk)
+                    if len(p1) > 0:
+                        temp = numpy.concatenate((p1[:, 1], postags_nltk), axis=0)
+                        postags_nltk = numpy.unique(temp)
+
+                    if len(p2) > 0:
+                        temp = numpy.concatenate((p2[:, 1], postags_nltk_u), axis=0)
+                        postags_nltk_u = numpy.unique(temp)
+                    s = ''
+                    isent += 1
+
+                else:
+                    s += token + ' '
+        return postags_nltk, postags_nltk_u, gs
+    except Exception as error:
+        print('caught this error: ' + repr(error))
+        exit(-1)
+
 
 def extract_pos_dictionary_from_conll(config):
     dspath = config.dataset_path + "Ritter/ner.txt"
@@ -18,7 +52,7 @@ def extract_pos_dictionary_from_conll(config):
         tools = NLPTools()
         with open(dspath) as f:
             for line in f:
-                if isent > 300:
+                if isent > 10000:
                     break
                 if line.strip() != '':
                     token = line.split('\t')[0]
@@ -90,10 +124,34 @@ def extract_pos_dictionary_from_conll(config):
 
 config = HorusConfig()
 
+n1, n2, n3 = extract_all_tags_conll(config)
+all = numpy.append(numpy.array([]), n1)
+all = numpy.append(all, n2)
+all = numpy.append(all, n3)
+allu = numpy.unique(all)
+le = preprocessing.LabelEncoder()
+le.fit(allu)
+joblib.dump(le, config.encoder_path + '_encoder_nltk2.pkl', compress=3)
+exit(0)
+
 n1, n2, s1, s2, t1, t2 = extract_pos_dictionary_from_conll(config)
+
+
+all = numpy.append(numpy.array([]), n1)
+all = numpy.append(all, n2)
+all = numpy.append(all, s1)
+all = numpy.append(all, s2)
+all = numpy.append(all, t1)
+all = numpy.append(all, t2)
+allu = numpy.unique(all)
 
 le = preprocessing.LabelEncoder()
 
+le.fit(allu)
+joblib.dump(le, config.encoder_path + '_encoder_pos.pkl', compress=3)
+print '-- ALL --'
+print len(allu)
+print (allu)
 
 le.fit(n1)
 joblib.dump(le, config.encoder_path + '_encoder_nltk.pkl', compress=3)

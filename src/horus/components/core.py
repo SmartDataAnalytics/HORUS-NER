@@ -1124,20 +1124,20 @@ class Core(object):
                     c.execute(sql, values)
                     res = c.fetchall()
                     if res is None or len(res) == 0:
-                        self.sys.log.info(':: [%s] querying the web' % term)
+                        self.sys.log.info(':: querying the web -> [%s]' % term)
                         metaquery, result_txts, result_imgs = bing_api5(term, key=self.config.search_engine_key, market='en-US')
                         '''
                         -------------------------------------
                         Web Sites
                         -------------------------------------
                         '''
-                        self.sys.log.info(':: [%s] caching (web site)' % term)
+                        self.sys.log.info(':: caching (web site) -> [%s]' % term)
                         values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text,
                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
                         len(result_txts), metaquery)
                         c.execute("""INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
                                                                  search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
-                                                                 VALUES(?,?,?,?,?,?,?,?,?)""", values)
+                                                                 VALUES(?,?,?,?,?,?,?,?)""", values)
                         id_term_search = c.lastrowid
                         self.horus_matrix[index][9] = id_term_search  # updating matrix
 
@@ -1154,14 +1154,14 @@ class Core(object):
                         Images
                         -------------------------------------
                         '''
-                        self.sys.log.info(':: [%s] caching - image' % term)
+                        self.sys.log.info(':: caching (image) -> [%s]' % term)
                         values = (
-                        term, ret_id_term, self.config.search_engine_api, 2, self.config.search_engine_features_img,
+                        term, self.config.search_engine_api, 2, self.config.search_engine_features_img,
                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
                         len(result_imgs), metaquery)
 
-                        sql = """INSERT into HORUS_TERM_SEARCH(term, id_term, id_search_engine, id_search_type,
-                                search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery) VALUES(?,?,?,?,?,?,?,?,?)"""
+                        sql = """INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
+                                search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery) VALUES(?,?,?,?,?,?,?,?)"""
                         c.execute(sql, values)
                         id_term_img = c.lastrowid
                         self.horus_matrix[index][10] = id_term_img  # updating matrix
@@ -1190,7 +1190,7 @@ class Core(object):
 
                         self.conn.commit()
                     else:
-                        print res
+                        print term, res
                         if (len(res) != 2):
                             raise Exception("that should not happen!")
                         if ((1 or 2) not in [row[1] for row in res]):

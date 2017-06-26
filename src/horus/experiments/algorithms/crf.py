@@ -115,7 +115,7 @@ dataset_wnut16_processed = '/Users/esteves/Github/horus-models/output/experiment
 #train_sents = dataset[0:t]
 #test_sents = dataset[t+1:(len(dataset)-1)]
 
-train_sents = dataset_wnut16
+train_sents = dataset_rit
 test_sents = dataset_wnut15
 
 #train_sents = dataset_wnut16
