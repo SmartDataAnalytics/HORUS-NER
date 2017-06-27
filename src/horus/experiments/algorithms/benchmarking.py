@@ -120,14 +120,14 @@ def get_features_from_horus_matrix_by_sentence(horusfile, le):
     features = numpy.array(features)
     return features
 
-def sent2features(sent, alg):
+def sent2features(sent, alg, horus_feat = False):
     if alg=='CRF':
-        return [features_to_crf_shape(sent, i) for i in range(len(sent))]
+        return [features_to_crf_shape(sent, i, horus_feat) for i in range(len(sent))]
 
 def klasses_to_CRF_shape(klasses):
     return klasses
 
-def features_to_crf_shape(sent, i):
+def features_to_crf_shape(sent, i, horus_feat):
     word = sent[i][2]
     postag = sent[i][9]
 
@@ -146,20 +146,23 @@ def features_to_crf_shape(sent, i):
         'size_small': sent[i][21],
         # 'wordnet_lemmatizer': wordnet_lemmatizer.lemmatize(word),
         'ind1': sent[i][4],
-        #'ind2': sent[i][23],
-        #'ind3': sent[i][24],
-        #'ind4': sent[i][25],
-        #'ind5': sent[i][26],
-        #'ind6': sent[i][27],
-        #'ind7': sent[i][28],
-        #'ind8': sent[i][29],
-        #'ind9': sent[i][30],
-        #'ind10': sent[i][31],
-        #'ind11': sent[i][32],
         # 'has_number': hasNumbers(word),
         # 'postag_similar_max': get_similar_words_pos(word)
         # 'gaz_per': True if word in NAMES else False
     }
+    if horus_feat is True:
+        features.update({
+            'ind2': sent[i][23],
+            'ind3': sent[i][24],
+            'ind4': sent[i][25],
+            'ind5': sent[i][26],
+            'ind6': sent[i][27],
+            'ind7': sent[i][28],
+            'ind8': sent[i][29],
+            'ind9': sent[i][30],
+            'ind10': sent[i][31],
+            'ind11': sent[i][32],
+        })
     if i > 0:
         word1 = sent[i - 1][2]
         postag1 = sent[i - 1][9]
@@ -189,35 +192,16 @@ def features_to_crf_shape(sent, i):
     return features
 
 
+
 le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 le2 = joblib.load(config.encoder_path + "_encoder_nltk2.pkl")
 
-# getting features
-#ds1 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_ritter_en_tweetNLP.csv"
-#ds1 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_wnut15_en_tweetNLP.csv"
-ds1 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv"
-#ds1 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_coNLL2003testA_en_NLTK.csv"
-X_train, y_train = get_features_from_horus_matrix_by_sentence(ds1, le1)
+dataset_prefix = config.output_path + "experiments/EXP_do_tokenization/"
+datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
+            ("out_exp003_wnut15_en_tweetNLP.csv", le1),
+            ("out_exp003_wnut16_en_tweetNLP.csv", le1),
+            ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
 
-ds2 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_ritter_en_tweetNLP.csv"
-#ds2 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_wnut15_en_tweetNLP.csv"
-#ds2 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv"
-#ds2 = config.output_path + "experiments/EXP_do_tokenization/out_exp003_coNLL2003testA_en_NLTK.csv"
-#ds2 = ds1
-X_test, y_test = get_features_from_horus_matrix_by_sentence(ds2, le1)
-
-print 'total of sentences:', len(X_train)
-print 'ok'
-
-X_train_CRF_shape = [sent2features(s, 'CRF') for s in X_train]
-y_train_CRF_shape = y_train
-
-#X_test_CRF_shape = X_train_CRF_shape
-X_test_CRF_shape = [sent2features(s, 'CRF') for s in X_test]
-y_test_CRF_shape = y_test
-
-
-# training
 crf = sklearn_crfsuite.CRF(
     algorithm='lbfgs',
     c1=0.088,
@@ -225,6 +209,62 @@ crf = sklearn_crfsuite.CRF(
     max_iterations=100,
     all_possible_transitions=True
 )
+
+#labels = list(crf.classes_)
+labels = list(['PER', 'ORG', 'LOC'])
+#labels.remove('O')
+# group B and I results
+sorted_labels = sorted(
+    labels,
+    key=lambda name: (name[1:], name[0])
+)
+
+r = [42, 39, 10, 5, 50]
+for horus_feat in (True, False):
+    print "HORUS? ", horus_feat
+    for ds1 in datasets:
+        X_train, y_train = get_features_from_horus_matrix_by_sentence(dataset_prefix + ds1[0], ds1[1])
+        X_train_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in X_train]
+        y_train_CRF_shape = y_train
+        for ds2 in datasets:
+            print "---------------------------------------------------"
+            print "dataset 1 = ", ds1[0]
+            print "dataset 2 = ", ds2[0]
+            if ds1[0] == ds2[0]:
+                X_test, y_test = X_train, y_train
+                X_test_CRF_shape = X_train_CRF_shape
+                y_test_CRF_shape = y_train_CRF_shape
+            else:
+                X_test, y_test = get_features_from_horus_matrix_by_sentence(dataset_prefix + ds2[0], ds2[1])
+                X_test_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in X_test]
+                y_test_CRF_shape = y_test
+
+            print 'total of sentences (train):', len(X_train)
+            print 'total of sentences (test):', len(X_test)
+
+            if ds1[0] == ds2[0]:
+                print "do cross validation"
+                for d in range(len(r)):
+                    cv_X_train, cv_X_test, cv_y_train, cv_y_test \
+                        = train_test_split(X_train_CRF_shape, y_train_CRF_shape, test_size=0.30,
+                                           random_state=r[d])
+                    m = crf.fit(cv_X_train, cv_y_train)
+                    cv_y_pred = m.predict(cv_X_test)
+                    print(metrics.flat_classification_report(
+                        cv_y_test, cv_y_pred, labels=sorted_labels, digits=3))
+            else:
+                crf.fit(X_train_CRF_shape, y_train_CRF_shape)
+                y_pred = crf.predict(X_test_CRF_shape)
+                print(metrics.flat_classification_report(
+                    y_test, y_pred, labels=sorted_labels, digits=3
+                ))
+
+
+exit(0)
+
+
+# training
+
 crf2 = sklearn_crfsuite.CRF(
     algorithm='lbfgs',
     c1=0.18687907015736968,
@@ -233,41 +273,16 @@ crf2 = sklearn_crfsuite.CRF(
     all_possible_transitions=True
 )
 #crf2.fit(X_train_CRF_shape, y_train_CRF_shape)
-crf.fit(X_train_CRF_shape, y_train_CRF_shape)
 
 # eval
-labels = list(crf.classes_)
-print labels
-labels.remove('O')
-#labels.remove('B-facility')
-#labels.remove('I-facility')
-#labels.remove('B-movie')
-#labels.remove('I-movie')
-#labels.remove('B-musicartist')
-#labels.remove('I-musicartist')
-#labels.remove('B-other')
-#labels.remove('I-other')
-#labels.remove('B-product')
-#labels.remove('I-product')
-#labels.remove('B-sportsteam')
-#labels.remove('I-sportsteam')
-#labels.remove('B-tvshow')
-#if 'I-tvshow' in labels:
-#    labels.remove('I-tvshow')
 
-y_pred = crf.predict(X_test_CRF_shape)
+
 #y_pred2 = crf2.predict(X_test_CRF_shape)
 
 #metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
 
-# group B and I results
-sorted_labels = sorted(
-    labels,
-    key=lambda name: (name[1:], name[0])
-)
-print(metrics.flat_classification_report(
-    y_test, y_pred, labels=sorted_labels, digits=3
-))
+
+
 #print(metrics.flat_classification_report(
 #    y_test, y_pred2, labels=sorted_labels, digits=3
 #))
