@@ -11,3 +11,7 @@ horus/.DS_Store
 /output/temp/
 /src/horus/test/
 build/
+/examples/horus.log
+/src/horus/components/webservice/horus.log
+/src/horus/components/horus.log
+/src/horus/experiments/horus.log

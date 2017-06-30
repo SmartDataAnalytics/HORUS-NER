@@ -186,13 +186,8 @@ X, Y = [], []
 teste = []
 
 samplefile = config.output_path + "experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv"
-#samplefile = config.output_path + "experiments/EXP_000_baseline_simple/out_exp000_1_ritter.csv"
 df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-countaux = 0
 for index, linha in df.iterrows():
-    countaux+=1
-    if countaux == 1000:
-        break
     if len(linha)>0:
         if linha[7] == 0:
 
@@ -261,27 +256,28 @@ features = numpy.array(features)
 #__ = joblib.dump(le, 'final_encoder.pkl', compress=3)
 
 
-if config.models_pos_tag_lib == 1:
-    le = joblib.load(config.encoder_path + "encoder_nltk.pkl")
-elif config.models_pos_tag_lib == 2:
-    le = joblib.load(config.encoder_path + "encoder_stanford.pkl")
-elif config.models_pos_tag_lib == 3:
-    le = joblib.load(config.encoder_path + "encoder_tweetnlp.pkl")
+#if config.models_pos_tag_lib == 1:
+#    le = joblib.load(config.encoder_path + "encoder_nltk.pkl")
+#elif config.models_pos_tag_lib == 2:
+#    le = joblib.load(config.encoder_path + "encoder_stanford.pkl")
+#elif config.models_pos_tag_lib == 3:
+#    le = joblib.load(config.encoder_path + "encoder_tweetnlp.pkl")
 
+le = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 for x in features:
-    x[0] = le.transform(x[0])
-    x[1] = le.transform(x[1])
     x[2] = le.transform(x[2])
+    x[3] = le.transform(x[3])
+    x[4] = le.transform(x[4])
 
 config = HorusConfig()
-features_file = open(config.output_path + 'features_dt_wnut16.csv', 'wb')
-wr = csv.writer(features_file) #quoting=csv.QUOTE_ALL
-wr.writerows(features)
+#features_file = open(config.output_path + 'features_dt_wnut16.csv', 'wb')
+#wr = csv.writer(features_file) #quoting=csv.QUOTE_ALL
+#wr.writerows(features)
 
-target_file = open(config.output_path + 'features_dt_wnut16_Y.csv', 'wb')
-wr2 = csv.writer(target_file,  delimiter=";")
-for row in Y:
-    wr2.writerow([row])
+#target_file = open(config.output_path + 'features_dt_wnut16_Y.csv', 'wb')
+#wr2 = csv.writer(target_file,  delimiter=";")
+#for row in Y:
+#    wr2.writerow([row])
 
 #vec = DictVectorizer()
 #d = dict(itertools.izip_longest(*[iter(features)] * 2, fillvalue=""))

@@ -1,5 +1,6 @@
 import sklearn_crfsuite
 from nltk import LancasterStemmer
+from sklearn import ensemble
 from sklearn.cross_validation import cross_val_score, ShuffleSplit, KFold, train_test_split
 from sklearn_crfsuite import metrics
 from nltk.corpus import stopwords
@@ -37,9 +38,9 @@ X, Y = [], []
 stop = set(stopwords.words('english'))
 lancaster_stemmer = LancasterStemmer()
 
-def get_features_from_horus_matrix_by_sentence(horusfile, le):
+def horus_to_features(horusfile, le):
     features, targets = [], []
-    sentences, Y = [], []
+    sentences_shape, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
     teste = []
     df = pd.read_csv(horusfile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
     countaux = 0
@@ -49,8 +50,8 @@ def get_features_from_horus_matrix_by_sentence(horusfile, le):
         if len(linha)>0:
             if linha[7] == 0: # no compounds
                 if linha[1] != oldsentid:
-                    sentences.append(features)
-                    Y.append(targets)
+                    sentences_shape.append(features)
+                    y_sentences_shape.append(targets)
                     features = []
                     targets = []
                 else: # same sentence
@@ -89,36 +90,38 @@ def get_features_from_horus_matrix_by_sentence(horusfile, le):
                     tx_dist = float(linha[24])
 
                     teste.append(linha[6])
-                    if linha[6] in definitions.NER_TAGS_LOC: ner = u"LOC" #definitions.KLASSES2["LOC"]
-                    elif linha[6] in definitions.NER_TAGS_ORG: ner = u"ORG" #definitions.KLASSES2["ORG"]
-                    elif linha[6] in definitions.NER_TAGS_PER: ner = u"PER" #definitions.KLASSES2["PER"]
-                    else: ner = u"O" #definitions.KLASSES2["O"]
+                    if linha[6] in definitions.NER_TAGS_LOC: ner = definitions.KLASSES2["LOC"]
+                    elif linha[6] in definitions.NER_TAGS_ORG: ner = definitions.KLASSES2["ORG"]
+                    elif linha[6] in definitions.NER_TAGS_PER: ner = definitions.KLASSES2["PER"]
+                    else: ner = definitions.KLASSES2["O"]
 
                     # Standard shape
-                    features.append([idsent, idtoken, token, token.lower(), stemmer_lanc, #0-4
+                    values = [idsent, idtoken, token, token.lower(), stemmer_lanc, #0-4
                                      le.transform(pos_bef), le.transform(postag), le.transform(pos_aft), #5-7
                                      pos_bef, postag, pos_aft, #8-10
                                      ner, title, digit, one_char_token, special_char, first_capitalized, #11-16
                                      hyphen, capitalized, nr_images_returned, stop_words, small, nr_websites_returned, #17-22
                                      cv_org, cv_loc, cv_per, cv_dist, cv_plc, #23-27
-                                     tx_org, tx_loc, tx_per, tx_dist, tx_err]) #28-32
+                                     tx_org, tx_loc, tx_per, tx_dist, tx_err] #28-32
 
                     if linha[51] in definitions.NER_TAGS_LOC: y = u"LOC"
                     elif linha[51] in definitions.NER_TAGS_ORG: y = u"ORG"
                     elif linha[51] in definitions.NER_TAGS_PER: y = u"PER"
                     else: y = u"O"
+
+                    features.append(values)
                     targets.append(y)
 
+                    tokens_shape.append(values[2:len(values)])
+                    y_tokens_shape.append(y)
+
                 oldsentid = linha[1]
-    return sentences, Y
 
-
-    print len(Y)
-    print set(Y)
-    print set(teste)
-
-    features = numpy.array(features)
-    return features
+    print 'total of sentences', len(sentences_shape)
+    print 'total of tokens', len(tokens_shape)
+    #print set(Y)
+    #print set(teste)
+    return sentences_shape, y_sentences_shape, tokens_shape, y_tokens_shape
 
 def sent2features(sent, alg, horus_feat = False):
     if alg=='CRF':
@@ -191,7 +194,75 @@ def features_to_crf_shape(sent, i, horus_feat):
 
     return features
 
+def run_models(CRF = False, DT = False, RNN = False):
+    if CRF:
+        _crf = sklearn_crfsuite.CRF(
+            algorithm='lbfgs',
+            c1=0.088,
+            c2=0.002,
+            max_iterations=100,
+            all_possible_transitions=True
+        )
+    if DT:
+        _dt = ensemble.RandomForestClassifier(n_estimators=50)
 
+    for horus_feat in (True, False):
+        print "HORUS? ", horus_feat
+        for ds1 in datasets:
+            X_train_sentences, y_train_sent, X_train_tokens, y_train_tokens = \
+                horus_to_features(dataset_prefix + ds1[0], ds1[1])
+
+            X_train_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in X_train_sentences]
+            y_train_CRF_shape = y_train_sent
+            for ds2 in datasets:
+                print "---------------------------------------------------"
+                print "dataset 1 = ", ds1[0]
+                print "dataset 2 = ", ds2[0]
+                if ds1[0] == ds2[0]:
+                    X_test, y_test = X_train_sentences, y_train_sent
+                    X_test_CRF_shape = X_train_CRF_shape
+                    y_test_CRF_shape = y_train_CRF_shape
+                else:
+                    X_test_sentences, y_test_sent, X_test_tokens, y_test_tokens \
+                        = horus_to_features(dataset_prefix + ds2[0], ds2[1])
+                    X_test_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in X_test_sentences]
+                    y_test_CRF_shape = y_test_sent
+
+                if ds1[0] == ds2[0]:
+                    print "do cross validation"
+                    for d in range(len(r)):
+                        if CRF:
+                            print 'CRF'
+                            split_X_train, split_X_test, split_y_train, split_y_test \
+                                = train_test_split(X_train_CRF_shape, y_train_CRF_shape, test_size=0.30,
+                                                   random_state=r[d])
+                            m = _crf.fit(split_X_train, split_y_train)
+                            split_y_pred = m.predict(split_X_test)
+                            print(metrics.flat_classification_report(
+                                split_y_test, split_y_pred, labels=sorted_labels, digits=3))
+                        if DT:
+                            print 'DT'
+                            split_X_train, split_X_test, split_y_train, split_y_test \
+                                = train_test_split(numpy.array(X_train_tokens), y_train_tokens, test_size=0.30, random_state=r[d])
+                            dtmodel = _dt.fit(split_X_train, split_y_train)
+                            dt_predictions = dtmodel.predict(split_X_test)
+                            print(metrics.flat_classification_report(
+                                y_test, dt_predictions, labels=sorted_labels, digits=3))
+                else:
+                    if CRF:
+                        print 'CRF'
+                        m = _crf.fit(X_train_CRF_shape, y_train_CRF_shape)
+                        y_pred = m.predict(X_test_CRF_shape)
+                        print(metrics.flat_classification_report(
+                            y_test, y_pred, labels=sorted_labels, digits=3
+                        ))
+                    if DT:
+                        print 'DT'
+                        m = _dt.fit(X_train_tokens, y_train_tokens)
+                        y_pred = m.predict(X_test)
+                        print(metrics.flat_classification_report(
+                            y_test, y_pred, labels=sorted_labels, digits=3
+                        ))
 
 le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 le2 = joblib.load(config.encoder_path + "_encoder_nltk2.pkl")
@@ -201,14 +272,6 @@ datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
             ("out_exp003_wnut15_en_tweetNLP.csv", le1),
             ("out_exp003_wnut16_en_tweetNLP.csv", le1),
             ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
-
-crf = sklearn_crfsuite.CRF(
-    algorithm='lbfgs',
-    c1=0.088,
-    c2=0.002,
-    max_iterations=100,
-    all_possible_transitions=True
-)
 
 #labels = list(crf.classes_)
 labels = list(['PER', 'ORG', 'LOC'])
@@ -220,45 +283,8 @@ sorted_labels = sorted(
 )
 
 r = [42, 39, 10, 5, 50]
-for horus_feat in (True, False):
-    print "HORUS? ", horus_feat
-    for ds1 in datasets:
-        X_train, y_train = get_features_from_horus_matrix_by_sentence(dataset_prefix + ds1[0], ds1[1])
-        X_train_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in X_train]
-        y_train_CRF_shape = y_train
-        for ds2 in datasets:
-            print "---------------------------------------------------"
-            print "dataset 1 = ", ds1[0]
-            print "dataset 2 = ", ds2[0]
-            if ds1[0] == ds2[0]:
-                X_test, y_test = X_train, y_train
-                X_test_CRF_shape = X_train_CRF_shape
-                y_test_CRF_shape = y_train_CRF_shape
-            else:
-                X_test, y_test = get_features_from_horus_matrix_by_sentence(dataset_prefix + ds2[0], ds2[1])
-                X_test_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in X_test]
-                y_test_CRF_shape = y_test
 
-            print 'total of sentences (train):', len(X_train)
-            print 'total of sentences (test):', len(X_test)
-
-            if ds1[0] == ds2[0]:
-                print "do cross validation"
-                for d in range(len(r)):
-                    cv_X_train, cv_X_test, cv_y_train, cv_y_test \
-                        = train_test_split(X_train_CRF_shape, y_train_CRF_shape, test_size=0.30,
-                                           random_state=r[d])
-                    m = crf.fit(cv_X_train, cv_y_train)
-                    cv_y_pred = m.predict(cv_X_test)
-                    print(metrics.flat_classification_report(
-                        cv_y_test, cv_y_pred, labels=sorted_labels, digits=3))
-            else:
-                crf.fit(X_train_CRF_shape, y_train_CRF_shape)
-                y_pred = crf.predict(X_test_CRF_shape)
-                print(metrics.flat_classification_report(
-                    y_test, y_pred, labels=sorted_labels, digits=3
-                ))
-
+run_models(False, True, False)
 
 exit(0)
 
