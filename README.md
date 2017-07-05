@@ -3,6 +3,7 @@ HORUS is meta-algorithm for Named Entity Recognition (NER) based on image proces
 <p align="center">
 <img src=http://dne5.com/whitney_example_peq.png />
 </p>
+
 ## Easy Setup (Python 2.7 based)
 - setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
 - get your [Microsoft Bing API Key](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
