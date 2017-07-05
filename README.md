@@ -1,11 +1,8 @@
 ## Boosting NER
-HORUS is meta-algorithm for Named Entity Recognition (NER) based on image processing and multi-level machine learning. It aims at boosting NER task by adding new features to the NER pipeline. 
-
-Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed (specially) for short-texts.  
+HORUS is meta-algorithm for Named Entity Recognition (NER) based on image processing and multi-level machine learning. It aims at boosting NER task by adding new features to the NER pipeline. Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed (specially) for short-texts.  
 <p align="center">
 <img src=http://dne5.com/whitney_example_peq.png />
 </p>
-
 ## Easy Setup (Python 2.7 based)
 - setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
 - get your [Microsoft Bing API Key](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
