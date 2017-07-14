@@ -23,6 +23,40 @@ CONST_CREATE_DICTIONARY = 0
 CONST_RETRAIN_MODEL = 1
 
 
+#Store and Retrieve keypoint features
+#    temp_array = []
+#    temp = pickle_keypoints(kp1, desc1)
+#    temp_array.append(temp)
+#    temp = pickle_keypoints(kp2, desc2)
+#    temp_array.append(temp)
+#    pickle.dump(temp_array, open("keypoints_database.p", "wb"))
+#
+#    #Retrieve Keypoint Features
+#    keypoints_database = pickle.load( open( "keypoints_database.p", "rb" ) )
+#    kp1, desc1 = unpickle_keypoints(keypoints_database[0])
+#    kp1, desc1 = unpickle_keypoints(keypoints_database[1])
+
+def pickle_keypoints(keypoints, descriptors):
+    i = 0
+    temp_array = []
+    for point in keypoints:
+        temp = (point.pt, point.size, point.angle, point.response, point.octave,
+        point.class_id, descriptors[i])
+        ++i
+        temp_array.append(temp)
+    return temp_array
+
+def unpickle_keypoints(array):
+    keypoints = []
+    descriptors = []
+    for point in array:
+        temp_feature = cv2.KeyPoint(x=point[0][0],y=point[0][1],_size=point[1], _angle=point[2], _response=point[3], _octave=point[4], _class_id=point[5])
+        temp_descriptor = point[6]
+        keypoints.append(temp_feature)
+        descriptors.append(temp_descriptor)
+    return keypoints, np.array(descriptors)
+
+
 def temp_create_image_keypoints(fn):
     img = cv2.imread(fn)
     gray = cv2.imread(fn, 1)
