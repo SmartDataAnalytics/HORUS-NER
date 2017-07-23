@@ -2,6 +2,7 @@
 setup.py
 src/horus/__init__.py
 src/horus/definitions.py
+src/horus/nn_classifier.py
 src/horus/components/__init__.py
 src/horus/components/bingAPI1.py
 src/horus/components/config.py
@@ -11,15 +12,8 @@ src/horus/components/main.py
 src/horus/components/systemlog.py
 src/horus/components/translator_test.py
 src/horus/experiments/__init__.py
-src/horus/experiments/experiment_helper.py
-src/horus/experiments/helper_feature_extractor.py
-src/horus/experiments/horus_dt_layer.py
 src/horus/experiments/horus_dt_layer_bkp.py
-src/horus/experiments/object-detection.py
-src/horus/experiments/plots.py
-src/horus/experiments/report.py
+src/horus/experiments/horus_final_layer.py
 src/horus/postagger/CMUTweetTagger.py
 src/horus/postagger/__init__.py
 src/horus/resource/__init__.py
-src/horus/sift/__init__.py
-src/horus/sift/main.py

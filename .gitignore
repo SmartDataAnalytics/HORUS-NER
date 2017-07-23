@@ -5,7 +5,13 @@ data/horus.conf
 horus/horus.log
 .DS_Store
 horus/.DS_Store
-/dist/
+/dist/horusner-0.1.0
+/dist/horusner-0.1.1
+/dist/horusner-0.1.2
+/dist/horusner-0.1.3
+/dist/horusner-0.1.4
+/dist/horusner-0.1.5
+/dist/horusner-0.1.6
 *.log
 *.pyc
 /output/temp/

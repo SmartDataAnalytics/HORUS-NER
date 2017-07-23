@@ -265,6 +265,9 @@ def run_models(CRF = False, DT = False, LSTM = False, STANFORD_NER = False):
                                 s_y_test, y_pred, labels=[1, 2, 3], target_names=['LOC', 'ORG', 'PER'], digits=3)
                             )
                 else:
+                    if LSTM:
+                        print '--LSTM'
+
                     if CRF:
                         print '--CRF'
                         m = _crf.fit(X1_CRF_shape, ds1[1][1])
