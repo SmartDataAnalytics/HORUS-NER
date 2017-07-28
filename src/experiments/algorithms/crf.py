@@ -1,26 +1,19 @@
 import matplotlib.pyplot as plt
-from nltk.corpus import stopwords
-
-from horus import definitions
-from nltk.tokenize import TweetTokenizer
-from nltk.stem.lancaster import LancasterStemmer
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import names, gazetteers
 from cleanco import cleanco
+from nltk.corpus import names, gazetteers
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.stem.lancaster import LancasterStemmer
+from nltk.tokenize import TweetTokenizer
 
 plt.style.use('ggplot')
 
-from itertools import chain
-
 import nltk
-import sklearn
 import scipy.stats
 from sklearn.metrics import make_scorer
-from sklearn.cross_validation import cross_val_score
 from sklearn.grid_search import RandomizedSearchCV
 
 import sklearn_crfsuite
-from sklearn_crfsuite import scorers
 from sklearn_crfsuite import metrics
 #from sklearn.model_selection import train_test_split
 

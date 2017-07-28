@@ -1,5 +1,6 @@
-from horus.components.config import HorusConfig
-from horus.components.core import Core
+from core.config import HorusConfig
+
+from horus.core import Core
 
 horus = Core(False, 5)
 print horus.version_label

@@ -2,7 +2,6 @@ import csv
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
@@ -10,7 +9,7 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
 from horus import definitions
-from horus.components.config import HorusConfig
+from horus.core import HorusConfig
 
 config = HorusConfig()
 file1reader = csv.reader(open(config.output_path + "experiments/EXP_000_baseline_simple/out_exp000_3_ritter.csv"), delimiter=",")

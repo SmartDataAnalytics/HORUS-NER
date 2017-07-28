@@ -15,7 +15,7 @@ class HorusConfig:
 
                     parser = SafeConfigParser()
                     parser.read(source.name)
-                    rootdir = pkg_resources.resource_filename('horus.resource', 'models')
+                    rootdir = pkg_resources.resource_filename('horus.resources', 'models')
 
                     self.database_db = parser.get('database', 'db_path')
                     self.root_dir = parser.get('path', 'root_dir')

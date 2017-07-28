@@ -6,8 +6,9 @@ Usage:
 results=runtagger_parse(['example tweet 1', 'example tweet 2'])
 results will contain a list of lists (one per tweet) of triples, each triple represents (term, type, confidence)
 """
-import subprocess
 import shlex
+import subprocess
+
 from horus import definitions
 
 # The only relavent source I've found is here:

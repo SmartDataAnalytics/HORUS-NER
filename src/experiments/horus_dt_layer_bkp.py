@@ -1,18 +1,16 @@
-import csv
-import pandas
-import itertools
 import numpy
+import pandas
 from sklearn import tree, preprocessing, ensemble
 from sklearn.cross_validation import train_test_split, cross_val_score
-from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
+
 from horus import definitions
-from horus.components.config import HorusConfig
+from horus.core import HorusConfig
 
 config = HorusConfig()
 #file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000_baseline_simple/out_exp000_1_NLTK.csv"), delimiter=",")

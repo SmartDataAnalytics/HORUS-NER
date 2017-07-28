@@ -1,5 +1,6 @@
 import sqlite3
-from horus.components.config import HorusConfig
+
+from horus.core import HorusConfig
 
 # got some database records issues, thus I had to fix it to avoid
 # hammer-solutions in the code

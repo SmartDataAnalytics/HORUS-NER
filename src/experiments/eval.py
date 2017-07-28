@@ -1,6 +1,5 @@
 import csv
 import itertools
-import json
 import logging
 
 import matplotlib.pyplot as plt
@@ -8,8 +7,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 
-from horus.components.core import Core
-from horus import definitions
+from horus.core import Core
+from horus.core import definitions
 
 
 def confusion_matrix_analysis(horus_matrix):

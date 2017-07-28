@@ -21,36 +21,33 @@ more info at: https://github.com/dnes85/components-models
 # Version: 1.0
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
-import codecs
 import csv
 import heapq
 import json
 import logging
+import re
 import sqlite3
 import string
+import unicodedata
 from time import gmtime, strftime
-import re
-import chardet
+
 import cv2
 import langdetect
 import nltk
 import numpy
+import pandas as pd
 import requests
-import unicodedata
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from microsofttranslator import Translator
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn import tree, preprocessing
-from bingAPI1 import bing_api2, bing_api5
-from config import HorusConfig
+from horus.bingAPI1 import bing_api5
 from horus import definitions
-from horus.components.systemlog import SystemLog
-from horus.components.util.nlp_tools import NLPTools
-import pandas as pd
-import cgi
+from horus.config import HorusConfig
+from horus.nlp_tools import NLPTools
+from horus.systemlog import SystemLog
 
 #print cv2.__version__
 
@@ -1125,6 +1122,7 @@ class Core(object):
                     res = c.fetchall()
                     if res is None or len(res) == 0:
                         self.sys.log.info(':: querying the web -> [%s]' % term)
+                        from horus.bingAPI1 import bing_api5
                         metaquery, result_txts, result_imgs = bing_api5(term, key=self.config.search_engine_key, market='en-US')
                         '''
                         -------------------------------------

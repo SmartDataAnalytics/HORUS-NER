@@ -1,35 +1,25 @@
-import csv
 import re
+
+import numpy
+import numpy as np
+import pandas
 import pydotplus
 from IPython.display import Image
-import pandas
-import itertools
-import numpy
-import sklearn
-from sklearn import tree, preprocessing, ensemble, svm
-from sklearn.cross_validation import train_test_split
-from sklearn.datasets import load_iris
-from sklearn.externals import joblib
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import f1_score
-from sklearn.metrics import precision_score
-from sklearn.metrics import recall_score
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.pipeline import Pipeline
-import numpy as np
-from sklearn.svm import SVC
-
-from horus import definitions
-from horus.components.config import HorusConfig
-from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers.embeddings import Embedding
+from keras.models import Sequential
 from keras.preprocessing import sequence
+from sklearn import tree, ensemble
+from sklearn.cross_validation import train_test_split
+from sklearn.datasets import load_iris
+from sklearn.externals import joblib
+from sklearn.metrics import classification_report
+from sklearn.metrics import f1_score
+from sklearn.naive_bayes import GaussianNB
+
+from horus import definitions
+from horus.core import HorusConfig
 
 config = HorusConfig()
 #file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000_baseline_simple/out_exp000_1.csv"), delimiter=",")

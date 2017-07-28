@@ -1,11 +1,10 @@
 import numpy
-
-from horus.components import config, core
 from sklearn import preprocessing
 from sklearn.externals import joblib
 
-from horus.components.config import HorusConfig
-from horus.components.util.nlp_tools import NLPTools
+from horus.core import HorusConfig
+from horus.nlp_tools import NLPTools
+
 
 def extract_all_tags_conll(config):
     dspath = config.dataset_path + "coNLL2003/coNLL2003.eng.testa"

@@ -1,22 +1,21 @@
+import matplotlib.pyplot as plt
 import sklearn_crfsuite
 from nltk import LancasterStemmer
-from sklearn import ensemble
-from sklearn.cross_validation import cross_val_score, ShuffleSplit, KFold, train_test_split
-from sklearn_crfsuite import metrics
-from sklearn import metrics as skmetrics
 from nltk.corpus import stopwords
-import matplotlib.pyplot as plt
+from sklearn import ensemble
+from sklearn import metrics as skmetrics
+from sklearn.cross_validation import train_test_split
+from sklearn_crfsuite import metrics
+
 plt.style.use('ggplot')
+from horus.core import HorusConfig
 from horus import definitions
-from horus.components.config import HorusConfig
 import pandas as pd
 import re
-import numpy
 from sklearn.externals import joblib
 import scipy.stats
-from sklearn.metrics import make_scorer, f1_score
+from sklearn.metrics import make_scorer
 from sklearn.grid_search import RandomizedSearchCV
-from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
@@ -98,13 +97,13 @@ def horus_to_features(horusfile, le):
 
                     # standard shape
                     sel_features = [idsent, idtoken, token, token.lower(), stemmer_lanc,
-                                pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
-                                le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
-                                title, digit, one_char_token, special_char, first_capitalized,
-                                hyphen, capitalized, stop_words, small,
-                                nr_images_returned, nr_websites_returned,
-                                cv_org, cv_loc, cv_per, cv_dist, cv_plc,
-                                tx_org, tx_loc, tx_per, tx_dist, tx_err]
+                                    pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
+                                    le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
+                                    title, digit, one_char_token, special_char, first_capitalized,
+                                    hyphen, capitalized, stop_words, small,
+                                    nr_images_returned, nr_websites_returned,
+                                    cv_org, cv_loc, cv_per, cv_dist, cv_plc,
+                                    tx_org, tx_loc, tx_per, tx_dist, tx_err]
 
                     features.append(sel_features)
 

@@ -1,11 +1,12 @@
 import nltk
-from nltk import word_tokenize
-from nltk.tag.stanford import StanfordNERTagger
 from nltk.tag import StanfordPOSTagger
+from nltk.tag.stanford import StanfordNERTagger
 
 from horus import definitions
-from horus.components.config import HorusConfig
-from horus.postagger import CMUTweetTagger
+from horus.config import HorusConfig
+from horus.resources.postagger import CMUTweetTagger
+
+
 #text = 'Diego Esteves works at Microsoft'
 #tag1 = st.tag(text.split())
 

@@ -5,19 +5,21 @@ data/horus.conf
 horus/horus.log
 .DS_Store
 horus/.DS_Store
-/dist/horusner-0.1.0
-/dist/horusner-0.1.1
-/dist/horusner-0.1.2
-/dist/horusner-0.1.3
-/dist/horusner-0.1.4
-/dist/horusner-0.1.5
-/dist/horusner-0.1.6
 *.log
 *.pyc
 /output/temp/
-/src/horus/test/
+/experiments/test/
 build/
 /examples/horus.log
-/src/horus/components/webservice/horus.log
-/src/horus/components/horus.log
-/src/horus/experiments/horus.log
+/horus/webservice/horus.log
+/horus/horus.log
+/experiments/horus.log
+
+# Compiled python modules.
+/*.pyc
+
+# Setuptools distribution folder.
+/dist/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
