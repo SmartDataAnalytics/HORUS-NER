@@ -1,6 +1,6 @@
 import os
 
-from horus.config import HorusConfig
+from horus.core.config import HorusConfig
 
 config = HorusConfig()
 if config.root_dir == '':

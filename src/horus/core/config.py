@@ -69,6 +69,7 @@ class HorusConfig:
                     self.search_engine_features_img = parser.get('search-engine', 'features_img')
                     self.search_engine_tot_resources = parser.get('search-engine', 'tot_resources')
 
+
                     self.translation_id = parser.get('translation', 'microsoft_client_id')
                     self.translation_secret = parser.get('translation', 'microsoft_client_secret')
 
@@ -77,6 +78,7 @@ class HorusConfig:
                     self.dataset_ritter = parser.get('dataset', 'ds_ritter')
                     self.dataset_conll = parser.get('dataset', 'ds_conll')
 
+                    self.models_force_download = parser.get('models-param', 'force_download')
                     self.models_location_theta = parser.get('models-param', 'location_theta')
                     self.models_distance_theta = parser.get('models-param', 'distance_theta')
                     self.models_safe_interval = parser.get('models-param', 'safe_interval')
@@ -84,6 +86,7 @@ class HorusConfig:
                     self.models_distance_theta_high_bias = parser.get('models-param', 'distance_theta_high_bias')
                     self.models_pos_tag_lib = int(parser.get('models-param', 'pos_tag_lib'))
                     self.models_pos_tag_lib_type = int(parser.get('models-param', 'pos_tag_lib_type'))
+                    self.models_kmeans_trees = int(parser.get('models-param', 'kmeans-trees'))
 
                     fine = True
 

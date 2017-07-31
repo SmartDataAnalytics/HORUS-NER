@@ -2,8 +2,8 @@ import nltk
 from nltk.tag import StanfordPOSTagger
 from nltk.tag.stanford import StanfordNERTagger
 
-from horus import definitions
-from horus.config import HorusConfig
+from horus.core import definitions
+from horus.core.config import HorusConfig
 from horus.resources.postagger import CMUTweetTagger
 
 

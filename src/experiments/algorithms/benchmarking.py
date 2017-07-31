@@ -8,8 +8,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn_crfsuite import metrics
 
 plt.style.use('ggplot')
-from horus.core import HorusConfig
-from horus import definitions
+from horus.core import HorusConfig, definitions
 import pandas as pd
 import re
 from sklearn.externals import joblib

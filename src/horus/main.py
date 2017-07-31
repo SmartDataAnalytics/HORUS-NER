@@ -23,7 +23,7 @@ more info at: https://github.com/dnes85/components-models
 # License: BSD 3 clause
 from optparse import OptionParser
 
-from horus.core import Core
+from horus.core.service import Core
 
 
 def main():
@@ -53,8 +53,7 @@ def main():
     if not opts.input_text and not opts.input_file:
         op.error('inform either an [input_text] or [input_file] as parameter!')
 
-    horus = Core(False, 5)
-    print horus.version_label
+    horus = Core()
     ret = horus.annotate(opts.input_text, opts.input_file, opts.ds_format, opts.output_file, opts.output_format)
     print ret
 

@@ -39,15 +39,16 @@ import pandas as pd
 import requests
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from horus.core.systemlog import SystemLog
 from microsofttranslator import Translator
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
-from horus.bingAPI1 import bing_api5
-from horus import definitions
-from horus.config import HorusConfig
-from horus.nlp_tools import NLPTools
-from horus.systemlog import SystemLog
+
+from horus.core import definitions
+from horus.core.config import HorusConfig
+from horus.util.nlp_tools import NLPTools
+
 
 #print cv2.__version__
 
@@ -94,7 +95,7 @@ class Core(object):
             print e
             self.conn.rollback()
 
-    def __init__(self,force_download=False,trees=5):
+    def __init__(self):
         """Return a HORUS object"""
         self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
@@ -109,7 +110,7 @@ class Core(object):
         self.tfidf_transformer = TfidfTransformer()
         self.detect = cv2.xfeatures2d.SIFT_create()
         self.extract = cv2.xfeatures2d.SIFT_create()
-        self.flann_params = dict(algorithm=1, trees=trees)
+        self.flann_params = dict(algorithm=1, trees=self.config.models_kmeans_trees)
         self.flann = cv2.FlannBasedMatcher(self.flann_params, {})
         self.extract_bow = cv2.BOWImgDescriptorExtractor(self.extract, self.flann)
         self.svm_logo = joblib.load(self.config.models_cv_org)
@@ -144,7 +145,7 @@ class Core(object):
 
         self.conn = sqlite3.connect(self.config.database_db)
         self.horus_matrix = []
-        if force_download is True:
+        if bool(int(self.config.models_force_download)) is True:
             try:
                 nltk.data.find('averaged_perceptron_tagger.zip')
             except LookupError:
@@ -688,6 +689,7 @@ class Core(object):
 
     def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv", ds_name=None, token_index = 0, ner_index = 1):
         try:
+            print self.version_label
             # 0 = text (parameter of reading file) / 1 = ritter
             if int(ds_format) == 0:
                 text = ''
@@ -1655,7 +1657,7 @@ class Core(object):
                 if self.horus_matrix[i][15] < int(self.config.models_distance_theta):
                     self.horus_matrix[i][17] = "*"
                 # ignore LOC classes having iPLC negative
-                if bool(self.config.models_distance_theta_high_bias) is True:
+                if bool(int(self.config.models_distance_theta_high_bias)) is True:
                     if initial == "LOC":
                         if self.horus_matrix[i][16] < int(self.config.models_limit_min_loc):
                             self.horus_matrix[i][17] = "*"
