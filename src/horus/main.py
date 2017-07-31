@@ -29,22 +29,13 @@ from horus.core.service import Core
 def main():
 
     op = OptionParser(usage='usage: %prog [options] arguments (example: main.py --input_text="diego esteves was born in'
-                            ' rio de janeiro" --ds_format=0 --output_file="out"--output_format="csv"')
+                            ' rio de janeiro" --ds_format=0 --output_file="out" --output_format="csv"')
 
-    op.add_option("--input_text", dest="input_text",
-                  help="The text to be annotated")
-
-    op.add_option("--input_file", dest="input_file",
-                  help="The file to be annotated")
-
-    op.add_option("--ds_format", dest="ds_format", default=0,
-                  help="The format to be annotated [0 = input text (default), 1 = Ritter, 2 = CoNNL]")
-
-    op.add_option("--output_file", dest="output_file", default="horus_out",
-                  help="The output file")
-
-    op.add_option("--output_format", dest="output_format", default="json",
-                  help="The output file type")
+    op.add_option("--input_text", dest="input_text", help="The text to be annotated")
+    op.add_option("--input_file", dest="input_file", help="The file to be annotated")
+    op.add_option("--ds_format", dest="ds_format", default=0, help="The format to be annotated [0 = input text (default), 1 = Ritter, 2 = CoNNL]")
+    op.add_option("--output_file", dest="output_file", default="horus_out", help="The output file")
+    op.add_option("--output_format", dest="output_format", default="json", help="The output file type")
 
     (opts, args) = op.parse_args()
     print(__doc__)
