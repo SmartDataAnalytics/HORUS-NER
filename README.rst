@@ -15,8 +15,8 @@ Example:
     #!/usr/bin/env python
     from horus.components.core import Core
 
-    horus = Core(False, 5)
-    x = horus.annotate("j bond was born in glencoe")
+    horus = Core()
+    x = horus.annotate("j bond was born n glencoe")
     print x
 
 more info at: https://github.com/dnes85/components-models
@@ -24,4 +24,4 @@ more info at: https://github.com/dnes85/components-models
 # Author: Esteves <diegoesteves@gmail.com>
 # Version: 1.5
 # Version Label: HORUS_NER_2016_1.5
-# License: BSD 3 clause
+# License: Apache
