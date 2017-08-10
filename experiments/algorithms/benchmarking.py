@@ -8,16 +8,21 @@ from sklearn.cross_validation import train_test_split
 from sklearn_crfsuite import metrics
 
 plt.style.use('ggplot')
-from horus.core import HorusConfig, definitions
+from horus.core.config import HorusConfig
+from horus.core import definitions
 import pandas as pd
 import re
 from sklearn.externals import joblib
 import scipy.stats
-from sklearn.metrics import make_scorer
+from sklearn.metrics import make_scorer, accuracy_score, confusion_matrix, precision_recall_fscore_support
 from sklearn.grid_search import RandomizedSearchCV
 import numpy as np
+from keras.engine import InputLayer
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers.core import Activation
+from keras.layers.wrappers import TimeDistributed
+from keras.preprocessing.sequence import pad_sequences
+from keras.layers import Embedding, LSTM, Dense, Dropout, Merge
 
 """
 ==========================================================
@@ -38,6 +43,7 @@ config = HorusConfig()
 X, Y = [], []
 stop = set(stopwords.words('english'))
 lancaster_stemmer = LancasterStemmer()
+ds_test_size = 0.3
 
 def horus_to_features(horusfile, le):
     print horusfile
@@ -127,9 +133,50 @@ def horus_to_features(horusfile, le):
     #print set(teste)
     return sentences_shape, y_sentences_shape, tokens_shape, y_tokens_shape
 
-def sent2features(sent, alg, horus_feat = False):
-    if alg=='CRF':
-        return [features_to_crf_shape(sent, i, horus_feat) for i in range(len(sent))]
+def encode(x, n):
+    result = np.zeros(n)
+    result[x] = 1
+    return result
+#keras.utils.np_utils.to_categorical or sparse_categorical_crossentropy
+
+def convert_lstm_shape(ds, y, horus_feat = False):
+    if horus_feat == False:
+        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
+    else:
+        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21], c[23], c[24], c[25], c[26], c[27], c[28], c[29], c[30], c[31], c[32]] for c in x] for x in ds]
+
+    all_text = [c[0] for x in Xclean for c in x]
+    words = list(set(all_text))  # distinct tokens
+    word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
+    ind2word = {index: word for index, word in enumerate(words)}
+    #labels = list(set([c for x in y for c in x]))
+    label2ind = definitions.KLASSES2
+    ind2label = definitions.KLASSES
+    print('Vocabulary size:', len(word2ind), len(label2ind))
+    lengths = [len(x) for x in Xclean]
+    maxlen = max(lengths)
+    print('min sentence / max sentence: ', min(lengths), maxlen)
+    if horus_feat == False:
+        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8]] for c in x] for x in Xclean]
+    else:
+        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
+                   c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]]
+                  for c in x] for x in Xclean]
+
+    max_label = max(label2ind.values()) + 1
+    y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
+    y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
+
+    X_enc = pad_sequences(X_enc, maxlen=maxlen)
+    y_enc = pad_sequences(y_enc, maxlen=maxlen)
+
+    max_features = len(word2ind)
+    out_size = len(label2ind) + 1
+
+    return X_enc, y_enc, max_features, out_size
+
+def sent2features(sent, horus_feat = False):
+    return [features_to_crf_shape(sent, i, horus_feat) for i in range(len(sent))]
 
 def klasses_to_CRF_shape(klasses):
     return klasses
@@ -205,8 +252,19 @@ def shape_datasets():
         ret.append([ds[0], horus_to_features(dataset_prefix + ds[0], ds[1])])
     return ret
 
-def run_models(CRF = False, DT = False, LSTM = False, STANFORD_NER = False):
-    if CRF:
+def score(yh, pr):
+    #real-no-encoding x predicted
+    coords = [np.where(yhh > 0)[0][0] for yhh in yh]
+    yh = [yhh[co:] for yhh, co in zip(yh, coords)]
+    ypr = [prr[co:] for prr, co in zip(pr, coords)]
+    fyh = [c for row in yh for c in row]
+    fpr = [c for row in ypr for c in row]
+    print set(fyh)
+    print set(fpr)
+    return fyh, fpr
+
+def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
+    if runCRF:
         _crf = sklearn_crfsuite.CRF(
             algorithm='lbfgs',
             c1=0.088,
@@ -214,96 +272,146 @@ def run_models(CRF = False, DT = False, LSTM = False, STANFORD_NER = False):
             max_iterations=100,
             all_possible_transitions=True
         )
-    if DT:
+    if runDT:
         _dt = ensemble.RandomForestClassifier(n_estimators=50)
-    if LSTM:
+    if runLSTM:
+        #model1 = Sequential()
+        #model1.add(Embedding(input_dim=max_features, output_dim=embedding_size, input_length=maxlen, mask_zero=True))
+        #model2 = Sequential()
+        #model2.add(InputLayer(input_shape=(maxlen, 3)))
+
         _lstm = Sequential()
-        _lstm.add(Dense(12, input_dim=19, kernel_initializer='uniform', activation='relu'))
-        _lstm.add(Dense(8, kernel_initializer='uniform', activation='relu'))
-        _lstm.add(Dense(1, kernel_initializer='uniform', activation='sigmoid'))
-        _lstm.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        #_lstm.add(Merge([model1, model2], mode='concat'))
+        #_lstm.add(Dense(1))
+        #_lstm.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxlen, 3)))
+        #_lstm.add(TimeDistributed(Dense(out_size)))
+        #_lstm.add(Activation('softmax'))
 
 
-    shaped_datasets = shape_datasets()
+    raw_datasets = shape_datasets()
 
     for horus_feat in (True, False):
         print "HORUS? ", horus_feat
-        for ds1 in shaped_datasets:
-            X1_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in ds1[1][0]]
-            for ds2 in shaped_datasets:
-                X2_CRF_shape = [sent2features(s, 'CRF', horus_feat) for s in ds2[1][0]]
+        for ds1 in raw_datasets:
+            if runDT: X1_dt = ds1[1][2]
+            if runCRF: X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
+            if runLSTM: X1_lstm, y1_lstm, max_features, out_size = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
+            for ds2 in raw_datasets:
+                if runDT: X2_dt = ds2[1][2]
+                if runCRF: X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
+                if runLSTM: X2_lstm, y2_lstm, max_features, out_size = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
                 print "---------------------------------------------------"
                 print "dataset 1 = ", ds1[0]
                 print "dataset 2 = ", ds2[0]
                 if ds1[0] == ds2[0]:
                     print "do cross validation"
                     for d in range(len(r)):
-                        if CRF:
+                        if runCRF:
                             print '--CRF'
-                            X_train, X_test, y_train, y_test \
-                                = train_test_split(X1_CRF_shape, ds1[1][1], test_size=0.30, random_state=r[d])
-                            m = _crf.fit(X_train, y_train)
-                            y_pred = m.predict(X_test)
-                            print(metrics.flat_classification_report(
-                                y_test, y_pred, labels=sorted_labels, digits=3)
-                            )
-                        if DT:
-                            if horus_feat == False:
-                                X_train = [x[0:12] for x in ds1[1][2]]
-                            else:
-                                X_train = ds1[1][2]
-                            y_train = ds1[1][3]
-
+                            Xtr, Xte, ytr, yte = train_test_split(X1_crf, ds1[1][1], test_size=ds_test_size, random_state=r[d])
+                            m = _crf.fit(Xtr, ytr)
+                            ypr = m.predict(Xte)
+                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels, digits=3))
+                        if runDT:
                             print '--DT'
-                            s_X_train, s_X_test, s_y_train, s_y_test \
-                                = train_test_split(X_train, y_train, test_size=0.30, random_state=r[d])
-                            dtmodel = _dt.fit(np.array(s_X_train).astype(float), np.array(s_y_train).astype(float))
-                            y_pred = dtmodel.predict(np.array(s_X_test).astype(float))
-                            print(skmetrics.classification_report(
-                                s_y_test, y_pred, labels=[1, 2, 3], target_names=['LOC', 'ORG', 'PER'], digits=3)
-                            )
+                            X_train = X1_dt
+                            if horus_feat == False:
+                                X_train = [x[0:12] for x in X1_dt]
+                            Xtr, Xte, ytr, yte = train_test_split(X_train, ds1[1][3], test_size=ds_test_size, random_state=r[d])
+                            m = _dt.fit(np.array(Xtr.astype(float), np.array(ytr).astype(float)))
+                            ypr = m.predict(np.array(Xte).astype(float))
+                            print(skmetrics.classification_report(yte, ypr, labels=sorted_labels , digits=3)) #labels=[1, 2, 3], target_names=['LOC', 'ORG', 'PER']
+                        if runLSTM:
+                            print '--LSTM'
+                            Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
+                            print('Training and testing tensor shapes:', X_train.shape, X_test.shape, ytr.shape, yte.shape)
+
+                            embedding_size = 128
+                            hidden_size = 128  # 32
+
+                            maxlen = 0
+                            for x in X_train:
+                                if len(x) > maxlen:
+                                    maxlen = len(x)
+                            print 'max sent: ', maxlen
+
+                            model1 = Sequential()
+                            model1.add(Embedding(input_dim=max_features, output_dim=embedding_size, input_length=maxlen, mask_zero=True))
+
+                            model2 = Sequential()
+                            model2.add(InputLayer(input_shape=(maxlen, 3)))
+
+                            model = Sequential()
+                            model.add(Merge([model1, model2], mode='concat'))
+                            model.add(Dense(1))
+
+                            model.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxlen, 3)))
+                            model.add(TimeDistributed(Dense(out_size)))
+                            model.add(Activation('softmax'))
+                            print 'compile...'
+                            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                            print(model.summary())
+                            print('train...')
+
+                            model.fit([Xtr[:, :, 0], Xtr[:, :, 1:4]], y1_lstm, epochs=50, batch_size=128,
+                                      validation_data=([Xte[:, :, 0], Xte[:, :, 1:4]], yte))
+                            score = model.evaluate([Xte[:, :, 0], Xte[:, :, 1:4]], yte, batch_size=128)
+
+                            print('Raw test score:', score)
+                            pr = model.predict_classes([Xtr[:, :, 0], Xtr[:, :, 1:4]])
+                            yh = ytr.argmax(2)  # no encoding
+                            fyh, fpr = score(yh, pr)
+                            print()
+                            print('Training accuracy:', accuracy_score(fyh, fpr))
+                            print('Training confusion matrix:')
+                            print(confusion_matrix(fyh, fpr))
+                            print('precision, recall, f1:')
+                            print precision_recall_fscore_support(fyh, fpr)
+
+                            pr = model.predict_classes([Xte[:, :, 0], Xte[:, :, 1:4]])
+                            yh = yte.argmax(2)
+                            fyh, fpr = score(yh, pr)
+                            print('Testing accuracy:', accuracy_score(fyh, fpr))
+                            print('Testing confusion matrix:')
+                            print(confusion_matrix(fyh, fpr))
+                            print precision_recall_fscore_support(fyh, fpr)
+
+
                 else:
-                    if LSTM:
+                    if runCRF:
+                        print '--CRF'
+                        m = _crf.fit(X1_crf, ds1[1][1])
+                        ypr = m.predict(X2_crf)
+                        print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels, digits=3))
+                    if runDT:
+                        print '--DT'
+                        X_train = X1_dt
+                        X_test = X2_dt
+                        if horus_feat == False:
+                            X_train = [x[0:12] for x in X1_dt]
+                            X_test = [x[0:12] for x in X2_dt]
+                        m = _dt.fit(X_train, ds1[1][3])
+                        ypr = m.predict(X_test)
+                        print(skmetrics.classification_report(ds2[1][3] , ypr, labels=sorted_labels, digits=3))
+                    if runLSTM:
                         print '--LSTM'
 
-                    if CRF:
-                        print '--CRF'
-                        m = _crf.fit(X1_CRF_shape, ds1[1][1])
-                        crf_pred = m.predict(X2_CRF_shape)
-                        print(metrics.flat_classification_report(
-                            ds2[1][1], crf_pred, labels=sorted_labels, digits=3
-                        ))
-                    if DT:
-                        print '--DT'
-                        if horus_feat == False:
-                            X_train = [x[0:12] for x in ds1[1][2]]
-                            X_test = [x[0:12] for x in ds2[1][2]]
-                        else:
-                            X_train = ds1[1][2]
-                            X_test = ds2[1][2]
-
-                        y_train = ds1[1][3]
-                        y_test = ds2[1][3]
-                        m = _dt.fit(X_train, y_train)
-                        y_pred = m.predict(X_test)
-                        print(skmetrics.classification_report(
-                            y_test , y_pred, labels=[1, 2, 3], target_names=['LOC', 'ORG', 'PER'], digits=3)
-                        )
-                    if STANFORD_NER:
+                    if runSTANFORD_NER:
                         print '--STANFORD_NER'
-                        print(metrics.flat_classification_report(
-                            ds2[1][3], ds2[1][2][:11], labels=sorted_labels, digits=3
-                        ))
+                        print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels, digits=3))
 
 
 le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 le2 = joblib.load(config.encoder_path + "_encoder_nltk2.pkl")
 
 dataset_prefix = config.output_path + "experiments/EXP_do_tokenization/"
+#datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
+#            ("out_exp003_wnut15_en_tweetNLP.csv", le1),
+#            ("out_exp003_wnut16_en_tweetNLP.csv", le1),
+#            ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
+
 datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
-            ("out_exp003_wnut15_en_tweetNLP.csv", le1),
-            ("out_exp003_wnut16_en_tweetNLP.csv", le1),
-            ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
+            ("out_exp003_wnut15_en_tweetNLP.csv", le1))
 
 #labels = list(crf.classes_)
 labels = list(['LOC', 'ORG', 'PER'])
@@ -316,7 +424,7 @@ sorted_labels = sorted(
 
 r = [42, 39, 10, 5, 50]
 
-run_models(False, True, False, False)
+run_models(False, False, True, False)
 
 exit(0)
 
