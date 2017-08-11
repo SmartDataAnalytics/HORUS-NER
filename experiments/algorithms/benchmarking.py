@@ -51,57 +51,55 @@ def horus_to_features(horusfile, le):
     targets, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
 
     df = pd.read_csv(horusfile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-    countaux = 0
     oldsentid = df.get_values()[0][1]
     for index, linha in df.iterrows():
-        countaux+=1
         if len(linha)>0:
             if linha[7] == 0: # no compounds
                 if linha[1] != oldsentid:
                     sentences_shape.append(features)
                     y_sentences_shape.append(targets)
                     targets, features = [],  []
-                else: # same sentence
-                    idsent = linha[1]
-                    idtoken = linha[2]
-                    pos_bef = ''
-                    pos_aft = ''
-                    if index > 0 and df.get_value(index - 1, 7) == 0:
-                        pos_bef = df.get_value(index - 1, 5)
-                    if index + 1 < len(df) and df.get_value(index + 1, 7) == 0:
-                        pos_aft = df.get_value(index + 1, 5)
-                    token = linha[3]
-                    postag = linha[5]
-                    one_char_token = len(token) == 1
-                    special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
-                    first_capitalized = token[0].isupper()
-                    capitalized = token.isupper()
-                    title = token.istitle()
-                    digit = token.isdigit()
-                    stop_words = token in stop
-                    small =  True if len(horusfile[3]) <= 2 else False
-                    stemmer_lanc = lancaster_stemmer.stem(token)
-                    nr_images_returned = linha[17]
-                    nr_websites_returned = linha[25]
-                    hyphen = '-' in token
-                    cv_loc = float(linha[12])
-                    cv_org = float(linha[13])
-                    cv_per = float(linha[14])
-                    cv_dist = float(linha[15])
-                    cv_plc = float(linha[16])
-                    tx_loc = float(linha[20])
-                    tx_org = float(linha[21])
-                    tx_per = float(linha[22])
-                    tx_err = float(linha[23])
-                    tx_dist = float(linha[24])
 
-                    if linha[6] in definitions.NER_TAGS_LOC: ner = u"LOC"
-                    elif linha[6] in definitions.NER_TAGS_ORG: ner = u"ORG"
-                    elif linha[6] in definitions.NER_TAGS_PER: ner = u"PER"
-                    else: ner = u"O"
+                idsent = linha[1]
+                idtoken = linha[2]
+                pos_bef = ''
+                pos_aft = ''
+                if index > 0 and df.get_value(index - 1, 7) == 0:
+                    pos_bef = df.get_value(index - 1, 5)
+                if index + 1 < len(df) and df.get_value(index + 1, 7) == 0:
+                    pos_aft = df.get_value(index + 1, 5)
+                token = linha[3]
+                postag = linha[5]
+                one_char_token = len(token) == 1
+                special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
+                first_capitalized = token[0].isupper()
+                capitalized = token.isupper()
+                title = token.istitle()
+                digit = token.isdigit()
+                stop_words = token in stop
+                small =  True if len(horusfile[3]) <= 2 else False
+                stemmer_lanc = lancaster_stemmer.stem(token)
+                nr_images_returned = linha[17]
+                nr_websites_returned = linha[25]
+                hyphen = '-' in token
+                cv_loc = float(linha[12])
+                cv_org = float(linha[13])
+                cv_per = float(linha[14])
+                cv_dist = float(linha[15])
+                cv_plc = float(linha[16])
+                tx_loc = float(linha[20])
+                tx_org = float(linha[21])
+                tx_per = float(linha[22])
+                tx_err = float(linha[23])
+                tx_dist = float(linha[24])
 
-                    # standard shape
-                    sel_features = [idsent, idtoken, token, token.lower(), stemmer_lanc,
+                if linha[6] in definitions.NER_TAGS_LOC: ner = u"LOC"
+                elif linha[6] in definitions.NER_TAGS_ORG: ner = u"ORG"
+                elif linha[6] in definitions.NER_TAGS_PER: ner = u"PER"
+                else: ner = u"O"
+
+                # standard shape
+                sel_features = [idsent, idtoken, token, token.lower(), stemmer_lanc,
                                     pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
                                     le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
                                     title, digit, one_char_token, special_char, first_capitalized,
@@ -110,20 +108,20 @@ def horus_to_features(horusfile, le):
                                     cv_org, cv_loc, cv_per, cv_dist, cv_plc,
                                     tx_org, tx_loc, tx_per, tx_dist, tx_err]
 
-                    features.append(sel_features)
+                features.append(sel_features)
 
-                    if linha[51] in definitions.NER_TAGS_LOC: y = u"LOC"
-                    elif linha[51] in definitions.NER_TAGS_ORG: y = u"ORG"
-                    elif linha[51] in definitions.NER_TAGS_PER: y = u"PER"
-                    else: y = u"O"
+                if linha[51] in definitions.NER_TAGS_LOC: y = u"LOC"
+                elif linha[51] in definitions.NER_TAGS_ORG: y = u"ORG"
+                elif linha[51] in definitions.NER_TAGS_PER: y = u"PER"
+                else: y = u"O"
 
-                    targets.append(y)
+                targets.append(y)
 
-                    #selected_features = numpy.array(selected_features)
-                    #selected_features = np.delete(selected_features, np.s_[0:2], axis=1)
+                #selected_features = numpy.array(selected_features)
+                #selected_features = np.delete(selected_features, np.s_[0:2], axis=1)
 
-                    tokens_shape.append(sel_features[9:len(sel_features)])
-                    y_tokens_shape.append(definitions.KLASSES2[y])
+                tokens_shape.append(sel_features[9:len(sel_features)])
+                y_tokens_shape.append(definitions.KLASSES2[y])
 
                 oldsentid = linha[1]
 
@@ -146,6 +144,8 @@ def convert_lstm_shape(ds, y, horus_feat = False):
         Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21], c[23], c[24], c[25], c[26], c[27], c[28], c[29], c[30], c[31], c[32]] for c in x] for x in ds]
 
     all_text = [c[0] for x in Xclean for c in x]
+    all_text.extend([c[1] for x in Xclean for c in x])
+
     words = list(set(all_text))  # distinct tokens
     word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
     ind2word = {index: word for index, word in enumerate(words)}
@@ -160,8 +160,7 @@ def convert_lstm_shape(ds, y, horus_feat = False):
         X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8]] for c in x] for x in Xclean]
     else:
         X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
-                   c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]]
-                  for c in x] for x in Xclean]
+                   c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]] for c in x] for x in Xclean]
 
     max_label = max(label2ind.values()) + 1
     y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
@@ -252,7 +251,7 @@ def shape_datasets():
         ret.append([ds[0], horus_to_features(dataset_prefix + ds[0], ds[1])])
     return ret
 
-def score(yh, pr):
+def score2(yh, pr):
     #real-no-encoding x predicted
     coords = [np.where(yhh > 0)[0][0] for yhh in yh]
     yh = [yhh[co:] for yhh, co in zip(yh, coords)]
@@ -293,13 +292,17 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
     for horus_feat in (True, False):
         print "HORUS? ", horus_feat
         for ds1 in raw_datasets:
+            for i in range(len(ds1[1][0])):
+                if len(ds1[1][0][i]) == 0:
+                    print i
+
             if runDT: X1_dt = ds1[1][2]
             if runCRF: X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
-            if runLSTM: X1_lstm, y1_lstm, max_features, out_size = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
+            if runLSTM: X1_lstm, y1_lstm, max_features_1, out_size_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
             for ds2 in raw_datasets:
                 if runDT: X2_dt = ds2[1][2]
                 if runCRF: X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
-                if runLSTM: X2_lstm, y2_lstm, max_features, out_size = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
+                if runLSTM: X2_lstm, y2_lstm, max_features_2, out_size_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
                 print "---------------------------------------------------"
                 print "dataset 1 = ", ds1[0]
                 print "dataset 2 = ", ds2[0]
@@ -324,43 +327,43 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                         if runLSTM:
                             print '--LSTM'
                             Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
-                            print('Training and testing tensor shapes:', X_train.shape, X_test.shape, ytr.shape, yte.shape)
+                            print('Training and testing tensor shapes:', Xtr.shape, Xte.shape, ytr.shape, yte.shape)
 
                             embedding_size = 128
                             hidden_size = 128  # 32
 
                             maxlen = 0
-                            for x in X_train:
+                            for x in Xtr:
                                 if len(x) > maxlen:
                                     maxlen = len(x)
                             print 'max sent: ', maxlen
 
                             model1 = Sequential()
-                            model1.add(Embedding(input_dim=max_features, output_dim=embedding_size, input_length=maxlen, mask_zero=True))
+                            model1.add(Embedding(input_dim=max_features_1, output_dim=embedding_size, input_length=maxlen, mask_zero=True))
 
                             model2 = Sequential()
-                            model2.add(InputLayer(input_shape=(maxlen, 3)))
+                            model2.add(InputLayer(input_shape=(maxlen, Xtr.shape[2] - 1)))
 
                             model = Sequential()
                             model.add(Merge([model1, model2], mode='concat'))
                             model.add(Dense(1))
 
-                            model.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxlen, 3)))
-                            model.add(TimeDistributed(Dense(out_size)))
+                            model.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxlen, Xtr.shape[2] - 1)))
+                            model.add(TimeDistributed(Dense(out_size_1)))
                             model.add(Activation('softmax'))
                             print 'compile...'
                             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
                             print(model.summary())
                             print('train...')
 
-                            model.fit([Xtr[:, :, 0], Xtr[:, :, 1:4]], y1_lstm, epochs=50, batch_size=128,
-                                      validation_data=([Xte[:, :, 0], Xte[:, :, 1:4]], yte))
-                            score = model.evaluate([Xte[:, :, 0], Xte[:, :, 1:4]], yte, batch_size=128)
+                            model.fit([Xtr[:, :, 0], Xtr[:, :, 1:Xtr.shape[2]]], ytr, epochs=50, batch_size=128,
+                                      validation_data=([Xte[:, :, 0], Xte[:, :, 1:Xtr.shape[2]]], yte))
+                            score = model.evaluate([Xte[:, :, 0], Xte[:, :, 1:Xtr.shape[2]]], yte, batch_size=128)
 
                             print('Raw test score:', score)
-                            pr = model.predict_classes([Xtr[:, :, 0], Xtr[:, :, 1:4]])
+                            pr = model.predict_classes([Xtr[:, :, 0], Xtr[:, :, 1:Xtr.shape[2]]])
                             yh = ytr.argmax(2)  # no encoding
-                            fyh, fpr = score(yh, pr)
+                            fyh, fpr = score2(yh, pr)
                             print()
                             print('Training accuracy:', accuracy_score(fyh, fpr))
                             print('Training confusion matrix:')
@@ -368,9 +371,9 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                             print('precision, recall, f1:')
                             print precision_recall_fscore_support(fyh, fpr)
 
-                            pr = model.predict_classes([Xte[:, :, 0], Xte[:, :, 1:4]])
+                            pr = model.predict_classes([Xte[:, :, 0], Xte[:, :, 1:Xte.shape[2]]])
                             yh = yte.argmax(2)
-                            fyh, fpr = score(yh, pr)
+                            fyh, fpr = score2(yh, pr)
                             print('Testing accuracy:', accuracy_score(fyh, fpr))
                             print('Testing confusion matrix:')
                             print(confusion_matrix(fyh, fpr))
@@ -411,7 +414,7 @@ dataset_prefix = config.output_path + "experiments/EXP_do_tokenization/"
 #            ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
 
 datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
-            ("out_exp003_wnut15_en_tweetNLP.csv", le1))
+            ("out_exp003_ritter_en_tweetNLP.csv", le1))
 
 #labels = list(crf.classes_)
 labels = list(['LOC', 'ORG', 'PER'])
