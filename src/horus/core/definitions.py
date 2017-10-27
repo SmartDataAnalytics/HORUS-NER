@@ -99,3 +99,12 @@ PENN_UNI_TAG = [['#', 'SYM'],['$', 'SYM'], ['','PUNCT'],[',','PUNCT'],['-LRB-','
                     ['LS','PUNCT'],['MD','VERB'],['NIL','X'],['NN','NOUN'],	['NNP','PROPN'],['NNPS','PROPN'],['NNS','NOUN'],['PDT','DET'],['POS','PART'],
                     ['PRP','PRON'],['PRP$','DET'],['RB','ADV'],['RBR','ADV'],['RBS','ADV'],['RP','PART'],['SYM','SYM'],['TO','PART'],['UH','INTJ'],['VB','VERB'],
                     ['VBD','VERB'],['VBG','VERB'],['VBN','VERB'],['VBP','VERB'],['VBZ','VERB'],['WDT','DET'],['WP','PRON'],['WP$', 'DET'],['WRB', 'ADV']]
+
+
+HORUS_FORMAT_INDEX_COL_IS_ENTITY = 0
+HORUS_FORMAT_INDEX_COL_ID_SENTENCE = 1
+HORUS_FORMAT_INDEX_COL_ID_WORD = 2
+HORUS_FORMAT_INDEX_COL_WORD = 3
+
+HORUS_FORMAT_INDEX_COL_IS_COMPOUND = 7
+HORUS_FORMAT_INDEX_COL_TARGET_NER = 51
