@@ -6,7 +6,7 @@ HORUS is meta-algorithm for Named Entity Recognition (NER) based on image proces
 
 ## Easy Setup (Python 2.7 based)
 - setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
-- get your [Microsoft Bing API Key](https://datamarket.azure.com/dataset/bing/search) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
+- get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
 - configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
 - setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
 - setup [Anaconda](https://anaconda.org/) and import our _requirements.txt_ file (if you're running on linux, please check) 
