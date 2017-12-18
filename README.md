@@ -1,124 +1,26 @@
 ### Boosting NER
 HORUS is meta-algorithm for Named Entity Recognition (NER) based on image processing and multi-level machine learning. It aims at boosting NER task by adding new features to the NER pipeline. Currently supports the identification of classical named-entity types (LOC, PER, ORG). It has been designed (specially) for short-texts.  
-<p align="center">
-<img src=http://dne5.com/whitney_example_peq.png />
-</p>
 
 #### Easy Setup (Python 2.7 based)
 
-conda env create -f horus.yml (tested for OSX)
-source activate horus_27_cv310
+1. Setup the python environment
+- setup [Anaconda](https://anaconda.org/)
+- conda env create -f horus.v015.yml (tested for OSX)
+- source activate horus_27_cv310
 
-- setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/dnes85/horus-models/blob/master/horus/cache/database/horus.db.sql) to create the schema
+2. Setup the framework environment
+- setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/diegoesteves/horus-ner/blob/master/horus0.1.5.db.sql) to create the schema
 - get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
 - configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
 - setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
-- setup [Anaconda](https://anaconda.org/) and import our _requirements.txt_ file (if you're running on linux, please check) 
-```python 
-conda env create -f environment.yml 
-```
-
-#### Config File Parameters
-
-**[path]**
-- root_dir: /Users/diegoesteves/Github/named-entity-recognition/horus-ner
-- output_path: /Users/diegoesteves/Github/named-entity-recognition/horus-ner/output
-- dataset_path: /Users/diegoesteves/Github/named-entity-recognition/horus-ner/data/dataset
-- encoder_path: /Users/diegoesteves/Github/named-entity-recognition/horus-ner/horus/resources/models/encoders
-
-**[database]**
-- db_path: the path to the *horus.db* file ([download the script here](data/database/horus.db_script_schema.sql))
-
-**[cache]**
-- img_folder: /Users/diegoesteves/DropDrive/CloudStation/HORUS_data_paper/cache/img/
-
-**[dataset]**
-- ds_ritter: /dataset/Ritter/ritter_ner.tsv
-- ds_conll: data/dataset/coNLL2003/nodocstart_coNLL2003.eng.testa
-- ds_defacto:
-
-**[search-engine]**
-: search engine used to retrieve results / 1 = Microsoft Bing and 2 = Google
-- api: 1
-- key: please register at the search engine website
-- features_text:
-- features_img:
-- tot_resources: 10
-
-**[translation]**
-: please register at https://datamarket.azure.com/developer/applications/register
-- microsoft_client_id: 
-- microsoft_client_secret:
-
-**[models-param]**
-- force_download = True
-- location_theta: 5
-- distance_theta: 1
-- distance_theta_high_bias: True
-- safe_interval: 2
-- limit_min_loc: -10
-- pos_tag_lib = the POS Tagger
-    - 1 = nltk pos-tag; 2 = TweetNLP
-- pos_tag_lib_type = the Tagset
-    - 4 = standard; 5 = universal tagset (that's a trick! keep it 4 or 5)
-- kmeans-trees: 5
-
-
-**[models-cv]**
-- horus_loc: /cv/horus_cv_loc.pkl
-- horus_org: /horus/org2__svm2.pkl
-- horus_org_voc: /horus/dict_002_org2_.pkl
-- horus_per: /cv/haarcascade_frontalface_default.xml
-- horus_loc_1: /horus/loc_coast_svm2.pkl
-- horus_loc_2: /horus/loc_forest_svm2.pkl
-- horus_loc_3: /horus/loc_highway_svm2.pkl
-- horus_loc_4: /horus/loc_inside_city_svm2.pkl
-- horus_loc_5: /horus/loc_mountain_svm2.pkl
-- horus_loc_6: /horus/loc_open_country_svm2.pkl
-- horus_loc_7: /horus/loc_street_svm2.pkl
-- horus_loc_8: /horus/loc_suburb_svm2.pkl
-- horus_loc_9: /horus/loc_tall_building_svm2.pkl
-- horus_loc_10: /horus/loc_map2_svm2.pkl
-- horus_loc_1_voc: /horus/dict_002_loc_coast.pkl
-- horus_loc_2_voc: /horus/dict_002_loc_forest.pkl
-- horus_loc_3_voc: /horus/dict_002_loc_highway.pkl
-- horus_loc_4_voc: /horus/dict_002_loc_inside_city.pkl
-- horus_loc_5_voc: /horus/dict_002_loc_mountain.pkl
-- horus_loc_6_voc: /horus/dict_002_loc_open_country.pkl
-- horus_loc_7_voc: /horus/dict_002_loc_street.pkl
-- horus_loc_8_voc: /horus/dict_002_loc_suburb.pkl
-- horus_loc_9_voc: /horus/dict_002_loc_tall_building.pkl
-- horus_loc_10_voc: /horus/dict_002_loc_map2.pkl
-
-**[models-text]**
-- horus_textchecking_1: /horus/resources/models/horus-text/text_classification_LinearSVC.pkl
-- horus_textchecking_2: /horus/resources/models/horus-text/text_classification_Passive-Aggressive.pkl
-- horus_textchecking_3: /horus/resources/models/horus-text/text_classification_Perceptron.pkl
-- horus_textchecking_4: /horus/resources/models/horus-text/text_classification_Ridge Classifier.pkl
-- horus_textchecking_5: /horus/resources/models/horus-text/text_classification_SGDClassifier_L1L2.pkl
-
-**[models-horus]**
-- horus_final: horus/resources/models/horus-final/randomforest.pkl
-- horus_final_encoder: horus/resources/models/horus-final/final_encoder.pkl
-
-**[model-stanford]**
-- model_filename_pos: /stanford/2015-04-20/english-bidirectional-distsim.tagger
-- path_to_jar_pos: /stanford/2015-04-20/stanford-postagger.jar
-- model_filename_ner: /stanford/english.all.3class.distsim.crf.ser.gz
-- path_to_jar_ner: /stanford/stanford-ner.jar
 
 
 #### Distribution
 - cd horus-models
 - python setup.py sdist
 
-```python
-cd dist/
-tar -zxvf horus-dist-0.1.tar.gz
-python setup.py install --record files.txt
-```
 
-## Usage 
+#### Usage 
 ```python
 python main.py --input_text="whitney houston has been honored in nyc" --ds_format=0 --output_format="csv"
 
@@ -403,3 +305,4 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
 - 0.1.0 initial version
 - 0.1.1 adding text classification
 - 0.1.2 adding map detection
+- 0.1.5 paper version
