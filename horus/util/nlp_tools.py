@@ -4,7 +4,7 @@ from nltk.tag.stanford import StanfordNERTagger
 
 from horus.core import definitions
 from horus.core.config import HorusConfig
-from horus.resources.postagger import CMUTweetTagger
+from horus.resources.models.tweetnlp import CMUTweetTagger
 
 
 #text = 'Diego Esteves works at Microsoft'

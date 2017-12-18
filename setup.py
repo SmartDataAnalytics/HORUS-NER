@@ -17,7 +17,7 @@ setup(name='horusner',
       author='Diego Esteves',
       author_email='diegoesteves@gmail.com',
       url='http://diegoesteves.github.io/horus-models/',
-      package_dir={'horusner': 'src/horus'},
+      package_dir={'horusner': 'horus'},
       packages=['horusner','horusner.core',
                 'horusner.resources', 'horusner.util'],
       classifiers=[

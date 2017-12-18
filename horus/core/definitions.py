@@ -8,13 +8,7 @@ if config.root_dir == '':
 else:
     ROOT_DIR = config.root_dir
 
-EXPERIMENTS_PATH = os.path.join(ROOT_DIR, 'src/horus/experiments')
-HORUS_PATH = os.path.join(ROOT_DIR, 'src/horus/components')
-RESOURCES_PATH = os.path.join(ROOT_DIR, 'src/horus/resources')
-POS_TAGGER_PATH = os.path.join(ROOT_DIR, 'src/horus/resources/postagger')
-OUTPUT_PATH = os.path.join(ROOT_DIR, 'output')
-DATASET_PATH = os.path.join(ROOT_DIR, 'data/dataset')
-
+RUN_TAGGER_CMD = config.models_tweetnlp_java_param + " " + config.models_tweetnlp_jar + " --model " + config.models_tweetnlp_model
 
 NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']

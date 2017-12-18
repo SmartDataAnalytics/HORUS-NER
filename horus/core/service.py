@@ -52,6 +52,7 @@ from horus.util.nlp_tools import NLPTools
 
 #print cv2.__version__
 
+from horus.util.bingAPI1 import bing_api5
 
 class Core(object):
     """ Description:
@@ -1124,7 +1125,6 @@ class Core(object):
                     res = c.fetchall()
                     if res is None or len(res) == 0:
                         self.sys.log.info(':: querying the web -> [%s]' % term)
-                        from horus.bingAPI1 import bing_api5
                         metaquery, result_txts, result_imgs = bing_api5(term, key=self.config.search_engine_key, market='en-US')
                         '''
                         -------------------------------------
