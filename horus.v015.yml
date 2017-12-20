@@ -93,7 +93,6 @@ dependencies:
   - keras==2.0.5
   - langdetect==1.0.7
   - markupsafe==1.0
-  - microsofttranslator==0.8
   - olefile==0.44
   - pipreqs==0.4.6
   - pkginfo==1.4.1
