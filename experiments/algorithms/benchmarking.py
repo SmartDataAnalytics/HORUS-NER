@@ -278,7 +278,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                             Xtr, Xte, ytr, yte = train_test_split(X1_crf, ds1[1][1], test_size=ds_test_size, random_state=r[d])
                             m = _crf.fit(Xtr, ytr)
                             ypr = m.predict(Xte)
-                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels, digits=3))
+                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                         if runDT:
                             print '--DT'
                             X_train = X1_dt
@@ -287,7 +287,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                             Xtr, Xte, ytr, yte = train_test_split(X_train, ds1[1][3], test_size=ds_test_size, random_state=r[d])
                             m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(float))
                             ypr = m.predict(np.array(Xte).astype(float))
-                            print(skmetrics.classification_report(yte, ypr, labels=sorted_labels , digits=3)) #labels=[1, 2, 3], target_names=['LOC', 'ORG', 'PER']
+                            print(skmetrics.classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                         if runLSTM:
                             print '--LSTM'
                             Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
@@ -299,7 +299,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                         print '--CRF'
                         m = _crf.fit(X1_crf, ds1[1][1])
                         ypr = m.predict(X2_crf)
-                        print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels, digits=3))
+                        print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                     if runDT:
                         print '--DT'
                         X_train = X1_dt
@@ -309,7 +309,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                             X_test = [x[0:12] for x in X2_dt]
                         m = _dt.fit(X_train, ds1[1][3])
                         ypr = m.predict(X_test)
-                        print(skmetrics.classification_report(ds2[1][3] , ypr, labels=sorted_labels, digits=3))
+                        print(skmetrics.classification_report(ds2[1][3] , ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                     if runLSTM:
                         print '--LSTM'
                         max_of_sentences = max(maxlen_1, maxlen_2)
@@ -319,7 +319,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
 
                     if runSTANFORD_NER:
                         print '--STANFORD_NER'
-                        print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels, digits=3))
+                        print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
 
 le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
@@ -332,17 +332,21 @@ datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
             ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
 
 #labels = list(crf.classes_)
-labels = list(['LOC', 'ORG', 'PER'])
+# trick for report visualization
+sorted_labels = definitions.KLASSES.copy()
+del sorted_labels[4]
+
+#labels = list(['LOC', 'ORG', 'PER'])
 #labels.remove('O')
 # group B and I results
-sorted_labels = sorted(
-    labels,
-    key=lambda name: (name[1:], name[0])
-)
+#sorted_labels = sorted(
+#    labels,
+#    key=lambda name: (name[1:], name[0])
+#)
 
 r = [42, 39, 10, 5, 50]
 
-run_models(False, True, False, False)
+run_models(False, False, True, False)
 
 exit(0)
 
