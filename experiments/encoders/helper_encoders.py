@@ -1,10 +1,8 @@
 import numpy
 from sklearn import preprocessing
 from sklearn.externals import joblib
-
-from horus.core import HorusConfig
+from horus.core.config import HorusConfig
 from horus.util.nlp_tools import NLPTools
-
 
 def extract_all_tags_conll(config):
     dspath = config.dataset_path + "coNLL2003/coNLL2003.eng.testa"
@@ -118,8 +116,6 @@ def extract_pos_dictionary_from_conll(config):
     except Exception as error:
         print('caught this error: ' + repr(error))
         exit(-1)
-
-
 
 config = HorusConfig()
 

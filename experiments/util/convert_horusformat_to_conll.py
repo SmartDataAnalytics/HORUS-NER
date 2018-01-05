@@ -5,6 +5,12 @@ import logging
 from horus.core import definitions
 from horus.core.config import HorusConfig
 
+from nltk.corpus import stopwords
+from nltk import LancasterStemmer, re
+
+lancaster_stemmer = LancasterStemmer()
+stop = set(stopwords.words('english'))
+
 config = HorusConfig()
 
 # :: Logging level ::
@@ -18,6 +24,86 @@ formatter = logging.Formatter('%(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+def horus_to_features(horusfile, le):
+    print horusfile
+    features, sentence_shape = [], []
+    targets, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
+
+    df = pd.read_csv(horusfile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+    oldsentid = df.get_value()[0][1]
+    for index, linha in df.iterrows():
+        if len(linha)>0:
+            if linha[7] == 0: #no compounds
+                if linha[1] != oldsentid:
+                    sentence_shape.append(features)
+                    y_sentences_shape.append(targets)
+                    targets, features = [], []
+
+                idsent = linha[1]
+                idtoken = linha[2]
+                pos_bef = ''
+                pos_aft = ''
+                if index > 0 and df.get_value(index-1, 7) == 0:
+                    pos_bef = df.get_value(index-1,5)
+                if index + 1 < len(df) and df.get_value(index+1, 7) == 0:
+                    pos_aft = df.get_value(index+1,5)
+                token = linha[3]
+                postag = linha[5]
+                one_char_token = len(token) == 1
+                special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
+                first_capitalized = token[0].isupper()
+                capitalized = token.isupper()
+                title = token.istitle()
+                digit = token.isdigit()
+                stop_words = token in stop
+                small = True if len(horusfile[3]) <= 2 else False
+                stemmer_lanc = lancaster_stemmer.stem(token)
+                nr_images_returned = linha[17]
+                nr_websites_returned = linha[25]
+                hyphen = '-' in token
+                cv_loc = float(linha[12])
+                cv_org = float(linha[13])
+                cv_per = float(linha[14])
+                cv_dist = float(linha[15])
+                cv_plc = float(linha[16])
+                tx_loc = float(linha[20])
+                tx_org = float(linha[21])
+                tx_per = float(linha[22])
+                tx_err = float(linha[23])
+                tx_dist = float(linha[24])
+
+                if linha[6] in definitions.NER_TAGS_LOC: ner = u'LOC'
+                elif linha[6] in definitions.NER_TAGS_ORG: ner = u'ORG'
+                elif linha[6] in definitions.NER_TAGS_PER: ner = u'PER'
+                else: ner = u'O'
+
+                #standard shape
+                sel_features = [idsent, idtoken, token, token.lower(), stemmer_lanc,
+                                pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
+                                le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
+                                title, digit, one_char_token, special_char, first_capitalized,
+                                hyphen, capitalized, stop_words, small,
+                                nr_images_returned, nr_websites_returned,
+                                cv_org, cv_loc, cv_per, cv_dist, cv_plc,
+                                tx_org, tx_loc, tx_per, tx_dist, tx_err]
+
+                features.append(sel_features)
+
+                if linha[51] in definitions.NER_TAGS_LOC: y = u'LOC'
+                elif linha[51] in definitions.NER_TAGS_ORG: y = u'ORG'
+                elif linha[51] in definitions.NER_TAGS_PER: y = u'PER'
+                else: y = u'O'
+
+                targets.append(y)
+
+                tokens_shape.append(sel_features[9:len(sel_features)])
+                y_tokens_shape.append(definitions.KLASSES2[y])
+
+                oldsentid = linha[1]
+
+    print 'total of sentences', len(sentence_shape)
+    print 'total of tokens', len(tokens_shape)
+    return sentence_shape, y_sentences_shape, tokens_shape, y_tokens_shape
 
 def get_remaining_column_indexes(line, cols):
     print("excluding irrelevant indexes...")
@@ -30,7 +116,6 @@ def get_remaining_column_indexes(line, cols):
     print("total of columns to exclude: ", str(len(to_exclude)))
     print("total of columns to keep: ", str(len(cols) + 1))
     return to_exclude
-
 
 def convertHORUStoCoNLL(dataset, cols, out_path):
     '''

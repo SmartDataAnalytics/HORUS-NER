@@ -39,20 +39,19 @@ import pandas as pd
 import requests
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from horus.core.systemlog import SystemLog
-from microsofttranslator import Translator
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
 
 from horus.core import definitions
 from horus.core.config import HorusConfig
+from horus.core.systemlog import SystemLog
+from horus.util.bing.search_engine.bingAPI1 import bing_api5
+from horus.util.bing.translation.bingtranslation import BingTranslator
 from horus.util.nlp_tools import NLPTools
 
 
-#print cv2.__version__
-
-from horus.util.bingAPI1 import bing_api5
+# print cv2.__version__
 
 class Core(object):
     """ Description:
@@ -107,7 +106,7 @@ class Core(object):
         self.sys.log.info(':: loading components...')
         self.tools = NLPTools()
         self.english_vocab = None
-        self.translator = Translator(self.config.translation_id, self.config.translation_secret)
+        self.translator = BingTranslator()
         self.tfidf_transformer = TfidfTransformer()
         self.detect = cv2.xfeatures2d.SIFT_create()
         self.extract = cv2.xfeatures2d.SIFT_create()

@@ -1,14 +1,12 @@
 import csv
 import itertools
 import logging
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
-
-from horus.core import Core
 from horus.core import definitions
+from horus.core.service import Core
 
 
 def confusion_matrix_analysis(horus_matrix):
@@ -137,7 +135,6 @@ def example_analysis(horus_matrix):
 
 
 horus = Core(False, 5)
-
 horus_matrix = csv.reader(open('/Users/esteves/Github/horus-models/output/out.csv'), delimiter=",")
 horus_matrix.next()
 

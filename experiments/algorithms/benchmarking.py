@@ -1,6 +1,7 @@
 import os
 
-from experiments.test.util import horus_to_features
+#from experiments.util import horus_to_features
+from experiments.util.convert_horusformat_to_conll import horus_to_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -47,7 +48,6 @@ output:
 """
 config = HorusConfig()
 X, Y = [], []
-
 
 ds_test_size = 0.2
 
@@ -343,7 +343,7 @@ sorted_labels = sorted(
 
 r = [42, 39, 10, 5, 50]
 
-run_models(False, False, True, False)
+run_models(True, False, False, False)
 
 exit(0)
 

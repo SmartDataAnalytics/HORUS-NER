@@ -1,10 +1,12 @@
-import requests
 from xml.etree import ElementTree
-from experiments.util.bing.translation.auth import AzureAuthClient
+
+import requests
+
 from horus.core.config import HorusConfig
+from horus.util.bing.translation.auth import AzureAuthClient
 
 
-class Translator(object):
+class BingTranslator(object):
 
     def __init__(self):
         config = HorusConfig()
@@ -19,5 +21,5 @@ class Translator(object):
         return translation.text
 
 if __name__ == "__main__":
-    t = Translator()
+    t = BingTranslator()
     print t.translate("hey what's up dude?", 'pt-br')
