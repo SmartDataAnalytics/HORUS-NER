@@ -1,7 +1,6 @@
 import os
 
-#from experiments.util import horus_to_features
-from experiments.util.convert_horusformat_to_conll import horus_to_features
+from horus.util.data_conversion import horus_to_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -249,7 +248,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
 
     raw_datasets = shape_datasets()
 
-    for horus_feat in (False, False):
+    for horus_feat in (False, True):
         print "HORUS? ", horus_feat
         for ds1 in raw_datasets:
             if runDT: X1_dt = ds1[1][2]
@@ -286,7 +285,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                             if horus_feat == False:
                                 X_train = [x[0:12] for x in X1_dt]
                             Xtr, Xte, ytr, yte = train_test_split(X_train, ds1[1][3], test_size=ds_test_size, random_state=r[d])
-                            m = _dt.fit(np.array(Xtr.astype(float), np.array(ytr).astype(float)))
+                            m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(float))
                             ypr = m.predict(np.array(Xte).astype(float))
                             print(skmetrics.classification_report(yte, ypr, labels=sorted_labels , digits=3)) #labels=[1, 2, 3], target_names=['LOC', 'ORG', 'PER']
                         if runLSTM:
@@ -343,7 +342,7 @@ sorted_labels = sorted(
 
 r = [42, 39, 10, 5, 50]
 
-run_models(True, False, False, False)
+run_models(False, True, False, False)
 
 exit(0)
 

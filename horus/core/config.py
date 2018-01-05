@@ -2,8 +2,17 @@ import os
 from ConfigParser import SafeConfigParser
 import pkg_resources
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
-class HorusConfig:
+
+class HorusConfig(object):
+    __metaclass__ = Singleton
+
     def __init__(self):
         fine = False
         config = None
@@ -17,7 +26,7 @@ class HorusConfig:
 
                     #self.root_dir = os.path.dirname(os.path.abspath(__file__))
                     self.root_dir = parser.get('path', 'root_dir')
-                    models_rootdir = pkg_resources.resource_filename('horus.resources', 'models')
+                    models_rootdir = pkg_resources.resource_filename('horus.resources', 'models') + "/"
 
                     # not attached to a root project directory, once it normally can be stored somewhere else (i.e., full path here)
                     self.database_db = parser.get('path', 'database_path')
