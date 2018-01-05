@@ -20,7 +20,7 @@ def bing_api5(query, key, top=0, market='en-us', safe='Moderate'):
     try:
         txts = None
         imgs = None
-        url = 'https://api.cognitive.microsoft.com/bing/v5.0/search'
+        url = 'https://api.cognitive.microsoft.com/bing/v7.0/search'
         # query string parameters
         if top != 0:
             payload = {'q': query, 'mkt': market, 'count': top, 'offset': 0, 'safesearch': safe}
