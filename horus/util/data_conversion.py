@@ -6,6 +6,8 @@ from horus.core import definitions
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
 
+from horus.core.config import HorusConfig
+
 lancaster_stemmer = LancasterStemmer()
 stop = set(stopwords.words('english'))
 
@@ -18,7 +20,6 @@ ch.setLevel(loggingLevel)
 formatter = logging.Formatter('%(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
 
 def horus_to_features(horusfile, le):
     print horusfile
@@ -113,7 +114,7 @@ def get_remaining_column_indexes(line, cols):
     print("total of columns to keep: ", str(len(cols) + 1))
     return to_exclude
 
-def convertHORUStoCoNLL(dataset, cols, out_path):
+def horus_to_conll(dataset, cols, out_path):
     '''
     read a horus format file and converts it to CoNLL standard format
     :param dataset: the horus format data set
@@ -161,3 +162,27 @@ def convertHORUStoCoNLL(dataset, cols, out_path):
     print("done! %s sentences exported to ConLL format!", str(i_sentence))
     dt_conll_format.to_csv(path_or_buf=out_path, sep="\t", index=False, header=False, float_format='%.0f')
     print("file saved to: ", out_path)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print "please inform: 1: data set and 2: column indexes ([1, .., n])"
+    else:
+        config = HorusConfig()
+        fixed = '/experiments/EXP_001/'
+        features = [3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25]
+        horus_to_conll(config.output_path + fixed + "coNLL2003_test.a.horus.conll",
+                       features,
+                       config.output_path + fixed +  "conll/coNLL2003_test.a.horus.conll")
+
+        horus_to_conll(config.output_path + fixed + "ritter.horus.conll",
+                       features,
+                       config.output_path + fixed + "conll/ritter.horus.conll")
+
+        horus_to_conll(config.output_path + fixed + "wnut15.horus.conll",
+                       features,
+                       config.output_path + fixed + "conll/wnut15.horus.conll")
+
+        horus_to_conll(config.output_path + fixed + "wnut16_en_tweetNLP.csv",
+                       features,
+                       config.output_path + fixed + "conll/wnut16.horus.conll")

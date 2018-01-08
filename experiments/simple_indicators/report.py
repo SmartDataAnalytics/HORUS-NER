@@ -11,7 +11,7 @@ from sklearn.metrics import recall_score
 from horus.core import definitions
 
 config = ()
-file1reader = csv.reader(open(config.output_path + "experiments/EXP_000_baseline_simple/out_exp000_3_ritter.csv"), delimiter=",")
+file1reader = csv.reader(open(config.output_path + "experiments/EXP_000/out_exp000_3_ritter.csv"), delimiter=",")
 header1 = file1reader.next() #header
 
 tot = 0

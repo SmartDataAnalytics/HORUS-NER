@@ -101,7 +101,7 @@ dataset_rit = get_tuples('/Users/esteves/Github/horus-models/data/dataset/Ritter
 dataset_wnut15 = get_tuples('/Users/esteves/Github/horus-models/data/dataset/wnut/2015.conll.freebase')
 dataset_wnut16 = get_tuples('/Users/esteves/Github/horus-models/data/dataset/wnut/2016.conll.freebase')
 
-dataset_wnut16_processed = '/Users/esteves/Github/horus-models/output/experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv'
+dataset_wnut16_processed = '/Users/esteves/Github/horus-models/output/experiments/EXP_001/wnut16.horus.conll'
 #dataset = dataset_wnut16
 
 #t = int(round(0.7*len(dataset)-1,1))

@@ -20,7 +20,7 @@ print "All Libraries Loaded"
     Read the data from the file and convert it into a numpy matrix
 '''
 #Read the CSV
-f = open('/Users/esteves/Github/horus-models/output/experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv')
+f = open('/Users/esteves/Github/horus-models/output/experiments/EXP_001/wnut16.horus.conll')
 data = csv.reader(f)
 
 #Convert the data into a matrix

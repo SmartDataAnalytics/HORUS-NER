@@ -22,7 +22,7 @@ from horus.core import definitions
 from horus.core.config import HorusConfig
 
 config = HorusConfig()
-#file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000_baseline_simple/out_exp000_1.csv"), delimiter=",")
+#file1reader = csv.reader(open(config.output_path + "experiments/ritter/EXP_000/out_exp000_1.csv"), delimiter=",")
 #header1 = file1reader.next()
 
 
@@ -175,7 +175,7 @@ features = []
 X, Y = [], []
 teste = []
 
-samplefile = config.output_path + "experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv"
+samplefile = config.output_path + "experiments/EXP_001/wnut16.horus.conll"
 df = pandas.read_csv(samplefile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
 for index, linha in df.iterrows():
     if len(linha)>0:

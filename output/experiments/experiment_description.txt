@@ -1,0 +1,5 @@
+EXP_000
+- first tests
+EXP_003
+- do tokenization (tweet nlp tokenizer for microblog and NLTK for conll)
+- english

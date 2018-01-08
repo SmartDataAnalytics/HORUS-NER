@@ -325,11 +325,11 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
 le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 le2 = joblib.load(config.encoder_path + "_encoder_nltk2.pkl")
 
-dataset_prefix = config.output_path + "experiments/EXP_do_tokenization/"
-datasets = (("out_exp003_ritter_en_tweetNLP.csv", le1),
-            ("out_exp003_wnut15_en_tweetNLP.csv", le1),
-            ("out_exp003_wnut16_en_tweetNLP.csv", le1),
-            ("out_exp003_coNLL2003testA_en_NLTK.csv", le2))
+dataset_prefix = config.output_path + "experiments/EXP_001/"
+datasets = (("ritter.horus.conll", le1),
+            ("wnut15.horus.conll", le1),
+            ("wnut16.horus.conll", le1),
+            ("coNLL2003_test.a.horus.conll", le2))
 
 #labels = list(crf.classes_)
 # trick for report visualization
