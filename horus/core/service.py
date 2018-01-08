@@ -46,13 +46,14 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from horus.core import definitions
 from horus.core.config import HorusConfig
 from horus.core.nlp_tools import NLPTools
-from horus.core.search_engines import query_bing
+from horus.core.search_engines import query_bing, query_flickr, query_wikipedia
 from horus.core.sqlite_helper import SQLiteHelper, HorusDB
 from horus.core.systemlog import SystemLog
 
 
 # print cv2.__version__
 from horus.core.translation.bingtranslation import BingTranslator
+
 
 
 class Core(object):
@@ -746,7 +747,7 @@ class Core(object):
                               (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo)!=0 else 0))
 
             if len(self.horus_matrix) > 0:
-                self.download_and_cache_results('bing')
+                self.download_and_cache_results()
                 self.detect_objects()
                 self.update_compound_predictions()
                 self.run_final_classifier()
@@ -1108,7 +1109,7 @@ class Core(object):
                 print('-> error: ' + repr(error))
         return auxtype
 
-    def __download_and_cache_results_bing(self):
+    def download_and_cache_results(self):
         try:
             self.sys.log.info(':: caching results...')
             auxc = 1
@@ -1121,11 +1122,26 @@ class Core(object):
                         self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
                         res = t.term_cached(term.upper(), self.config.search_engine_api, self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
-                            self.sys.log.info(':: not cached, querying the web -> [%s]' % term)
-                            metaquery, result_txts, result_imgs = query_bing(term, key=self.config.search_engine_key, market='en-US')
                             '''
                             --------------------------------------------------------------------------
-                            Web Sites (TEXT)
+                            Downloading resources...
+                            --------------------------------------------------------------------------
+                            '''
+                            self.sys.log.info(':: not cached, querying -> [%s]' % term)
+
+                            # Microsoft Bing
+                            if self.config.search_engine_api == 1:
+                                metaquery, result_txts, result_imgs = query_bing(term,
+                                                                                 key=self.config.search_engine_key,
+                                                                                 market='en-US')
+                            # Flickr
+                            elif self.config.search_engine_api == 3:
+                                metaquery, result_imgs = query_flickr(term)
+                                metaquery, result_txts = query_wikipedia(term)
+
+                            '''
+                            --------------------------------------------------------------------------
+                            Caching Documents (Texts)
                             --------------------------------------------------------------------------
                             '''
                             self.sys.log.info(':: caching (web site text) -> [%s]' % term)
@@ -1135,12 +1151,13 @@ class Core(object):
                                                          str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
                             self.horus_matrix[index][9] = id_term_search
                             seq = 0
-                            for web_result in result_txts:
+                            for web_result_txt in result_txts:
                                 seq += 1
-                                t.save_website_data(id_term_search, seq, web_result['id'], web_result['displayUrl'], web_result['name'], web_result['snippet'])
+                                t.save_website_data(id_term_search, seq, web_result_txt['id'], web_result_txt['displayUrl'],
+                                                    web_result_txt['name'], web_result_txt['snippet'])
                             '''
                             --------------------------------------------------------------------------
-                            Images
+                            Caching Documents (Images)
                             --------------------------------------------------------------------------
                             '''
                             self.sys.log.info(':: caching (web images) -> [%s]' % term)
@@ -1150,17 +1167,17 @@ class Core(object):
                                                          str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
                             self.horus_matrix[index][10] = id_term_img
                             seq = 0
-                            for web_img_result in result_imgs:
-                                self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
+                            for web_result_img in result_imgs:
+                                self.sys.log.debug(':: downloading image [%s]' % (web_result_img['name']))
                                 seq += 1
-                                auxtype = self.download_image_local(web_img_result['contentUrl'],
-                                                                    web_img_result['encodingFormat'],
-                                                                    web_img_result['thumbnailUrl'],
-                                                                    web_img_result['encodingFormat'], id_term_img, 0, seq)
+                                auxtype = self.download_image_local(web_result_img['contentUrl'],
+                                                                    web_result_img['encodingFormat'],
+                                                                    web_result_img['thumbnailUrl'],
+                                                                    web_result_img['encodingFormat'], id_term_img, 0, seq)
                                 self.sys.log.debug(':: caching image  ...')
-                                t.save_image_data(id_term_img, seq, web_img_result['contentUrl'], web_img_result['name'],
-                                                  web_img_result['encodingFormat'], web_img_result['height'],
-                                                  web_img_result['width'], web_img_result['thumbnailUrl'], str(auxtype))
+                                t.save_image_data(id_term_img, seq, web_result_img['contentUrl'], web_result_img['name'],
+                                                  web_result_img['encodingFormat'], web_result_img['height'],
+                                                  web_result_img['width'], web_result_img['thumbnailUrl'], str(auxtype))
 
                             t.commit()
                         else:
@@ -1177,21 +1194,6 @@ class Core(object):
         except Exception as e:
             self.sys.log.error(':: an error has occurred: ', e)
             raise
-
-    #TODO: to implement Flickr API
-    def __download_and_cache_results_flickr(self):
-        raise Exception('not implemented')
-
-    def download_and_cache_results(self, engine):
-        try:
-            if engine == 'bing':
-                self.__download_and_cache_results_bing()
-            elif engine == 'flickr':
-                self.__download_and_cache_results_flickr()
-            else:
-                raise Exception('not implemented')
-        except Exception as e:
-            return e
 
     def detect_faces(self,img):
         try:

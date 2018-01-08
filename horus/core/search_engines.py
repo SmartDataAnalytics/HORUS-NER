@@ -4,9 +4,13 @@ import urllib
 import requests
 import json
 
-def query_flickr(query, top=10):
-    print('sadas')
-    #to implement
+#TODO: to implement
+def query_wikipedia(query):
+    raise Exception('not implemented')
+
+#TODO: to implement
+def query_flickr(query):
+    raise Exception('not implemented')
 
 def query_microsoft_graph(query, top=10):
     try:
