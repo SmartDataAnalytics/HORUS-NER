@@ -24,7 +24,7 @@ def query_microsoft_graph(query, top=10):
     except Exception as e:
         raise ValueError(e)
 
-def query_bing(query, key, top=10, market='en-us', safe='Moderate', source='Web', version='v5'):
+def query_bing(query, key, top, market='en-us', safe='Moderate', source='Web', version='v5'):
     if version == 'v2':
         return __bing_api2(query, key, top, market, source)
     elif version =='v5':
