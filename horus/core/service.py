@@ -46,9 +46,9 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from horus.core import definitions
 from horus.core.config import HorusConfig
 from horus.core.systemlog import SystemLog
-from horus.util.bing.search_engine.bingAPI1 import bing_api5
-from horus.util.bing.translation.bingtranslation import BingTranslator
 from horus.util.nlp_tools import NLPTools
+from horus.util.search_engines import query_bing
+from horus.util.translation import BingTranslator
 
 
 # print cv2.__version__
@@ -1124,7 +1124,7 @@ class Core(object):
                     res = c.fetchall()
                     if res is None or len(res) == 0:
                         self.sys.log.info(':: querying the web -> [%s]' % term)
-                        metaquery, result_txts, result_imgs = bing_api5(term, key=self.config.search_engine_key, market='en-US')
+                        metaquery, result_txts, result_imgs = query_bing(term, key=self.config.search_engine_key, market='en-US')
                         '''
                         -------------------------------------
                         Web Sites

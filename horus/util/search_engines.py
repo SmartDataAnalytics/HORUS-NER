@@ -1,18 +1,8 @@
 import logging
 import urllib2
-
-import urllib3
 import urllib
 import requests
-#sess = requests.Session()
-#adapter = requests.adapters.HTTPAdapter(max_retries = 20)
-#sess.mount('http://', adapter)
-from requests.auth import HTTPBasicAuth
 import json
-
-# json_result['d']['results']
-# Each result has attributes like 'Description', 'Title', 'Url', '__metadata',
-# 'DisplayUrl' and 'ID' so you can do what you want!
 
 def query_microsoft_graph(query, top=10):
     try:
@@ -29,13 +19,12 @@ def query_microsoft_graph(query, top=10):
 def query_bing(query, key, top=10, market='en-us', safe='Moderate', source='Web', version='v5'):
     if version == 'v2':
         __bing_api2(query, key, top, market, source)
-    elif version =='v5':
-        __bing_api5(query, key, top, market, safe)
+    elif version =='v7':
+        __bing_api7(query, key, top, market, safe)
     else:
         raise Exception('bing api version not implemented')
 
-
-def __bing_api5(query, key, top, market, safe):
+def __bing_api7(query, key, top, market, safe):
     # https://msdn.microsoft.com/en-us/library/dn760794(v=bsynd.50).aspx
     try:
         txts = None
@@ -64,7 +53,6 @@ def __bing_api5(query, key, top, market, safe):
     except Exception as e:
         print (':: an error has occurred: ', e)
         return query, None
-
 
 def __bing_api2(query, key, top, market, source):
 
@@ -95,9 +83,9 @@ def __bing_api2(query, key, top, market, source):
     except Exception as e:
         print (':: an error has occurred: ', e)
         return query, None
-        #raise
 
 
+'''
 def bing_api(query, api, source_type="Web", top=10, format='json', market='en-US'):
     """Returns the decoded json response content
     :param query: query for search
@@ -131,23 +119,10 @@ def bing_api(query, api, source_type="Web", top=10, format='json', market='en-US
         else:
             return query, jsonobject
 
-        '''
-        # create auth object
-        auth = HTTPBasicAuth(api, api)
-        # set headers
-        headers = {'User-Agent': user_agent}
-        # get response from search url
-        response_data = sess.get(url, headers=headers, auth=auth)
-        # response_data = requests.get(url, headers=headers, auth=auth)
-
-        if response_data.status_code == 200:
-            return query, response_data.json()  # decode json response content
-        else:
-            return query, None
-        '''
     except Exception as e:
         logging.error(':: an error has occurred: ', e)
         raise
+'''
 
 def main():
     out = query_microsoft_graph('microsoft', 10)
