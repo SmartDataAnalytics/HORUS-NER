@@ -62,14 +62,13 @@ class HorusDB(object):
                      search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
                      VALUES(?,?,?,?,?,?,?,?)"""
             id = self.conn.cursor().execute(sql, values)
-            self.sys.log.debug('image cached')
             return id.lastrowid
         except Exception as e:
             raise e
 
-    def save_website_data(self, id_term_search, id_web_result, seq, displayURL, name, snippet):
+    def save_website_data(self, id_term_search, seq, web_id, web_display_url, web_name, web_snippet):
         try:
-            values = (id_term_search, 0, id_web_result, seq, displayURL, name, snippet, '')
+            values = (id_term_search, 0, web_id, seq, web_display_url, web_name, web_snippet, '')
             sql = """INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
                                          search_engine_resource_id, result_seq, result_url, result_title,
                                          result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)"""
@@ -88,7 +87,6 @@ class HorusDB(object):
                      result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
             id = self.conn.cursor().execute(sql, values)
-            self.sys.log.debug('image cached')
             return id.lastrowid
         except Exception as e:
             raise e

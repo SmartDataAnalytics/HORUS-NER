@@ -1137,7 +1137,7 @@ class Core(object):
                             seq = 0
                             for web_result in result_txts:
                                 seq += 1
-                                t.save_website_data(id_term_search, 0, web_result['id'], seq, web_result['displayUrl'], web_result['name'], web_result['snippet'], '')
+                                t.save_website_data(id_term_search, seq, web_result['id'], web_result['displayUrl'], web_result['name'], web_result['snippet'])
                             '''
                             --------------------------------------------------------------------------
                             Images
@@ -1147,7 +1147,7 @@ class Core(object):
                             id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
                                                          len(result_imgs), self.config.search_engine_api,
                                                          2, self.config.search_engine_features_img,
-                                                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime()), metaquery))
+                                                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
                             self.horus_matrix[index][10] = id_term_img
                             seq = 0
                             for web_img_result in result_imgs:
@@ -1332,7 +1332,6 @@ class Core(object):
     def detect_text_klass(self,t1, t2, id, t1en, t2en):
 
         from translate import Translator
-        self.sys.log.debug(':: text analysis component launched')
 
         try:
 
