@@ -14,8 +14,28 @@ import json
 # Each result has attributes like 'Description', 'Title', 'Url', '__metadata',
 # 'DisplayUrl' and 'ID' so you can do what you want!
 
+def query_microsoft_graph(query, top=10):
+    try:
+        url = 'https://concept.research.microsoft.com/api/Concept/ScoreByProb?instance={}&topK={}'.format(query, top)
+        #urllib2.urlopen(url).read()
+        r = requests.get(url)
+        if r.status_code != 200:
+            raise Exception ('error when querying microsoft graph! status code = ' + r.status_code)
+        return r.json()
 
-def bing_api5(query, key, top=0, market='en-us', safe='Moderate'):
+    except Exception as e:
+        raise ValueError(e)
+
+def query_bing(query, key, top=10, market='en-us', safe='Moderate', source='Web', version='v5'):
+    if version == 'v2':
+        __bing_api2(query, key, top, market, source)
+    elif version =='v5':
+        __bing_api5(query, key, top, market, safe)
+    else:
+        raise Exception('bing api version not implemented')
+
+
+def __bing_api5(query, key, top, market, safe):
     # https://msdn.microsoft.com/en-us/library/dn760794(v=bsynd.50).aspx
     try:
         txts = None
@@ -46,17 +66,18 @@ def bing_api5(query, key, top=0, market='en-us', safe='Moderate'):
         return query, None
 
 
-def bing_api2(query, api, source_type="Web", top=10, format='json', market='en-US'):
+def __bing_api2(query, key, top, market, source):
 
     try:
-        keyBing = api  # get Bing key from: https://datamarket.azure.com/account/keys
+        format = 'json'
+        keyBing = key  # get Bing key from: https://datamarket.azure.com/account/keys
         credentialBing = 'Basic ' + (':%s' % keyBing).encode('base64')[
                                     :-1]  # the "-1" is to remove the trailing "\n" which encode adds
         query = '%27' + urllib.quote(query) + '%27'
         market = '%27' + urllib.quote(market) + '%27'
         offset = 0
 
-        url = 'https://api.datamarket.azure.com/Bing/Search/' + source_type + \
+        url = 'https://api.datamarket.azure.com/Bing/Search/' + source + \
               '?Query=%s&Market=%s&$top=%d&$skip=%d&$format=json' % (query, market, int(top), offset)
 
         request = urllib2.Request(url)
@@ -127,3 +148,9 @@ def bing_api(query, api, source_type="Web", top=10, format='json', market='en-US
     except Exception as e:
         logging.error(':: an error has occurred: ', e)
         raise
+
+def main():
+    out = query_microsoft_graph('microsoft', 10)
+
+if __name__ == "__main__":
+    main()
