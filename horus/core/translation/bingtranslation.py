@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 import requests
 
 from horus.core.config import HorusConfig
-from horus.util.translation.auth import AzureAuthClient
+from horus.core.translation.auth import AzureAuthClient
 
 
 class BingTranslator(object):

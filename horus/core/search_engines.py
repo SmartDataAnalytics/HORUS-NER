@@ -4,6 +4,10 @@ import urllib
 import requests
 import json
 
+def query_flickr(query, top=10):
+    print('sadas')
+    #to implement
+
 def query_microsoft_graph(query, top=10):
     try:
         url = 'https://concept.research.microsoft.com/api/Concept/ScoreByProb?instance={}&topK={}'.format(query, top)
@@ -18,18 +22,18 @@ def query_microsoft_graph(query, top=10):
 
 def query_bing(query, key, top=10, market='en-us', safe='Moderate', source='Web', version='v5'):
     if version == 'v2':
-        __bing_api2(query, key, top, market, source)
-    elif version =='v7':
-        __bing_api7(query, key, top, market, safe)
+        return __bing_api2(query, key, top, market, source)
+    elif version =='v5':
+        return __bing_api5(query, key, top, market, safe)
     else:
         raise Exception('bing api version not implemented')
 
-def __bing_api7(query, key, top, market, safe):
+def __bing_api5(query, key, top, market, safe):
     # https://msdn.microsoft.com/en-us/library/dn760794(v=bsynd.50).aspx
     try:
         txts = None
         imgs = None
-        url = 'https://api.cognitive.microsoft.com/bing/v7.0/search'
+        url = 'https://api.cognitive.microsoft.com/bing/v5.0/search'
         # query string parameters
         if top != 0:
             payload = {'q': query, 'mkt': market, 'count': top, 'offset': 0, 'safesearch': safe}

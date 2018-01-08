@@ -1,13 +1,11 @@
 import os
 
-from horus.util.data_conversion import horus_to_features
+from horus.core.data_conversion import horus_to_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 import matplotlib.pyplot as plt
 import sklearn_crfsuite
-from nltk import LancasterStemmer
-from nltk.corpus import stopwords
 from sklearn import ensemble
 from sklearn import metrics as skmetrics
 from sklearn.cross_validation import train_test_split
@@ -16,8 +14,6 @@ from sklearn_crfsuite import metrics
 plt.style.use('ggplot')
 from horus.core.config import HorusConfig
 from horus.core import definitions
-import pandas as pd
-import re
 from sklearn.externals import joblib
 import scipy.stats
 from sklearn.metrics import make_scorer, accuracy_score, confusion_matrix, precision_recall_fscore_support
@@ -28,7 +24,7 @@ from keras.models import Sequential
 from keras.layers.core import Activation
 from keras.layers.wrappers import TimeDistributed
 from keras.preprocessing.sequence import pad_sequences
-from keras.layers import Embedding, LSTM, Dense, Dropout, Merge
+from keras.layers import Embedding, LSTM, Dense, Merge
 
 """
 ==========================================================

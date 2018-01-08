@@ -45,13 +45,15 @@ from sklearn.feature_extraction.text import TfidfTransformer
 
 from horus.core import definitions
 from horus.core.config import HorusConfig
+from horus.core.nlp_tools import NLPTools
+from horus.core.search_engines import query_bing
+from horus.core.sqlite_helper import SQLiteHelper, HorusDB
 from horus.core.systemlog import SystemLog
-from horus.util.nlp_tools import NLPTools
-from horus.util.search_engines import query_bing
-from horus.util.translation import BingTranslator
 
 
 # print cv2.__version__
+from horus.core.translation.bingtranslation import BingTranslator
+
 
 class Core(object):
     """ Description:
@@ -744,7 +746,7 @@ class Core(object):
                               (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo)!=0 else 0))
 
             if len(self.horus_matrix) > 0:
-                self.download_and_cache_results()
+                self.download_and_cache_results('bing')
                 self.detect_objects()
                 self.update_compound_predictions()
                 self.run_final_classifier()
@@ -1106,103 +1108,90 @@ class Core(object):
                 print('-> error: ' + repr(error))
         return auxtype
 
-    def download_and_cache_results(self):
+    def __download_and_cache_results_bing(self):
         try:
             self.sys.log.info(':: caching results...')
             auxc = 1
-            c = self.conn.cursor()
-            for index in range(len(self.horus_matrix)):
-                term = self.horus_matrix[index][3]
-                self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
-                if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
-                    values = (term.upper(), self.config.search_engine_api, self.config.search_engine_features_text)
-                    sql = """SELECT id, id_search_type, tot_results_returned 
-                             FROM HORUS_TERM_SEARCH 
-                             WHERE upper(term) = ? AND id_search_engine = ? AND search_engine_features = ? 
-                             ORDER BY term, id_search_type ASC LIMIT 2"""
-                    c.execute(sql, values)
-                    res = c.fetchall()
-                    if res is None or len(res) == 0:
-                        self.sys.log.info(':: querying the web -> [%s]' % term)
-                        metaquery, result_txts, result_imgs = query_bing(term, key=self.config.search_engine_key, market='en-US')
-                        '''
-                        -------------------------------------
-                        Web Sites
-                        -------------------------------------
-                        '''
-                        self.sys.log.info(':: caching (web site) -> [%s]' % term)
-                        values = (term, self.config.search_engine_api, 1, self.config.search_engine_features_text,
-                        str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
-                        len(result_txts), metaquery)
-                        c.execute("""INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
-                                                                 search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
-                                                                 VALUES(?,?,?,?,?,?,?,?)""", values)
-                        id_term_search = c.lastrowid
-                        self.horus_matrix[index][9] = id_term_search  # updating matrix
 
-                        seq = 0
-                        for web_result in result_txts:
-                            seq += 1
-                            row = (id_term_search, 0, web_result['id'], seq, web_result['displayUrl'], web_result['name'],
-                                   web_result['snippet'], '')
-                            c.execute("""INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
-                                         search_engine_resource_id, result_seq, result_url, result_title,
-                                         result_description, result_html_text) VALUES(?,?,?,?,?,?,?,?)""",row)
-                        '''
-                        -------------------------------------
-                        Images
-                        -------------------------------------
-                        '''
-                        self.sys.log.info(':: caching (image) -> [%s]' % term)
-                        values = (
-                        term, self.config.search_engine_api, 2, self.config.search_engine_features_img,
-                        str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.config.search_engine_tot_resources,
-                        len(result_imgs), metaquery)
-
-                        sql = """INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
-                                search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery) VALUES(?,?,?,?,?,?,?,?)"""
-                        c.execute(sql, values)
-                        id_term_img = c.lastrowid
-                        self.horus_matrix[index][10] = id_term_img  # updating matrix
-                        seq = 0
-                        for web_img_result in result_imgs:
-                            self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
-                            seq += 1
-                            auxtype = self.download_image_local(web_img_result['contentUrl'],
+            with SQLiteHelper(self.config.database_db) as sqlcon:
+                t = HorusDB(sqlcon)
+                for index in range(len(self.horus_matrix)):
+                    term = self.horus_matrix[index][3]
+                    if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
+                        self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
+                        res = t.term_cached(term.upper(), self.config.search_engine_api, self.config.search_engine_features_text)
+                        if res is None or len(res) == 0:
+                            self.sys.log.info(':: not cached, querying the web -> [%s]' % term)
+                            metaquery, result_txts, result_imgs = query_bing(term, key=self.config.search_engine_key, market='en-US')
+                            '''
+                            --------------------------------------------------------------------------
+                            Web Sites (TEXT)
+                            --------------------------------------------------------------------------
+                            '''
+                            self.sys.log.info(':: caching (web site text) -> [%s]' % term)
+                            id_term_search = t.save_term(term, self.config.search_engine_tot_resources,
+                                                         len(result_txts), self.config.search_engine_api,
+                                                         1, self.config.search_engine_features_text,
+                                                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
+                            self.horus_matrix[index][9] = id_term_search
+                            seq = 0
+                            for web_result in result_txts:
+                                seq += 1
+                                t.save_website_data(id_term_search, 0, web_result['id'], seq, web_result['displayUrl'], web_result['name'], web_result['snippet'], '')
+                            '''
+                            --------------------------------------------------------------------------
+                            Images
+                            --------------------------------------------------------------------------
+                            '''
+                            self.sys.log.info(':: caching (web images) -> [%s]' % term)
+                            id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
+                                                         len(result_imgs), self.config.search_engine_api,
+                                                         2, self.config.search_engine_features_img,
+                                                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime()), metaquery))
+                            self.horus_matrix[index][10] = id_term_img
+                            seq = 0
+                            for web_img_result in result_imgs:
+                                self.sys.log.debug(':: downloading image [%s]' % (web_img_result['name']))
+                                seq += 1
+                                auxtype = self.download_image_local(web_img_result['contentUrl'],
                                                                     web_img_result['encodingFormat'],
                                                                     web_img_result['thumbnailUrl'],
                                                                     web_img_result['encodingFormat'], id_term_img, 0, seq)
-                            self.sys.log.debug(':: caching image result ...')
-                            fname = ('%s_%s_%s.%s' % (str(id_term_img), str(0), str(seq), str(auxtype)))
-                            row = (id_term_img, 0, seq, seq, web_img_result['contentUrl'],
-                                       web_img_result['name'], web_img_result['encodingFormat'], web_img_result['height'],
-                                       web_img_result['width'], web_img_result['thumbnailUrl'],
-                                       web_img_result['encodingFormat'], fname)
+                                self.sys.log.debug(':: caching image  ...')
+                                t.save_image_data(id_term_img, seq, web_img_result['contentUrl'], web_img_result['name'],
+                                                  web_img_result['encodingFormat'], web_img_result['height'],
+                                                  web_img_result['width'], web_img_result['thumbnailUrl'], str(auxtype))
 
-                            sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search, id_ner_type, 
-                                                                 search_engine_resource_id, result_seq, result_media_url, result_media_title,
-                                                                 result_media_content_type, result_media_height, result_media_width, 
-                                                                 result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
-                                                                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
-                            c.execute(sql, row)
-                            self.sys.log.debug(':: term [%s] cached (img)!' % term)
+                            t.commit()
+                        else:
+                            print term, res
+                            if (len(res) != 2):
+                                raise Exception("that should not happen!")
+                            if ((1 or 2) not in [row[1] for row in res]):
+                                raise Exception("that should not happen auch!")
+                            self.horus_matrix[index][9] = res[0][0]
+                            self.horus_matrix[index][10] = res[1][0]
 
-                        self.conn.commit()
-                    else:
-                        print term, res
-                        if (len(res) != 2):
-                            raise Exception("that should not happen!")
-                        if ((1 or 2) not in [row[1] for row in res]):
-                            raise Exception("that should not happen auch!")
-                        self.horus_matrix[index][9] = res[0][0]
-                        self.horus_matrix[index][10] = res[1][0]
-
-
-                auxc+=1
+                    auxc+=1
 
         except Exception as e:
             self.sys.log.error(':: an error has occurred: ', e)
             raise
+
+    #TODO: to implement Flickr API
+    def __download_and_cache_results_flickr(self):
+        raise Exception('not implemented')
+
+    def download_and_cache_results(self, engine):
+        try:
+            if engine == 'bing':
+                self.__download_and_cache_results_bing()
+            elif engine == 'flickr':
+                self.__download_and_cache_results_flickr()
+            else:
+                raise Exception('not implemented')
+        except Exception as e:
+            return e
 
     def detect_faces(self,img):
         try:
