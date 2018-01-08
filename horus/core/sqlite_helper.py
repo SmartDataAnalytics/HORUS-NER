@@ -57,7 +57,7 @@ class HorusDB(object):
 
     def save_term(self, term, query_tot_resource, tot_results_returned, id_searchengine, id_searchtype, search_engine_features, query_date , metaquery):
         try:
-            values = (term, query_tot_resource, tot_results_returned, id_searchengine, id_searchtype, search_engine_features, query_date, metaquery)
+            values = (term, id_searchengine, id_searchtype, search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
             sql = """INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
                      search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
                      VALUES(?,?,?,?,?,?,?,?)"""
