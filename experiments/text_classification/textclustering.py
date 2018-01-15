@@ -31,10 +31,13 @@ from sklearn.linear_model import LogisticRegression as LR
 #b = np.zeros((N,N+1))
 #b[:,:-1] = a
 
-#CONST_WIKI_PER_FILE = '/Users/dnes/Github/horus-models/dataset/Wikipedia/wiki_PER2.csv'
-#CONST_WIKI_LOC_FILE = '/Users/dnes/Github/horus-models/dataset/Wikipedia/wiki_LOC2.csv'
-#CONST_WIKI_ORG_FILE = '/Users/dnes/Github/horus-models/dataset/Wikipedia/wiki_ORG2.csv'
-CONST_WIKI_ALL = '/Users/esteves/Github/horus-models/data/dataset/Wikipedia/wiki_3classes2.csv'
+from horus.core.config import HorusConfig
+config = HorusConfig()
+
+#CONST_WIKI_PER_FILE = config.dataset_path + '/Wikipedia/wiki_PER2.csv'
+#CONST_WIKI_LOC_FILE = config.dataset_path + '/Wikipedia/wiki_LOC2.csv'
+#CONST_WIKI_ORG_FILE = config.dataset_path + '/Wikipedia/wiki_ORG2.csv'
+CONST_WIKI_ALL = config.dataset_path + '/Wikipedia/wiki_3classes2.csv'
 
 
 #train_ds = pd.read_csv(CONST_WIKI_PER_FILE, header=0, quoting=3) #engine='python' sep='\t',
@@ -43,7 +46,6 @@ CONST_WIKI_ALL = '/Users/esteves/Github/horus-models/data/dataset/Wikipedia/wiki
 #train_ds_per = np.genfromtxt(CONST_WIKI_PER_FILE, delimiter="|\-/|", skip_header=1, dtype={'names': ('klass', 'text'), 'formats': (np.int, '|S1000')})
 train_ds = np.genfromtxt(CONST_WIKI_ALL, delimiter="|\-/|", skip_header=1, dtype={'names': ('klass', 'text'), 'formats': (np.int, '|S1000')})
 
-MODELS_TEXT_DIR = '/Users/esteves/Github/horus-models/src/horus/resource/models/horus/text/'
 
 html_parser = HTMLParser.HTMLParser()
 train_ds_clean = html_parser.unescape(train_ds)
@@ -106,7 +108,7 @@ docs_per2 = [['A Última Vez Que Vi Richard ilustração. quadrinhos Diego Estev
              ['Diego Esteves is on Facebook. Join Facebook to connect with Diego Esteves and others you may know. Facebook gives people the power to share and makes the... Diego Esteves | Facebook', 3],
              ['Ähnliche XING-Profile wie das von DIEGO ESTEVES ALMANZA. Martin Reyes Rico Gerente Comercial Mexico adrian soriano carrillo ... DIEGO ESTEVES ALMANZA - GERENTE - xing.com', 3]]
 
-clf = joblib.load('nbpipelinetfidf.pkl')
+clf = joblib.load(config.models_text_root + 'nbpipelinetfidf.pkl')
 print clf.predict('A Última Vez Que Vi Richard ilustração. quadrinhos Diego Esteves')
 #exit(0)
 
@@ -116,7 +118,7 @@ count_vect = CountVectorizer(stop_words='english', lowercase=True, strip_accents
                              encoding='utf-8', decode_error='ignore')
 X_train_counts = count_vect.fit_transform(Xtrain['text'])
 print X_train_counts.shape
-joblib.dump(X_train_counts, MODELS_TEXT_DIR + 'xtrain-counts.data', compress=3)
+joblib.dump(X_train_counts, config.models_text_root + 'xtrain-counts.data', compress=3)
 #print count_vect.vocabulary_.get(u'algorithm')
 
 ''' tf-idf '''
@@ -128,46 +130,46 @@ joblib.dump(X_train_counts, MODELS_TEXT_DIR + 'xtrain-counts.data', compress=3)
 tfidf_transformer = TfidfTransformer()
 X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 print X_train_tfidf.shape
-joblib.dump(X_train_counts, MODELS_TEXT_DIR + 'xtrain-counts-tfidf.data', compress=3)
+joblib.dump(X_train_counts, config.models_text_root + 'xtrain-counts-tfidf.data', compress=3)
 
 ''' training '''
 
 
 clf = MultinomialNB().fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf, MODELS_TEXT_DIR + 'multiNB.pkl', compress=3)
+joblib.dump(clf, config.models_text_root + 'multiNB.pkl', compress=3)
 
 clf2 = BernoulliNB().fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf2, MODELS_TEXT_DIR + 'bernoulliNB.pkl', compress=3)
+joblib.dump(clf2, config.models_text_root + 'bernoulliNB.pkl', compress=3)
 
 clf3 = SGDClassifier(alpha=.0001, n_iter=50, penalty="elasticnet").fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf3, MODELS_TEXT_DIR + 'sgd.pkl', compress=3)
+joblib.dump(clf3, config.models_text_root + 'sgd.pkl', compress=3)
 
 clf4 = LinearSVC(loss='l2', dual=False, tol=1e-3).fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf4, MODELS_TEXT_DIR + 'linearSVCloss.pkl', compress=3)
+joblib.dump(clf4, config.models_text_root + 'linearSVCloss.pkl', compress=3)
 
 clf5 = MultinomialNB(alpha=.01).fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf5, MODELS_TEXT_DIR + 'multiNBa01.pkl', compress=3)
+joblib.dump(clf5, config.models_text_root + 'multiNBa01.pkl', compress=3)
 
 clf6 = BernoulliNB(alpha=.01).fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf6, MODELS_TEXT_DIR + 'bernoulliNBa01.pkl', compress=3)
+joblib.dump(clf6, config.models_text_root + 'bernoulliNBa01.pkl', compress=3)
 
 clf7 = NearestCentroid().fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf7, MODELS_TEXT_DIR + 'NC.pkl', compress=3)
+joblib.dump(clf7, config.models_text_root + 'NC.pkl', compress=3)
 
 clf8 = LinearSVC().fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))
-joblib.dump(clf8, MODELS_TEXT_DIR + 'linearSVC.pkl', compress=3)
+joblib.dump(clf8, config.models_text_root + 'linearSVC.pkl', compress=3)
 
 
 
 ''' testing DBPedia '''
 colnames = ['object', 'abstract']
-df1 = pd.read_csv(("/Users/esteves/Github/horus-models/data/dataset/DBPedia/dbo_LOC.csv"), sep=',',
+df1 = pd.read_csv((config.dataset_path + "/DBPedia/dbo_LOC.csv"), sep=',',
                        names=colnames, header=0,
                        dtype={"object": str, "abstract": str})
-df2 = pd.read_csv(("/Users/esteves/Github/horus-models/data/dataset/DBPedia/dbo_ORG.csv"), sep=',',
+df2 = pd.read_csv((config.dataset_path + "/DBPedia/dbo_ORG.csv"), sep=',',
                        names=colnames, header=0,
                        dtype={"object": str, "abstract": str})
-df3 = pd.read_csv(("/Users/esteves/Github/horus-models/data/dataset/DBPedia/dbo_PER.csv"), sep=',',
+df3 = pd.read_csv((config.dataset_path + "/DBPedia/dbo_PER.csv"), sep=',',
                        names=colnames, header=0,
                        dtype={"object": str, "abstract": str})
 #loc_data = data.abstract.tolist()

@@ -25,12 +25,16 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
 from time import time
 
-name_export = 'text_classification_results_k_all'
+from horus.core.config import HorusConfig
+
+config = HorusConfig()
+
+#name_export = 'text_classification_results_k_all'
+
 
 target_names = ['LOC', 'ORG', 'PER']
-MODELS_TEXT_DIR = '/Users/esteves/Github/horus-models/src/horus/resource/models/horus/text/'
 
-CONST_WIKI_ALL = '/Users/esteves/Github/horus-models/data/dataset/Wikipedia/wiki_3classes2.csv'
+CONST_WIKI_ALL = config.dataset_path + '/Wikipedia/wiki_3classes2.csv'
 train_ds = np.genfromtxt(CONST_WIKI_ALL, delimiter="|\-/|", skip_header=1,
                          dtype={'names': ('klass', 'text'), 'formats': (np.int, '|S1000')})
 
@@ -57,12 +61,13 @@ print("done in %fs" % (duration))
 # TEST DATA
 ##########################
 
+DB_PEDIA_DS_PATH = config.dataset_path + '/DBPedia/'
 colnames = ['object', 'abstract']
-df1 = pd.read_csv(("/Users/esteves/Github/horus-models/data/dataset/DBPedia/dbo_LOC.csv"), sep=',',
+df1 = pd.read_csv((DB_PEDIA_DS_PATH + "dbo_LOC.csv"), sep=',',
                        names=colnames, header=0, dtype={"object": str, "abstract": str})
-df2 = pd.read_csv(("/Users/esteves/Github/horus-models/data/dataset/DBPedia/dbo_ORG.csv"), sep=',',
+df2 = pd.read_csv((DB_PEDIA_DS_PATH + "dbo_ORG.csv"), sep=',',
                        names=colnames, header=0, dtype={"object": str, "abstract": str})
-df3 = pd.read_csv(("/Users/esteves/Github/horus-models/data/dataset/DBPedia/dbo_PER.csv"), sep=',',
+df3 = pd.read_csv((DB_PEDIA_DS_PATH + "dbo_PER.csv"), sep=',',
                        names=colnames, header=0, dtype={"object": str, "abstract": str})
 df1['klass'] = 1
 df2['klass'] = 2
@@ -181,4 +186,4 @@ results.append(benchmark(Pipeline([
 print 'Exporting models'
 
 print 'Exporting results'
-joblib.dump(results, str(name_export) + '.pkl', compress=3)
+joblib.dump(results, config.models_text_root + 'text_classification_results_k_all.pkl', compress=3)

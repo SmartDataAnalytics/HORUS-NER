@@ -16,6 +16,9 @@ from sklearn.cross_validation import train_test_split
 #https://medium.com/towards-data-science/improving-the-interpretation-of-topic-models-87fd2ee3847d
 #http://miriamposner.com/blog/very-basic-strategies-for-interpreting-results-from-the-topic-modeling-tool/
 #https://www.analyticsvidhya.com/blog/2016/08/beginners-guide-to-topic-modeling-in-python/
+from horus.core.config import HorusConfig
+
+config = HorusConfig()
 
 '''
 POS filter -> remove IN, CD, MD
@@ -27,13 +30,14 @@ def get_histogram(sentences):
     counter = Counter(chain.from_iterable(sentences))
     # print counter
 
-doc1 = "Sugar is bad to consume. My sister likes to have sugar, but not my father."
-doc2 = "My father spends a lot of time driving my sister around to dance practice."
-doc3 = "Doctors suggest that driving may cause increased stress and blood pressure."
-doc4 = "Sometimes I feel pressure to perform well at school, but my father never seems to drive my sister to do better."
-doc5 = "Health experts say that Sugar is not good for your lifestyle."
+#doc1 = "Sugar is bad to consume. My sister likes to have sugar, but not my father."
+#doc2 = "My father spends a lot of time driving my sister around to dance practice."
+#doc3 = "Doctors suggest that driving may cause increased stress and blood pressure."
+#doc4 = "Sometimes I feel pressure to perform well at school, but my father never seems to drive my sister to do better."
+#doc5 = "Health experts say that Sugar is not good for your lifestyle."
 
-CONST_WIKI_ALL = '/Users/nilesh/PycharmProjects/blah/wiki_3classes2.csv'
+#CONST_WIKI_ALL = config.dataset_path + '/Wikipedia/wiki_3classes2.csv'
+CONST_WIKI_ALL = config.dataset_path + '/Wikipedia/wiki_4classes.csv'
 dataset = np.genfromtxt(CONST_WIKI_ALL, delimiter="|\-/|", skip_header=1,
                          dtype={'names': ('klass', 'text'), 'formats': (np.int, '|S1000')})
 
