@@ -34,6 +34,24 @@ wvmodel = shorttext.utils.load_word2vec_model(emb)
 #trainclassdict = shorttext.data.subjectkeywords()
 trainclassdict  = dict
 
+
+
+classifier1 = shorttext.classifiers.load_varnnlibvec_classifier(wvmodel, 'text_convnet_plo.bin')
+#classifier2 = shorttext.classifiers.load_varnnlibvec_classifier(wvmodel, 'text_clstm_word_embed.bin')
+#classifier3 = shorttext.classifiers.load_varnnlibvec_classifier(wvmodel, 'text_double_cnn_word_embed.bin')
+
+print classifier1.score('village')
+print classifier1.score('river')
+print classifier1.score('chile')
+print classifier1.score('jack')
+print classifier1.score('esteves')
+print classifier1.score('global co.')
+print classifier1.score('global solutions')
+exit(0)
+
+
+
+
 kmodel1 = shorttext.classifiers.frameworks.CNNWordEmbed(len(trainclassdict.keys()), vecsize=300)
 kmodel2 = shorttext.classifiers.frameworks.CLSTMWordEmbed(len(trainclassdict.keys()), vecsize=300)
 kmodel3 = shorttext.classifiers.frameworks.DoubleCNNWordEmbed(len(trainclassdict.keys()), vecsize=300)
@@ -49,12 +67,9 @@ try:
     classifier3.train(trainclassdict, kmodel1, nb_epoch=1000)
 except:
     raise
-print classifier1.score('village')
-print classifier2.score('village')
-print classifier3.score('village')
+
 
 classifier1.save_compact_model('text_cnn_word_embed_plo.bin')
 classifier2.save_compact_model('text_clstm_word_embed.bin')
 classifier3.save_compact_model('text_double_cnn_word_embed.bin')
 
-#classifier2 = shorttext.classifiers.load_varnnlibvec_classifier(wvmodel, 'text_convnet_plo.bin')
