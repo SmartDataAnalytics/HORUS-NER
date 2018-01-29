@@ -1,3 +1,4 @@
+from sklearn.externals import joblib
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 import string
@@ -16,6 +17,7 @@ from sklearn.cross_validation import train_test_split
 #https://medium.com/towards-data-science/improving-the-interpretation-of-topic-models-87fd2ee3847d
 #http://miriamposner.com/blog/very-basic-strategies-for-interpreting-results-from-the-topic-modeling-tool/
 #https://www.analyticsvidhya.com/blog/2016/08/beginners-guide-to-topic-modeling-in-python/
+#https://radimrehurek.com/gensim/wiki.html
 from horus.core.config import HorusConfig
 
 config = HorusConfig()
@@ -80,8 +82,8 @@ def clean(doc):
 
 doc_clean = [clean(doc).split() for doc in doc_complete]
 
-# get_histogram(doc_clean)
-# exit(0)
+get_histogram(doc_clean)
+
 
 # Creating the term dictionary of our courpus, where every unique term is assigned an index.
 dictionary = corpora.Dictionary(doc_clean)
@@ -102,4 +104,5 @@ numpy_matrix = gensim.matutils.corpus2dense(corpus, num_terms=len(dictionary)).T
 X_train, X_test, y_train, y_test = train_test_split(np.array(numpy_matrix), labels, test_size=0.2, random_state=5)
 print type(X_train), type(y_train)
 svm = LinearSVC().fit(X_train, y_train)
+joblib.dump(svm, config.models_text_root + 'tp_model.pkl', compress=3)
 print "Accuracy:", svm.score(X_test, y_test)
