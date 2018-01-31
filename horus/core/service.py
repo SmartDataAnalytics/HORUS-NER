@@ -1388,8 +1388,7 @@ class Core(object):
 
         return ret
 
-    def detect_text_klass(self, t1, t2, id, t1en, t2en):
-
+    def translation(self, t1, t2, id, t1en, t2en):
         from translate import Translator
 
         try:
@@ -1439,7 +1438,7 @@ class Core(object):
                             # updating
 
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
-                         SET result_title_en = ? WHERE id = ?"""
+                                 SET result_title_en = ? WHERE id = ?"""
                 c.execute(sql, (t1final.encode("utf-8"), id))
                 self.conn.commit()
             else:
@@ -1461,31 +1460,44 @@ class Core(object):
                             # updating
 
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT
-                                SET result_description_en = ? WHERE id = ?"""
+                                        SET result_description_en = ? WHERE id = ?"""
                 c.execute(sql, (t2final.encode("utf-8"), id))
                 self.conn.commit()
             else:
                 t2final = t2en
 
             c.close()
-
-            docs = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
-            predictions = [self.text_checking_model_1.predict(docs)[0],
-                           self.text_checking_model_2.predict(docs)[0],
-                           self.text_checking_model_3.predict(docs)[0],
-                           self.text_checking_model_4.predict(docs)[0],
-                           self.text_checking_model_5.predict(docs)[0]]
-
-            return predictions
-
-            # blob = TextBlob(t2)
-            # t22 = blob.translate(to='en')
-            # text_vocab = set(w.lower() for w in t2 if w.lower().isalpha())
-            # unusual = text_vocab.difference(english_vocab)
-
         except Exception as e:
             self.sys.log.error(':: Error: ' + str(e))
-            return ret_error
+            return False, ret_error
+
+        return t1final, t2final
+
+    def detect_text_klass(self, t1, t2, id, t1en, t2en):
+
+        t1final, t2final = self.translation(t1, t2, id, t1en, t2en)
+        if t1final is False:
+            return False
+        else:
+            docs = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
+            if self.config.text_classification_type == 0:  # TFIDF
+                predictions = [self.text_checking_model_1.predict(docs)[0],
+                               self.text_checking_model_2.predict(docs)[0],
+                               self.text_checking_model_3.predict(docs)[0],
+                               self.text_checking_model_4.predict(docs)[0],
+                               self.text_checking_model_5.predict(docs)[0]]
+            elif self.config.text_classification_type == 1:  # TopicModeling
+                import shorttext
+                emb = '/Volumes/dne5data/embeddings/GoogleNews-vectors-negative300.bin.gz'
+                wvmodel = shorttext.utils.load_word2vec_model(emb)
+                modelpath = self.config.models_1_text_cnn
+                classifier1 = shorttext.classifiers.load_varnnlibvec_classifier(wvmodel, modelpath)
+                predictions = [classifier1.score(docs)]
+                predictions.append([0,0])
+            else:
+                raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
+            return predictions
 
     def remove_accents(self, data):
         return ' '.join(x for x in unicodedata.normalize('NFKD', data) if x in string.ascii_letters).lower()
@@ -1765,10 +1777,20 @@ class Core(object):
                 y = []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("""SELECT id, result_seq, result_title, result_description, result_title_en,
+                    if self.config.object_detection_type == 0:  # SIFT
+                        _sql = """SELECT id, result_seq, result_title, result_description, result_title_en,
                                       result_description_en, processed, text_1_klass, text_2_klass, text_3_klass, 
                                       text_4_klass, text_5_klass FROM HORUS_SEARCH_RESULT_TEXT
-                                      WHERE id_term_search = %s AND id_ner_type = %s""" % (id_term_txt, id_ner_type))
+                                      WHERE id_term_search = %s AND id_ner_type = %s"""
+                    elif self.config.object_detection_type == 1:  # CNN
+                        _sql = """SELECT id, result_seq, result_title, result_description, result_title_en,
+                                      result_description_en, processed_cnn, text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 
+                                      0, 0, FROM HORUS_SEARCH_RESULT_TEXT
+                                      WHERE id_term_search = %s AND id_ner_type = %s"""
+                    else:
+                        raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
+                    cursor.execute(_sql % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()
 
                     nr_results_txt = len(rows)
@@ -1778,13 +1800,22 @@ class Core(object):
 
                     tot_err = 0
                     for itxt in range(limit_txt):
+
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                            ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4],
-                                                         rows[itxt][5])
+
+                            if self.config.object_detection_type == 0:
+                                ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                                _sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
+                                          text_3_klass = %s, text_4_klass = %s, text_5_klass = %s WHERE id = %s"""
+                            elif self.config.object_detection_type == 1:
+                                ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                                _sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed_cnn = 1, text_1_klass_cnn = %s, text_2_klass_cnn = %s,
+                                                                          text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s WHERE id = %s"""
+                            else:
+                                raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
                             y.append(ret)
-                            sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
-                                     text_3_klass = %s, text_4_klass = %s, text_5_klass = %s
-                                     WHERE id = %s""" % (ret[0], ret[1], ret[2], ret[3], ret[4], rows[itxt][0])
+                            sql = _sql % (ret[0], ret[1], ret[2], ret[3], ret[4], rows[itxt][0])
                             cursor.execute(sql)
                             if ret[0] == -1 or ret[1] == -1 or ret[2] == -1 or ret[3] == -1 or ret[4] == -1:
                                 tot_err += 1
