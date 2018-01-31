@@ -84,6 +84,8 @@ class HorusConfig(object):
                     self.models_4_text = models_rootdir + parser.get('models-text', 'horus_textchecking_4')
                     self.models_5_text = models_rootdir + parser.get('models-text', 'horus_textchecking_5')
 
+                    self.models_1_text_cnn = models_rootdir + parser.get('models-text', 'horus_texthecking_tm_cnn')
+
                     self.model_final = models_rootdir + parser.get('models-horus', 'horus_final')
                     self.model_final_encoder = models_rootdir + parser.get('models-horus', 'horus_final_encoder')
 
@@ -120,6 +122,8 @@ class HorusConfig(object):
                     self.models_pos_tag_lib = int(parser.get('models-param', 'pos_tag_lib'))
                     self.models_pos_tag_lib_type = int(parser.get('models-param', 'pos_tag_lib_type'))
                     self.models_kmeans_trees = int(parser.get('models-param', 'kmeans-trees'))
+                    self.object_detection_type = int(parser.get('models-param', 'object_detection_type'))
+                    self.text_classification_type = int(parser.get('models-param', 'text_classification_type'))
 
                     fine = True
 

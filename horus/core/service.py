@@ -48,6 +48,11 @@ import torch.nn as nn
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 
+from torch.autograd import Variable
+import numpy as np
+import matplotlib.image as mpimg
+from PIL import Image
+
 from horus.core import definitions
 from horus.core.config import HorusConfig
 from horus.core.nlp_tools import NLPTools
@@ -1492,8 +1497,8 @@ class Core(object):
         return temp
         # return "".join(i for i in temp if ord(i) < 128)
 
-    def detect_faces_cnn(image):
-        img = torch.from_numpy(img / float(255)).float()
+    def detect_faces_cnn(self, image):
+        img = torch.from_numpy(image / float(255)).float()
         img.unsqueeze_(-1)
         img = img.expand(28, 28, 3)
         img = img.transpose(2, 0)
@@ -1506,8 +1511,8 @@ class Core(object):
         _, predicted = torch.max(outputs.data, 1)
         return predicted.numpy().sum()
 
-    def detect_logo_cnn(image):
-        img = torch.from_numpy(img / float(255)).float()
+    def detect_logo_cnn(self, image):
+        img = torch.from_numpy(image / float(255)).float()
         img.unsqueeze_(-1)
         img = img.expand(28, 28, 3)
         img = img.transpose(2, 0)
@@ -1520,9 +1525,9 @@ class Core(object):
         _, predicted = torch.max(outputs.data, 1)
         return predicted.numpy().sum()
 
-    def detect_place_cnn(image):
+    def detect_place_cnn(self, image):
         ret = []
-        img = torch.from_numpy(img / float(255)).float()
+        img = torch.from_numpy(image / float(255)).float()
         img.unsqueeze_(-1)
         img = img.expand(28, 28, 3)
         img = img.transpose(2, 0)
@@ -1589,14 +1594,14 @@ class Core(object):
         outputs = cnn(img_variable)
         _, predicted = torch.max(outputs.data, 1)
         ret.append(predicted.numpy().sum())
-        return new_ret
+        return ret
 
-    def preprocess_image(img):
+    def preprocess_image(self, img):
         if len(img.shape) == 3:
             r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
             img = 0.2989 * r + 0.5870 * g + 0.1140 * b
             resized_image = cv2.resize(img, (28, 28))
-        return image
+        return resized_image
 
     def detect_objects(self):  # id_term_img, id_term_txt, id_ner_type, term
         self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
@@ -1627,10 +1632,20 @@ class Core(object):
                 filesimg = []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("""SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2,
-                                             nr_place_3, nr_place_4, nr_place_5, nr_place_6, nr_place_7, nr_place_8,
-                                             nr_place_9, nr_place_10 FROM HORUS_SEARCH_RESULT_IMG 
-                                      WHERE id_term_search = %s AND id_ner_type = %s """ % (id_term_img, id_ner_type))
+                    if self.config.object_detection_type == 0:  # SIFT
+                        _sql = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2,
+                                        nr_place_3, nr_place_4, nr_place_5, nr_place_6, nr_place_7, nr_place_8,
+                                        nr_place_9, nr_place_10 FROM HORUS_SEARCH_RESULT_IMG 
+                                 WHERE id_term_search = %s AND id_ner_type = %s """
+                    elif self.config.object_detection_type == 1:  # CNN
+                        _sql = """SELECT filename, id, processed_cnn, nr_faces_cnn, nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn,
+                                  nr_place_3_cnn, nr_place_4_cnn, nr_place_5_cnn, nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn,
+                                  nr_place_9_cnn, nr_place_10_cnn FROM HORUS_SEARCH_RESULT_IMG 
+                                  WHERE id_term_search = %s AND id_ner_type = %s """
+                    else:
+                        raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
+                    cursor.execute(_sql % (id_term_img, id_ner_type))
                     rows = cursor.fetchall()
 
                     nr_results_img = len(rows)
@@ -1638,8 +1653,7 @@ class Core(object):
                         self.sys.log.debug(":: term has not returned images!")
                     limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
-                    for indeximgs in range(
-                            limit_img):  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
+                    for indeximgs in range(limit_img):  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
                         filesimg.append(
                             (self.config.cache_img_folder + rows[indeximgs][0], rows[indeximgs][1], rows[indeximgs][2],
                              rows[indeximgs][3], rows[indeximgs][4], rows[indeximgs][5], rows[indeximgs][6],
@@ -1649,15 +1663,16 @@ class Core(object):
                              rows[indeximgs][13], rows[indeximgs][14]))
 
                 for image_term in filesimg:
-                    if image_term[2] == 1:
+                    if image_term[2] == 1: # processed
                         tot_geral_faces += image_term[3]
                         tot_geral_logos += image_term[4]
                         if (image_term[5:13]).count(1) >= int(T):
                             tot_geral_locations += 1
                         tot_geral_pos_locations += image_term[5:13].count(1)
                         tot_geral_neg_locations += (image_term[5:13].count(-1) * -1)
+
                     else:
-                        if self.objectdetection_type == 0:
+                        if self.config.object_detection_type == 0:
                             # ----- face recognition -----
                             tot_faces = self.detect_faces(image_term[0])
                             if tot_faces > 0:
@@ -1678,7 +1693,7 @@ class Core(object):
                                 self.sys.log.debug(":: found {0} place(s)!".format(1))
 
                         elif self.objectdetection_type == 1:
-                            image = preprocess_image(image_term[0])
+                            image = self.preprocess_image(image_term[0])
                             # ----- face recognition -----
                             tot_faces = self.detect_faces_cnn(image)
                             if tot_faces > 0:
@@ -1699,10 +1714,19 @@ class Core(object):
                                 self.sys.log.debug(":: found {0} place(s)!".format(1))
 
                         # updating results
-                        sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, 
-                                 nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, 
-                                 nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, processed = 1
-                                 WHERE id = ?"""
+                        if self.config.object_detection_type == 0:  # SIFT
+                            _sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, 
+                                     nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, 
+                                     nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, processed = 1
+                                     WHERE id = ?"""
+                        elif self.config.object_detection_type == 1:  # CNN
+                            _sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces_cnn = ?, nr_logos_cnn = ?, nr_place_1_cnn = ?, 
+                                      nr_place_2_cnn = ?, nr_place_3_cnn = ?, nr_place_4_cnn = ?, nr_place_5_cnn = ?, nr_place_6_cnn = ?, 
+                                      nr_place_7_cnn = ?, nr_place_8_cnn = ?, nr_place_9_cnn = ?, nr_place_10_cnn = ?, processed_cnn = 1
+                                      WHERE id = ?"""
+                        else:
+                            raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
                         param = []
                         param.append(tot_faces)
                         param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
