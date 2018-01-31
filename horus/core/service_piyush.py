@@ -42,6 +42,12 @@ from django.core.validators import URLValidator
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
+import matplotlib.image as mpimg
+import torch 
+import torch.nn as nn
+import torchvision.datasets as dsets
+import torchvision.transforms as transforms
+
 
 from horus.core import definitions
 from horus.core.config import HorusConfig
@@ -1564,8 +1570,11 @@ class Core(object):
         ret.append(predicted.numpy().sum())
         return new_ret
 
-    def preprocessed_image(image):
-        #add
+    def preprocess_image(img):
+        if len(img.shape) == 3:
+        	r, g, b = img[:,:,0], img[:,:,1], img[:,:,2]
+        	img = 0.2989 * r + 0.5870 * g + 0.1140 * b
+        	resized_image = cv2.resize(img, (28, 28))
         return image
 
     def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
