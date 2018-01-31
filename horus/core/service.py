@@ -31,6 +31,7 @@ import string
 import unicodedata
 from time import gmtime, strftime
 
+import shorttext
 import cv2
 import langdetect
 import nltk
@@ -62,7 +63,11 @@ from horus.core.systemlog import SystemLog
 
 # print cv2.__version__
 from horus.core.translation.bingtranslation import BingTranslator
+import en_core_web_sm
+import os
 
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+nlp = en_core_web_sm.load()
 
 class CNN(nn.Module):
     def __init__(self):
@@ -181,6 +186,9 @@ class Core(object):
         self.text_checking_model_5 = joblib.load(self.config.models_5_text)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)
+        self.emb = '/Users/diegoesteves/Downloads/GoogleNews-vectors-negative300 (1).bin.gz'
+        self.wvmodel = shorttext.utils.load_word2vec_model(self.emb)
+        self.classifier_tm = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel, self.config.models_1_text_cnn)
 
         self.conn = sqlite3.connect(self.config.database_db)
         self.horus_matrix = []
@@ -1486,13 +1494,13 @@ class Core(object):
                                self.text_checking_model_4.predict(docs)[0],
                                self.text_checking_model_5.predict(docs)[0]]
             elif self.config.text_classification_type == 1:  # TopicModeling
-                import shorttext
-                emb = '/Volumes/dne5data/embeddings/GoogleNews-vectors-negative300.bin.gz'
-                wvmodel = shorttext.utils.load_word2vec_model(emb)
-                modelpath = self.config.models_1_text_cnn
-                classifier1 = shorttext.classifiers.load_varnnlibvec_classifier(wvmodel, modelpath)
-                predictions = [classifier1.score(docs)]
-                predictions.append([0,0])
+                dict = self.classifier_tm.score(docs)
+                predictions = []
+                predictions.append(dict.get('loc'))
+                predictions.append(dict.get('per'))
+                predictions.append(dict.get('org'))
+                predictions.append(0)
+                predictions.append(0)
             else:
                 raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
 
