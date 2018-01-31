@@ -38,7 +38,7 @@ class HorusConfig(object):
 
                     self.encoder_path = models_rootdir + parser.get('path', 'encoder_path')
 
-                    self.models_cnn_loc1 = models_rootdir + parser.get('models-cnn  ', 'horus_loc_1')
+                    self.models_cnn_loc1 = models_rootdir + parser.get('models-cnn', 'horus_loc_1')
                     self.models_cnn_loc2 = models_rootdir + parser.get('models-cnn', 'horus_loc_2')
                     self.models_cnn_loc3 = models_rootdir + parser.get('models-cnn', 'horus_loc_3')
                     self.models_cnn_loc4 = models_rootdir + parser.get('models-cnn', 'horus_loc_4')

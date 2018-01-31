@@ -322,10 +322,11 @@ le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 le2 = joblib.load(config.encoder_path + "_encoder_nltk2.pkl")
 
 dataset_prefix = config.output_path + "experiments/EXP_001/"
-datasets = (("ritter.horus.conll", le1),
-            ("wnut15.horus.conll", le1),
-            ("wnut16.horus.conll", le1),
-            ("coNLL2003_test.a.horus.conll", le2))
+datasets = (("ritter.horus", le1),
+            ("wnut15.horus", le1))
+
+#("wnut16.horus", le1),
+#            ("coNLL2003_test.a.horus", le2)
 
 #labels = list(crf.classes_)
 # trick for report visualization
@@ -342,7 +343,7 @@ del sorted_labels[4]
 
 r = [42, 39, 10, 5, 50]
 
-run_models(False, False, True, False)
+run_models(False, True, False, False)
 
 exit(0)
 

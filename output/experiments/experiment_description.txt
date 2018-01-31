@@ -1,5 +1,31 @@
+------------------------------------------------------------------------
 EXP_000
 - first tests
 EXP_003
 - do tokenization (tweet nlp tokenizer for microblog and NLTK for conll)
 - english
+------------------------------------------------------------------------
+EXP_001
+- do tokenization (tweet nlp tokenizer for microblog and NLTK for conll)
+- english
+- SIFT (CV)
+- BoW+TF-IDF (TXT)
+------------------------------------------------------------------------
+EXP_002
+- do tokenization (tweet nlp tokenizer for microblog and NLTK for conll)
+- english
+- SIFT (CV)
+- Topic Modeling (TXT)
+------------------------------------------------------------------------
+EXP_003
+- do tokenization (tweet nlp tokenizer for microblog and NLTK for conll)
+- english
+- CNN (CV)
+- BoW+TF-IDF (TXT)
+------------------------------------------------------------------------
+EXP_004
+- do tokenization (tweet nlp tokenizer for microblog and NLTK for conll)
+- english
+- CNN (CV)
+- Topic Modeling (TXT)
+------------------------------------------------------------------------

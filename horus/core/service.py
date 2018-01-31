@@ -1184,12 +1184,12 @@ class Core(object):
                             self.sys.log.info(':: not cached, querying -> [%s]' % term)
 
                             # Microsoft Bing
-                            if self.config.search_engine_api == 1:
+                            if int(self.config.search_engine_api) == 1:
                                 metaquery, result_txts, result_imgs = query_bing(term,
                                                                                  key=self.config.search_engine_key,
                                                                                  top=self.config.search_engine_tot_resources)
                             # Flickr
-                            elif self.config.search_engine_api == 3:
+                            elif (self.config.search_engine_api) == 3:
                                 metaquery, result_imgs = query_flickr(term)
                                 metaquery, result_txts = query_wikipedia(term)
 
