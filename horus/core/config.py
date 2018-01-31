@@ -38,6 +38,19 @@ class HorusConfig(object):
 
                     self.encoder_path = models_rootdir + parser.get('path', 'encoder_path')
 
+                    self.models_cnn_loc1 = models_rootdir + parser.get('models-cnn  ', 'horus_loc_1')
+                    self.models_cnn_loc2 = models_rootdir + parser.get('models-cnn', 'horus_loc_2')
+                    self.models_cnn_loc3 = models_rootdir + parser.get('models-cnn', 'horus_loc_3')
+                    self.models_cnn_loc4 = models_rootdir + parser.get('models-cnn', 'horus_loc_4')
+                    self.models_cnn_loc5 = models_rootdir + parser.get('models-cnn', 'horus_loc_5')
+                    self.models_cnn_loc6 = models_rootdir + parser.get('models-cnn', 'horus_loc_6')
+                    self.models_cnn_loc7 = models_rootdir + parser.get('models-cnn', 'horus_loc_7')
+                    self.models_cnn_loc8 = models_rootdir + parser.get('models-cnn', 'horus_loc_8')
+                    self.models_cnn_loc9 = models_rootdir + parser.get('models-cnn', 'horus_loc_9')
+                    self.models_cnn_loc10 = models_rootdir + parser.get('models-cnn', 'horus_loc_10')
+                    self.models_cnn_per = models_rootdir + parser.get('models-cnn', 'horus_per')
+                    self.models_cnn_org = models_rootdir + parser.get('models-cnn', 'horus_org')
+
                     self.models_cv_loc1 = models_rootdir + parser.get('models-cv', 'horus_loc_1')
                     self.models_cv_loc2 = models_rootdir + parser.get('models-cv', 'horus_loc_2')
                     self.models_cv_loc3 = models_rootdir + parser.get('models-cv', 'horus_loc_3')
