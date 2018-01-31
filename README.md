@@ -24,6 +24,14 @@ python main.py --input_file="sentences.txt" --ds_format=0
 python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
 ```
 
+1. to process an input file (e.g., conll) and generate the horus feature file format
+- examples/process_input_file.py
+
+2. to convert a horus input file format to conll
+- horus/core/data_conversion.py
+
+3. to run some benchmarks
+- experiments/benchmarking.py
 
 ## Version
 - 0.1.0 initial version

@@ -1171,8 +1171,8 @@ class Core(object):
                 for index in range(len(self.horus_matrix)):
                     term = self.horus_matrix[index][3]
                     if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
-                        self.sys.log.debug(
-                            ':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
+                        if auxc%1000==0:
+                            self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
                         res = t.term_cached(term.upper(), self.config.search_engine_api,
                                             self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
@@ -1238,7 +1238,6 @@ class Core(object):
 
                             t.commit()
                         else:
-                            print term, res
                             if (len(res) != 2):
                                 raise Exception("that should not happen!")
                             if ((1 or 2) not in [row[1] for row in res]):
@@ -1777,15 +1776,15 @@ class Core(object):
                 y = []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    if self.config.object_detection_type == 0:  # SIFT
+                    if self.config.text_classification_type == 0:  # SIFT
                         _sql = """SELECT id, result_seq, result_title, result_description, result_title_en,
                                       result_description_en, processed, text_1_klass, text_2_klass, text_3_klass, 
                                       text_4_klass, text_5_klass FROM HORUS_SEARCH_RESULT_TEXT
                                       WHERE id_term_search = %s AND id_ner_type = %s"""
-                    elif self.config.object_detection_type == 1:  # CNN
+                    elif self.config.text_classification_type == 1:  # CNN
                         _sql = """SELECT id, result_seq, result_title, result_description, result_title_en,
                                       result_description_en, processed_cnn, text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 
-                                      0, 0, FROM HORUS_SEARCH_RESULT_TEXT
+                                      0, 0 FROM HORUS_SEARCH_RESULT_TEXT
                                       WHERE id_term_search = %s AND id_ner_type = %s"""
                     else:
                         raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
@@ -1803,11 +1802,11 @@ class Core(object):
 
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
 
-                            if self.config.object_detection_type == 0:
+                            if self.config.text_classification_type == 0:
                                 ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                 _sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
                                           text_3_klass = %s, text_4_klass = %s, text_5_klass = %s WHERE id = %s"""
-                            elif self.config.object_detection_type == 1:
+                            elif self.config.text_classification_type == 1:
                                 ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                 _sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed_cnn = 1, text_1_klass_cnn = %s, text_2_klass_cnn = %s,
                                                                           text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s WHERE id = %s"""
