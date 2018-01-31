@@ -42,6 +42,11 @@ from django.core.validators import URLValidator
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
+import matplotlib.image as mpimg
+import torch
+import torch.nn as nn
+import torchvision.datasets as dsets
+import torchvision.transforms as transforms
 
 from horus.core import definitions
 from horus.core.config import HorusConfig
@@ -50,10 +55,36 @@ from horus.core.search_engines import query_bing, query_flickr, query_wikipedia
 from horus.core.sqlite_helper import SQLiteHelper, HorusDB
 from horus.core.systemlog import SystemLog
 
-
 # print cv2.__version__
 from horus.core.translation.bingtranslation import BingTranslator
 
+
+class CNN(nn.Module):
+    def __init__(self):
+        super(CNN, self).__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=5, padding=2),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(16, 32, kernel_size=5, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.fc1 = nn.Linear(7 * 7 * 32, 100)
+        self.fc2 = nn.Linear(100, 10)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = out.view(out.size(0), -1)
+        out = self.fc1(out)
+        out = self.fc2(out)
+        return out
+
+
+cnn = CNN()
 
 
 class Core(object):
@@ -93,7 +124,7 @@ class Core(object):
                               annotator_stanford_compounds = ?, annotator_tweetNLP_compounds = ?
                             WHERE id = ?"""
                     c2.execute(sql, (json.dumps(u0), json.dumps(u1), json.dumps(u2), id))
-            #self.conn.commit() -> ja fiz o que tinha que fazer...
+            # self.conn.commit() -> ja fiz o que tinha que fazer...
         except Exception as e:
             print e
             self.conn.rollback()
@@ -200,13 +231,13 @@ class Core(object):
                         if term == "''": swap = '"'
                         if term == '"': swap = "''"
                     # tweetNLP
-                    #if u'&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt' == x[i]:
+                    # if u'&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt' == x[i]:
                     #    term = term.replace(u'&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;lt', u'&lt;')
-                    #elif u'&' in x[i]:
+                    # elif u'&' in x[i]:
                     #    term = term.replace(u'&', u'&amp;')
-                    #elif u'<' in x[i]:
+                    # elif u'<' in x[i]:
                     #    term = term.replace(u'<', u'&lt;')
-                    #elif u'>' in x[i]:
+                    # elif u'>' in x[i]:
                     #    term = term.replace(u'>', u'&gt;')
 
                     if self.config.models_pos_tag_lib == 3:
@@ -218,7 +249,7 @@ class Core(object):
                         term = re.sub("&amp;", "&", term)
                         term = re.sub("&quot;", '"', term)
                         term = re.sub("&apos;", "'", term)
-                        term = re.sub("&apos", "'", term) #trick
+                        term = re.sub("&apos", "'", term)  # trick
                         term = re.sub("&gt;", ">", term)
                         term = re.sub("&lt;", "<", term)
 
@@ -237,10 +268,7 @@ class Core(object):
         try:
             for i in range(len(x)):
                 x[i] = x[i].replace('``', u'"')
-                #x[i] = x[i].replace("''", u'"')
-
-
-
+                # x[i] = x[i].replace("''", u'"')
 
             ##################################################
             # cases (|count(left)| + x + |count(right)| = 7)
@@ -293,9 +321,9 @@ class Core(object):
                 if (ix + 4 < len(x) and ix >= 1) else ''
             merged_bef_1_aft_5 = x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] + x[ix + 5] \
                 if (ix + 5 < len(x) and ix >= 1) else ''
-            merged_bef_1_aft_6 = x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] + x[ix + 5] + x[ix + 6] \
+            merged_bef_1_aft_6 = x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] + x[ix + 5] + x[
+                ix + 6] \
                 if (ix + 6 < len(x) and ix >= 1) else ''
-
 
             # -2..5 d +1
             merged_bef_2_aft_1 = x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] \
@@ -306,9 +334,11 @@ class Core(object):
                 if (ix + 1 < len(x) and ix >= 4) else ''
             merged_bef_5_aft_1 = x[ix - 5] + x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] \
                 if (ix + 1 < len(x) and ix >= 5) else ''
-            merged_bef_6_aft_1 = x[ix - 6] + x[ix - 5] + x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] \
+            merged_bef_6_aft_1 = x[ix - 6] + x[ix - 5] + x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[
+                ix + 1] \
                 if (ix + 1 < len(x) and ix >= 6) else ''
-            merged_bef_5_aft_2 = x[ix - 5] + x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] \
+            merged_bef_5_aft_2 = x[ix - 5] + x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[
+                ix + 2] \
                 if (ix + 2 < len(x) and ix >= 5) else ''
 
             # -2 d +3..5
@@ -316,19 +346,20 @@ class Core(object):
                 if (ix + 3 < len(x) and ix >= 2) else ''
             merged_bef_2_aft_4 = x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] \
                 if (ix + 4 < len(x) and ix >= 2) else ''
-            merged_bef_2_aft_5 = x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] + x[ix + 5] \
+            merged_bef_2_aft_5 = x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] + x[
+                ix + 5] \
                 if (ix + 5 < len(x) and ix >= 2) else ''
-
 
             # -3..4 d +2
             merged_bef_3_aft_2 = x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] \
                 if (ix + 2 < len(x) and ix >= 3) else ''
-            merged_bef_3_aft_4 = x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[ix + 4] \
+            merged_bef_3_aft_4 = x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] + x[ix + 3] + x[
+                ix + 4] \
                 if (ix + 4 < len(x) and ix >= 3) else ''
-            merged_bef_4_aft_2 = x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2]  \
+            merged_bef_4_aft_2 = x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] \
                 if (ix + 2 < len(x) and ix >= 4) else ''
             merged_bef_4_aft_3 = x[ix - 4] + x[ix - 3] + x[ix - 2] + x[ix - 1] + x[ix] + x[ix + 1] + x[ix + 2] \
-                + x[ix + 3] if (ix + 3 < len(x) and ix >= 4) else ''
+                                 + x[ix + 3] if (ix + 3 < len(x) and ix >= 4) else ''
 
             seq = [[term, -1, 1],
                    [merged_aft_1, -1, 2],
@@ -370,10 +401,10 @@ class Core(object):
             for s in seq:
                 xbefore1 = x[ix + s[1]] if (ix + s[1]) >= 0 else ''
 
-                xbefore2 = x[ix + s[1] - 1] + x[ix + s[1]]  \
+                xbefore2 = x[ix + s[1] - 1] + x[ix + s[1]] \
                     if (ix + s[1] - 1) >= 0 else ''
 
-                xbefore3 = x[ix + s[1] - 2] + x[ix + s[1] - 1] + x[ix + s[1]]  \
+                xbefore3 = x[ix + s[1] - 2] + x[ix + s[1] - 1] + x[ix + s[1]] \
                     if (ix + s[1] - 2) >= 0 else ''
 
                 xbefore4 = x[ix + s[1] - 3] + x[ix + s[1] - 2] + x[ix + s[1] - 1] + x[ix + s[1]] \
@@ -388,7 +419,7 @@ class Core(object):
                 xafter3 = x[ix + s[2]] + x[ix + s[2] + 1] + x[ix + s[2] + 2] \
                     if (ix + s[2] + 2) < len(x) else ''
 
-                xafter2 = x[ix + s[2]] + x[ix + s[2] + 1]  \
+                xafter2 = x[ix + s[2]] + x[ix + s[2] + 1] \
                     if (ix + s[2] + 1) < len(x) else ''
 
                 xafter1 = x[ix + s[2]] \
@@ -399,14 +430,14 @@ class Core(object):
                     yafter = y[iy + 1] if iy + 1 < len(y) else ''
                     print '    ybefore: %s, y: %s, yafter: %s' % (ybefore, y[iy], yafter)
                     if (y[iy] == s[0] or y[iy] == s[0].replace(u'"', u"''")) and (ybefore == xbefore1 or
-                                          ybefore == xbefore2 or
-                                          ybefore == xbefore3 or
-                                          ybefore == xbefore4 or
-                                          ybefore == xbefore5 or
-                                          yafter == xafter1 or
-                                          yafter == xafter2 or
-                                          yafter == xafter3 or
-                                          yafter == xafter4):
+                                                                                  ybefore == xbefore2 or
+                                                                                  ybefore == xbefore3 or
+                                                                                  ybefore == xbefore4 or
+                                                                                  ybefore == xbefore5 or
+                                                                                  yafter == xafter1 or
+                                                                                  yafter == xafter2 or
+                                                                                  yafter == xafter3 or
+                                                                                  yafter == xafter4):
                         return iy
 
             print 'index not found'
@@ -443,11 +474,11 @@ class Core(object):
             q = True
             # optimization trick
             start = 0
-            #if i >= 14:
+            # if i >= 14:
             #    start = i - 14
-            #elif i >= 13:
+            # elif i >= 13:
             #    start = i - 13
-            #elif i >= 12:
+            # elif i >= 12:
             #    start = i - 12
             # tries to get a single not aligned token
             for z in range(start, len(y)):
@@ -474,8 +505,9 @@ class Core(object):
 
                     p = '_'
                     if ix + 1 < len(x):
-                            p = (term + x[ix+1])
-                    if (y[z] == term or y[z] == p) and (fine1 or fine2 or fine3 or fine4 or fine5 or fine6 or fine7 or fine8):
+                        p = (term + x[ix + 1])
+                    if (y[z] == term or y[z] == p) and (
+                            fine1 or fine2 or fine3 or fine4 or fine5 or fine6 or fine7 or fine8):
                         #  ok, is the correct one by value and position
                         index_token = y.index(y[z])
                         q = False
@@ -483,7 +515,7 @@ class Core(object):
                 except Exception:
                     continue
             # start to merge stuff and try to locate it
-            merged=''
+            merged = ''
             print '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-'
             ntimes = len(x) - start
             print 'ntimes = %s' % (ntimes)
@@ -493,7 +525,7 @@ class Core(object):
                     merged = ''
                     if q is False:
                         break
-                    for m in range(start, len(x)): #start, len(x)
+                    for m in range(start, len(x)):  # start, len(x)
                         xm = x[m].replace(u'``', u'"').replace('\'\'', u'"')
                         merged = merged + xm
                         print 'm = %s, xm = %s, merged = %s' % (m, xm, merged)
@@ -502,17 +534,18 @@ class Core(object):
                             af = (x[ix + 1] if ix + 1 < len(x) else '')
                             bf = (x[ix - 1] if ix > 0 else '')
 
-                            af = af.replace(u'``', u'"') #.replace('\'\'', u'"')
+                            af = af.replace(u'``', u'"')  # .replace('\'\'', u'"')
                             bf = bf.replace(u'``', u'"')
 
                             print 'af = %s, bf = %s' % (af, bf)
 
-                            if term in merged and (af in merged or bf in merged):  # if it is merged, at least 2 MUST be included
+                            if term in merged and (
+                                    af in merged or bf in merged):  # if it is merged, at least 2 MUST be included
                                 q = False
                                 break
                         except Exception:
                             continue
-                    start+=1
+                    start += 1
                 if q is True:
                     return None
 
@@ -523,7 +556,7 @@ class Core(object):
         return index_token
 
     def get_ner_mapping2(self, y, x, t, i):
-        if i+1 < len(y):
+        if i + 1 < len(y):
             if y[i] == t:
                 return i
         index_token = self.get_ner_mapping2_loop(x, y, i, t)
@@ -545,9 +578,9 @@ class Core(object):
                 return itermx
             else:
                 # simplest solution
-                for itermy in range(len(listy)-1):
-                    if listy[itermy] == termx and (listy[itermy-1] == listx[itermx-1]
-                                                    or listy[itermy+1] == listx[itermx+1]):
+                for itermy in range(len(listy) - 1):
+                    if listy[itermy] == termx and (listy[itermy - 1] == listx[itermx - 1]
+                                                   or listy[itermy + 1] == listx[itermx + 1]):
                         index_ner_y = itermy
                         break
                 if index_ner_y != -1:
@@ -604,7 +637,7 @@ class Core(object):
         sent_index = 0
         try:
             for sent in sentences:
-                sent_index+=1
+                sent_index += 1
                 ipositionstartterm = 0
                 for c in range(len(sent[6][self.config.models_pos_tag_lib])):
                     word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
@@ -619,16 +652,20 @@ class Core(object):
                 for i in range(len(sent[2][self.config.models_pos_tag_lib])):
                     term = sent[2][self.config.models_pos_tag_lib][i]
                     if len(sent[2][0]) > 0:
-                        ind_ner_real = self.get_ner_mapping_simple(sent[2][0], sent[2][self.config.models_pos_tag_lib], i, starty)
+                        ind_ner_real = self.get_ner_mapping_simple(sent[2][0], sent[2][self.config.models_pos_tag_lib],
+                                                                   i, starty)
                         starty = ind_ner_real
-                        #ind_ner = self.get_ner_mapping_slice(sent[2][0], sent[2][self.config.models_pos_tag_lib], i)
-                        #ind_ner = self.get_ner_mapping2(sent[2][0], sent[2][self.config.models_pos_tag_lib], term, i)
+                        # ind_ner = self.get_ner_mapping_slice(sent[2][0], sent[2][self.config.models_pos_tag_lib], i)
+                        # ind_ner = self.get_ner_mapping2(sent[2][0], sent[2][self.config.models_pos_tag_lib], term, i)
                         is_entity = 1 if sent[3][0][ind_ner_real] in definitions.NER_TAGS else 0
                     else:
                         is_entity = -1
-                    tag_ner = sent[3][self.config.models_pos_tag_lib][i] if len(sent[3][self.config.models_pos_tag_lib]) > 0 else ''
-                    tag_pos = sent[4][self.config.models_pos_tag_lib][i] if len(sent[4][self.config.models_pos_tag_lib]) > 0 else ''
-                    tag_pos_uni = sent[5][self.config.models_pos_tag_lib][i] if len(sent[5][self.config.models_pos_tag_lib]) > 0 else ''
+                    tag_ner = sent[3][self.config.models_pos_tag_lib][i] if len(
+                        sent[3][self.config.models_pos_tag_lib]) > 0 else ''
+                    tag_pos = sent[4][self.config.models_pos_tag_lib][i] if len(
+                        sent[4][self.config.models_pos_tag_lib]) > 0 else ''
+                    tag_pos_uni = sent[5][self.config.models_pos_tag_lib][i] if len(
+                        sent[5][self.config.models_pos_tag_lib]) > 0 else ''
                     word_index += 1
                     # we do not know if they have the same alignment, so test it to get the correct tag
                     if len(sent[3][0]) > 0:
@@ -653,16 +690,16 @@ class Core(object):
                     else:
                         tag_ner = definitions.KLASSES[4]
 
-                    temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0] # 0-8
+                    temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0]  # 0-8
                     temp.extend(self.populate_matrix_new_columns())
                     temp.extend([tag_ner_y])
                     ## that is a hack to integrate to GERBIL
-                    #if ipositionstartterm >= len(sent[1][0]):
+                    # if ipositionstartterm >= len(sent[1][0]):
                     #    ipositionstartterm-=1
-                    #if sent[1][0][ipositionstartterm] == term[0]:
+                    # if sent[1][0][ipositionstartterm] == term[0]:
                     #    if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
                     #        raise Exception("GERBIL integration: error 1!")
-                    #else:
+                    # else:
                     #    ipositionstartterm-=1
                     #    if sent[1][0][ipositionstartterm] == term[0]:
                     #        if sent[1][0][ipositionstartterm:ipositionstartterm+len(term)] != term:
@@ -681,7 +718,7 @@ class Core(object):
         return converted
 
     def populate_matrix_new_columns(self):
-        temp = [] #receives 0=8
+        temp = []  # receives 0=8
         temp.extend([0] * 9)  # 9-17
         temp.extend([definitions.KLASSES[4]])  # 18
         temp.extend([0] * 7)  # 19-25
@@ -690,7 +727,8 @@ class Core(object):
         temp.extend([definitions.KLASSES[4]] * 15)  # 36-50
         return temp
 
-    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv", ds_name=None, token_index = 0, ner_index = 1):
+    def annotate(self, input_text, input_file=None, ds_format=0, output_file='horus_out', output_format="csv",
+                 ds_name=None, token_index=0, ner_index=1):
         try:
             print self.version_label
             # 0 = text (parameter of reading file) / 1 = ritter
@@ -708,7 +746,7 @@ class Core(object):
 
                 sent_tokenize_list = self.process_input_text(text)
 
-            elif int(ds_format) == 1: #CoNLL format
+            elif int(ds_format) == 1:  # CoNLL format
                 if input_file is None:
                     raise Exception("Provide an input file format to be annotated")
                 self.sys.log.info(':: processing CoNLL format -> %s' % ds_name)
@@ -723,12 +761,11 @@ class Core(object):
             self.sys.log.info(':: %s sentence(s) without entity' % tot_others)
             self.horus_matrix = self.convert_dataset_to_horus_matrix(sent_tokenize_list)
 
-
             hm = pd.DataFrame(self.horus_matrix)
             self.sys.log.info(':: basic POS statistics')
             a = len(hm)  # all
             a2 = len(hm[(hm[7] == 0)])  # all excluding compounds
-            plo =     hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
+            plo = hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
             not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]  # all PLO entities (not compound)
 
             pos_ok_plo = plo[(plo[5].isin(definitions.POS_NOUN_TAGS))]
@@ -742,9 +779,9 @@ class Core(object):
             self.sys.log.info(':: [test dataset statistics]')
             self.sys.log.info(':: -> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
             self.sys.log.info(':: -> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
-                              (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo)!=0 else 0))
+                              (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
             self.sys.log.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
-                              (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo)!=0 else 0))
+                              (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
 
             if len(self.horus_matrix) > 0:
                 self.download_and_cache_results()
@@ -773,18 +810,18 @@ class Core(object):
             horus_csv = open(self.config.output_path + output_file + '.csv', 'wb')
             wr = csv.writer(horus_csv, quoting=csv.QUOTE_ALL)
             wr.writerow(definitions.HORUS_MATRIX_HEADER)
-            #wr.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
+            # wr.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
             wr.writerows(self.horus_matrix)
 
     def convert_unicode(s):
         # u'abc'.encode('utf-8') -> unicode to str
         # 'abc'.decode('utf-8') -> str to unicode
         if isinstance(s, str):
-            return s.decode('utf8') #unicode(s, 'utf8 )
+            return s.decode('utf8')  # unicode(s, 'utf8 )
         elif isinstance(s, unicode):
             return s
         else:
-            raise Exception ("that's not a string!")
+            raise Exception("that's not a string!")
 
     def run_final_classifier(self):
         self.sys.log.info(':: running final classifier...')
@@ -799,7 +836,8 @@ class Core(object):
                     pos_aft = self.horus_matrix[index + 1][5]
 
                 one_char_token = 1 if len(self.horus_matrix[index][3]) == 1 else 0
-                special_char = 1 if len(re.findall('(http://\S+|\S*[^\w\s]\S*)', self.horus_matrix[index][3])) > 0 else 0
+                special_char = 1 if len(
+                    re.findall('(http://\S+|\S*[^\w\s]\S*)', self.horus_matrix[index][3])) > 0 else 0
                 first_capitalized = 1 if self.horus_matrix[index][3][0].isupper() else 0
                 capitalized = 1 if self.horus_matrix[index][3].isupper() else 0
                 '''
@@ -810,10 +848,10 @@ class Core(object):
                 features.append((pos_bef, self.horus_matrix[index][5], pos_aft, int(self.horus_matrix[index][12]),
                                  int(self.horus_matrix[index][13]), int(self.horus_matrix[index][14]),
                                  int(self.horus_matrix[index][15]),
-                                 int(self.horus_matrix[index][16]), #int(self.horus_matrix[index][17])
+                                 int(self.horus_matrix[index][16]),  # int(self.horus_matrix[index][17])
                                  int(self.horus_matrix[index][20]), int(self.horus_matrix[index][21]),
                                  int(self.horus_matrix[index][22]), float(self.horus_matrix[index][23]),
-                                 int(self.horus_matrix[index][24]), #int(self.horus_matrix[index][25])
+                                 int(self.horus_matrix[index][24]),  # int(self.horus_matrix[index][25])
                                  one_char_token, special_char, first_capitalized, capitalized))
 
                 features = numpy.array(features)
@@ -831,7 +869,7 @@ class Core(object):
         :: param horus_matrix:
         :: return: output of annotated sentence
         '''
-        x1, x2, x3, x4, x5 = '','','','',''
+        x1, x2, x3, x4, x5 = '', '', '', '', ''
         id_sent_aux = self.horus_matrix[0][1]
         for token in self.horus_matrix:
             if token[7] == 0:
@@ -856,7 +894,7 @@ class Core(object):
         self.sys.log.info(':: KLASS 4 -->: ' + x4)
         self.sys.log.info(':: KLASS 5 -->: ' + x5)
 
-    def cache_sentence_ritter(self,sentence_list):
+    def cache_sentence_ritter(self, sentence_list):
         self.sys.log.debug(':: caching Ritter dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
@@ -881,8 +919,9 @@ class Core(object):
                 compound = compound[:-1]
 
                 if compound != '':
-                    compound_ok+=1
-                    self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1, len(compound.split(' '))])
+                    compound_ok += 1
+                    self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1,
+                                              len(compound.split(' '))])
                     compound = ''
                 prev_tag = ''
                 prev_word = ''
@@ -895,9 +934,10 @@ class Core(object):
             # 8 = compound_size
 
             i_word = 1
-            for k in range(len(sent[2])): # list of NER tags
+            for k in range(len(sent[2])):  # list of NER tags
                 is_entity = 1 if sent[3] in definitions.NER_RITTER else 0
-                self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                self.horus_matrix.append(
+                    [is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
                 if is_entity:
                     token_ok += 1
@@ -906,9 +946,9 @@ class Core(object):
             i_word = 1
 
         self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
-                     % (str(sent_with_ner), str(token_ok), str(compound_ok)))
+                           % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
-    def cache_sentence_conll(self,sentence_list):
+    def cache_sentence_conll(self, sentence_list):
         self.sys.log.debug(':: caching coNLL 2003 dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
@@ -925,7 +965,9 @@ class Core(object):
                 for chunck_tag in sent[6]:  # list of chunck tags
                     word = sent[2][i_word - 1]
                     if chunck_tag in "I-NP":  # only NP chunck
-                        if prev_tag.replace('I-NP', 'NP').replace('B-NP', 'NP') == chunck_tag.replace('I-NP', 'NP').replace('B-NP', 'NP'):
+                        if prev_tag.replace('I-NP', 'NP').replace('B-NP', 'NP') == chunck_tag.replace('I-NP',
+                                                                                                      'NP').replace(
+                                'B-NP', 'NP'):
                             if compound == "":
                                 compound += prev_word + ' ' + word + ' '
                             else:
@@ -944,8 +986,9 @@ class Core(object):
                 compound = compound[:-1]
 
                 if compound != '':
-                    compound_ok+=1
-                    self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1, len(compound.split(' '))])
+                    compound_ok += 1
+                    self.horus_matrix.append([1, i_sent, i_word - len(compound.split(' ')), compound, '', '', '', 1,
+                                              len(compound.split(' '))])
                     compound = ''
                 prev_tag = ''
                 prev_word = ''
@@ -958,10 +1001,11 @@ class Core(object):
             # 8 = compound_size
 
             i_word = 1
-            for k in range(len(sent[2])): # list of NER tags
+            for k in range(len(sent[2])):  # list of NER tags
                 is_entity = 1 if sent[3] in definitions.NER_CONLL else 0
 
-                self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                self.horus_matrix.append(
+                    [is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
                 if is_entity:
                     token_ok += 1
@@ -971,7 +1015,7 @@ class Core(object):
             i_word = 1
 
         self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
-                     % (str(sent_with_ner), str(token_ok), str(compound_ok)))
+                           % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     def tokenize_and_pos(self, sentence, annotator_id):
         # NLTK
@@ -986,7 +1030,7 @@ class Core(object):
                 return self.tools.tokenize_and_pos_twitter(sentence)
             return self.tools.tokenize_and_pos_twitter_list(sentence)
 
-    def cache_sentence(self,sentence_format, sentence_list):
+    def cache_sentence(self, sentence_format, sentence_list):
         if sentence_format == 1:
             self.cache_sentence_ritter(sentence_list)
         elif sentence_format == 2:
@@ -1022,7 +1066,7 @@ class Core(object):
 
             for token in sent[2][self.config.models_pos_tag_lib]:
                 toparse.append(tuple([token, sent[4][self.config.models_pos_tag_lib][aux]]))
-                aux+=1
+                aux += 1
             t = cp.parse(toparse)
 
             i_word = 0
@@ -1051,7 +1095,8 @@ class Core(object):
             i_word = 1
             for k in range(len(sent[2])):
                 is_entity = 1 if (sent[0] == 1 and sent[3][k] != 'O') else -1
-                self.horus_matrix.append([is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                self.horus_matrix.append(
+                    [is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
 
             i_sent += 1
@@ -1064,11 +1109,11 @@ class Core(object):
             c = self.conn.cursor()
             self.conn.text_factory = str
             sentence = [corpus, sent[0], sent[1][0], sent[1][1], sent[1][2], sent[1][3],
-                    json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]), json.dumps(sent[2][3]),
-                    json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]), json.dumps(sent[3][3]),
-                    json.dumps(sent[4][0]), json.dumps(sent[4][1]), json.dumps(sent[4][2]), json.dumps(sent[4][3]),
-                    json.dumps(sent[5][0]), json.dumps(sent[5][1]), json.dumps(sent[5][2]), json.dumps(sent[5][3]),
-                    json.dumps(sent[6][1]), json.dumps(sent[6][2]), json.dumps(sent[6][3])]
+                        json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]), json.dumps(sent[2][3]),
+                        json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]), json.dumps(sent[3][3]),
+                        json.dumps(sent[4][0]), json.dumps(sent[4][1]), json.dumps(sent[4][2]), json.dumps(sent[4][3]),
+                        json.dumps(sent[5][0]), json.dumps(sent[5][1]), json.dumps(sent[5][2]), json.dumps(sent[5][3]),
+                        json.dumps(sent[6][1]), json.dumps(sent[6][2]), json.dumps(sent[6][3])]
 
             sql = """INSERT INTO HORUS_SENTENCES(corpus_name, sentence_has_NER, sentence,
                             same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
@@ -1086,14 +1131,15 @@ class Core(object):
             self.sys.log.error(':: an error has occurred: ', e)
             raise
 
-    def download_image_local(self,image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
+    def download_image_local(self, image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
         val = URLValidator()
         auxtype = None
         try:
             val(thumbs_url)
             try:
                 img_data = requests.get(thumbs_url).content
-                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, thumbs_type), 'wb') as handler:
+                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, thumbs_type),
+                          'wb') as handler:
                     handler.write(img_data)
                     auxtype = thumbs_type
             except Exception as error:
@@ -1102,7 +1148,8 @@ class Core(object):
             self.sys.log.error('No thumbs img here...', e)
             try:
                 img_data = requests.get(image_url).content
-                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, image_type), 'wb') as handler:
+                with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, image_type),
+                          'wb') as handler:
                     auxtype = image_type
                     handler.write(img_data)
             except Exception as error:
@@ -1119,8 +1166,10 @@ class Core(object):
                 for index in range(len(self.horus_matrix)):
                     term = self.horus_matrix[index][3]
                     if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
-                        self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
-                        res = t.term_cached(term.upper(), self.config.search_engine_api, self.config.search_engine_features_text)
+                        self.sys.log.debug(
+                            ':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
+                        res = t.term_cached(term.upper(), self.config.search_engine_api,
+                                            self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
                             '''
                             --------------------------------------------------------------------------
@@ -1153,7 +1202,8 @@ class Core(object):
                             seq = 0
                             for web_result_txt in result_txts:
                                 seq += 1
-                                t.save_website_data(id_term_search, seq, web_result_txt['id'], web_result_txt['displayUrl'],
+                                t.save_website_data(id_term_search, seq, web_result_txt['id'],
+                                                    web_result_txt['displayUrl'],
                                                     web_result_txt['name'], web_result_txt['snippet'])
                             '''
                             --------------------------------------------------------------------------
@@ -1162,9 +1212,9 @@ class Core(object):
                             '''
                             self.sys.log.info(':: caching (web images) -> [%s]' % term)
                             id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
-                                                         len(result_imgs), self.config.search_engine_api,
-                                                         2, self.config.search_engine_features_img,
-                                                         str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
+                                                      len(result_imgs), self.config.search_engine_api,
+                                                      2, self.config.search_engine_features_img,
+                                                      str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
                             self.horus_matrix[index][10] = id_term_img
                             seq = 0
                             for web_result_img in result_imgs:
@@ -1173,9 +1223,11 @@ class Core(object):
                                 auxtype = self.download_image_local(web_result_img['contentUrl'],
                                                                     web_result_img['encodingFormat'],
                                                                     web_result_img['thumbnailUrl'],
-                                                                    web_result_img['encodingFormat'], id_term_img, 0, seq)
+                                                                    web_result_img['encodingFormat'], id_term_img, 0,
+                                                                    seq)
                                 self.sys.log.debug(':: caching image  ...')
-                                t.save_image_data(id_term_img, seq, web_result_img['contentUrl'], web_result_img['name'],
+                                t.save_image_data(id_term_img, seq, web_result_img['contentUrl'],
+                                                  web_result_img['name'],
                                                   web_result_img['encodingFormat'], web_result_img['height'],
                                                   web_result_img['width'], web_result_img['thumbnailUrl'], str(auxtype))
 
@@ -1189,13 +1241,13 @@ class Core(object):
                             self.horus_matrix[index][9] = res[0][0]
                             self.horus_matrix[index][10] = res[1][0]
 
-                    auxc+=1
+                    auxc += 1
 
         except Exception as e:
             self.sys.log.error(':: an error has occurred: ', e)
             raise
 
-    def detect_faces(self,img):
+    def detect_faces(self, img):
         try:
             # print cv2.__version__
             face_cascade = cv2.CascadeClassifier(self.config.models_cv_per)
@@ -1219,7 +1271,7 @@ class Core(object):
             self.sys.log.error(':: error: ' + repr(error))
             return -1
 
-    def bow_features(self,fn, ner_type):
+    def bow_features(self, fn, ner_type):
         im = cv2.imread(fn, 0)
         if ner_type == 'ORG_1':
             self.extract_bow.setVocabulary(self.voc_org)
@@ -1246,7 +1298,7 @@ class Core(object):
 
         return self.extract_bow.compute(im, self.detect.detect(im))
 
-    def detect_logo(self,img):
+    def detect_logo(self, img):
         f = self.bow_features(img, 'ORG_1');
         if f is None:
             self.sys.log.warn(':: feature extraction error!')
@@ -1256,7 +1308,7 @@ class Core(object):
         self.sys.log.debug('predicted class -> ' + str(p))
         return p
 
-    def detect_place(self,img):
+    def detect_place(self, img):
         self.sys.log.debug(':: detecting places...')
         ret = []
         f = self.bow_features(img, 'LOC_1');
@@ -1331,7 +1383,7 @@ class Core(object):
 
         return ret
 
-    def detect_text_klass(self,t1, t2, id, t1en, t2en):
+    def detect_text_klass(self, t1, t2, id, t1en, t2en):
 
         from translate import Translator
 
@@ -1344,24 +1396,24 @@ class Core(object):
             if isinstance(t2, str):
                 t2 = unicode(t2, "utf-8")
 
-            #print t1.encode("utf-8")
-            #print t2.encode("utf-8")
+            # print t1.encode("utf-8")
+            # print t2.encode("utf-8")
 
-            #t1 = t1.decode('utf-8')
-            #t2 = t2.decode('utf-8')
+            # t1 = t1.decode('utf-8')
+            # t2 = t2.decode('utf-8')
 
-            #content = unicode(t1.strip(codecs.BOM_UTF8), 'utf-8')
+            # content = unicode(t1.strip(codecs.BOM_UTF8), 'utf-8')
 
-            #print self.remove_accents(t1)
-            #t1 = self.remove_non_ascii(t1)
-            #t2 = self.remove_non_ascii(t2)
+            # print self.remove_accents(t1)
+            # t1 = self.remove_non_ascii(t1)
+            # t2 = self.remove_non_ascii(t2)
 
             t1final = t1
             t2final = t1
 
-            #https://pypi.python.org/pypi/translate (alternative 1000 per day)
-            #https://www.microsoft.com/en-us/translator/getstarted.aspx
-            #https://github.com/openlabs/Microsoft-Translator-Python-API
+            # https://pypi.python.org/pypi/translate (alternative 1000 per day)
+            # https://www.microsoft.com/en-us/translator/getstarted.aspx
+            # https://github.com/openlabs/Microsoft-Translator-Python-API
 
             c = self.conn.cursor()
 
@@ -1421,8 +1473,8 @@ class Core(object):
 
             return predictions
 
-            #blob = TextBlob(t2)
-            #t22 = blob.translate(to='en')
+            # blob = TextBlob(t2)
+            # t22 = blob.translate(to='en')
             # text_vocab = set(w.lower() for w in t2 if w.lower().isalpha())
             # unusual = text_vocab.difference(english_vocab)
 
@@ -1438,9 +1490,115 @@ class Core(object):
         printable = set(string.printable)
         temp = filter(lambda x: x in printable, t)
         return temp
-        #return "".join(i for i in temp if ord(i) < 128)
+        # return "".join(i for i in temp if ord(i) < 128)
 
-    def detect_objects(self):     # id_term_img, id_term_txt, id_ner_type, term
+    def detect_faces_cnn(image):
+        img = torch.from_numpy(img / float(255)).float()
+        img.unsqueeze_(-1)
+        img = img.expand(28, 28, 3)
+        img = img.transpose(2, 0)
+        img.unsqueeze_(0)
+        img_variable = Variable(img)
+        cnn = CNN()
+        cnn.load_state_dict(torch.load(self.config.models_cnn_per))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        return predicted.numpy().sum()
+
+    def detect_logo_cnn(image):
+        img = torch.from_numpy(img / float(255)).float()
+        img.unsqueeze_(-1)
+        img = img.expand(28, 28, 3)
+        img = img.transpose(2, 0)
+        img.unsqueeze_(0)
+        img_variable = Variable(img)
+        cnn = CNN()
+        cnn.load_state_dict(torch.load(self.config.models_cnn_org))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        return predicted.numpy().sum()
+
+    def detect_place_cnn(image):
+        ret = []
+        img = torch.from_numpy(img / float(255)).float()
+        img.unsqueeze_(-1)
+        img = img.expand(28, 28, 3)
+        img = img.transpose(2, 0)
+        img.unsqueeze_(0)
+        img_variable = Variable(img)
+        cnn = CNN()
+        # loc1
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc1))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc2
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc2))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc3
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc3))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc4
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc4))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc5
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc5))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc6
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc6))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc7
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc7))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc8
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc8))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc9
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc9))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        # loc10
+        cnn.load_state_dict(torch.load(self.config.models_cnn_loc10))
+        cnn.eval()
+        outputs = cnn(img_variable)
+        _, predicted = torch.max(outputs.data, 1)
+        ret.append(predicted.numpy().sum())
+        return new_ret
+
+    def preprocess_image(img):
+        if len(img.shape) == 3:
+            r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+            img = 0.2989 * r + 0.5870 * g + 0.1140 * b
+            resized_image = cv2.resize(img, (28, 28))
+        return image
+
+    def detect_objects(self):  # id_term_img, id_term_txt, id_ner_type, term
         self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
         auxi = 0
         toti = len(self.horus_matrix)
@@ -1454,7 +1612,6 @@ class Core(object):
                 id_term_img = self.horus_matrix[index][10]
                 id_term_txt = self.horus_matrix[index][9]
                 id_ner_type = 0
-
 
                 tot_geral_faces = 0
                 tot_geral_logos = 0
@@ -1481,11 +1638,15 @@ class Core(object):
                         self.sys.log.debug(":: term has not returned images!")
                     limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
-                    for indeximgs in range(limit_img):  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
-                        filesimg.append((self.config.cache_img_folder + rows[indeximgs][0], rows[indeximgs][1], rows[indeximgs][2],
-                                         rows[indeximgs][3], rows[indeximgs][4], rows[indeximgs][5], rows[indeximgs][6], rows[indeximgs][7],
-                                         rows[indeximgs][8], rows[indeximgs][9], rows[indeximgs][10], rows[indeximgs][11], rows[indeximgs][12],
-                                         rows[indeximgs][13], rows[indeximgs][14]))
+                    for indeximgs in range(
+                            limit_img):  # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 13=nr_places_1 to 9
+                        filesimg.append(
+                            (self.config.cache_img_folder + rows[indeximgs][0], rows[indeximgs][1], rows[indeximgs][2],
+                             rows[indeximgs][3], rows[indeximgs][4], rows[indeximgs][5], rows[indeximgs][6],
+                             rows[indeximgs][7],
+                             rows[indeximgs][8], rows[indeximgs][9], rows[indeximgs][10], rows[indeximgs][11],
+                             rows[indeximgs][12],
+                             rows[indeximgs][13], rows[indeximgs][14]))
 
                 for image_term in filesimg:
                     if image_term[2] == 1:
@@ -1496,24 +1657,46 @@ class Core(object):
                         tot_geral_pos_locations += image_term[5:13].count(1)
                         tot_geral_neg_locations += (image_term[5:13].count(-1) * -1)
                     else:
-                        # ----- face recognition -----
-                        tot_faces = self.detect_faces(image_term[0])
-                        if tot_faces > 0:
-                            tot_geral_faces += 1
-                            self.sys.log.debug(":: found {0} faces!".format(tot_faces))
-                        # ----- logo recognition -----
-                        tot_logos = self.detect_logo(image_term[0])
-                        if tot_logos[0] == 1:
-                            tot_geral_logos += 1
-                            self.sys.log.debug(":: found {0} logo(s)!".format(1))
-                        # ----- place recognition -----
-                        res = self.detect_place(image_term[0])
-                        tot_geral_pos_locations += res.count(1)
-                        tot_geral_neg_locations += (res.count(-1) * -1)
+                        if self.objectdetection_type == 0:
+                            # ----- face recognition -----
+                            tot_faces = self.detect_faces(image_term[0])
+                            if tot_faces > 0:
+                                tot_geral_faces += 1
+                                self.sys.log.debug(":: found {0} faces!".format(tot_faces))
+                            # ----- logo recognition -----
+                            tot_logos = self.detect_logo(image_term[0])
+                            if tot_logos[0] == 1:
+                                tot_geral_logos += 1
+                                self.sys.log.debug(":: found {0} logo(s)!".format(1))
+                            # ----- place recognition -----
+                            res = self.detect_place(image_term[0])
+                            tot_geral_pos_locations += res.count(1)
+                            tot_geral_neg_locations += (res.count(-1) * -1)
 
-                        if res.count(1) >= T:
-                            tot_geral_locations += 1
-                            self.sys.log.debug(":: found {0} place(s)!".format(1))
+                            if res.count(1) >= T:
+                                tot_geral_locations += 1
+                                self.sys.log.debug(":: found {0} place(s)!".format(1))
+
+                        elif self.objectdetection_type == 1:
+                            image = preprocess_image(image_term[0])
+                            # ----- face recognition -----
+                            tot_faces = self.detect_faces_cnn(image)
+                            if tot_faces > 0:
+                                tot_geral_faces += 1
+                                self.sys.log.debug(":: found {0} faces!".format(tot_faces))
+                            # ----- logo recognition -----
+                            tot_logos = self.detect_logo_cnn(image)
+                            if tot_logos[0] == 1:
+                                tot_geral_logos += 1
+                                self.sys.log.debug(":: found {0} logo(s)!".format(1))
+                            # ----- place recognition -----
+                            res = self.detect_place_cnn(image)
+                            tot_geral_pos_locations += res.count(1)
+                            tot_geral_neg_locations += (res.count(0) * -1)
+
+                            if res.count(1) >= T:
+                                tot_geral_locations += 1
+                                self.sys.log.debug(":: found {0} place(s)!".format(1))
 
                         # updating results
                         sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, 
@@ -1571,8 +1754,9 @@ class Core(object):
 
                     tot_err = 0
                     for itxt in range(limit_txt):
-                        if rows[itxt][6] == 0 or rows[itxt][6] is None: # not processed yet
-                            ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                        if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
+                            ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4],
+                                                         rows[itxt][5])
                             y.append(ret)
                             sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
                                      text_3_klass = %s, text_4_klass = %s, text_5_klass = %s
@@ -1604,7 +1788,8 @@ class Core(object):
                     self.sys.log.debug(':: TX statistics:'
                                        '(LOC=%s, ORG=%s, PER=%s, DIST=%s, ERR.TRANS=%s)' %
                                        (str(gp[0]).zfill(2), str(gp[1]).zfill(2), str(gp[2]).zfill(2),
-                                        str(dist_tx_indicator).zfill(2), str(tot_err/float(limit_txt)) if limit_txt >0 else 0))
+                                        str(dist_tx_indicator).zfill(2),
+                                        str(tot_err / float(limit_txt)) if limit_txt > 0 else 0))
                     self.sys.log.debug('-------------------------------------------------------------')
 
                     if limit_txt != 0:
@@ -1615,20 +1800,20 @@ class Core(object):
                     # checking final NER based on:
                     #  -> theta
                     if self.horus_matrix[index][15] >= int(self.config.models_distance_theta):
-                        self.horus_matrix[index][36] = self.horus_matrix[index][18]   # CV is the final decision
-                        self.horus_matrix[index][39] = self.horus_matrix[index][36]   # compound prediction initial
+                        self.horus_matrix[index][36] = self.horus_matrix[index][18]  # CV is the final decision
+                        self.horus_matrix[index][39] = self.horus_matrix[index][36]  # compound prediction initial
                     elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta):
-                        self.horus_matrix[index][36] = self.horus_matrix[index][26]   # TX is the final decision
-                        self.horus_matrix[index][39] = self.horus_matrix[index][36]   # compound prediction initial
+                        self.horus_matrix[index][36] = self.horus_matrix[index][26]  # TX is the final decision
+                        self.horus_matrix[index][39] = self.horus_matrix[index][36]  # compound prediction initial
                     #  -> theta+1
-                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta)+1:
+                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta) + 1:
                         self.horus_matrix[index][37] = self.horus_matrix[index][18]  # CV is the final decision
-                    elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta)+1:
+                    elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta) + 1:
                         self.horus_matrix[index][37] = self.horus_matrix[index][26]  # TX is the final decision
                     #  -> theta+2
-                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta)+2:
+                    if self.horus_matrix[index][15] >= int(self.config.models_distance_theta) + 2:
                         self.horus_matrix[index][38] = self.horus_matrix[index][18]  # CV is the final decision
-                    elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta)+2:
+                    elif self.horus_matrix[index][24] >= int(self.config.models_distance_theta) + 2:
                         self.horus_matrix[index][38] = self.horus_matrix[index][26]  # TX is the final decision
 
     def update_rules_cv_predictions(self):
@@ -1641,7 +1826,7 @@ class Core(object):
             initial = self.horus_matrix[i][17]
             # get nouns or compounds
             if self.horus_matrix[i][4] == 'NOUN' or \
-                            self.horus_matrix[i][4] == 'PROPN' or self.horus_matrix[i][7] == 1:
+                    self.horus_matrix[i][4] == 'PROPN' or self.horus_matrix[i][7] == 1:
                 # do not consider classifications below a theta
                 if self.horus_matrix[i][15] < int(self.config.models_distance_theta):
                     self.horus_matrix[i][17] = "*"
@@ -1662,7 +1847,7 @@ class Core(object):
         i_y, i_sent, i_first_word, i_c_size = [], [], [], []
         for i in range(len(self.horus_matrix)):
             if self.horus_matrix[i][7] == 1:
-                i_y.append(self.horus_matrix[i][36]) # KLASS_1
+                i_y.append(self.horus_matrix[i][36])  # KLASS_1
                 i_sent.append(self.horus_matrix[i][1])
                 i_first_word.append(self.horus_matrix[i][2])
                 i_c_size.append(int(self.horus_matrix[i][8]))
@@ -1670,7 +1855,7 @@ class Core(object):
                 for z in range(len(i_y)):
                     if i_sent[z] == self.horus_matrix[i][1] and i_first_word[z] == self.horus_matrix[i][2]:
                         for k in range(i_c_size[z]):
-                            self.horus_matrix[i+k][39] = i_y[z] # KLASS_4
+                            self.horus_matrix[i + k][39] = i_y[z]  # KLASS_4
 
     def process_input_text(self, text):
         self.sys.log.info(':: text: ' + text)
@@ -1746,7 +1931,7 @@ class Core(object):
                 i_word += 1
         return compounds
 
-    def process_and_save_sentence(self, hasNER, s, dataset_name = '', tokens_gold_standard = [], ner_gold_standard = []):
+    def process_and_save_sentence(self, hasNER, s, dataset_name='', tokens_gold_standard=[], ner_gold_standard=[]):
         # that' a sentence, check if cached!
         cache_sent = self.sentence_cached_before(dataset_name, s)
         if len(cache_sent) != 0:
@@ -1819,11 +2004,12 @@ class Core(object):
                     if line.strip() != '':
                         if separator == '': separator = None
                         token = line.split(separator)[token_index]
-                        ner = line.split(separator)[ner_index].replace('\r','').replace('\n','')
+                        ner = line.split(separator)[ner_index].replace('\r', '').replace('\n', '')
                     if line.strip() == '':
                         if len(tokens) != 0:
                             self.sys.log.debug(':: processing sentence %s' % str(tot_sentences))
-                            sentences.append(self.process_and_save_sentence(has3NER, s, dataset_name, tokens, tags_ner_y))
+                            sentences.append(
+                                self.process_and_save_sentence(has3NER, s, dataset_name, tokens, tags_ner_y))
                             tokens = []
                             tags_ner_y = []
                             s = ''
