@@ -1629,10 +1629,10 @@ class Core(object):
         return ret
 
     def preprocess_image(self, img):
-        if len(img.shape) == 3:
-            r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
-            img = 0.2989 * r + 0.5870 * g + 0.1140 * b
-            resized_image = cv2.resize(img, (28, 28))
+        #if len(img.shape) == 3:
+        #    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+        #    img = 0.2989 * r + 0.5870 * g + 0.1140 * b
+        resized_image = cv2.resize(img, (28, 28))
         return resized_image
 
     def detect_objects(self):  # id_term_img, id_term_txt, id_ner_type, term
