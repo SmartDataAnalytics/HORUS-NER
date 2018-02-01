@@ -186,7 +186,7 @@ class Core(object):
         self.text_checking_model_5 = joblib.load(self.config.models_5_text)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)
-        self.emb = '/Users/diegoesteves/Downloads/GoogleNews-vectors-negative300 (1).bin.gz'
+        self.emb = '/Users/diegoesteves/Downloads/GoogleNews-vectors-negative300 (1).bin'
         self.wvmodel = shorttext.utils.load_word2vec_model(self.emb)
         self.classifier_tm = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel, self.config.models_1_text_cnn)
 
@@ -800,16 +800,18 @@ class Core(object):
                 self.download_and_cache_results()
                 self.detect_objects()
                 self.update_compound_predictions()
-                self.run_final_classifier()
-                self.export_data(output_file, output_format)
-                if int(ds_format) == 0:
-                    self.print_annotated_sentence()
+                #self.run_final_classifier()
+                #self.export_data(output_file, output_format)
+                #if int(ds_format) == 0:
+                #    self.print_annotated_sentence()
 
             self.conn.close()
             return self.horus_matrix
 
         except Exception as error:
-            print('caught this error: ' + repr(error))
+            self.sys.log.error('caught this error here: ' + repr(error))
+
+        self.sys.log.info(':: annotation completed: ' + output_file)
 
     def export_data(self, output_file, output_format):
         self.sys.log.info(':: exporting metadata to: ' + self.config.output_path + output_file + "." + output_format)
@@ -1321,77 +1323,82 @@ class Core(object):
         return p
 
     def detect_place(self, img):
-        self.sys.log.debug(':: detecting places...')
-        ret = []
-        f = self.bow_features(img, 'LOC_1');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc1.predict(f)[0])
+        try:
 
-        f = self.bow_features(img, 'LOC_2');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc2.predict(f)[0])
+            self.sys.log.debug(':: detecting places...')
+            ret = []
+            f = self.bow_features(img, 'LOC_1');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc1.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_3');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc3.predict(f)[0])
+            f = self.bow_features(img, 'LOC_2');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc2.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_4');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc4.predict(f)[0])
+            f = self.bow_features(img, 'LOC_3');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc3.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_5');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc5.predict(f)[0])
+            f = self.bow_features(img, 'LOC_4');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc4.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_6');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc6.predict(f)[0])
+            f = self.bow_features(img, 'LOC_5');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc5.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_7');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc7.predict(f)[0])
+            f = self.bow_features(img, 'LOC_6');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc6.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_8');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc8.predict(f)[0])
+            f = self.bow_features(img, 'LOC_7');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc7.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_9');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc9.predict(f)[0])
+            f = self.bow_features(img, 'LOC_8');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc8.predict(f)[0])
 
-        f = self.bow_features(img, 'LOC_10');
-        if f is None:
-            self.sys.log.warn(':: feature extraction error!')
-            ret.append(-1)
-        else:
-            ret.append(self.svm_loc10.predict(f)[0])
+            f = self.bow_features(img, 'LOC_9');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc9.predict(f)[0])
+
+            f = self.bow_features(img, 'LOC_10');
+            if f is None:
+                self.sys.log.warn(':: feature extraction error!')
+                ret.append(-1)
+            else:
+                ret.append(self.svm_loc10.predict(f)[0])
+
+        except Exception as e:
+            self.sys.log.error(':: Error: ' + str(e))
 
         return ret
 
@@ -1482,29 +1489,35 @@ class Core(object):
 
     def detect_text_klass(self, t1, t2, id, t1en, t2en):
 
-        t1final, t2final = self.translation(t1, t2, id, t1en, t2en)
-        if t1final is False:
-            return False
-        else:
-            docs = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
-            if self.config.text_classification_type == 0:  # TFIDF
-                predictions = [self.text_checking_model_1.predict(docs)[0],
-                               self.text_checking_model_2.predict(docs)[0],
-                               self.text_checking_model_3.predict(docs)[0],
-                               self.text_checking_model_4.predict(docs)[0],
-                               self.text_checking_model_5.predict(docs)[0]]
-            elif self.config.text_classification_type == 1:  # TopicModeling
-                dict = self.classifier_tm.score(docs)
-                predictions = []
-                predictions.append(dict.get('loc'))
-                predictions.append(dict.get('per'))
-                predictions.append(dict.get('org'))
-                predictions.append(0)
-                predictions.append(0)
-            else:
-                raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+        try:
 
-            return predictions
+            t1final, t2final = self.translation(t1, t2, id, t1en, t2en)
+            if t1final is False:
+                return t2final #error vector
+            else:
+                docs = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
+                if self.config.text_classification_type == 0:  # TFIDF
+                    predictions = [self.text_checking_model_1.predict(docs)[0],
+                                   self.text_checking_model_2.predict(docs)[0],
+                                   self.text_checking_model_3.predict(docs)[0],
+                                   self.text_checking_model_4.predict(docs)[0],
+                                   self.text_checking_model_5.predict(docs)[0]]
+                elif self.config.text_classification_type == 1:  # TopicModeling
+                    dict = self.classifier_tm.score(docs)
+                    predictions = []
+                    predictions.append(dict.get('loc'))
+                    predictions.append(dict.get('per'))
+                    predictions.append(dict.get('org'))
+                    predictions.append(0)
+                    predictions.append(0)
+                else:
+                    raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
+        except Exception as e:
+            self.sys.log.error(':: Error: ' + str(e))
+            predictions = [-1, -1, -1, -1, -1]
+
+        return predictions
 
     def remove_accents(self, data):
         return ' '.join(x for x in unicodedata.normalize('NFKD', data) if x in string.ascii_letters).lower()
@@ -1623,6 +1636,34 @@ class Core(object):
         return resized_image
 
     def detect_objects(self):  # id_term_img, id_term_txt, id_ner_type, term
+
+        # database sql
+        if 1==1:
+            if self.config.object_detection_type not in (0,1):
+                raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+            if self.config.text_classification_type not in (0, 1):
+                raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
+
+            _sql_object_0_sel = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2, nr_place_3, nr_place_4, nr_place_5, nr_place_6, nr_place_7, nr_place_8, nr_place_9, nr_place_10 
+                                   FROM HORUS_SEARCH_RESULT_IMG WHERE id_term_search = %s AND id_ner_type = %s """
+
+            _sql_object_1_sel = """SELECT filename, id, processed_cnn, nr_faces_cnn, nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn, nr_place_3_cnn, nr_place_4_cnn, nr_place_5_cnn, nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn, nr_place_9_cnn, nr_place_10_cnn 
+                                   FROM HORUS_SEARCH_RESULT_IMG WHERE id_term_search = %s AND id_ner_type = %s """
+
+            _sql_object_0_upd = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, processed = 1 WHERE id = ?"""
+
+            _sql_object_1_upd = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces_cnn = ?, nr_logos_cnn = ?, nr_place_1_cnn = ?, nr_place_2_cnn = ?, nr_place_3_cnn = ?, nr_place_4_cnn = ?, nr_place_5_cnn = ?, nr_place_6_cnn = ?, nr_place_7_cnn = ?, nr_place_8_cnn = ?, nr_place_9_cnn = ?, nr_place_10_cnn = ?, processed_cnn = 1 WHERE id = ?"""
+
+            _sql_text_0_sel   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, processed, text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass 
+                                   FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
+
+            _sql_text_1_sel   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, processed_cnn, text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0 
+                                   FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
+
+            _sql_text_0_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s, text_3_klass = %s, text_4_klass = %s, text_5_klass = %s WHERE id = %s"""
+
+            _sql_text_1_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed_cnn = 1, text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s WHERE id = %s"""
+
         self.sys.log.info(':: detecting %s objects...' % len(self.horus_matrix))
         auxi = 0
         toti = len(self.horus_matrix)
@@ -1652,17 +1693,9 @@ class Core(object):
                 with self.conn:
                     cursor = self.conn.cursor()
                     if self.config.object_detection_type == 0:  # SIFT
-                        _sql = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2,
-                                        nr_place_3, nr_place_4, nr_place_5, nr_place_6, nr_place_7, nr_place_8,
-                                        nr_place_9, nr_place_10 FROM HORUS_SEARCH_RESULT_IMG 
-                                 WHERE id_term_search = %s AND id_ner_type = %s """
+                        _sql = _sql_object_0_sel
                     elif self.config.object_detection_type == 1:  # CNN
-                        _sql = """SELECT filename, id, processed_cnn, nr_faces_cnn, nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn,
-                                  nr_place_3_cnn, nr_place_4_cnn, nr_place_5_cnn, nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn,
-                                  nr_place_9_cnn, nr_place_10_cnn FROM HORUS_SEARCH_RESULT_IMG 
-                                  WHERE id_term_search = %s AND id_ner_type = %s """
-                    else:
-                        raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+                        _sql = _sql_object_1_sel
 
                     cursor.execute(_sql % (id_term_img, id_ner_type))
                     rows = cursor.fetchall()
@@ -1711,7 +1744,7 @@ class Core(object):
                                 tot_geral_locations += 1
                                 self.sys.log.debug(":: found {0} place(s)!".format(1))
 
-                        elif self.objectdetection_type == 1:
+                        elif self.config.object_detection_type == 1:
                             image = self.preprocess_image(image_term[0])
                             # ----- face recognition -----
                             tot_faces = self.detect_faces_cnn(image)
@@ -1734,15 +1767,9 @@ class Core(object):
 
                         # updating results
                         if self.config.object_detection_type == 0:  # SIFT
-                            _sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, 
-                                     nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, 
-                                     nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, processed = 1
-                                     WHERE id = ?"""
+                            _sql = _sql_object_0_upd
                         elif self.config.object_detection_type == 1:  # CNN
-                            _sql = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces_cnn = ?, nr_logos_cnn = ?, nr_place_1_cnn = ?, 
-                                      nr_place_2_cnn = ?, nr_place_3_cnn = ?, nr_place_4_cnn = ?, nr_place_5_cnn = ?, nr_place_6_cnn = ?, 
-                                      nr_place_7_cnn = ?, nr_place_8_cnn = ?, nr_place_9_cnn = ?, nr_place_10_cnn = ?, processed_cnn = 1
-                                      WHERE id = ?"""
+                            _sql = _sql_object_1_upd
                         else:
                             raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
 
@@ -1751,7 +1778,7 @@ class Core(object):
                         param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
                         param.extend(res)
                         param.append(image_term[1])
-                        cursor.execute(sql, param)
+                        cursor.execute(_sql, param)
 
                 self.conn.commit()
 
@@ -1785,17 +1812,9 @@ class Core(object):
                 with self.conn:
                     cursor = self.conn.cursor()
                     if self.config.text_classification_type == 0:  # SIFT
-                        _sql = """SELECT id, result_seq, result_title, result_description, result_title_en,
-                                      result_description_en, processed, text_1_klass, text_2_klass, text_3_klass, 
-                                      text_4_klass, text_5_klass FROM HORUS_SEARCH_RESULT_TEXT
-                                      WHERE id_term_search = %s AND id_ner_type = %s"""
+                        _sql = _sql_text_0_sel
                     elif self.config.text_classification_type == 1:  # CNN
-                        _sql = """SELECT id, result_seq, result_title, result_description, result_title_en,
-                                      result_description_en, processed_cnn, text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 
-                                      0, 0 FROM HORUS_SEARCH_RESULT_TEXT
-                                      WHERE id_term_search = %s AND id_ner_type = %s"""
-                    else:
-                        raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+                        _sql = _sql_text_1_sel
 
                     cursor.execute(_sql % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()
@@ -1812,14 +1831,10 @@ class Core(object):
 
                             if self.config.text_classification_type == 0:
                                 ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                                _sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s,
-                                          text_3_klass = %s, text_4_klass = %s, text_5_klass = %s WHERE id = %s"""
+                                _sql = _sql_text_0_upd
                             elif self.config.text_classification_type == 1:
                                 ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                                _sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed_cnn = 1, text_1_klass_cnn = %s, text_2_klass_cnn = %s,
-                                                                          text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s WHERE id = %s"""
-                            else:
-                                raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+                                _sql = _sql_text_1_upd
 
                             y.append(ret)
                             sql = _sql % (ret[0], ret[1], ret[2], ret[3], ret[4], rows[itxt][0])
@@ -2087,7 +2102,7 @@ class Core(object):
             self.sys.log.info(':: %s sentences processed successfully' % str(len(sentences)))
             return sentences
         except Exception as error:
-            print('caught this error: ' + repr(error))
+            self.sys.log.error('caught this error: ' + repr(error))
 
     def processing_conll_ds(self, dspath):
         sentences = []
