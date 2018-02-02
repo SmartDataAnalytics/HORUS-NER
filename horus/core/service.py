@@ -1632,6 +1632,7 @@ class Core(object):
         return ret
 
     def preprocess_image(self, img):
+	img=mpimg.imread(img)
         #if len(img.shape) == 3:
         #    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
         #    img = 0.2989 * r + 0.5870 * g + 0.1140 * b
