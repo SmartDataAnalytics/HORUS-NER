@@ -801,7 +801,7 @@ class Core(object):
                 self.detect_objects()
                 self.update_compound_predictions()
                 #self.run_final_classifier()
-                #self.export_data(output_file, output_format)
+                self.export_data(output_file, output_format)
                 #if int(ds_format) == 0:
                 #    self.print_annotated_sentence()
 
