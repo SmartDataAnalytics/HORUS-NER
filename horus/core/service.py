@@ -919,6 +919,8 @@ class Core(object):
         for sent in sentence_list:
 
             self.sys.log.info(':: processing sentence: ' + sent[1])
+            if int(sent[1])==29:
+                aaa=1
 
             # processing compounds
             if sent[0] == 1:
@@ -973,6 +975,8 @@ class Core(object):
         for sent in sentence_list:
 
             self.sys.log.info(':: processing sentence: ' + sent[1])
+            if int(sent[1])==29:
+                aaa=1
 
             # processing compounds
             if sent[0] == 1:
@@ -1183,8 +1187,7 @@ class Core(object):
                     if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
                         if auxc%1000==0:
                             self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(self.horus_matrix)), term))
-                        res = t.term_cached(term.upper(), self.config.search_engine_api,
-                                            self.config.search_engine_features_text)
+                        res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
                             '''
                             --------------------------------------------------------------------------
@@ -1208,7 +1211,7 @@ class Core(object):
                             Caching Documents (Texts)
                             --------------------------------------------------------------------------
                             '''
-                            self.sys.log.info(':: caching (web site text) -> [%s]' % term)
+                            self.sys.log.debug(':: caching (web sites) -> [%s]' % term)
                             id_term_search = t.save_term(term, self.config.search_engine_tot_resources,
                                                          len(result_txts), self.config.search_engine_api,
                                                          1, self.config.search_engine_features_text,
@@ -1216,9 +1219,9 @@ class Core(object):
                             self.horus_matrix[index][9] = id_term_search
                             seq = 0
                             for web_result_txt in result_txts:
+                                self.sys.log.info(':: caching (web site) -> [%s]' % web_result_txt['displayUrl'])
                                 seq += 1
-                                t.save_website_data(id_term_search, seq, web_result_txt['id'],
-                                                    web_result_txt['displayUrl'],
+                                t.save_website_data(id_term_search, seq, web_result_txt['id'], web_result_txt['displayUrl'],
                                                     web_result_txt['name'], web_result_txt['snippet'])
                             '''
                             --------------------------------------------------------------------------
@@ -2076,6 +2079,17 @@ class Core(object):
             has3NER = -1
             tot_sentences = 1
             self.sys.log.info(':: processing sentences...')
+
+            #hack to find problems in CONLL file
+            #linenr = 0
+            #with open(dspath) as f:
+            #    for line in f:
+            #        linenr+=1
+            #        if line.strip() != '':
+            #            if len(line.split()) != 2:
+            #                print(linenr)
+            #exit(0)
+
             with open(dspath) as f:
                 for line in f:
                     if line.strip() != '':

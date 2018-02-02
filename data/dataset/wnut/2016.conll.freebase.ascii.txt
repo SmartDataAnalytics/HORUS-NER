@@ -497,7 +497,7 @@ Staff	O
 email	O
 breach	O
 http://www.cbsnews.com/news/russia-believed-to-be-behind-pentagons-joint-staff-email-breach/	O
-	O
+... O
 pic.twitter.com/4rDMGYbSUl	O
 
 Jaguar	B-product
@@ -867,7 +867,7 @@ check	O
 this	O
 out	O
 http://krebsonsecurity.com/2015/11/breach-at-it-automation-firm-landesk/	O
-	O
+... O
 
 .	O
 @POTUS	O
@@ -953,7 +953,7 @@ division	O
 |	O
 N4G	O
 http://n4g.com/news/1803241/china-fines-microsoft-for-breach-of-rules-with-xbox-division	O
-	O
+... O
 
 You	O
 brighten	O
@@ -1047,7 +1047,7 @@ San	B-geo-loc
 Bernardino	I-geo-loc
 Shooting	O
 http://jezebel.com/at-least-12-dead-20-reportedly-wounded-in-san-bernadin-1745761238	O
-	O
+... O
 
 @stefeeeey	O
 talaga	O
@@ -1087,7 +1087,7 @@ times	O
 GOVERNMENT	O
 SLAVES	O
 http://govtslaves.info/hackers-successfully-breach-u-s-department-of-energys-systems-150-times/	O
-	O
+... O
 
 Fasting	O
 for	O
@@ -1509,7 +1509,7 @@ Dead	O
 Several	O
 Injured	O
 http://www.kwtx.com/home/headlines/Waco-Shooting-Near-Twin-Peaks-In-Waco-304043711.html#.VVkSXYWC0Nc.twitter	O
-	O
+... O
 
 Police	O
 identify	O
@@ -1656,7 +1656,7 @@ Alexis	I-person
 ,	O
 34	O
 http://www.breakingnews.com/item/ahZzfmJyZWFraW5nbmV3cy13d3ctaHJkcg0LEgRTZWVkGJWF7BMM/2013/09/16/fbi-confirms-deceased-washington-navy-yard-shootin	O
-	O
+... O
 
 Raiders	O
 trailing	O
@@ -1763,7 +1763,7 @@ shooting	O
 Chicago	B-company
 Tribune	I-company
 http://www.chicagotribune.com/news/local/breaking/ct-chicago-shooting-gun-violence-20150919-story.html	O
-	O
+... O
 
 RT	O
 @AstonCurrency	O
@@ -2259,7 +2259,7 @@ High	I-facility
 School	I-facility
 Shooting	O
 http://www.mnpoliceclips.com/chilling-audio-marysville-high-school-shooting.html	O
-	O
+... O
 
 So	O
 tired	O
@@ -3266,7 +3266,7 @@ Del	B-geo-loc
 (	O
 AP	O
 )	O
-	O
+... O
 A	O
 gunman	O
 opened	O
@@ -3606,7 +3606,7 @@ to	O
 3	O
 suspects	O
 http://www.cnn.com/2015/12/02/us/san-bernardino-shooting/index.html	O
-	O
+... O
 
 I	O
 REMEMBER	O
@@ -3657,7 +3657,7 @@ UCLA	B-other
 Health	I-other
 Breach	O
 http://www.securityweek.com/details-45-million-individuals-exposed-ucla-health-breach?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+Securityweek+%28SecurityWeek+RSS+Feed%29	O
-	O
+... O
 #Infosec	O
 
 RT	O
@@ -4053,7 +4053,7 @@ Multiple	O
 Injuries	O
 Reported	O
 http://mashable.com/2014/04/02/fort-hood-shooting/#:eyJzIjoidCIsImkiOiJfc284ZGFodmkwcXR1dmlsdSJ9	O
-	O
+... O
 via	O
 @mashable	O
 
@@ -4134,7 +4134,7 @@ detonate	O
 suspicious	O
 device	O
 http://www.latimes.com/local/lanow/la-me-ln-san-bernardino-shooting-live-updates-htmlstory.html#85209652	O
-	O
+... O
 via	O
 latimes	B-company
 
@@ -4403,7 +4403,7 @@ bike	O
 gang	O
 clubhouse	O
 http://www.abc15.com/dpp/news/region_southeast_valley/apache_junction/apache-junction-shooting-4-injured-after-shooting-at-a-party-in-apache-junction	O
-	O
+... O
 
 RT	O
 @Kevinwoo91	O
@@ -5200,7 +5200,7 @@ via	O
 #Cybersecurity	O
 News)	O
 http://www.infosecurity-magazine.com/news/sql-injection-possible-vector-for	O
-	O
+... O
 
 @streeettrash	O
 ah	O
@@ -5442,7 +5442,7 @@ job	O
 and	O
 @HackingDave	O
 http://www.bloomberg.com/video/does-snapchat-security-breach-risk-more-than-data-eG0w2zTlQJmgHAefO7OcGQ.html	O
-	O
+... O
 
 @DonSchenck	O
 @kenperkins	O
@@ -5540,7 +5540,7 @@ Need	O
 to	O
 Know	O
 http://heavy.com/news/2015/07/muhammad-youssef-abdulazeez-chattanooga-shooter-shooting-shot-killed-marines-recruiting-center-islam-muslim-terrorism-photos-facebook-twitter-age-bio/	O
-	O
+... O
 #Chattanooga	B-geo-loc
 
 RT	O
@@ -5693,7 +5693,7 @@ Peace	O
 counter	O
 claim	O
 defamation	O
-	O
+... O
 1,387,281,974	O
 x	O
 1	O
@@ -5885,7 +5885,7 @@ Freeway	I-geo-loc
 :	O
 Police	O
 http://chicago.ysktoday.com/man-hospitalized-after-shooting-on-bishop-ford-freeway-police-2/	O
-	O
+... O
 
 @Incredible_Nath	O
 GAGO	O
@@ -6330,7 +6330,7 @@ Systems	I-company
 over	O
 #breach	O
 http://celebcafe.org/talktalk-hires-bae-systems-over-breach-7711/	O
-	O
+... O
 pic.twitter.com/9V0a0URtHO	O
 
 TL_jp	O
@@ -6469,7 +6469,7 @@ edition	O
 ?	O
 
 http://twitter.com/KnowsisHealth/status/679017559782477824	O
-	O
+... O
 Cyber	O
 security	O
 :	O
@@ -6571,7 +6571,7 @@ impacts	O
 Cal	O
 cardholders	O
 http://www.databreachtoday.com/anonymous-posts-amex-card-data-a-6909?rf=2014-06-05-edbt&utm_source=SilverpopMailing&utm_medium=email&utm_campaign=enews-dbt-20140605%20(1)&utm_content=&spMailingID=6633309&spUserID=NTU5OTQ0MzY2ODAS1&spJobID=460551289&spReportId=NDYwNTUxMjg5S0	O
-	O
+... O
 
 Santa	B-facility
 Monica	I-facility
@@ -7132,7 +7132,7 @@ PPL	B-facility
 Park	I-facility
 :	O
 http://www.philly.com/philly/news/5_reported_hurt_in_Chester_shooting.html	O
-	O
+... O
 via	O
 @emilybabay	O
 @phillynews	O
@@ -7624,7 +7624,7 @@ Day	I-other
 parade	O
 shooting	O
 http://bit.ly/13rwtRM	O
-	O
+... O
 Well	O
 done	O
 ,	O
@@ -7918,7 +7918,7 @@ suspects	O
 on	O
 loose	O
 http://www.cnn.com/2015/12/02/us/san-bernardino-shooting/index.html	O
-	O
+... O
 
 MHA	B-other
 's	O
@@ -8188,7 +8188,7 @@ squad	O
 arrives	O
 at	O
 scene	O
-	O
+... O
 rolling	O
 coverage	O
 :	O
@@ -8385,7 +8385,7 @@ in	O
 ,	O
 #Oregon	B-geo-loc
 http://abc7.com/news/shooting-at-umpqua-community-college-in-oregon/1011787/	O
-	O
+... O
 
 RT	O
 @blackholebam13	O
@@ -8568,7 +8568,7 @@ suspects	O
 at	O
 large	O
 http://www.washingtonpost.com/local/police-search-for-active-shooter-on-grounds-of-washington-navy-yard-in-southeast-dc/2013/09/16/b1d72b9a-1ecb-11e3-b7d1-7153ad47b549_story.html	O
-	O
+... O
 
 omygosh	O
 lang	O
@@ -8812,7 +8812,7 @@ Philadelphia	B-company
 Business	I-company
 Journal	I-company
 http://www.bizjournals.com/philadelphia/morning_roundup/2015/12/nj-rutgers-university-cyberattack-hackers-breach.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+industry_7+%28Industry+Technology%29	O
-	O
+... O
 #Infosec	O
 
 In	O
@@ -9095,7 +9095,7 @@ it	O
 him	O
 .	O
 https://twitter.com/frybergj/with_replies	O
-	O
+... O
 
 RT	O
 @Michael5SOS	O
@@ -9208,7 +9208,7 @@ and	O
 OPM	B-other
 Breach	O
 Effect	O
-	O
+... O
 Daily	O
 Intelligence	O
 -	O
@@ -9511,7 +9511,7 @@ shooting	O
 U.S.	O
 News	O
 http://usnews.nbcnews.com/_news/2013/05/12/18213691-dozen-injured-in-new-orleans-mothers-day-parade-shooting?lite	O
-	O
+... O
 via	O
 @NBCnews	O
 
@@ -9858,7 +9858,7 @@ at	O
 large	O
 .	O
 http://turnto10.com/news/nation-world/20-injured-in-san-bernardino-shooting-fire-dept-says	O
-	O
+... O
 #SanBernadino	B-geo-loc
 
 1	O
@@ -10103,7 +10103,7 @@ Linode	B-company
 Data	O
 Breach	O
 Update	O
-	O
+... O
 Under	O
 Control	O
 ,	O
@@ -10136,7 +10136,7 @@ data	O
 breach	O
 grow	O
 http://ln.is/www.mirror.co.uk/new/Wy7vU	O
-	O
+... O
 
 OH	O
 GOD	O
@@ -10451,7 +10451,7 @@ Patreon	B-company
 security	O
 breach	O
 http://tdh.me/patreon-security-breach/	O
-	O
+... O
 
 I	O
 swear	O
@@ -10947,7 +10947,7 @@ Daesh/ISIL	B-other
 :/	O
 /	O
 news.sky.com/story/1656777/is-registration-forms-identify-22000-jihadis	O
-	O
+... O
 
 Hackers	O
 breach	O
@@ -10965,7 +10965,7 @@ to	O
 leak	O
 20,000	O
 http://www.computerworld.com/article/3030983/security/hackers-breach-doj-dump-details-of-9-000-dhs-employees-plan-to-leak-20-000-from-fbi.html	O
-	O
+... O
 via	O
 @computerworld	O
 
@@ -11126,7 +11126,7 @@ Breach	O
 Releases	O
 Fix	O
 http://mashable.com/2014/01/09/snapchat-update-2/#:eyJzIjoidCIsImkiOiJfenc3dnVkODZlZ2w3NGlxZmxyaGpuXyJ9	O
-	O
+... O
 via	O
 @mashable	O
 
@@ -11386,7 +11386,7 @@ to	O
 3	O
 suspects	O
 http://www.cnn.com/2015/12/02/us/san-bernardino-shooting/index.html	O
-	O
+... O
 
 @Veeroonicuuuh	O
 sa	O
@@ -11422,7 +11422,7 @@ at	O
 Marysville-Pilchuck	B-facility
 High	I-facility
 School	I-facility
-	O
+... O
 http://NBCNews.com	O
 http://wp.me/p56Jo9-dF6	O
 
@@ -11840,7 +11840,7 @@ Says	O
 Sandy	O
 ...	O
 http://politics.trendolizer.com/2015/12/an-hour-before-the-san-bernardino-shooting-trump-was-with-radio-host-who-says-sandy-hook-was-a-hoax.html	O
-	O
+... O
 pic.twitter.com/cBfaHznxGU	O
 
 Just	O
@@ -11886,7 +11886,7 @@ Fort	B-facility
 Hood	I-facility
 shooting	O
 http://huff.to/1hBKcgg	O
-	O
+... O
 
 Vote	O
 :	O
@@ -12216,8 +12216,8 @@ Need	O
 to	O
 Know	O
 http://heavy.com/news/2015/07/muhammad-youssef-abdulazeez-chattanooga-shooter-shooting-shot-killed-marines-recruiting-center-islam-muslim-terrorism-photos-facebook-twitter-age-bio/	O
-	O
-	O
+... O
+... O
 
 RT	O
 @BleacherReport	O
@@ -12377,7 +12377,7 @@ a	O
 man	O
 .	O
 http://www.usatoday.com/story/news/nation/2014/08/26/krupinski-detroit-police-shooting/14634913/	O
-	O
+... O
 
 RT	O
 @theastropath	O
@@ -12957,7 +12957,7 @@ guide	O
 together	O
 :	O
 http://www.ekouk.com/resources/free-downloads/how-to-check-if-your-website-is-insecure-and-how-to-fix-it/	O
-	O
+... O
 
 Starwood	B-company
 Reports	O
@@ -13639,7 +13639,7 @@ Francisco	I-company
 Chronicle	I-company
 -	O
 http://web4co.com/news/3-killed-2-wounded-in-atlanta-shooting-san-francisco-chronicle	O
-	O
+... O
 
 #Monsanto	B-company
 may	O
@@ -13792,7 +13792,7 @@ stolen	O
 laptop	O
 :	O
 http://www.databreaches.net/update-to-republic-services-stolen-laptop-breach/	O
-	O
+... O
 
 On	O
 Thursday	O
@@ -13978,7 +13978,7 @@ Center	I-other
 |	O
 MSNBC	B-company
 http://www.msnbc.com/msnbc/san-bernardino-shooting-what-the-inland-regional-center	O
-	O
+... O
 
 RT	O
 @jodiereg	O
@@ -14247,7 +14247,7 @@ to	O
 4.5	O
 Million	O
 http://dragplus.com/post/id/31230369	O
-	O
+... O
 
 RT	O
 @jessbrammar	O
@@ -14708,7 +14708,7 @@ owner	O
 Shooter	O
 .	O
 http://thinkprogress.org/justice/2014/04/29/3431956/shooting-injures-six-in-georgia-town-where-everyone-is-required-by-law-to-own-a-gun/	O
-	O
+... O
 .	O
 @peaceforus4ever	O
 
@@ -14826,7 +14826,7 @@ High	I-facility
 School	I-facility
 :	O
 https://www.facebook.com/MarkAnthonyDiBello	O
-	O
+... O
 The	O
 cause	O
 is	O
@@ -15000,7 +15000,7 @@ E	B-company
 T	I-company
 Magazine	I-company
 http://eandt.theiet.org/news/2015/oct/talktalk2.cfm#.Vi_Jgc4D3uQ.twitter	O
-	O
+... O
 
 RT	O
 @mariswarriors	O
@@ -15868,7 +15868,7 @@ ends	O
 in	O
 shootout	O
 http://mashable.com/2015/05/17/biker-gangs-shooting-waco/	O
-	O
+... O
 
 I	O
 think	O
@@ -15927,7 +15927,7 @@ WP	B-company
 Engine	I-company
 Attack	O
 http://wptavern.com/linode-confirms-data-security-breach-that-matches-recent-wp-engine-attack	O
-	O
+... O
 via	O
 @wptavern	O
 
@@ -16285,7 +16285,7 @@ Webcasting	O
 Site	O
 #COP21	O
 https://ent.siteintelgroup.com/Dark-Web-and-Cyber-Security/anonymous-claims-breach-of-un-climate-change-webcasting-site.html	O
-	O
+... O
 
 RT	O
 @TEEN_TOP	O
@@ -16469,7 +16469,7 @@ Occupy	O
 protesters	O
 ?	O
 http://chicago.cbslocal.com/2014/06/10/couple-responsible-for-vegas-shooting-spree-recently-lived-in-indiana/	O
-	O
+... O
 
 RT	O
 @Harry_Styles	O
@@ -17170,7 +17170,7 @@ crime	O
 says	O
 Obama	B-person
 http://www.bbc.com/news/world-us-canada-33192128	O
-	O
+... O
 .	O
 Start	O
 in	O
@@ -17480,7 +17480,7 @@ http://t.co/Uaml84CSmN	O
 TalkTalk	B-company
 could	O
 receive	O
-	O
+... O
 500,000	O
 fine	O
 for	O
@@ -17720,7 +17720,7 @@ with	O
 attack	O
 -	O
 http://www.mirror.co.uk/news/world-news/new-orleans-mothers-day-parade-1886047	O
-	O
+... O
 
 Naku	O
 ahh	O
@@ -17848,7 +17848,7 @@ Reports	O
 Shooting	O
 -	O
 http://www.usnewsheadlines247.com/washington-marysville-pilchuck-high-school-reports-shooting.html	O
-	O
+... O
 pic.twitter.com/j7jrUDUhSS	O
 
 TWITTER	B-company
@@ -18197,7 +18197,7 @@ the	O
 sun	O
 
 http://www.clickondetroit.com/news/police-report-shooting-in-waco-texas/33072026	O
-	O
+... O
 9	O
 dead	O
 in	O
@@ -18229,7 +18229,7 @@ Breach	O
 |	O
 http://SecurityWeek.Com	O
 http://www.securityweek.com/650000-affected-jd-wetherspoon-data-breach	O
-	O
+... O
 
 RT	O
 @MiamiHEAT	O
@@ -18699,7 +18699,7 @@ affects	O
 million	O
 patients	O
 http://www.latimes.com/business/la-fi-ucla-medical-data-20150717-story.html	O
-	O
+... O
 
 You	O
 may	O
@@ -18827,7 +18827,7 @@ Columbus	B-geo-loc
 shooting	O
 10TV	B-company
 http://bit.ly/1NalyDz?utm_source=dlvr.it&utm_medium=twitter	O
-	O
+... O
 
 Gonna	O
 be	O
@@ -19212,7 +19212,7 @@ Customer	O
 Contacts	O
 .	O
 http://www.datacenterknowledge.com/archives/2016/01/11/interxion-security-breach-exposes-customer-contacts/	O
-	O
+... O
 .	O
 http://Ripardo.com	O
 #security	O
@@ -19696,7 +19696,7 @@ Regional	I-other
 Center	I-other
 ?	O
 http://www.kcentv.com/story/30652163/san-bernardino-shooting-what-is-the-inland-regional-center	O
-	O
+... O
 
 AURIER	O
 PASSE	O
@@ -19868,7 +19868,7 @@ to	O
 investigate	O
 shooting	O
 http://finance.yahoo.com/news/federal-lawyers-fly-minneapolis-probe-shooting-071435848.html?soc_src=mediacontentstory&soc_trk=tw	O
-	O
+... O
 via	O
 @YahooFinance	O
 
@@ -19904,7 +19904,7 @@ WorldWide	O
 Florida	O
 :	O
 http://www.wptv.com/news/region-c-palm-beach-county/west-palm-beach/more-than-1-victim-in-west-palm-beach-shooting	O
-	O
+... O
 
 MTG	B-product
 1x	I-product
@@ -20044,7 +20044,7 @@ Yahoo	B-company
 News	I-company
 UK	I-company
 http://uk.news.yahoo.com/shots-fired-at-washington-navy-yard--u-s--navy-confirms-130407614.html	O
-	O
+... O
 via	O
 @YahooNewsUK	O
 
@@ -20270,7 +20270,7 @@ Breach	O
 #AppSec	O
 #SQLi	O
 http://krebsonsecurity.com/2015/10/talktalk-hackers-demanded-80k-in-bitcoin/	O
-	O
+... O
 
 @therightswrong	O
 @killabeez357	O
@@ -20549,7 +20549,7 @@ a	O
 look	O
 .	O
 https://m.youtube.com/watch?v=MrA9KYuE8y4	O
-	O
+... O
 
 #MLB	O
 #Padres	O
@@ -20675,13 +20675,13 @@ by	O
 phishing	O
 :	O
 http://www.dailytribune.com/general-news/20150911/community-service-agency-oakland-family-services-security-breached-16k-clients-affected	O
-	O
+... O
 Org	O
 .	O
 notification	O
 :	O
 http://www.oaklandfamilyservices.org/OaklandFamilyServices9-10-15.pdf	O
-	O
+... O
 
 RT	O
 @AgiwaldW	O
@@ -22106,7 +22106,7 @@ dead	O
 1	O
 sought	O
 http://news.yahoo.com/shots-fired-at-washington-navy-yard--u-s--navy-confirms-130407614.html	O
-	O
+... O
 via	O
 @YahooNews	O
 ameican	O
@@ -22570,7 +22570,7 @@ to	O
 shots	O
 #BlueLivesMatter	O
 http://www.nbcchicago.com/news/local/river-forest-critical-incident-police-shooting-gunshots-lathrop-avenue-314282941.html	O
-	O
+... O
 
 @null	O
 Hari	O
@@ -22599,7 +22599,7 @@ everyone	O
 :/	O
 /	O
 www.inquisitr.com/2257852/chattanooga-shooting-isis-twitter-account-warned-of-attack-minutes-before-shooting-authorities-calling-it-terrorism/	O
-	O
+... O
 
 University	B-other
 of	I-other
@@ -22613,7 +22613,7 @@ came	O
 from	O
 China	B-geo-loc
 http://www.scmagazine.com/uva-attack-came-from-china-targeted-email-accounts-of-two-staffers/article/433157/	O
-	O
+... O
 via	O
 @scmagazine	O
 #AUOSINT	O
@@ -23220,7 +23220,7 @@ in	O
 Rogers	B-facility
 Park	I-facility
 http://www.chicagotribune.com/news/local/breaking/chi-chicago-shootings-at-least-2-shot-on-far-north-side-20140205,0,3123950.story	O
-	O
+... O
 
 Major	O
 caching	O
@@ -23296,7 +23296,7 @@ at	O
 Hilton	B-company
 Hotel	I-company
 Properties	O
-	O
+... O
 Krebs	B-company
 on	I-company
 Security	I-company
@@ -23703,7 +23703,7 @@ Santa	B-geo-loc
 Monica	I-geo-loc
 campus	O
 http://guardamerican.com/index.php/blog/146-crime-punishment/798-breaking-active-killer-shooting-on-santa-monica-campus	O
-	O
+... O
 
 Can't	O
 Wait	O
@@ -24015,7 +24015,7 @@ Show	I-tvshow
 #smsportschat	O
 #snapchat	O
 http://www.nbcnews.com/id/21134540/vp=53971379&#53971379	O
-	O
+... O
 
 FBI	B-other
 describes	O
@@ -24035,7 +24035,7 @@ definitions	O
 hmm	O
 .	O
 http://www.chron.com/news/us/article/FBI-New-Orleans-shooting-likely-street-violence-4509500.php?cmpid=usworldhcat	O
-	O
+... O
 
 Why	O
 Wait	O
@@ -24287,7 +24287,7 @@ Staminus	B-company
 hackers	O
 claim	O
 :	O
-	O
+... O
 pic.twitter.com/U9gcgRb8zE	O
 
 @GrandSlamGal	O
@@ -24322,7 +24322,7 @@ for	O
 privacy	O
 breach	O
 http://www.theguardian.com/business/2015/nov/08/talktalk-hacking-boy-arrested-sues-newspapers-privacy	O
-	O
+... O
 
 It	O
 's	O
@@ -24407,7 +24407,7 @@ with	O
 Xbox	B-product
 division	O
 http://gearsiege.com/2015/10/10/microsoft-fined-by-china-for-breach-of-rules-with-xbox-division/	O
-	O
+... O
 
 Don't	O
 know	O
@@ -24752,7 +24752,7 @@ loco	O
 mundo	O
 !	O
 http://www.latimes.com/nation/nationnow/la-na-nn-washington-navy-yard-shootings-20130916,0,6137381.story	O
-	O
+... O
 
 Ask	O
 your	O
@@ -25512,7 +25512,7 @@ breach	O
 :/	O
 /	O
 www.theguardian.com/business/2015/oct/30/second-teenager-arrested-over-talktalk-data-breach	O
-	O
+... O
 
 Breaking	O
 News	O
@@ -26419,7 +26419,7 @@ After	O
 Data	O
 Breach	O
 http://hacker-bot.tumblr.com/post/134975722245	O
-	O
+... O
 #HB	O
 
 RT	O
@@ -26569,7 +26569,7 @@ Gardens	I-geo-loc
 Strip	O
 Club	O
 Shooting	O
-	O
+... O
 CBS	B-company
 Miami	I-company
 http://cbsloc.al/1Ih6pxY	O
@@ -26817,7 +26817,7 @@ in	O
 San	B-geo-loc
 Bernardino	I-geo-loc
 http://www.motherjones.com/mojo/2015/12/san-bernardino-shooting	O
-	O
+... O
 via	O
 @MotherJones	O
 
@@ -26930,7 +26930,7 @@ Tennessee	B-geo-loc
 Navy	B-other
 facility	O
 http://www.foxnews.com/us/2015/07/16/shooting-reported-at-chattanooga-army-recruiting-center-college-on-lockdown/	O
-	O
+... O
 via	O
 the	O
 @FoxNews	O
@@ -27568,7 +27568,7 @@ Need	O
 to	O
 Know	O
 http://heavy.com/news/2015/07/muhammad-youssef-abdulazeez-chattanooga-shooter-shooting-shot-killed-marines-recruiting-center-islam-muslim-terrorism-photos-facebook-twitter-age-bio/	O
-	O
+... O
 
 10	O
 short	O
@@ -27989,7 +27989,7 @@ affects	O
 Tumblr/Pinterest/Twitter	B-company
 -	O
 http://isc.sans.edu/diary/Zendesk+breach+affects+TumblrPinterestTwitter/15247	O
-	O
+... O
 
 http://t.co/KWEyL8eEco	O
 June	O
@@ -28078,7 +28078,7 @@ caught	O
 on	O
 video	O
 http://www.foxnews.com/us/2015/11/22/good-samaritan-survives-new-orleans-shooting-caught-on-surveillance-video/	O
-	O
+... O
 via	O
 the	O
 @FoxNews	O
@@ -28214,7 +28214,7 @@ Jul	O
 PM	O
 ET	O
 http://pulpnews.com/c/i.php?id=1656162663	O
-	O
+... O
 
 Why	O
 you	O
@@ -28358,7 +28358,7 @@ LA	B-company
 Daily	I-company
 News	I-company
 http://www.dailynews.com/breakingnews/ci_23413557/video-fire-shooting-near-santa-monica-college	O
-	O
+... O
 
 @hdubxo	O
 https://t.co/22pLby87XZ	O
@@ -28613,7 +28613,7 @@ loosehttp	O
 :/	O
 /	O
 www.cnn.com/2015/12/02/us/san-bernardino-shooting/index.html	O
-	O
+... O
 
 #BanThaDH	O
 https://t.co/8VjdRRstks	O
@@ -31977,10 +31977,10 @@ er	O
 hello	O
 ?	O
 http://gu.com/p/4e2kq?CMP=Share_iOSApp_Other	O
-	O
+... O
 
 http://m.theaustralian.com.au/subscribe/news/1/index.html?sourceCode=TAWEB_MRE170_a&mode=premium&dest=http://m.theaustralian.com.au/business/mining-energy/brazil-dam-breach-disaster-rocks-bhp/story-e6frg9df-1227600850673&memtype=anonymous	O
-	O
+... O
 
 University	B-other
 of	I-other
@@ -31997,7 +31997,7 @@ China	B-geo-loc
 SC	B-company
 Magazine	I-company
 http://www.scmagazine.com/uva-attack-came-from-china-targeted-email-accounts-of-two-staffers/article/433157/	O
-	O
+... O
 via	O
 @scmagazine	O
 
@@ -33208,7 +33208,7 @@ v	O
 Sacramentu	B-geo-loc
 .	O
 http://sacramento.cbslocal.com/2014/10/24/authorities-at-scene-of-officer-involved-shooting-in-arden-area/	O
-	O
+... O
 
 RT	O
 @fartshire	O
@@ -34171,7 +34171,7 @@ with	O
 that	O
 defence	O
 https://twitter.com/bainesy1969/status/657816032145444864	O
-	O
+... O
 
 #ChattanoogaShooting	O
 Heart	O
@@ -34180,7 +34180,7 @@ new	O
 details	O
 .	O
 https://twitter.com/ap/status/621754537280454657	O
-	O
+... O
 
 WJZ	B-company
 BREAKING	O
@@ -34305,7 +34305,7 @@ Possible	O
 member	O
 .	O
 https://twitter.com/IncursioSubter/status/700354752203399168	O
-	O
+... O
 
 March	O
 24	O
@@ -34627,7 +34627,7 @@ San	B-geo-loc
 Bernardino	I-geo-loc
 Shooting	O
 http://time.com/4133708/san-bernardino-shooting-father-texts/?xid=IFT-Trending	O
-	O
+... O
 
 RT	O
 @NiallOfficial	O
@@ -35669,7 +35669,7 @@ Fort	B-facility
 Hood	I-facility
 shooting	O
 .	O
-	O
+... O
 Again	O
 ?	O
 
@@ -36447,7 +36447,7 @@ The	B-company
 Washington	I-company
 Post	I-company
 http://www.washingtonpost.com/politics/aaron-alexis-34-is-dead-gunman-in-navy-yard-shooting-authorities-say/2013/09/16/dcf431ce-1f07-11e3-8459-657e0c72fec8_story.html?Post+generic=%3Ftid%3Dsm_twitter_washingtonpost	O
-	O
+... O
 
 It	O
 's	O
@@ -36713,7 +36713,7 @@ as	O
 #criminal	O
 #law	O
 http://www.livbrown.co.uk/news/Criminal/2016/02/breach-of-the-peace-the-current-law	O
-	O
+... O
 
 Just	O
 spoke	O
@@ -37011,7 +37011,7 @@ Minneapolis	B-other
 Police	I-other
 .	O
 http://kstp.mn/7ij3m	O
-	O
+... O
 
 Je	O
 perds	O
@@ -37034,7 +37034,7 @@ Monica	I-facility
 College	I-facility
 Shooting	O
 http://bit.ly/ZyEPFT	O
-	O
+... O
 People	O
 are	O
 crazy	O
@@ -37081,7 +37081,7 @@ Jul	O
 AM	O
 ET	O
 http://pulpnews.com/c/i.php?id=1659257361	O
-	O
+... O
 
 @kbgiordano	O
 that	O
@@ -37343,7 +37343,7 @@ Miami	B-geo-loc
 nightclub	O
 shooting	O
 http://news.msn.com/crime-justice/police-15-hurt-in-miami-nightclub-shooting#tscptmt	O
-	O
+... O
 
 @EmathsUK	O
 @mickkay2	O
@@ -37465,7 +37465,7 @@ The	O
 Hacker	O
 News	O
 http://thehackernews.com/2014/02/800000-customer-details-stolen-in-data_2.html	O
-	O
+... O
 
 @FOX29philly	O
 :	O
@@ -37480,7 +37480,7 @@ barbershop	O
 shooting	O
 .	O
 http://bit.ly/188o9Ga	O
-	O
+... O
 
 RT	O
 @koookieelatte	O
@@ -38279,7 +38279,7 @@ New	B-geo-loc
 Orleans	I-geo-loc
 .	O
 http://on.cnn.com/13roV1m	O
-	O
+... O
 you've	O
 gotta	O
 be	O
@@ -38966,9 +38966,9 @@ Law	O
 Enforcement	O
 Breach	O
 |	O
-	O
+... O
 http://www.wired.com/2015/11/cia-email-hackers-return-with-major-law-enforcement-breach/	O
-	O
+... O
 ,	O
 see	O
 more	O
@@ -38981,7 +38981,7 @@ investigate	O
 Parkville	B-geo-loc
 shooting	O
 http://www.rightrelevance.com/search/articles/hero?article=f822828d89aab013d1160bef653be1b9eef2c738&query=baltimore%20md&taccount=baltimoremdrr	O
-	O
+... O
 pic.twitter.com/Zwk3RRhS4A	O
 
 @MichaelSkolnik	O
@@ -39196,7 +39196,7 @@ Live	O
 coverage	O
 -	O
 http://wkrn.com/2015/07/16/shooting-reported-on-campus-of-chattanooga-state-community-college/	O
-	O
+... O
 @WCBD	O
 
 RT	O
@@ -40088,7 +40088,7 @@ Gray	I-person
 said	O
 .	O
 http://on.cnn.com/1gnGbIm	O
-	O
+... O
 
 @Now	O
 July	O
@@ -40271,7 +40271,7 @@ So	O
 sad	O
 !	O
 http://gma.yahoo.com/navy-yard-shooting-suspect-identified-aaron-alexis-202805949--abc-news-topstories.html	O
-	O
+... O
 
 "	O
 Don't	O
@@ -40757,7 +40757,7 @@ site	O
 leak	O
 ...	O
 http://www.theguardian.com/technology/2015/dec/21/hello-kitty-data-breach-leaks-details-3-3million-user-accounts	O
-	O
+... O
 
 PDC	B-other
 William	I-other
@@ -41189,7 +41189,7 @@ job	O
 :	O
 @jeremycorbyn's:	O
 http://www.telegraph.co.uk/news/politics/Jeremy_Corbyn/12105535/Jeremy-Corbyns-Trident-policy-spend-137-billion-to-save-one-job-his-own.html	O
-	O
+... O
 
 Leak	O
 :	O
@@ -41213,7 +41213,7 @@ at	O
 Chase	B-facility
 Bank	I-facility
 http://www.fireandreamitchell.com/2015/11/27/colorado-springs-shooting-occurred-at-chase-bank/	O
-	O
+... O
 via	O
 @famblog	O
 
@@ -41878,7 +41878,7 @@ government	O
 FBI	B-other
 warns	O
 http://www.reuters.com/article/2013/11/15/us-usa-security-anonymous-fbi-idUSBRE9AE17C20131115	O
-	O
+... O
 by	O
 @techwriterjim	O
 &	O
@@ -41948,7 +41948,7 @@ Need	O
 to	O
 Know	O
 http://heavy.com/news/2015/07/muhammad-youssef-abdulazeez-chattanooga-shooter-shooting-shot-killed-marines-recruiting-center-islam-muslim-terrorism-photos-facebook-twitter-age-bio/	O
-	O
+... O
 
 City	O
 ladies	O
@@ -43382,7 +43382,7 @@ MILLION	O
 #Hacked	O
 !!	O
 https://freedomhacker.net/data-breach-trio-patreon-t-mobile-scottrade-hacked-4666/	O
-	O
+... O
 pic.twitter.com/letPcEAD5u	O
 
 Chattanooga	B-geo-loc
@@ -43402,7 +43402,7 @@ the	O
 iranians	O
 ....	O
 http://www.msn.com/en-us/news/us/chattanooga-shooting-suspect-identified-law-enforcement/ar-AAd3U69	O
-	O
+... O
 
 @backstreetboys	O
 I	O
@@ -43480,15 +43480,15 @@ is	O
 
 Two	O
 wounded	O
-	O
+... O
 one	O
 critically	O
-	O
+... O
 in	O
 Englewood	B-geo-loc
 shooting	O
 http://chicago.suntimes.com/crime/7/71/986971/two-injured-one-critically-englewood-shooting	O
-	O
+... O
 
 RT	O
 @mexiconocturno	O
@@ -43633,7 +43633,7 @@ shooting	O
 reported	O
 victims	O
 http://www.570news.com/2015/12/02/regional-police-board-approved-its-budget-for-next-year-with-3-6-per-cent-increase/	O
-	O
+... O
 via	O
 @570News	O
 
@@ -43660,7 +43660,7 @@ Independent	B-company
 .	O
 ie	O
 http://www.independent.ie/world-news/turkey-warns-russia-after-second-airspace-breach-34410659.html	O
-	O
+... O
 
 Happy	O
 18th	O
@@ -43894,7 +43894,7 @@ to	O
 fix	O
 .	O
 http://phys.org/news/2015-12-cyber-breach-bureau-meteorologythe-hack.html#jCp	O
-	O
+... O
 
 It	O
 's	O
@@ -45012,7 +45012,7 @@ guilty	O
 )	O
 >	O
 http://www.theguardian.com/media/greenslade/2015/nov/08/boy-arrested-in-talktalk-probe-sues-three-papers-for-breach-of-privacy	O
-	O
+... O
 
 Have	O
 a	O
@@ -45521,7 +45521,7 @@ police	O
 say	O
 .	O
 http://www.foxnews.com/us/2013/05/12/as-many-as-12-shot-in-new-orleans-mother-day-parade/	O
-	O
+... O
 
 RT	O
 @5SOSUpdatesAUT	O
@@ -45623,7 +45623,7 @@ Santa	B-facility
 Monica	I-facility
 College	I-facility
 http://4.nbcla.com/11mtiGg	O
-	O
+... O
 
 Breach	B-company
 &	I-company
@@ -45689,7 +45689,7 @@ Post	I-company
 :/	O
 /	O
 www.washingtonpost.com/news/the-switch/wp/2016/03/01/the-human-problem-at-the-heart-of-snapchats-employee-data-breach/	O
-	O
+... O
 
 RT	O
 @DevinHayes_	O
@@ -45885,7 +45885,7 @@ Yards	O
 drive-by	O
 shooting	O
 http://chicago.suntimes.com/crime/7/71/993228/four-people-wounded-new-city-drive-shooting	O
-	O
+... O
 #Chiraq	O
 
 RT	O
@@ -45949,7 +45949,7 @@ in	O
 Gresham	B-geo-loc
 neighborhood	O
 http://www.chicagotribune.com/news/local/breaking/chi-mr-gs-shooting-chicago-south-side-87th-ashland-gresham-20130320,0,398903.story	O
-	O
+... O
 
 RT	O
 @ToyotaRacing	O
@@ -47029,7 +47029,7 @@ NAME	O
 AGAIN	O
 ?	O
 http://www.cnn.com/2015/10/31/us/colorado-springs-shooting/	O
-	O
+... O
 
 RT	O
 @Cherwell_Fire	O
@@ -47541,7 +47541,7 @@ possible	O
 database	O
 breach	O
 http://www.friendlydb.com/item/6979473/online-broadcaster-livestream-suffers-possible-database-breach	O
-	O
+... O
 
 RT	O
 @Ashton5SOS	O
@@ -47676,7 +47676,7 @@ de	O
 passeports	O
 !	O
 http://securityaffairs.co/wordpress/46085/data-breach/anonymous-philippines-data-breach.html	O
-	O
+... O
 
 1923	B-product
 S	I-product
@@ -47864,7 +47864,7 @@ identified	O
 http://CNN.com	O
 -	O
 http://www.cnn.com/2015/07/16/us/tennessee-naval-reserve-shooting/index.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+rss%2Fcnn_topstories+%28RSS%3A+CNN+-+Top+Stories%29	O
-	O
+... O
 
 DTN	B-company
 Libya	I-company
@@ -47907,7 +47907,7 @@ IT	B-company
 Governance	I-company
 Blog	O
 http://www.itgovernance.co.uk/blog/jd-wetherspoon-data-breach-300-bigger-than-talktalk-incident/	O
-	O
+... O
 
 Wendy	B-company
 's	I-company
@@ -48758,7 +48758,7 @@ dozen	O
 people	O
 shot	O
 .	O
-	O
+... O
 
 #Zendesk	B-company
 #Security	O
@@ -49129,7 +49129,7 @@ University	I-facility
 Flagstaff	B-geo-loc
 Campus	O
 https://www.yahoo.com/gma/deadly-shooting-reported-northern-arizona-universitys-flagstaff-campus-100028168--abc-news-topstories.html	O
-	O
+... O
 
 Congrats	O
 to	O
@@ -49318,7 +49318,7 @@ of	O
 practice	O
 :	O
 http://www.farminguk.com/News/Retailers-face-anonymous-complaints-if-they-breach-grocery-code-of-practice_30030.html#.U3QS0J2-qRQ.twitter	O
-	O
+... O
 
 Jeff	B-person
 Samardzija	I-person
@@ -49382,7 +49382,7 @@ for	O
 privacy	O
 breach	O
 http://gu.com/p/4e2dk?CMP=Share_AndroidApp_Tweet	O
-	O
+... O
 
 RT	O
 @Dory	O
@@ -49427,7 +49427,7 @@ drops	O
 -	O
 #infosec	O
 http://www.thestreet.com/story/13404375/1/juniper-networks-jnpr-stock-drops-as-fbi-probes-security-breach.html	O
-	O
+... O
 via	O
 @TheStreet	O
 
@@ -49493,7 +49493,7 @@ http://engt.co/1PTXwdf	O
 #californie	O
 #nouvelles	O
 http://buzzymoment.com/fr/article/shooting-santa-monica-college	O
-	O
+... O
 
 Our	O
 next	O
@@ -50530,7 +50530,7 @@ good	O
 right	O
 ?	O
 http://www.cnn.com/2015/12/02/us/san-bernardino-shooting/index.html	O
-	O
+... O
 
 [#wildhackathon	O
 ]	O
@@ -51161,7 +51161,7 @@ After	O
 Data	O
 Breach	O
 http://www.voanews.com/content/report-cia-agents-pulled-from-china-after-data-breach/2985636.html	O
-	O
+... O
 
 RT	O
 @ufc	O
@@ -51296,7 +51296,7 @@ from	O
 @AP)	O
 .	O
 http://m.apnews.com/ap/db_268743/contentdetail.htm?contentguid=d5SW2AtL	O
-	O
+... O
 
 @bud_caddell	O
 haha	O
@@ -51323,7 +51323,7 @@ interwebs	O
 Data	O
 Breach	O
 Day	O
-	O
+... O
 Patreon	B-company
 (	O
 2.3	O
@@ -51339,7 +51339,7 @@ Scottrade	B-company
 4.6	O
 M	O
 )	O
-	O
+... O
 http://riteio.us/CLFZzm	O
 #	O
 digitalproducerpic.twitter.com/wvCpCXkcuy	O
@@ -51729,7 +51729,7 @@ Tomorrow	O
 
 
 http://www.cnn.com/2015/07/16/us/chattanooga-shooting-live-blog/index.html	O
-	O
+... O
 
 garnet	B-company
 hill	I-company
@@ -52705,7 +52705,7 @@ Tennessee	B-geo-loc
 Navy	B-other
 facility	O
 http://www.foxnews.com/us/2015/07/16/shooting-reported-at-chattanooga-army-recruiting-center-college-on-lockdown/	O
-	O
+... O
 via	O
 the	O
 @FoxNews	O
@@ -52838,7 +52838,7 @@ all	O
 are	O
 .	O
 http://bitchcorner.com/2013/10/15/tuesday-travesty-snapchat/	O
-	O
+... O
 
 Hello	O
 everyone	O
@@ -52923,7 +52923,7 @@ patient-data	O
 security	O
 breach	O
 http://www.consumeraffairs.com/news/class-action-suit-filed-against-ucla-health-over-patient-data-security-breach-072315.html#social-link	O
-	O
+... O
 
 RT	O
 @AMPromoting	O
@@ -53063,7 +53063,7 @@ their	O
 families	O
 .	O
 http://www.cnn.com/2015/12/02/us/san-bernardino-shooting	O
-	O
+... O
 
 Join	O
 the	O
@@ -53231,7 +53231,7 @@ leak	O
 from	O
 FBI	B-other
 http://www.computerworld.com/article/3030983/security/hackers-breach-doj-dump-details-of-9-000-dhs-employees-plan-to-leak-20-000-from-fbi.html	O
-	O
+... O
 #UPPERS	O
 
 RT	O
@@ -53272,11 +53272,11 @@ to	O
 change	O
 passwords	O
 after	O
-	O
+... O
 #security	O
 breach	O
 http://www.thenational.ae/uae/technology/thousands-of-dubizzle-users-told-to-change-passwords-after-security-breach	O
-	O
+... O
 #UAE	O
 
 RT	O
@@ -53540,7 +53540,7 @@ Tennessee	B-geo-loc
 Navy	B-other
 facility	O
 http://www.foxnews.com/us/2015/07/16/shooting-reported-at-chattanooga-army-recruiting-center-college-on-lockdown/	O
-	O
+... O
 via	O
 the	O
 @FoxNews	O
@@ -53652,7 +53652,7 @@ to	O
 Gun	O
 Violence	O
 http://www.newyorker.com/news/news-desk/after-the-san-bernardino-shooting-three-approaches-to-gun-violence	O
-	O
+... O
 via	O
 @joshuarothman	O
 
@@ -54819,7 +54819,7 @@ leaves	O
 Marines	O
 dead	O
 http://feeds.mashable.com/~r/Mashable/~3/vnZcg2Xxr50/	O
-	O
+... O
 Four	O
 U.S.	O
 Marines	O
@@ -54929,7 +54929,7 @@ children	O
 :/	O
 /	O
 twitter.com/bettyfreedoms/status/548954213800108032	O
-	O
+... O
 
 I	O
 am	O
@@ -55056,7 +55056,7 @@ SVU	I-movie
 "	O
 S	O
 http://pinterest.com/pin/527343437591957436/	O
-	O
+... O
 
 RT	O
 @TheEDMnation	O
@@ -55355,7 +55355,7 @@ ideology	O
 Chicago	B-company
 Tribune	I-company
 http://articles.chicagotribune.com/2014-06-09/news/sns-rt-us-usa-nevada-shooting-20140608_1_bunkerville-cliven-bundy-supremacist-ideology	O
-	O
+... O
 via	O
 @ArchiveDigger	O
 #YOUBLAMECLIVENBUNDY	O
@@ -57207,7 +57207,7 @@ to	O
 million	O
 customers	O
 http://stratuswerkz.com/2015/10/talktalk-suffers-major-data-breach-affecting-4-million-customers/	O
-	O
+... O
 pic.twitter.com/0GVzlogOnQ	O
 
 Book	O
@@ -58051,7 +58051,7 @@ Of	O
 Nuclear	O
 Treaty	O
 http://ln.is/dailycaller.com/2015/oMO52	O
-	O
+... O
 via	O
 @dailycaller	O
 
@@ -58204,7 +58204,7 @@ New	B-geo-loc
 Orleans	I-geo-loc
 .	O
 http://on.cnn.com/13roV1m	O
-	O
+... O
 Right	O
 .	O
 Gun	O
@@ -58286,7 +58286,7 @@ avoided	O
 #privacy	O
 #security	O
 http://www.scmagazineuk.com/jd-wetherspoon-breach-three-data-management-mistakes-that-could-have-been-avoided/article/460792/	O
-	O
+... O
 
 @DefineChic	O
 told	O
@@ -58729,7 +58729,7 @@ stolen	O
 :/	O
 /	O
 www.scmagazine.com/320k-time-warner-cable-customers-possibly-victimized/article/463803/	O
-	O
+... O
 
 @pizookiecam	O
 ON	O
@@ -58791,7 +58791,7 @@ Telecom	I-company
 Orange	I-company
 '	I-company
 http://thehackernews.com/2014/02/800000-customer-details-stolen-in-data_2.html	O
-	O
+... O
 #Security	O
 
 I	O
@@ -59419,7 +59419,7 @@ gunman	O
 dead	O
 :	O
 http://registerguard.com/rg/news/local/33566342-75/10-reported-dead-in-shooting-at-umpqua-community-college-in-roseburg.html.csp#.Vg2oW4Pw8ns.twitter	O
-	O
+... O
 #UCCShooting	O
 
 @AceConcierge	O
@@ -59841,7 +59841,7 @@ expect	O
 http://t.co/K2ijFeBksn	O
 
 http://twitter.com/SirkisYoran/status/674406367634006017:CT	O
-	O
+... O
 :	O
 Data	O
 Security	O
@@ -60646,7 +60646,7 @@ injured	O
 ,	O
 in	O
 http://www.bbc.co.uk/news/world-us-canada-24111481#sa-ns_mchannel=rss&ns_source=PublicRSS20-sa	O
-	O
+... O
 
 RT	O
 @infzer0	O
@@ -61282,7 +61282,7 @@ Angeles	I-company
 Times	I-company
 #breach	O
 http://dragplus.com/post/id/33046068	O
-	O
+... O
 
 RT	O
 @Harry_Styles	O
@@ -61666,7 +61666,7 @@ affects	O
 million	O
 patients	O
 http://www.latimes.com/business/la-fi-ucla-medical-data-20150717-story.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+latimes%2Fbusiness+%28L.A.+Times+-+Business%29	O
-	O
+... O
 #EMM	O
 
 Midnight	O
@@ -61728,7 +61728,7 @@ after	O
 security	O
 breach	O
 http://www.irishtimes.com/news/world/europe/u2-concert-evacuated-in-stockholm-after-security-breach-1.2359348	O
-	O
+... O
 via	O
 @IrishTimesWorldpic	O
 .twitter.com/1V5wfGPWMO	O
@@ -62116,9 +62116,9 @@ at	O
 Excellus	B-company
 BlueCross	I-company
 BlueShield	I-company
-	O
+... O
 http://personallines.insurance-business-review.com/news/keller-rohrback-investigates-data-breach-at-excellus-bluecross-blueshield-140915-4670014	O
-	O
+... O
 
 I	O
 correctly	O
@@ -62359,18 +62359,18 @@ Scam	O
 of	O
 the	O
 day	O
-	O
+... O
 October	O
 31	O
 ,	O
 2015	O
-	O
+... O
 TalkTalk	B-company
 data	O
 breach	O
 update	O
 http://scamicide.com/2015/10/31/scam-of-the-day-october-31-2015-talktalk-data-breach-update/	O
-	O
+... O
 
 3rd	O
 local	O
@@ -62971,7 +62971,7 @@ un	O
 environnement	O
 #NodeJS	O
 https://github.com/spolu/exo_browser	O
-	O
+... O
 via	O
 #ParisJS	O
 
@@ -63587,7 +63587,7 @@ EU	B-other
 law	O
 '	O
 http://www.bbc.co.uk/news/uk-scotland-35160396	O
-	O
+... O
 #MUP	O
 #alcohol	O
 #publichealth	O
@@ -63748,7 +63748,7 @@ following	O
 breach	O
 -	O
 http://www.infoworld.com/article/3000810/security/vbulletin-resets-patches-and-issues-emergency-patches-following-breach.html#tk.rss_security	O
-	O
+... O
 
 WP	B-company
 Engine	I-company
@@ -63909,7 +63909,7 @@ poor	O
 
 #MarysvilleShooting	O
 http://www.thestranger.com/seattle/does-media-coverage-of-school-shootings-lead-to-more-school-shootings/Content?oid=20329038	O
-	O
+... O
 
 @AVargasBellido	O
 @KenoRadio	O
@@ -64243,7 +64243,7 @@ Alexis	I-person
 among	O
 dead	O
 http://news.yahoo.com/video/navy-yard-shooting-gunman-dead-173803576.html	O
-	O
+... O
 via	O
 @YahooNews	O
 
@@ -64263,7 +64263,7 @@ Washington	B-facility
 Navy	I-facility
 Yard	I-facility
 http://www.washingtonpost.com/blogs/liveblog/wp/2013/09/16/shooting-at-washington-navy-yard/	O
-	O
+... O
 
 St	B-company
 .	I-company
@@ -64341,7 +64341,7 @@ for	O
 Chattanooga	B-geo-loc
 Shooting	O
 http://www.infowars.com/suspected-isis-twitter-account-claims-responsibility-for-chattanooga-shooting/	O
-	O
+... O
 
 RT	O
 @Jamiebower	O
@@ -64781,7 +64781,7 @@ $150/day	O
 .	O
 See	O
 http://atlanta.craigslist.org/atl/tfr/4702988081.html	O
-	O
+... O
 for	O
 details	O
 .	O
@@ -65357,7 +65357,7 @@ denies	O
 breach	O
 -	O
 http://xvoda.com/2016/01/08/time-warner-cable-denies-breach/	O
-	O
+... O
 
 RT	O
 @Horny4DaBiebs	O

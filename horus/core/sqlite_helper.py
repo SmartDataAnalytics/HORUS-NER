@@ -40,7 +40,7 @@ class HorusDB(object):
             raise e
 
     def term_cached(self, term, search_engine, search_engine_features = ''):
-        values = (term.upper(), search_engine, search_engine_features)
+        values = (term, search_engine, search_engine_features)
         ret = self.__exists_record(SQL_TERM_SEARCH_SEL, values)
         if ret is not False:
             return ret
@@ -52,27 +52,23 @@ class HorusDB(object):
             values = (term, id_searchengine, id_searchtype, search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
             id = self.conn.cursor().execute(SQL_TERM_SEARCH_INS, values)
             return id.lastrowid
-        except Exception as e:
-            raise e
+        except:
+            raise
 
     def save_website_data(self, id_term_search, seq, web_id, web_display_url, web_name, web_snippet):
         try:
             values = (id_term_search, 0, web_id, seq, web_display_url, web_name, web_snippet, '')
             id = self.conn.cursor().execute(SQL_HORUS_SEARCH_RESULT_TEXT_INS, values)
             return id.lastrowid
-        except Exception as e:
-            raise e
+        except:
+            raise
 
     def save_image_data(self, id_term_img, seq, contentURL, name, encoding_format, height, width, thumbnailUrl, auxtype):
         try:
             fname = ('%s_%s_%s.%s' % (str(id_term_img), str(0), str(seq), str(auxtype)))
             values = (id_term_img, 0, seq, seq, contentURL, name, encoding_format, height, width, thumbnailUrl, encoding_format, fname)
-            sql = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_term_search, id_ner_type, 
-                     search_engine_resource_id, result_seq, result_media_url, result_media_title,
-                     result_media_content_type, result_media_height, result_media_width, 
-                     result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
-                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
+            sql = SQL_HORUS_SEARCH_RESULT_IMG_INS
             id = self.conn.cursor().execute(sql, values)
             return id.lastrowid
-        except Exception as e:
-            raise e
+        except:
+            raise
