@@ -132,7 +132,7 @@ X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 print X_train_tfidf.shape
 joblib.dump(X_train_counts, config.models_text_root + 'xtrain-counts-tfidf.data', compress=3)
 
-''' training '''
+''' feature_extraction '''
 
 
 clf = MultinomialNB().fit(X_train_tfidf, np.array(Xtrain['klass'], dtype=np.int32))

@@ -348,7 +348,7 @@ run_models(False, True, False, False)
 exit(0)
 
 
-# training
+# feature_extraction
 
 crf2 = sklearn_crfsuite.CRF(
     algorithm='lbfgs',

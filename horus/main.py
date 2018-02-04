@@ -23,7 +23,7 @@ more info at: https://github.com/dnes85/components-models
 # License: BSD 3 clause
 from optparse import OptionParser
 
-from horus.core.training import Core
+from horus.core.feature_extraction import Core
 
 
 def main():

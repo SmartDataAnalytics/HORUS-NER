@@ -123,13 +123,13 @@ print '- setting vocabulary to extractor'
 extract_bow.setVocabulary(voc)
 
 if CONST_RETRAIN_MODEL == 1:
-    print '- creating training data'
+    print '- creating feature_extraction data'
     traindata, trainlabels = [], []
     for i in range(213): # 20
         traindata.extend(bow_features(path(pos, i))); trainlabels.append(1)
         traindata.extend(bow_features(path(neg, i))); trainlabels.append(-1)
 
-    print '- training the model'
+    print '- feature_extraction the model'
     svm = svm.NuSVC(nu=0.5, kernel='rbf', gamma=0.1, probability=True)
     svm.fit(np.array(traindata), np.array(trainlabels))
     joblib.dump(svm, CONST_SVM_MODEL_PATH, compress=3)

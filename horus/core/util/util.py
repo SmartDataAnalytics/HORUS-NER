@@ -1,13 +1,21 @@
+import json
+import logging
 import ntpath
 
+import re
+
+import nltk
+
 from horus.core.config import HorusConfig
+from horus.core.util import definitions
+from nltk.tokenize import sent_tokenize
+
+from horus.core.util.nlp_tools import NLPTools
+from horus.core.util.sqlite_helper import SQLiteHelper, HorusDB
+from horus.core.util.systemlog import SystemLog
 
 config = HorusConfig()
-
-
-def path_leaf(path):
-    head, tail = ntpath.split(path)
-    return tail or ntpath.basename(head)
+sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
 
 html_escape_table = {
         "&": "&amp;",
@@ -16,6 +24,36 @@ html_escape_table = {
         ">": "&gt;",
         "<": "&lt;",
     }
+
+
+def get_compounds(tokens):
+    compounds = []
+    pattern = """
+                                NP:
+                                   {<JJ>*<NN|NNS|NNP|NNPS><CC>*<NN|NNS|NNP|NNPS>+}
+                                   {<NN|NNS|NNP|NNPS><IN>*<NN|NNS|NNP|NNPS>+}
+                                   {<JJ>*<NN|NNS|NNP|NNPS>+}
+                                   {<NN|NNP|NNS|NNPS>+}
+                                """
+    cp = nltk.RegexpParser(pattern)
+    toparse = []
+    for token in tokens:
+        toparse.append(tuple([token[0], token[1]]))
+    t = cp.parse(toparse)
+
+    i_word = 0
+    for item in t:
+        if type(item) is nltk.Tree:
+            i_word += len(item)
+            if len(item) > 1:  # that's a compound
+                compound = ''
+                for tk in item:
+                    compound += tk[0] + ' '
+
+                compounds.append([i_word - len(item) + 1, compound[:len(compound) - 1], len(item)])
+        else:
+            i_word += 1
+    return compounds
 
 def html_escape(text):
     return "".join(html_escape_table.get(c, c) for c in text)
@@ -399,3 +437,4 @@ def convert_unicode(s):
         return s
     else:
         raise Exception("that's not a string!")
+

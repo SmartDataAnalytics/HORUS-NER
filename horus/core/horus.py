@@ -25,6 +25,7 @@ import logging
 
 from horus.core.config import HorusConfig
 from horus.core.util.systemlog import SystemLog
+from nltk.tokenize import sent_tokenize
 
 
 class Horus(object):
@@ -32,6 +33,7 @@ class Horus(object):
     def __init__(self):
         self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
+        self.util = Util()
 
     def run_final_classifier(self):
         self.sys.log.info(':: running final classifier...')
@@ -72,3 +74,82 @@ class Horus(object):
 
         except Exception as error:
             raise error
+
+    def __process_input_text(self, text):
+        self.sys.log.info(':: text: ' + text)
+        self.sys.log.info(':: tokenizing sentences ...')
+        sent_tokenize_list = sent_tokenize(text)
+        self.sys.log.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
+        sentences = []
+        for sentence in sent_tokenize_list:
+            sentences.append(self.util.process_and_save_sentence(-1, sentence))
+
+        return sentences
+
+    def update_rules_cv_predictions(self):
+        '''
+        updates the predictions based on inner rules
+        :return:
+        '''
+        self.sys.log.info(':: updating predictions based on rules')
+        for i in range(len(self.horus_matrix)):
+            initial = self.horus_matrix[i][17]
+            # get nouns or compounds
+            if self.horus_matrix[i][4] == 'NOUN' or \
+                    self.horus_matrix[i][4] == 'PROPN' or self.horus_matrix[i][7] == 1:
+                # do not consider classifications below a theta
+                if self.horus_matrix[i][15] < int(self.config.models_distance_theta):
+                    self.horus_matrix[i][17] = "*"
+                # ignore LOC classes having iPLC negative
+                if bool(int(self.config.models_distance_theta_high_bias)) is True:
+                    if initial == "LOC":
+                        if self.horus_matrix[i][16] < int(self.config.models_limit_min_loc):
+                            self.horus_matrix[i][17] = "*"
+                        elif self.horus_matrix[i][16] < 0 and self.horus_matrix[i][15] > \
+                                int(self.config.models_safe_interval):
+                            self.horus_matrix[i][17] = initial
+
+    def update_compound_predictions(self):
+        '''
+        pre-requisite: the matrix should start with the sentence compounds at the beginning.
+        '''
+        self.sys.log.info(':: updating compounds predictions')
+        i_y, i_sent, i_first_word, i_c_size = [], [], [], []
+        for i in range(len(self.horus_matrix)):
+            if self.horus_matrix[i][7] == 1:
+                i_y.append(self.horus_matrix[i][36])  # KLASS_1
+                i_sent.append(self.horus_matrix[i][1])
+                i_first_word.append(self.horus_matrix[i][2])
+                i_c_size.append(int(self.horus_matrix[i][8]))
+            if self.horus_matrix[i][7] == 0:
+                for z in range(len(i_y)):
+                    if i_sent[z] == self.horus_matrix[i][1] and i_first_word[z] == self.horus_matrix[i][2]:
+                        for k in range(i_c_size[z]):
+                            self.horus_matrix[i + k][39] = i_y[z]  # KLASS_4
+
+
+    def annotate_text(self, text):
+        """
+        annotates an input text with HORUS
+        :param text:
+        :return:
+        """
+        try:
+            print self.version_label
+            if text is not None:
+                self.sys.log.info(':: annotating text: %s' % text)
+                sent_tokenize_list = self.util.process_input_text(text.strip('"\''))
+                self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
+            else:
+                raise Exception("err: missing text to be annotated")
+
+            if len(self.horus_matrix) > 0:
+                self.util.download_and_cache_results()
+                self.detect_objects()
+                self.update_compound_predictions()
+                self.run_final_classifier()
+                self.util.print_annotated_sentence()
+                return self.horus_matrix
+
+        except Exception as error:
+            self.sys.log.error('sorry: ' + repr(error))

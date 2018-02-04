@@ -195,7 +195,7 @@ y_train = [sent2labels(s) for s in train_sents]
 X_test = [sent2features(s) for s in test_sents]
 y_test = [sent2labels(s) for s in test_sents]
 
-# training
+# feature_extraction
 crf = sklearn_crfsuite.CRF(
     algorithm='lbfgs',
     c1=0.088,

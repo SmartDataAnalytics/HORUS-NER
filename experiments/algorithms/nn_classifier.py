@@ -53,7 +53,7 @@ matrix_np_labelled = np.zeros((matrix_np.shape[1],matrix_np.shape[0]))   #To sto
 encoders = []
 
 '''
-@diego: I'm training encoders again since none of the existing ones have the encoding for most of the data. I looked at them all ;)
+@diego: I'm feature_extraction encoders again since none of the existing ones have the encoding for most of the data. I looked at them all ;)
 '''
 
 for i in range(matrix_np.shape[1]):

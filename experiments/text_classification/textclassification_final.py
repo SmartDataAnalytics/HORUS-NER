@@ -42,7 +42,7 @@ train = np.array(train_ds)
 y_train = train['klass']
 
 
-print("Extracting features from the training data using a sparse vectorizer")
+print("Extracting features from the feature_extraction data using a sparse vectorizer")
 t0 = time()
 vectorizer = TfidfVectorizer(sublinear_tf=True, lowercase=True, max_df=0.5, stop_words='english',
                              strip_accents='unicode', encoding='utf-8', decode_error='ignore')
