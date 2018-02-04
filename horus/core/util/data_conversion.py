@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 import numpy as np
 import logging
-from horus.core import definitions
+from horus.core.util import definitions
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
 
@@ -137,7 +137,7 @@ def horus_to_conll(dataset, cols, out_path):
     df.dropna(how="all", inplace=True)
     print("dataset shape: ", df.shape)
     # get targets before excluding
-    y = df.iloc[:,definitions.HORUS_FORMAT_INDEX_COL_TARGET_NER].copy()
+    y = df.iloc[:, definitions.HORUS_FORMAT_INDEX_COL_TARGET_NER].copy()
     oldsentid = df.get_values()[0][definitions.HORUS_FORMAT_INDEX_COL_ID_SENTENCE]
     # exclude irrelevant columns
     df.drop(df.columns[columns_to_exclude], axis=1, inplace=True)

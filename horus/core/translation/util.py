@@ -2,7 +2,7 @@ import logging
 
 import langdetect
 
-from horus.core.systemlog import SystemLog
+from horus.core.util.systemlog import SystemLog
 
 
 def translate(self, t1, t2, id, t1en, t2en):

@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
-from horus.core import definitions
+from horus.core.util import definitions
 from horus.core.config import HorusConfig
 
 config = HorusConfig()

@@ -1,5 +1,5 @@
 from horus.core.config import HorusConfig
-from horus.core.service import Core
+from horus.core.training import Core
 
 horus = Core()
 print horus.version_label

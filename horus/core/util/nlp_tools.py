@@ -2,7 +2,7 @@ import nltk
 from nltk.tag import StanfordPOSTagger
 from nltk.tag.stanford import StanfordNERTagger
 
-from horus.core import definitions
+from horus.core.util import definitions
 from horus.core.config import HorusConfig
 from horus.resources.models.tweetnlp import CMUTweetTagger
 

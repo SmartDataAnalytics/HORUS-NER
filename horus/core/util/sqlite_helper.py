@@ -1,5 +1,5 @@
 import sqlite3
-from horus.core.definitions_sql import *
+from horus.core.util.definitions_sql import *
 
 
 class SQLiteHelper(object):

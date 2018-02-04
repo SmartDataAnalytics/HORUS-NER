@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
-
+import matplotlib.image as mpimg
 from torch.autograd import Variable
-
+import cv2
 from horus.core.config import HorusConfig
 
 
@@ -25,6 +25,14 @@ class CNN(nn.Module):
         self.fc2 = nn.Linear(100, 10)
         self.config = HorusConfig()
 
+    def preprocess_image(self, img):
+        img = mpimg.imread(img)
+
+        # if len(img.shape) == 3:
+        #    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+        #    img = 0.2989 * r + 0.5870 * g + 0.1140 * b
+        resized_image = cv2.resize(img, (28, 28))
+        return resized_image
 
 
     def forward(self, x):

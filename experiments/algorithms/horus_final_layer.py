@@ -18,7 +18,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import f1_score
 from sklearn.naive_bayes import GaussianNB
 
-from horus.core import definitions
+from horus.core.util import definitions
 from horus.core.config import HorusConfig
 
 config = HorusConfig()

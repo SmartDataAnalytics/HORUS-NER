@@ -3,7 +3,7 @@ from sklearn import preprocessing
 from sklearn.externals import joblib
 
 from horus.core.config import HorusConfig
-from horus.core.nlp_tools import NLPTools
+from horus.core.util.nlp_tools import NLPTools
 
 
 def extract_all_tags_conll(config):

@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
-from horus.core import definitions
-from horus.core.service import Core
+from horus.core.util import definitions
+from horus.core.training import Core
 
 
 def confusion_matrix_analysis(horus_matrix):

@@ -1,5 +1,5 @@
 # encoding: utf-8
-from horus.core.service import Core
+from horus.core.training import Core
 
 # = ["\xe5\x81\x9a\xe6\x88\x8f\xe4\xb9\x8b\xe8\xaf\xb4"]
 #a = [l[0].decode('utf8')]

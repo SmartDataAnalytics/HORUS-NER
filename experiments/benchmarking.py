@@ -1,6 +1,6 @@
 import os
 
-from horus.core.data_conversion import horus_to_features
+from horus.core.util.data_conversion import horus_to_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -13,7 +13,7 @@ from sklearn_crfsuite import metrics
 
 plt.style.use('ggplot')
 from horus.core.config import HorusConfig
-from horus.core import definitions
+from horus.core.util import definitions
 from sklearn.externals import joblib
 import scipy.stats
 from sklearn.metrics import make_scorer, accuracy_score, confusion_matrix, precision_recall_fscore_support
