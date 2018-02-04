@@ -109,6 +109,7 @@ class HorusConfig(object):
                     self.translation_secret = parser.get('translation', 'microsoft_client_secret')
 
                     self.cache_img_folder = parser.get('cache', 'img_folder')
+                    self.cache_sentences = parser.get('cache', 'cache_sentences')
 
                     self.dataset_ritter = parser.get('dataset', 'ds_ritter')
                     self.dataset_conll = parser.get('dataset', 'ds_conll')
@@ -124,6 +125,7 @@ class HorusConfig(object):
                     self.models_kmeans_trees = int(parser.get('models-param', 'kmeans-trees'))
                     self.object_detection_type = int(parser.get('models-param', 'object_detection_type'))
                     self.text_classification_type = int(parser.get('models-param', 'text_classification_type'))
+                    self.embeddings_path = parser.get('models-param', 'embeddings_path')
 
                     fine = True
 

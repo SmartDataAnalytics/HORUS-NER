@@ -11,5 +11,5 @@ from horus.core.service import Core
 text = "gustavo scarpa"
 #text = u"bullshit about airports/coffee/conferences".encode('utf8')
 horus = Core()
-horus.annotate(text)
+horus.export_features(text)
 #print horus.get_cv_annotation()

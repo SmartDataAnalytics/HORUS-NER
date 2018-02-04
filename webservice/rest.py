@@ -15,7 +15,7 @@ app = web.application(urls, globals())
 class annotate:
     def GET(self, sentence):
         horus = Core(5)
-        ret = horus.annotate(sentence, '', 0, '', 'json')
+        ret = horus.export_features(sentence, '', 0, '', 'json')
         return json.dumps(ret)
 
 
