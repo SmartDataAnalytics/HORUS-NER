@@ -392,7 +392,7 @@ class FeatureExtraction(object):
                     elif horus_matrix[index][24] >= int(self.config.models_distance_theta) + 2:
                         horus_matrix[index][38] = horus_matrix[index][26]  # TX is the final decision
 
-    def export_features(self, file, label=None, token_index=0, ner_index=1):
+    def extract_features(self, file, label=None, token_index=0, ner_index=1):
         """
         generates the feature_extraction data for HORUS
         do not use the config file to choose the models, exports all features (self.detect_objects())
@@ -422,3 +422,7 @@ class FeatureExtraction(object):
 
         except Exception as error:
             self.sys.log.error('caught this error here: ' + repr(error))
+
+
+if __name__ == '__main__':
+    FeatureExtraction().extract_features()
