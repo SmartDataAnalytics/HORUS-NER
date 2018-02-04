@@ -18,6 +18,8 @@ class HorusConfig(object):
         config = None
         for ini_file in os.curdir, os.path.expanduser("~"), "/etc/horus", os.environ.get('HORUS_CONF'):
             try:
+                self.version = "0.1.5"
+                self.version_label = "HORUS 0.1.5"
                 with open(os.path.join(ini_file, "horus.ini")) as source:
 
                     #config.readfp(source)
