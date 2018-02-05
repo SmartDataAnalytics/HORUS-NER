@@ -30,7 +30,6 @@ import sqlite3
 import nltk
 import numpy
 import pandas as pd
-from sklearn.externals import joblib
 from horus.core.config import HorusConfig
 from horus.core.feature_extraction.object_detection.cnn import CNN
 from horus.core.feature_extraction.object_detection.sift import SIFT
@@ -54,20 +53,18 @@ class FeatureExtraction(object):
     def __init__(self):
         self.logging = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.horus_matrix = []
+        self.config = HorusConfig()
         self.logging.log.info('------------------------------------------------------------------')
-        self.logging.log.info('::                       HORUS ' + self.version + '                            ::')
+        self.logging.log.info('::                       HORUS ' + self.config.version + '                            ::')
         self.logging.log.info('------------------------------------------------------------------')
         self.logging.log.info(':: loading components...')
-        self.config = HorusConfig()
         self.util = Util()
-        self.tools = NLPTools()
-        self.translator = BingTranslator()
+        #self.tools = NLPTools()
+        #self.translator = BingTranslator()
         self.cnn = CNN()
         self.sift = SIFT()
         self.bow = BowTfidf()
         self.text_topicmodeling = TopicModeling()
-        self.final = joblib.load(self.config.model_final)
-        self.final_encoder = joblib.load(self.config.model_final_encoder)
         self.conn = sqlite3.connect(self.config.database_db)
 
         if bool(int(self.config.models_force_download)) is True:
@@ -224,17 +221,17 @@ class FeatureExtraction(object):
                     else:
                         if self.config.object_detection_type in (-1,0):
                             # ----- face recognition -----
-                            tot_faces = self.detect_faces(ifeat[0])
+                            tot_faces = self.sift.detect_faces(ifeat[0])
                             if tot_faces > 0:
                                 tot_geral_faces += 1
                                 self.logging.log.debug(":: found {0} faces!".format(tot_faces))
                             # ----- logo recognition -----
-                            tot_logos = self.detect_logo(ifeat[0])
+                            tot_logos = self.sift.detect_logo(ifeat[0])
                             if tot_logos[0] == 1:
                                 tot_geral_logos += 1
                                 self.logging.log.debug(":: found {0} logo(s)!".format(1))
                             # ----- place recognition -----
-                            res = self.detect_place(ifeat[0])
+                            res = self.sift.detect_place(ifeat[0])
                             tot_geral_pos_locations += res.count(1)
                             tot_geral_neg_locations += (res.count(-1) * -1)
 
@@ -250,12 +247,12 @@ class FeatureExtraction(object):
                                 tot_geral_faces_cnn += 1
                                 self.logging.log.debug(":: found {0} faces!".format(tot_faces))
                             # ----- logo recognition -----
-                            tot_logos = self.detect_logo_cnn(image)
+                            tot_logos = self.cnn.detect_logo_cnn(image)
                             if tot_logos[0] == 1:
                                 tot_geral_logos_cnn += 1
                                 self.logging.log.debug(":: found {0} logo(s)!".format(1))
                             # ----- place recognition -----
-                            res = self.detect_place_cnn(image)
+                            res = self.cnn.detect_place_cnn(image)
                             tot_geral_pos_locations_cnn += res.count(1)
                             tot_geral_neg_locations_cnn += (res.count(0) * -1)
 

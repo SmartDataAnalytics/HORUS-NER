@@ -31,6 +31,7 @@ from horus.core.feature_extraction.util import Util
 from horus.core.util import definitions
 from horus.core.util.systemlog import SystemLog
 from nltk.tokenize import sent_tokenize
+from sklearn.externals import joblib
 
 
 class Horus(object):
@@ -39,6 +40,8 @@ class Horus(object):
         self.logging = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
         self.util = Util()
+        self.final = joblib.load(self.config.model_final)
+        self.final_encoder = joblib.load(self.config.model_final_encoder)
         self.features = FeatureExtraction()
 
     def run_final_classifier(self):
