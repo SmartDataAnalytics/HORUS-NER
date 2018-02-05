@@ -13,3 +13,4 @@ class TopicModeling():
         self.wvmodel = shorttext.utils.load_word2vec_model(self.config.embeddings_path)
         self.classifier_tm = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel,
                                                                                self.config.models_1_text_cnn)
+

@@ -61,10 +61,10 @@ class FeatureExtraction(object):
         self.util = Util()
         #self.tools = NLPTools()
         #self.translator = BingTranslator()
-        self.cnn = CNN()
-        self.sift = SIFT()
-        self.bow = BowTfidf()
-        self.text_topicmodeling = TopicModeling()
+        self.image_cnn = CNN()
+        self.image_sift = SIFT()
+        self.text_bow = BowTfidf()
+        self.text_tm = TopicModeling()
         self.conn = sqlite3.connect(self.config.database_db)
 
         if bool(int(self.config.models_force_download)) is True:
@@ -154,11 +154,10 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         horus_matrix = matrix
-        if 1==1:
-            if self.config.object_detection_type not in (0,1):
-                raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
-            if self.config.text_classification_type not in (0, 1):
-                raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
+        if self.config.object_detection_type not in (-1, 0,1):
+            raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+        if self.config.text_classification_type not in (-1, 0, 1):
+            raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
         self.logging.log.info(':: detecting %s objects...' % len(horus_matrix))
         auxi = 0
         toti = len(horus_matrix)
@@ -221,17 +220,17 @@ class FeatureExtraction(object):
                     else:
                         if self.config.object_detection_type in (-1,0):
                             # ----- face recognition -----
-                            tot_faces = self.sift.detect_faces(ifeat[0])
+                            tot_faces = self.image_sift.detect_faces(ifeat[0])
                             if tot_faces > 0:
                                 tot_geral_faces += 1
                                 self.logging.log.debug(":: found {0} faces!".format(tot_faces))
                             # ----- logo recognition -----
-                            tot_logos = self.sift.detect_logo(ifeat[0])
+                            tot_logos = self.image_sift.detect_logo(ifeat[0])
                             if tot_logos[0] == 1:
                                 tot_geral_logos += 1
                                 self.logging.log.debug(":: found {0} logo(s)!".format(1))
                             # ----- place recognition -----
-                            res = self.sift.detect_place(ifeat[0])
+                            res = self.image_sift.detect_place(ifeat[0])
                             tot_geral_pos_locations += res.count(1)
                             tot_geral_neg_locations += (res.count(-1) * -1)
 
@@ -240,19 +239,19 @@ class FeatureExtraction(object):
                                 self.logging.log.debug(":: found {0} place(s)!".format(1))
 
                         elif self.config.object_detection_type in (-1,1):
-                            image = self.cnn.preprocess_image(ifeat[0])
+                            image = self.image_cnn.preprocess_image(ifeat[0])
                             # ----- face recognition -----
-                            tot_faces = self.cnn.detect_faces(image)
+                            tot_faces = self.image_cnn.detect_faces(image)
                             if tot_faces > 0:
                                 tot_geral_faces_cnn += 1
                                 self.logging.log.debug(":: found {0} faces!".format(tot_faces))
                             # ----- logo recognition -----
-                            tot_logos = self.cnn.detect_logo_cnn(image)
+                            tot_logos = self.image_cnn.detect_logo_cnn(image)
                             if tot_logos[0] == 1:
                                 tot_geral_logos_cnn += 1
                                 self.logging.log.debug(":: found {0} logo(s)!".format(1))
                             # ----- place recognition -----
-                            res = self.cnn.detect_place_cnn(image)
+                            res = self.image_cnn.detect_place_cnn(image)
                             tot_geral_pos_locations_cnn += res.count(1)
                             tot_geral_neg_locations_cnn += (res.count(0) * -1)
 
@@ -325,12 +324,14 @@ class FeatureExtraction(object):
                     for itxt in range(limit_txt):
 
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
+                            text_merged = rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5]
+                            text_en = self.util.translate(text_merged)
 
                             if self.config.text_classification_type == 0:
-                                ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                                ret = self.text_bow.detect_text_klass(text_en)
                                 _sql = sql_text_0_upd
                             elif self.config.text_classification_type == 1:
-                                ret = self.detect_text_klass(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                                ret = self.text_tm.detect_text_klass(text_en)
                                 _sql = sql_text_1_upd
 
                             y.append(ret)

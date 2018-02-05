@@ -46,6 +46,35 @@ class Util(object):
             "<": "&lt;",
         }
 
+    def translate(self, text):
+        try:
+
+            t1final, t2final = translate(t1, t2, id, t1en, t2en)
+            if t1final is False:
+                return t2final  # error vector
+            else:
+                docs = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
+                if self.config.text_classification_type == 0:  # TFIDF
+                    predictions = [self.text_checking_model_1.predict(docs)[0],
+                                   self.text_checking_model_2.predict(docs)[0],
+                                   self.text_checking_model_3.predict(docs)[0],
+                                   self.text_checking_model_4.predict(docs)[0],
+                                   self.text_checking_model_5.predict(docs)[0]]
+                elif self.config.text_classification_type == 1:  # TopicModeling
+                    dict = self.classifier_tm.score(docs)
+                    predictions = []
+                    predictions.append(dict.get('loc'))
+                    predictions.append(dict.get('per'))
+                    predictions.append(dict.get('org'))
+                    predictions.append(0)
+                    predictions.append(0)
+                else:
+                    raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+
+        except Exception as e:
+            self.sys.log.error(':: Error: ' + str(e))
+            predictions = [-1, -1, -1, -1, -1]
+
     def get_compounds(self, tokens):
         compounds = []
         pattern = """
