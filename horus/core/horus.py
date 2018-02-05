@@ -24,6 +24,8 @@ more info at: https://github.com/dnes85/components-models
 import logging
 
 from horus.core.config import HorusConfig
+from horus.core.feature_extraction.features import FeatureExtraction
+from horus.core.feature_extraction.util import Util
 from horus.core.util.systemlog import SystemLog
 from nltk.tokenize import sent_tokenize
 
@@ -34,6 +36,7 @@ class Horus(object):
         self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
         self.util = Util()
+        self.features = FeatureExtraction()
 
     def run_final_classifier(self):
         self.sys.log.info(':: running final classifier...')
@@ -127,7 +130,6 @@ class Horus(object):
                         for k in range(i_c_size[z]):
                             self.horus_matrix[i + k][39] = i_y[z]  # KLASS_4
 
-
     def annotate_text(self, text):
         """
         annotates an input text with HORUS
@@ -145,7 +147,7 @@ class Horus(object):
 
             if len(self.horus_matrix) > 0:
                 self.util.download_and_cache_results()
-                self.detect_objects()
+                self.features.detect_objects()
                 self.update_compound_predictions()
                 self.run_final_classifier()
                 self.util.print_annotated_sentence()
@@ -153,3 +155,7 @@ class Horus(object):
 
         except Exception as error:
             self.sys.log.error('sorry: ' + repr(error))
+
+if __name__ == '__main__':
+    #args[0], args[1], args[2], args[3]
+    Horus().annotate_text('diego')
