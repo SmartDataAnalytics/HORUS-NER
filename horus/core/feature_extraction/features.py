@@ -148,19 +148,19 @@ class FeatureExtraction(object):
         self.sys.log.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
                           (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
 
-    def detect_objects(self, horus_matrix):
+    def detect_objects(self, matrix):
         """
         receives a horus_matrix and iterate over the tokens, detecting objects for each image/document
         in a set of images/documents related to a given token
         :param horus_matrix: the horus_matrix
         :return: an updated horus matrix
         """
+        horus_matrix = matrix
         if 1==1:
             if self.config.object_detection_type not in (0,1):
                 raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
             if self.config.text_classification_type not in (0, 1):
                 raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
-
         self.sys.log.info(':: detecting %s objects...' % len(horus_matrix))
         auxi = 0
         toti = len(horus_matrix)
@@ -391,6 +391,7 @@ class FeatureExtraction(object):
                         horus_matrix[index][38] = horus_matrix[index][18]  # CV is the final decision
                     elif horus_matrix[index][24] >= int(self.config.models_distance_theta) + 2:
                         horus_matrix[index][38] = horus_matrix[index][26]  # TX is the final decision
+        return horus_matrix
 
     def extract_features(self, file, label=None, token_index=0, ner_index=1):
         """
@@ -425,4 +426,5 @@ class FeatureExtraction(object):
 
 
 if __name__ == '__main__':
+    #args[0], args[1], args[2], args[3]
     FeatureExtraction().extract_features()

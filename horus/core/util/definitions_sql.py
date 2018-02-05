@@ -48,7 +48,7 @@ sql_text_0_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_
 sql_text_1_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed_cnn = 1, text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s WHERE id = %s"""
 
 
-sql_save_sentence = """INSERT INTO HORUS_SENTENCES(corpus_name, sentence_has_NER, sentence,
+SQL_SENTENCE_SAVE = """INSERT INTO HORUS_SENTENCES(corpus_name, sentence_has_NER, sentence,
                             same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
                             corpus_tokens, annotator_nltk_tokens, annotator_stanford_tokens, annotator_tweetNLP_tokens,
                             corpus_ner_y, annotator_nltk_ner, annotator_stanford_ner, annotator_tweetNLP_ner,
