@@ -1,6 +1,6 @@
 import os
 
-from horus.core.feature_extraction.feature_conversion import horus_to_features
+from horus.core.feature_extraction.horus_to_conll import horus_to_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 

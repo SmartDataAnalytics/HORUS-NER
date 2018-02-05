@@ -23,9 +23,12 @@ more info at: https://github.com/dnes85/components-models
 # License: BSD 3 clause
 import logging
 
+import re
+
 from horus.core.config import HorusConfig
 from horus.core.feature_extraction.main import FeatureExtraction
 from horus.core.feature_extraction.util import Util
+from horus.core.util import definitions
 from horus.core.util.systemlog import SystemLog
 from nltk.tokenize import sent_tokenize
 
