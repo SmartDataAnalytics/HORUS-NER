@@ -98,11 +98,11 @@ class FeatureExtraction(object):
         except:
             pass
 
-    def __export_data(self, file, format):
-        self.logging.log.info(':: exporting metadata to: ' + self.config.output_path + file + "." + format)
+    def __export_data(self, file, subfolder, format):
+        self.logging.log.info(':: exporting metadata to: ' + self.config.output_path + subfolder + '/' + file + "." + format)
 
         if format == 'json':
-            with open(self.config.output_path + file + '.json', 'wb') as outfile:
+            with open(self.config.output_path + subfolder + '/' + file + '.json', 'wb') as outfile:
                 json.dump(self.horus_matrix, outfile)
         elif format == 'csv':
             writer = csv.writer(open(self.config.output_path + file + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
@@ -394,7 +394,7 @@ class FeatureExtraction(object):
                         horus_matrix[index][38] = horus_matrix[index][26]  # TX is the final decision
         return horus_matrix
 
-    def extract_features(self, file, label=None, token_index=0, ner_index=1):
+    def extract_features(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
         """
         generates the feature_extraction data for HORUS
         do not use the config file to choose the models, exports all features (self.detect_objects())
@@ -409,13 +409,14 @@ class FeatureExtraction(object):
             if file is None:
                 raise Exception("Provide an input file format to be annotated")
             self.logging.log.info(':: processing CoNLL format -> %s' % label)
+            file = self.config.dataset_path + file
             sent_tokenize_list = self.util.process_ds_conll_format(file, label, token_index, ner_index, '')
             self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
             if len(self.horus_matrix) > 0:
                 self.util.download_and_cache_results()
                 self.horus_matrix = self.detect_objects(self.horus_matrix)
                 outfilename = self.util.path_leaf(file) + ".horus"
-                self.__export_data(outfilename, "tsv")
+                self.__export_data(outfilename, out_subfolder, 'tsv')
                 self.logging.log.info(':: feature extraction completed! filename = ' + outfilename)
             else:
                 self.logging.log.warn(':: nothing to do...')
