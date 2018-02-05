@@ -324,8 +324,10 @@ class FeatureExtraction(object):
                     for itxt in range(limit_txt):
 
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                            text_merged = rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5]
-                            text_en = self.util.translate(text_merged)
+                            self.util.
+                            t1, t2 = [rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5]]
+                            merged = ["{} {}".format(t1.encode("utf-8"), t2.encode("utf-8"))]
+                            text_en = self.util.translate(merged)
 
                             if self.config.text_classification_type == 0:
                                 ret = self.text_bow.detect_text_klass(text_en)
