@@ -24,7 +24,7 @@ more info at: https://github.com/dnes85/components-models
 import logging
 
 from horus.core.config import HorusConfig
-from horus.core.feature_extraction.features import FeatureExtraction
+from horus.core.feature_extraction.main import FeatureExtraction
 from horus.core.feature_extraction.util import Util
 from horus.core.util.systemlog import SystemLog
 from nltk.tokenize import sent_tokenize
@@ -33,13 +33,13 @@ from nltk.tokenize import sent_tokenize
 class Horus(object):
 
     def __init__(self):
-        self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
+        self.logging = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
         self.util = Util()
         self.features = FeatureExtraction()
 
     def run_final_classifier(self):
-        self.sys.log.info(':: running final classifier...')
+        self.logging.log.info(':: running final classifier...')
         try:
             for index in range(len(self.horus_matrix)):
                 features = []
@@ -79,10 +79,10 @@ class Horus(object):
             raise error
 
     def __process_input_text(self, text):
-        self.sys.log.info(':: text: ' + text)
-        self.sys.log.info(':: tokenizing sentences ...')
+        self.logging.log.info(':: text: ' + text)
+        self.logging.log.info(':: tokenizing sentences ...')
         sent_tokenize_list = sent_tokenize(text)
-        self.sys.log.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
+        self.logging.log.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
         sentences = []
         for sentence in sent_tokenize_list:
             sentences.append(self.util.process_and_save_sentence(-1, sentence))
@@ -94,7 +94,7 @@ class Horus(object):
         updates the predictions based on inner rules
         :return:
         '''
-        self.sys.log.info(':: updating predictions based on rules')
+        self.logging.log.info(':: updating predictions based on rules')
         for i in range(len(self.horus_matrix)):
             initial = self.horus_matrix[i][17]
             # get nouns or compounds
@@ -116,7 +116,7 @@ class Horus(object):
         '''
         pre-requisite: the matrix should start with the sentence compounds at the beginning.
         '''
-        self.sys.log.info(':: updating compounds predictions')
+        self.logging.log.info(':: updating compounds predictions')
         i_y, i_sent, i_first_word, i_c_size = [], [], [], []
         for i in range(len(self.horus_matrix)):
             if self.horus_matrix[i][7] == 1:
@@ -139,7 +139,7 @@ class Horus(object):
         try:
             print self.version_label
             if text is not None:
-                self.sys.log.info(':: annotating text: %s' % text)
+                self.logging.log.info(':: annotating text: %s' % text)
                 sent_tokenize_list = self.util.process_input_text(text.strip('"\''))
                 self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
             else:
@@ -154,7 +154,7 @@ class Horus(object):
                 return self.horus_matrix
 
         except Exception as error:
-            self.sys.log.error('sorry: ' + repr(error))
+            self.logging.log.error('sorry: ' + repr(error))
 
 if __name__ == '__main__':
     #args[0], args[1], args[2], args[3]
