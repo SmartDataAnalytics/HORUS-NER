@@ -4,13 +4,27 @@ import os
 
 from horus.core.config import HorusConfig
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-nlp = en_core_web_sm.load()
-
 class TopicModeling():
     def __init__(self):
-        self.config = HorusConfig()
-        self.wvmodel = shorttext.utils.load_word2vec_model(self.config.embeddings_path)
-        self.classifier_tm = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel,
-                                                                               self.config.models_1_text_cnn)
+        try:
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+            en_core_web_sm.load()
+            self.config = HorusConfig()
+            self.wvmodel = shorttext.utils.load_word2vec_model(self.config.embeddings_path)
+            self.classifier_tm = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel,
+                                                                                   self.config.models_1_text_cnn)
+        except Exception as e:
+            raise e
 
+    def detect_text_klass(self, text):
+        predictions = []
+        try:
+            dict = self.classifier_tm.score(text)
+            predictions.append(dict.get('loc'))
+            predictions.append(dict.get('per'))
+            predictions.append(dict.get('org'))
+            predictions.append(0)
+            predictions.append(0)
+            return predictions
+        except Exception as e:
+            raise e

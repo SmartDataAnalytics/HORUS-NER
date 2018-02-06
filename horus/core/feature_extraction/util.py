@@ -49,7 +49,7 @@ class Util(object):
 
     def translate(self, t1, t2, id, t1en, t2en):
         from translate import Translator
-        self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
+
 
         try:
 

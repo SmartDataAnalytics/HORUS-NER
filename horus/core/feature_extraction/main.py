@@ -60,7 +60,7 @@ class FeatureExtraction(object):
         self.logging.log.info(':: loading components...')
         self.util = Util()
         #self.tools = NLPTools()
-        #self.translator = BingTranslator()
+        self.translator = BingTranslator()
         self.image_cnn = CNN()
         self.image_sift = SIFT()
         self.text_bow = BowTfidf()
@@ -145,6 +145,41 @@ class FeatureExtraction(object):
                           (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
         self.logging.log.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
                           (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
+
+    def __detect_and_translate(self, t1, t2, id, t1en, t2en):
+        try:
+
+            t1final = t1
+            t2final = t1
+            if isinstance(t1, str):
+                t1 = unicode(t1, "utf-8")
+            if isinstance(t2, str):
+                t2 = unicode(t2, "utf-8")
+            c = self.conn.cursor()
+            if t1en is None:
+                lt1 = self.translator.detect_language(t1)
+                if lt1 != 'en':
+                    t1final = self.translator.translate(t1, 'en')
+                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_title_en = ? WHERE id = ?"""
+                c.execute(sql, (t1final.encode("utf-8"), id))
+            else:
+                t1final = t1en
+
+            if t2en is None:
+                lt2 = self.translator.detect_language(t2)
+                if lt2 != 'en':
+                    t2final = self.translator.translate(t2, 'en')
+                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_description_en = ? WHERE id = ?"""
+                c.execute(sql, (t2final.encode("utf-8"), id))
+            else:
+                t2final = t2en
+
+            c.close()
+        except Exception as e:
+            self.sys.log.error(':: Error: ' + str(e))
+            raise
+
+        return t1final, t2final
 
     def detect_objects(self, matrix):
         """
@@ -324,16 +359,13 @@ class FeatureExtraction(object):
                     for itxt in range(limit_txt):
 
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                            self.util.
-                            t1, t2 = [rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5]]
-                            merged = ["{} {}".format(t1.encode("utf-8"), t2.encode("utf-8"))]
-                            text_en = self.util.translate(merged)
-
-                            if self.config.text_classification_type == 0:
-                                ret = self.text_bow.detect_text_klass(text_en)
+                            t1final, t2final = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                            merged_en = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
+                            if self.config.text_classification_type in (-1, 0):
+                                ret = self.text_bow.detect_text_klass(merged_en)
                                 _sql = sql_text_0_upd
-                            elif self.config.text_classification_type == 1:
-                                ret = self.text_tm.detect_text_klass(text_en)
+                            elif self.config.text_classification_type in (-1, 1):
+                                ret = self.text_tm.detect_text_klass(merged_en)
                                 _sql = sql_text_1_upd
 
                             y.append(ret)
