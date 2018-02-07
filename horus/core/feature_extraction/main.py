@@ -175,11 +175,12 @@ class FeatureExtraction(object):
                 t2final = t2en
 
             c.close()
+
+            return "{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))
+
         except Exception as e:
             self.sys.log.error(':: Error: ' + str(e))
             raise
-
-        return t1final, t2final
 
     def detect_objects(self, matrix):
         """
@@ -208,10 +209,10 @@ class FeatureExtraction(object):
                 id_ner_type = 0
 
                 tot_geral_faces, tot_geral_logos, tot_geral_locations, tot_geral_pos_locations, \
-                    tot_geral_neg_locations = 0
+                    tot_geral_neg_locations =-1
 
                 tot_geral_faces_cnn, tot_geral_logos_cnn, tot_geral_locations_cnn, tot_geral_pos_locations_cnn, \
-                    tot_geral_neg_locations_cnn = 0
+                    tot_geral_neg_locations_cnn =-1
 
                 T = int(self.config.models_location_theta)  # location threshold
 
@@ -222,7 +223,7 @@ class FeatureExtraction(object):
                 filesimg = []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute(SQL_OBJECT_DETECTION_SQL % (id_term_img, id_ner_type))
+                    cursor.execute(SQL_OBJECT_DETECTION_SEL % (id_term_img, id_ner_type))
                     rows = cursor.fetchall()
                     nr_results_img = len(rows)
                     if nr_results_img == 0:
@@ -253,63 +254,56 @@ class FeatureExtraction(object):
                         tot_geral_neg_locations_cnn += (ifeat[16:25].count(-1) * -1)
 
                     else:
-                        if self.config.object_detection_type in (-1,0):
-                            # ----- face recognition -----
-                            tot_faces = self.image_sift.detect_faces(ifeat[0])
-                            if tot_faces > 0:
-                                tot_geral_faces += 1
-                                self.logging.log.debug(":: found {0} faces!".format(tot_faces))
-                            # ----- logo recognition -----
-                            tot_logos = self.image_sift.detect_logo(ifeat[0])
-                            if tot_logos[0] == 1:
-                                tot_geral_logos += 1
-                                self.logging.log.debug(":: found {0} logo(s)!".format(1))
-                            # ----- place recognition -----
-                            res = self.image_sift.detect_place(ifeat[0])
-                            tot_geral_pos_locations += res.count(1)
-                            tot_geral_neg_locations += (res.count(-1) * -1)
 
-                            if res.count(1) >= T:
-                                tot_geral_locations += 1
-                                self.logging.log.debug(":: found {0} place(s)!".format(1))
+                        # ----- face recognition -----
+                        tot_faces = self.image_sift.detect_faces(ifeat[0])
+                        if tot_faces > 0:
+                            tot_geral_faces += 1
+                            self.logging.log.debug(":: found {0} faces!".format(tot_faces))
+                        # ----- logo recognition -----
+                        tot_logos = self.image_sift.detect_logo(ifeat[0])
+                        if tot_logos[0] == 1:
+                            tot_geral_logos += 1
+                            self.logging.log.debug(":: found {0} logo(s)!".format(1))
+                        # ----- place recognition -----
+                        res = self.image_sift.detect_place(ifeat[0])
+                        tot_geral_pos_locations += res.count(1)
+                        tot_geral_neg_locations += (res.count(-1) * -1)
 
-                        elif self.config.object_detection_type in (-1,1):
-                            image = self.image_cnn.preprocess_image(ifeat[0])
-                            # ----- face recognition -----
-                            tot_faces = self.image_cnn.detect_faces(image)
-                            if tot_faces > 0:
-                                tot_geral_faces_cnn += 1
-                                self.logging.log.debug(":: found {0} faces!".format(tot_faces))
-                            # ----- logo recognition -----
-                            tot_logos = self.image_cnn.detect_logo_cnn(image)
-                            if tot_logos[0] == 1:
-                                tot_geral_logos_cnn += 1
-                                self.logging.log.debug(":: found {0} logo(s)!".format(1))
-                            # ----- place recognition -----
-                            res = self.image_cnn.detect_place_cnn(image)
-                            tot_geral_pos_locations_cnn += res.count(1)
-                            tot_geral_neg_locations_cnn += (res.count(0) * -1)
+                        if res.count(1) >= T:
+                            tot_geral_locations += 1
+                            self.logging.log.debug(":: found {0} place(s)!".format(1))
 
-                            if res.count(1) >= T:
-                                tot_geral_locations_cnn += 1
-                                self.logging.log.debug(":: found {0} place(s)!".format(1))
 
-                        # updating results
-                        if self.config.object_detection_type == 0:  # SIFT
-                            _sql = sql_object_0_upd
-                        elif self.config.object_detection_type == 1:  # CNN
-                            _sql = sql_object_1_upd
-                        elif self.config.object_detection_type == -1: #ALL
-                            _sql = sql_object_upd
-                        else:
-                            raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+                        image = self.image_cnn.preprocess_image(ifeat[0])
+                        # ----- face recognition -----
+                        tot_faces_cnn = self.image_cnn.detect_faces(image)
+                        if tot_faces_cnn > 0:
+                            tot_geral_faces_cnn += 1
+                            self.logging.log.debug(":: found {0} faces!".format(tot_faces))
+                        # ----- logo recognition -----
+                        tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
+                        if tot_logos_cnn[0] == 1:
+                            tot_geral_logos_cnn += 1
+                            self.logging.log.debug(":: found {0} logo(s)!".format(1))
+                        # ----- place recognition -----
+                        res_cnn = self.image_cnn.detect_place_cnn(image)
+                        tot_geral_pos_locations_cnn += res_cnn.count(1)
+                        tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
+
+                        if res_cnn.count(1) >= T:
+                            tot_geral_locations_cnn += 1
+                            self.logging.log.debug(":: found {0} place(s)!".format(1))
 
                         param = []
                         param.append(tot_faces)
                         param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
                         param.extend(res)
+                        param.append(tot_faces_cnn)
+                        param.append(tot_logos_cnn[0]) if tot_logos_cnn[0] == 1 else param.append(0)
+                        param.extend(res_cnn)
                         param.append(ifeat[1])
-                        cursor.execute(sql_object_upd, param)
+                        cursor.execute(SQL_OBJECT_DETECTION_UPD, param)
 
                 self.conn.commit()
 
@@ -339,15 +333,10 @@ class FeatureExtraction(object):
                 # -----------------------------------------------------------------
                 # text classification
                 # -----------------------------------------------------------------
-                y = []
+                y_bow, y_tm = [], []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    if self.config.text_classification_type == 0:  # SIFT
-                        _sql = sql_text_0_sel
-                    elif self.config.text_classification_type == 1:  # CNN
-                        _sql = sql_text_1_sel
-
-                    cursor.execute(_sql % (id_term_txt, id_ner_type))
+                    cursor.execute(sql_text_sel % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()
 
                     nr_results_txt = len(rows)
@@ -355,50 +344,56 @@ class FeatureExtraction(object):
                         self.logging.log.debug(":: term has not returned web sites!")
                     limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
 
-                    tot_err = 0
                     for itxt in range(limit_txt):
 
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                            t1final, t2final = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                            merged_en = ["{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))]
+                            merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                             if self.config.text_classification_type in (-1, 0):
-                                ret = self.text_bow.detect_text_klass(merged_en)
-                                _sql = sql_text_0_upd
-                            elif self.config.text_classification_type in (-1, 1):
-                                ret = self.text_tm.detect_text_klass(merged_en)
-                                _sql = sql_text_1_upd
+                                ret_bow = self.text_bow.detect_text_klass(merged_en)
+                            else: ret_bow = [0,0,0,0,0]
+                            if self.config.text_classification_type in (-1, 1):
+                                ret_tm = self.text_tm.detect_text_klass(merged_en)
+                            else: ret_tm = [0,0,0,0,0]
 
-                            y.append(ret)
-                            sql = _sql % (ret[0], ret[1], ret[2], ret[3], ret[4], rows[itxt][0])
-                            cursor.execute(sql)
-                            if ret[0] == -1 or ret[1] == -1 or ret[2] == -1 or ret[3] == -1 or ret[4] == -1:
-                                tot_err += 1
+                            y_bow.append(ret_bow)
+                            y_tm.append(ret_tm)
+
+                            cursor.execute(sql_text_upd % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
+                                                           ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
+                                                           rows[itxt][0]))
                         else:
-                            y.append(rows[itxt][7:12])
+                            y_bow.append(rows[itxt][7:12])
+                            y_tm.append(rows[itxt][13:18])
 
                     self.conn.commit()
 
-                    yy = numpy.array(y)
-                    gp = [numpy.count_nonzero(yy == 1), numpy.count_nonzero(yy == 2), numpy.count_nonzero(yy == 3)]
-                    horus_tx_ner = gp.index(max(gp)) + 1
+                    yyb = numpy.array(y_bow)
+                    yytm = numpy.array(y_tm)
+                    gpb = [numpy.count_nonzero(yyb == 1), numpy.count_nonzero(yyb == 2), numpy.count_nonzero(yyb == 3)]
+                    horus_tx_ner = gpb.index(max(gpb)) + 1
 
                     horus_matrix[index][19] = limit_txt
-                    horus_matrix[index][20] = gp[0]
-                    horus_matrix[index][21] = gp[1]
-                    horus_matrix[index][22] = gp[2]
-                    horus_matrix[index][23] = float(tot_err)
+                    horus_matrix[index][20] = gpb[0]
+                    horus_matrix[index][21] = gpb[1]
+                    horus_matrix[index][22] = gpb[2]
+                    horus_matrix[index][23] = 0
+                    horus_matrix[index][28] = yytm[0]
+                    horus_matrix[index][29] = yytm[1]
+                    horus_matrix[index][30] = yytm[2]
 
-                    maxs_tx = heapq.nlargest(2, gp)
+                    maxs_tx = heapq.nlargest(2, gpb)
+                    maxs_tm = heapq.nlargest(2, yytm)
                     dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
-
+                    dist_tx_indicator_tm = max(maxs_tm) - min(maxs_tm)
+                    horus_matrix[index][31] = dist_tx_indicator_tm
                     horus_matrix[index][24] = dist_tx_indicator
                     horus_matrix[index][25] = nr_results_txt
 
                     self.logging.log.debug(':: TX statistics:'
-                                       '(LOC=%s, ORG=%s, PER=%s, DIST=%s, ERR.TRANS=%s)' %
-                                       (str(gp[0]).zfill(2), str(gp[1]).zfill(2), str(gp[2]).zfill(2),
+                                       '(LOC=%s, ORG=%s, PER=%s, DIST=%s, LOC_TM=%s, ORG_TM=%s, PER_TM=%s)' %
+                                       (str(gpb[0]).zfill(2), str(gpb[1]).zfill(2), str(gpb[2]).zfill(2),
                                         str(dist_tx_indicator).zfill(2),
-                                        str(tot_err / float(limit_txt)) if limit_txt > 0 else 0))
+                                        str(yytm[0]).zfill(2), str(yytm[1]).zfill(2), str(yytm[2]).zfill(2)))
                     self.logging.log.debug('-------------------------------------------------------------')
 
                     if limit_txt != 0:
@@ -406,24 +401,6 @@ class FeatureExtraction(object):
                     else:
                         horus_matrix[index][26] = definitions.KLASSES[4]
 
-                    # checking final NER based on:
-                    #  -> theta
-                    if horus_matrix[index][15] >= int(self.config.models_distance_theta):
-                        horus_matrix[index][36] = horus_matrix[index][18]  # CV is the final decision
-                        horus_matrix[index][39] = horus_matrix[index][36]  # compound prediction initial
-                    elif horus_matrix[index][24] >= int(self.config.models_distance_theta):
-                        horus_matrix[index][36] = horus_matrix[index][26]  # TX is the final decision
-                        horus_matrix[index][39] = horus_matrix[index][36]  # compound prediction initial
-                    #  -> theta+1
-                    if horus_matrix[index][15] >= int(self.config.models_distance_theta) + 1:
-                        horus_matrix[index][37] = horus_matrix[index][18]  # CV is the final decision
-                    elif horus_matrix[index][24] >= int(self.config.models_distance_theta) + 1:
-                        horus_matrix[index][37] = horus_matrix[index][26]  # TX is the final decision
-                    #  -> theta+2
-                    if horus_matrix[index][15] >= int(self.config.models_distance_theta) + 2:
-                        horus_matrix[index][38] = horus_matrix[index][18]  # CV is the final decision
-                    elif horus_matrix[index][24] >= int(self.config.models_distance_theta) + 2:
-                        horus_matrix[index][38] = horus_matrix[index][26]  # TX is the final decision
         return horus_matrix
 
     def extract_features(self, file, out_subfolder, label=None, token_index=0, ner_index=1):

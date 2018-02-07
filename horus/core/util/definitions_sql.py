@@ -19,17 +19,13 @@ SQL_HORUS_SEARCH_RESULT_IMG_INS = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_ter
                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
 
 
-SQL_OBJECT_DETECTION_SQL = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2, nr_place_3, nr_place_4, 
+SQL_OBJECT_DETECTION_SEL = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2, nr_place_3, nr_place_4, 
                              nr_place_5, nr_place_6, nr_place_7, nr_place_8, nr_place_9, nr_place_10, nr_faces_cnn, 
                              nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn, nr_place_3_cnn, nr_place_4_cnn, nr_place_5_cnn, 
                              nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn, nr_place_9_cnn, nr_place_10_cnn 
                     FROM HORUS_SEARCH_RESULT_IMG WHERE id_term_search = %s AND id_ner_type = %s """
 
-sql_object_0_upd = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, processed = 1 WHERE id = ?"""
-
-sql_object_1_upd = """UPDATE HORUS_SEARCH_RESULT_IMG SET nr_faces_cnn = ?, nr_logos_cnn = ?, nr_place_1_cnn = ?, nr_place_2_cnn = ?, nr_place_3_cnn = ?, nr_place_4_cnn = ?, nr_place_5_cnn = ?, nr_place_6_cnn = ?, nr_place_7_cnn = ?, nr_place_8_cnn = ?, nr_place_9_cnn = ?, nr_place_10_cnn = ?, processed_cnn = 1 WHERE id = ?"""
-
-sql_object_upd = """UPDATE HORUS_SEARCH_RESULT_IMG 
+SQL_OBJECT_DETECTION_UPD = """UPDATE HORUS_SEARCH_RESULT_IMG 
                       SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, 
                           nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, 
                           nr_faces_cnn, nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn, nr_place_3_cnn, nr_place_4_cnn, 
@@ -37,15 +33,15 @@ sql_object_upd = """UPDATE HORUS_SEARCH_RESULT_IMG
                           processed = 1, processed_cnn = 1
                       WHERE id = ?"""
 
-sql_text_0_sel   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, processed, text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass 
-                                   FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
+sql_text_sel   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, 
+                             processed, text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
+                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0 
+                      FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
 
-sql_text_1_sel   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, processed_cnn, text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0 
-                                   FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
-
-sql_text_0_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, text_1_klass = %s, text_2_klass = %s, text_3_klass = %s, text_4_klass = %s, text_5_klass = %s WHERE id = %s"""
-
-sql_text_1_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed_cnn = 1, text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s WHERE id = %s"""
+sql_text_upd   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, 
+                           text_1_klass = %s, text_2_klass = %s, text_3_klass = %s, text_4_klass = %s, text_5_klass = %s, 
+                           text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s 
+                           WHERE id = %s"""
 
 
 SQL_SENTENCE_SAVE = """INSERT INTO HORUS_SENTENCES(corpus_name, sentence_has_NER, sentence,

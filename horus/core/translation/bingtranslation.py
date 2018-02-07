@@ -1,4 +1,6 @@
 # -*- coding: utf8 -*-
+import urllib
+from urlparse import urlparse
 
 from xml.etree import ElementTree
 import requests
@@ -26,7 +28,9 @@ class BingTranslator(object):
 
     def translate(self, input_text, to_lang):
         try:
-            translateUrl = "http://api.microsofttranslator.com/v2/Http.svc/Translate?text={}&to={}".format(input_text, to_lang)
+            url = "http://api.microsofttranslator.com/v2/Http.svc/Translate"
+            params = {'to': to_lang, 'text': input_text}
+            translateUrl = "{}?{}".format(url, urllib.urlencode(params))
             translationData = requests.get(translateUrl, headers=self.headers)
             if translationData.status_code != 200:
                 raise(':: error: bing translation status code: ' + str(translationData.status_code))
