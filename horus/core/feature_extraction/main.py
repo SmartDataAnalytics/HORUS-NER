@@ -190,10 +190,10 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         horus_matrix = matrix
-        if self.config.object_detection_type not in (-1, 0,1):
-            raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
-        if self.config.text_classification_type not in (-1, 0, 1):
-            raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
+        #if self.config.object_detection_type not in (-1, 0,1):
+        #    raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
+        #if self.config.text_classification_type not in (-1, 0, 1):
+        #    raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
         self.logging.log.info(':: detecting %s objects...' % len(horus_matrix))
         auxi = 0
         toti = len(horus_matrix)
@@ -312,18 +312,33 @@ class FeatureExtraction(object):
                 dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
                 place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
 
+                outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, tot_geral_faces_cnn]
+                maxs_cv_cnn = heapq.nlargest(2, outs_cnn)
+                dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
+                place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
+
                 horus_matrix[index][11] = limit_img
-                horus_matrix[index][12] = tot_geral_locations  # 1
-                horus_matrix[index][13] = tot_geral_logos  # 2
-                horus_matrix[index][14] = tot_geral_faces  # 3
-                horus_matrix[index][15] = dist_cv_indicator  # 4
+                horus_matrix[index][12] = tot_geral_locations_cnn  # 1
+                horus_matrix[index][13] = tot_geral_logos_cnn  # 2
+                horus_matrix[index][14] = tot_geral_faces_cnn  # 3
+                horus_matrix[index][15] = dist_cv_indicator_cnn  # 4
                 horus_matrix[index][16] = place_cv_indicator  # 5
                 horus_matrix[index][17] = nr_results_img  # 5
 
+                horus_matrix[index][32] = tot_geral_locations_cnn  # 1
+                horus_matrix[index][33] = tot_geral_logos_cnn  # 2
+                horus_matrix[index][34] = tot_geral_faces_cnn  # 3
+                horus_matrix[index][35] = dist_cv_indicator_cnn  # 4
+                horus_matrix[index][36] = place_cv_indicator_cnn  # 5
+
                 self.logging.log.debug(':: CV statistics:'
-                                   '(LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)' %
+                                   '(BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)'
+                                       '(CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)' %
                                    (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
-                                    str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator))
+                                    str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator,
+                                    str(tot_geral_locations_cnn).zfill(2), str(tot_geral_logos_cnn).zfill(2),
+                                    str(tot_geral_faces_cnn).zfill(2), str(dist_cv_indicator_cnn).zfill(2), place_cv_indicator_cnn
+                                    ))
 
                 if limit_img != 0:
                     horus_matrix[index][18] = definitions.KLASSES[outs.index(max(outs)) + 1]
