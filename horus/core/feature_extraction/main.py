@@ -60,11 +60,11 @@ class FeatureExtraction(object):
         self.logging.log.info(':: loading components...')
         self.util = Util()
         #self.tools = NLPTools()
-        self.translator = BingTranslator()
-        self.image_cnn = CNN()
-        self.image_sift = SIFT()
-        self.text_bow = BowTfidf()
-        self.text_tm = TopicModeling()
+        self.translator = BingTranslator(self.config)
+        self.image_cnn = CNN(self.config)
+        self.image_sift = SIFT(self.config)
+        self.text_bow = BowTfidf(self.config)
+        self.text_tm = TopicModeling(self.config)
         self.conn = sqlite3.connect(self.config.database_db)
 
         if bool(int(self.config.models_force_download)) is True:
