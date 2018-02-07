@@ -10,8 +10,7 @@ from horus.core.translation.auth import AzureAuthClient
 
 class BingTranslator(object):
 
-    def __init__(self):
-        config = HorusConfig()
+    def __init__(self, config):
         auth_client = AzureAuthClient(config.translation_secret)
         self.final_token = 'Bearer ' + auth_client.get_access_token()
         self.headers = {"Authorization ": self.final_token}

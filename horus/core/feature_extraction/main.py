@@ -58,7 +58,7 @@ class FeatureExtraction(object):
         self.logging.log.info('::                       HORUS ' + self.config.version + '                            ::')
         self.logging.log.info('------------------------------------------------------------------')
         self.logging.log.info(':: loading components...')
-        self.util = Util()
+        self.util = Util(self.config)
         #self.tools = NLPTools()
         self.translator = BingTranslator(self.config)
         self.image_cnn = CNN(self.config)

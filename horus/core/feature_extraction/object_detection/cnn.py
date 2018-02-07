@@ -9,7 +9,7 @@ from horus.core.config import HorusConfig
 
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super(CNN, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=5, padding=2),
@@ -23,7 +23,7 @@ class CNN(nn.Module):
             nn.MaxPool2d(2))
         self.fc1 = nn.Linear(7 * 7 * 32, 100)
         self.fc2 = nn.Linear(100, 10)
-        self.config = HorusConfig()
+        self.config = config
 
     def preprocess_image(self, img):
         img = mpimg.imread(img)

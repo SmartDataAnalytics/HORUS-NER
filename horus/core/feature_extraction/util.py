@@ -35,9 +35,8 @@ import re
 import langdetect
 
 class Util(object):
-    def __init__(self):
+    def __init__(self, config):
         self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
-        self.config = HorusConfig()
         self.tools = NLPTools()
         self.html_escape_table = {
             "&": "&amp;",
@@ -46,6 +45,7 @@ class Util(object):
             ">": "&gt;",
             "<": "&lt;",
         }
+        self.config = config
 
     def translate(self, t1, t2, id, t1en, t2en):
         from translate import Translator
@@ -139,7 +139,7 @@ class Util(object):
                 return t2final  # error vector
             else:
 
-                if self.config.text_classification_type == 0:  # TFIDF
+                if config.config.text_classification_type == 0:  # TFIDF
                     predictions = [self.text_checking_model_1.predict(docs)[0],
                                    self.text_checking_model_2.predict(docs)[0],
                                    self.text_checking_model_3.predict(docs)[0],
