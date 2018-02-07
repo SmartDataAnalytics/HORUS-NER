@@ -429,7 +429,6 @@ class FeatureExtraction(object):
         :return: the feature file
         """
         try:
-            print self.version_label
             if file is None:
                 raise Exception("Provide an input file format to be annotated")
             self.logging.log.info(':: processing CoNLL format -> %s' % label)

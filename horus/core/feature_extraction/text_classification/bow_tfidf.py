@@ -9,7 +9,7 @@ class BowTfidf():
         self.text_checking_model_3 = joblib.load(config.models_3_text)
         self.text_checking_model_4 = joblib.load(config.models_4_text)
         self.text_checking_model_5 = joblib.load(config.models_5_text)
-        self.tfidf_transformer = TfidfTransformer()
+        #self.tfidf_transformer = TfidfTransformer()
 
     def detect_text_klass(self, text):
         try:
