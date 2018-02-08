@@ -1,6 +1,7 @@
 import json
 import logging
 import ntpath
+import sqlite3
 
 import numpy
 
@@ -16,13 +17,11 @@ from nltk.tokenize import sent_tokenize
 from horus.core.util.definitions_sql import SQL_SENTENCE_SAVE
 from horus.core.util.nlp_tools import NLPTools
 from horus.core.util.sqlite_helper import SQLiteHelper, HorusDB
-from horus.core.util.systemlog import SystemLog
 from horus.core.config import HorusConfig
 from horus.core.search_engines import query_bing, query_flickr, query_wikipedia
 from horus.core.util import definitions
 from horus.core.util.nlp_tools import NLPTools
 from horus.core.util.sqlite_helper import SQLiteHelper, HorusDB
-from horus.core.util.systemlog import SystemLog
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from time import gmtime, strftime
@@ -33,10 +32,12 @@ import string
 import unicodedata
 import re
 import langdetect
+from horus.core.util.systemlog import SysLogger
+
 
 class Util(object):
     def __init__(self, config):
-        self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
+        #self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.tools = NLPTools()
         self.html_escape_table = {
             "&": "&amp;",
@@ -46,8 +47,10 @@ class Util(object):
             "<": "&lt;",
         }
         self.config = config
+        self.logger = SysLogger().getLog()
+        self.conn = sqlite3.connect(self.config.database_db)
 
-    def translate(self, t1, t2, id, t1en, t2en):
+    def translate_old(self, t1, t2, id, t1en, t2en):
         from translate import Translator
 
 
@@ -88,12 +91,12 @@ class Util(object):
                     try:
                         t1final = self.translator.translate(t1, 'en')
                     except Exception as e1:
-                        self.sys.log.error(':: Error, trying another service: ' + str(e1))
+                        self.logger.error(':: Error, trying another service: ' + str(e1))
                         try:
                             translator2 = Translator(from_lang=lt1, to_lang="en")
                             t1final = translator2.translate(t1)
                         except Exception as e2:
-                            self.sys.log.error(':: Error at service 2: ' + str(e2))
+                            self.logger.error(':: Error at service 2: ' + str(e2))
                             return ret_error
                             # updating
 
@@ -109,12 +112,12 @@ class Util(object):
                     try:
                         t2final = self.translator.translate(t2, 'en')
                     except Exception as e1:
-                        self.sys.log.error(':: Error, trying another service: ' + str(e1))
+                        self.logger.error(':: Error, trying another service: ' + str(e1))
                         try:
                             translator2 = Translator(from_lang=lt2, to_lang="en")
                             t2final = translator2.translate(t2)
                         except Exception as e2:
-                            self.sys.log.error(':: Error at service 2: ' + str(e2))
+                            self.logger.error(':: Error at service 2: ' + str(e2))
                             return ret_error
                             # updating
 
@@ -126,12 +129,12 @@ class Util(object):
 
             c.close()
         except Exception as e:
-            self.sys.log.error(':: Error: ' + str(e))
+            self.logger.error(':: Error: ' + str(e))
             return False, ret_error
 
         return t1final, t2final
 
-    def translate(self, text):
+    def translate_old2(self, text):
         try:
 
             t1final, t2final = translate(t1, t2, id, t1en, t2en)
@@ -157,10 +160,10 @@ class Util(object):
                     raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
 
         except Exception as e:
-            self.sys.log.error(':: Error: ' + str(e))
+            self.logger.error(':: Error: ' + str(e))
             predictions = [-1, -1, -1, -1, -1]
 
-    def get_compounds(self, tokens):
+    def __get_compounds(self, tokens):
         compounds = []
         pattern = """
                                     NP:
@@ -635,7 +638,7 @@ class Util(object):
         :param sentences
         :return: horus_matrix
         '''
-        self.sys.log.info(':: starting conversion to horus_matrix based on system parameters')
+        self.logger.info(':: starting conversion to horus_matrix based on system parameters')
         converted = []
         sent_index = 0
         try:
@@ -715,7 +718,7 @@ class Util(object):
                     ipositionstartterm += (len(term) + 1)
 
         except Exception as error:
-            self.sys.log.error(':: Erro! %s' % str(error))
+            self.logger.error(':: Erro! %s' % str(error))
             exit(-1)
 
         return converted
@@ -767,7 +770,7 @@ class Util(object):
                     sent.append([json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19]), json.loads(ret[20])])
                     sent.append([json.loads('[]'), json.loads(ret[21]), json.loads(ret[22]), json.loads(ret[23])])
         except Exception as e:
-            self.sys.log.error(':: an error has occurred: ', e)
+            self.logger.error(':: an error has occurred: ', e)
             raise
         return sent
 
@@ -838,7 +841,7 @@ class Util(object):
             s = ''
             has3NER = -1
             tot_sentences = 1
-            self.sys.log.info(':: processing sentences...')
+            self.logger.info(':: processing sentences...')
 
             # hack to find problems in CONLL file
             # linenr = 0
@@ -858,7 +861,7 @@ class Util(object):
                         ner = line.split(separator)[ner_index].replace('\r', '').replace('\n', '')
                     if line.strip() == '':
                         if len(tokens) != 0:
-                            self.sys.log.debug(':: processing sentence %s' % str(tot_sentences))
+                            self.logger.debug(':: processing sentence %s' % str(tot_sentences))
                             sentences.append(
                                 self.process_and_save_sentence(has3NER, s, dataset_name, tokens, tags_ner_y))
                             tokens = []
@@ -873,10 +876,10 @@ class Util(object):
                         if ner in definitions.NER_RITTER:
                             has3NER = 1
 
-            self.sys.log.info(':: %s sentences processed successfully' % str(len(sentences)))
+            self.logger.info(':: %s sentences processed successfully' % str(len(sentences)))
             return sentences
         except Exception as error:
-            self.sys.log.error('caught this error: ' + repr(error))
+            self.logger.error('caught this error: ' + repr(error))
 
     def print_annotated_sentence(self, horus_matrix):
         '''
@@ -902,12 +905,12 @@ class Util(object):
                     x4 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[39])
                     x5 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[40])
 
-        self.sys.log.info(':: sentence annotated :: ')
-        self.sys.log.info(':: KLASS 1 -->: ' + x1)
-        self.sys.log.info(':: KLASS 2 -->: ' + x2)
-        self.sys.log.info(':: KLASS 3 -->: ' + x3)
-        self.sys.log.info(':: KLASS 4 -->: ' + x4)
-        self.sys.log.info(':: KLASS 5 -->: ' + x5)
+        self.logger.info(':: sentence annotated :: ')
+        self.logger.info(':: KLASS 1 -->: ' + x1)
+        self.logger.info(':: KLASS 2 -->: ' + x2)
+        self.logger.info(':: KLASS 3 -->: ' + x3)
+        self.logger.info(':: KLASS 4 -->: ' + x4)
+        self.logger.info(':: KLASS 5 -->: ' + x5)
 
     def download_image_local(self, image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
         val = URLValidator()
@@ -923,7 +926,7 @@ class Util(object):
             except Exception as error:
                 print('-> error: ' + repr(error))
         except ValidationError, e:
-            self.sys.log.error('No thumbs img here...', e)
+            self.logger.error('No thumbs img here...', e)
             try:
                 img_data = requests.get(image_url).content
                 with open('%s%s_%s_%s.%s' % (self.config.cache_img_folder, term_id, id_ner_type, seq, image_type),
@@ -936,7 +939,7 @@ class Util(object):
 
     def download_and_cache_results(self, matrix):
         try:
-            self.sys.log.info(':: caching results...')
+            self.logger.info(':: caching results...')
             auxc = 1
             horus_matrix = matrix
             with SQLiteHelper(self.config.database_db) as sqlcon:
@@ -945,7 +948,7 @@ class Util(object):
                     term = horus_matrix[index][3]
                     if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
                         if auxc%1000==0:
-                            self.sys.log.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
+                            self.logger.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                         res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
                             '''
@@ -953,7 +956,7 @@ class Util(object):
                             Downloading resources...
                             --------------------------------------------------------------------------
                             '''
-                            self.sys.log.info(':: not cached, querying -> [%s]' % term)
+                            self.logger.info(':: not cached, querying -> [%s]' % term)
 
                             # Microsoft Bing
                             if int(self.config.search_engine_api) == 1:
@@ -970,7 +973,7 @@ class Util(object):
                             Caching Documents (Texts)
                             --------------------------------------------------------------------------
                             '''
-                            self.sys.log.debug(':: caching (web sites) -> [%s]' % term)
+                            self.logger.debug(':: caching (web sites) -> [%s]' % term)
                             id_term_search = t.save_term(term, self.config.search_engine_tot_resources,
                                                          len(result_txts), self.config.search_engine_api,
                                                          1, self.config.search_engine_features_text,
@@ -978,7 +981,7 @@ class Util(object):
                             horus_matrix[index][9] = id_term_search
                             seq = 0
                             for web_result_txt in result_txts:
-                                self.sys.log.info(':: caching (web site) -> [%s]' % web_result_txt['displayUrl'])
+                                self.logger.info(':: caching (web site) -> [%s]' % web_result_txt['displayUrl'])
                                 seq += 1
                                 t.save_website_data(id_term_search, seq, web_result_txt['id'], web_result_txt['displayUrl'],
                                                     web_result_txt['name'], web_result_txt['snippet'])
@@ -987,7 +990,7 @@ class Util(object):
                             Caching Documents (Images)
                             --------------------------------------------------------------------------
                             '''
-                            self.sys.log.info(':: caching (web images) -> [%s]' % term)
+                            self.logger.info(':: caching (web images) -> [%s]' % term)
                             id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
                                                       len(result_imgs), self.config.search_engine_api,
                                                       2, self.config.search_engine_features_img,
@@ -995,14 +998,14 @@ class Util(object):
                             horus_matrix[index][10] = id_term_img
                             seq = 0
                             for web_result_img in result_imgs:
-                                self.sys.log.debug(':: downloading image [%s]' % (web_result_img['name']))
+                                self.logger.debug(':: downloading image [%s]' % (web_result_img['name']))
                                 seq += 1
                                 auxtype = self.download_image_local(web_result_img['contentUrl'],
                                                                     web_result_img['encodingFormat'],
                                                                     web_result_img['thumbnailUrl'],
                                                                     web_result_img['encodingFormat'], id_term_img, 0,
                                                                     seq)
-                                self.sys.log.debug(':: caching image  ...')
+                                self.logger.debug(':: caching image  ...')
                                 t.save_image_data(id_term_img, seq, web_result_img['contentUrl'],
                                                   web_result_img['name'],
                                                   web_result_img['encodingFormat'], web_result_img['height'],
@@ -1018,10 +1021,10 @@ class Util(object):
                             horus_matrix[index][10] = res[1][0]
 
                     auxc += 1
-            return horus_matrix
+            #eturn horus_matrix
 
         except Exception as e:
-            self.sys.log.error(':: an error has occurred: ', e)
+            self.logger.error(':: an error has occurred: ', e)
             raise
 
     def path_leaf(path):
@@ -1104,7 +1107,7 @@ class Util(object):
         return ' '.join(x for x in unicodedata.normalize('NFKD', data) if x in string.ascii_letters).lower()
 
     def __cache_sentence_ritter(self, sentence_list):
-        self.sys.log.debug(':: caching Ritter dataset...:')
+        self.logger.debug(':: caching Ritter dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
         sent_with_ner = 0
@@ -1112,7 +1115,7 @@ class Util(object):
         compound_ok = 0
         for sent in sentence_list:
 
-            self.sys.log.info(':: processing sentence: ' + sent[1])
+            self.logger.info(':: processing sentence: ' + sent[1])
             if int(sent[1])==29:
                 aaa=1
 
@@ -1156,11 +1159,11 @@ class Util(object):
             i_sent += 1
             i_word = 1
 
-        self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+        self.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     def __cache_sentence_conll(self, sentence_list):
-        self.sys.log.debug(':: caching coNLL 2003 dataset...:')
+        self.logger.debug(':: caching coNLL 2003 dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
         sent_with_ner = 0
@@ -1168,7 +1171,7 @@ class Util(object):
         compound_ok = 0
         for sent in sentence_list:
 
-            self.sys.log.info(':: processing sentence: ' + sent[1])
+            self.logger.info(':: processing sentence: ' + sent[1])
             if int(sent[1])==29:
                 aaa=1
 
@@ -1227,7 +1230,7 @@ class Util(object):
             i_sent += 1
             i_word = 1
 
-        self.sys.log.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+        self.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     def __cache_sentence(self, sentence_format, sentence_list):
@@ -1281,7 +1284,7 @@ class Util(object):
             return id.lastrowid
 
         except Exception as e:
-            self.sys.log.error(':: an error has occurred: ', e)
+            self.logger.error(':: an error has occurred: ', e)
             raise
 
     def __processing_conll_ds(self, dspath):

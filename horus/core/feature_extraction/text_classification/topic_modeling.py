@@ -2,6 +2,9 @@ import shorttext
 import en_core_web_sm
 import os
 
+from horus.core.util.systemlog import SysLogger
+
+
 class TopicModeling():
     def __init__(self, config):
         try:

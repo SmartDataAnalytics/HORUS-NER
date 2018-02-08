@@ -152,7 +152,7 @@ class Horus(object):
                 raise Exception("err: missing text to be annotated")
 
             if len(self.horus_matrix) > 0:
-                self.util.download_and_cache_results()
+                self.util.download_and_cache_results(self.horus_matrix)
                 self.features.detect_objects()
                 self.update_compound_predictions()
                 self.run_final_classifier()

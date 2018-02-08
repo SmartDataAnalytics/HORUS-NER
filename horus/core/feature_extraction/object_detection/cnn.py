@@ -6,6 +6,7 @@ import matplotlib.image as mpimg
 from torch.autograd import Variable
 import cv2
 from horus.core.config import HorusConfig
+from horus.core.util.systemlog import SysLogger
 
 
 class CNN(nn.Module):

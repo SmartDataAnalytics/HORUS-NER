@@ -1,6 +1,9 @@
 import cv2
 from sklearn.externals import joblib
 
+from horus.core.util.systemlog import SysLogger
+
+
 class SIFT():
     def __init__(self, config):
         self.detect = cv2.xfeatures2d.SIFT_create()

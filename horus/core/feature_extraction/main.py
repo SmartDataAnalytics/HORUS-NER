@@ -35,7 +35,7 @@ from horus.core.feature_extraction.object_detection.cnn import CNN
 from horus.core.feature_extraction.object_detection.sift import SIFT
 from horus.core.feature_extraction.util import Util
 from horus.core.util.nlp_tools import NLPTools
-from horus.core.util.systemlog import SystemLog
+from horus.core.util.systemlog import SysLogger
 from horus.core.util.definitions_sql import *
 # print cv2.__version__
 from horus.core.feature_extraction.text_classification.bow_tfidf import BowTfidf
@@ -51,23 +51,30 @@ class FeatureExtraction(object):
             None
     """
     def __init__(self):
-        self.logging = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.horus_matrix = []
         self.config = HorusConfig()
-        self.logging.log.info('------------------------------------------------------------------')
-        self.logging.log.info('::                       HORUS ' + self.config.version + '                            ::')
-        self.logging.log.info('------------------------------------------------------------------')
-        self.logging.log.info(':: loading components...')
+        self.logger = SysLogger().getLog()
+        self.logger.info('------------------------------------------------------------------')
+        self.logger.info('::                       HORUS ' + self.config.version + '                            ::')
+        self.logger.info('------------------------------------------------------------------')
+        self.logger.info(':: loading components...')
         self.util = Util(self.config)
         #self.tools = NLPTools()
-        self.translator = BingTranslator(self.config)
+        #self.translator = BingTranslator(self.config)
+        self.translator = None
+        self.logger.info(':: loading CNN')
         self.image_cnn = CNN(self.config)
+        self.logger.info(':: loading SIFT')
         self.image_sift = SIFT(self.config)
+        self.logger.info(':: loading BoW')
         self.text_bow = BowTfidf(self.config)
+        self.logger.info(':: loading TM')
         self.text_tm = TopicModeling(self.config)
+        self.logger.info(':: database connecting ...')
         self.conn = sqlite3.connect(self.config.database_db)
 
         if bool(int(self.config.models_force_download)) is True:
+            self.logger.info(':: downloading NLTK data...')
             try:
                 nltk.data.find('averaged_perceptron_tagger.zip')
             except LookupError:
@@ -97,7 +104,7 @@ class FeatureExtraction(object):
 
     def __export_data(self, file, subfolder, format):
         temp = self.config.output_path + subfolder + '/' + file
-        self.logging.log.info(':: exporting metadata to: ' + temp + "." + format)
+        self.logger.info(':: exporting metadata to: ' + temp + "." + format)
         if format == 'json':
             with open(temp + '.json', 'wb') as outfile:
                 json.dump(self.horus_matrix, outfile)
@@ -117,15 +124,15 @@ class FeatureExtraction(object):
 
         df = pd.DataFrame(sent_tokenize_list)
 
-        self.logging.log.info(':: %s sentence(s) cached' % str(len(sent_tokenize_list)))
+        self.logger.info(':: %s sentence(s) cached' % str(len(sent_tokenize_list)))
         tot_sentences_with_entity = len(df.loc[df[0] == 1])
         tot_others = len(df.loc[df[0] == -1])
-        self.logging.log.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
-        self.logging.log.info(':: %s sentence(s) without entity' % tot_others)
+        self.logger.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
+        self.logger.info(':: %s sentence(s) without entity' % tot_others)
         self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
 
         hm = pd.DataFrame(self.horus_matrix)
-        self.logging.log.info(':: basic POS statistics')
+        self.logger.info(':: basic POS statistics')
         a = len(hm)  # all
         a2 = len(hm[(hm[7] == 0)])  # all excluding compounds
         plo = hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
@@ -135,15 +142,15 @@ class FeatureExtraction(object):
         pos_not_ok_plo = plo[(~plo[5].isin(definitions.POS_NOUN_TAGS))]
         pos_noun_but_not_entity = not_plo[(not_plo[5].isin(definitions.POS_NOUN_TAGS))]
 
-        self.logging.log.info(':: [basic statistics]')
-        self.logging.log.info(':: -> ALL terms: %s ' % a)
-        self.logging.log.info(':: -> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
-        self.logging.log.info(':: -> ALL NNs (no compounds nor entities): %s ' % len(pos_noun_but_not_entity))
-        self.logging.log.info(':: [test dataset statistics]')
-        self.logging.log.info(':: -> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
-        self.logging.log.info(':: -> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
+        self.logger.info(':: [basic statistics]')
+        self.logger.info(':: -> ALL terms: %s ' % a)
+        self.logger.info(':: -> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
+        self.logger.info(':: -> ALL NNs (no compounds nor entities): %s ' % len(pos_noun_but_not_entity))
+        self.logger.info(':: [test dataset statistics]')
+        self.logger.info(':: -> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
+        self.logger.info(':: -> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
                           (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
-        self.logging.log.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
+        self.logger.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
                           (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
 
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
@@ -194,7 +201,7 @@ class FeatureExtraction(object):
         #    raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
         #if self.config.text_classification_type not in (-1, 0, 1):
         #    raise Exception('parameter value not implemented: ' + str(self.config.text_classification_type))
-        self.logging.log.info(':: detecting %s objects...' % len(horus_matrix))
+        self.logger.info(':: detecting %s objects...' % len(horus_matrix))
         auxi = 0
         toti = len(horus_matrix)
         for index in range(len(horus_matrix)):
@@ -202,17 +209,22 @@ class FeatureExtraction(object):
             if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
 
                 term = horus_matrix[index][3]
-                self.logging.log.info(':: token %d of %d [%s]' % (auxi, toti, term))
+                self.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
 
                 id_term_img = horus_matrix[index][10]
                 id_term_txt = horus_matrix[index][9]
                 id_ner_type = 0
 
-                tot_geral_faces, tot_geral_logos, tot_geral_locations, tot_geral_pos_locations, \
-                    tot_geral_neg_locations =-1
-
-                tot_geral_faces_cnn, tot_geral_logos_cnn, tot_geral_locations_cnn, tot_geral_pos_locations_cnn, \
-                    tot_geral_neg_locations_cnn =-1
+                tot_geral_faces =-1
+                tot_geral_logos =-1
+                tot_geral_locations =-1
+                tot_geral_pos_locations =-1
+                tot_geral_neg_locations =-1
+                tot_geral_faces_cnn =-1
+                tot_geral_logos_cnn =-1
+                tot_geral_locations_cnn =-1
+                tot_geral_pos_locations_cnn =-1
+                tot_geral_neg_locations_cnn =-1
 
                 T = int(self.config.models_location_theta)  # location threshold
 
@@ -227,7 +239,7 @@ class FeatureExtraction(object):
                     rows = cursor.fetchall()
                     nr_results_img = len(rows)
                     if nr_results_img == 0:
-                        self.logging.log.debug(":: term has not returned images!")
+                        self.logger.debug(":: term has not returned images!")
                     limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
                     # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
@@ -240,10 +252,10 @@ class FeatureExtraction(object):
 
                 for ifeat in filesimg:
                     if ifeat[2] == 1: # processed
-                        tot_geral_faces += ifeat[3]
-                        tot_geral_logos += ifeat[4]
-                        tot_geral_faces_cnn += ifeat[14]
-                        tot_geral_logos_cnn += ifeat[15]
+                        tot_geral_faces += ifeat[3] if ifeat[3] != None else 0
+                        tot_geral_logos += ifeat[4] if ifeat[4] != None else 0
+                        tot_geral_faces_cnn += ifeat[14] if ifeat[14] != None else 0
+                        tot_geral_logos_cnn += ifeat[15] if ifeat[15] != None else 0
                         if (ifeat[5:14]).count(1) >= int(T):
                             tot_geral_locations += 1
                         if (ifeat[16:25]).count(1) >= int(T):
@@ -259,12 +271,12 @@ class FeatureExtraction(object):
                         tot_faces = self.image_sift.detect_faces(ifeat[0])
                         if tot_faces > 0:
                             tot_geral_faces += 1
-                            self.logging.log.debug(":: found {0} faces!".format(tot_faces))
+                            self.logger.debug(":: found {0} faces!".format(tot_faces))
                         # ----- logo recognition -----
                         tot_logos = self.image_sift.detect_logo(ifeat[0])
                         if tot_logos[0] == 1:
                             tot_geral_logos += 1
-                            self.logging.log.debug(":: found {0} logo(s)!".format(1))
+                            self.logger.debug(":: found {0} logo(s)!".format(1))
                         # ----- place recognition -----
                         res = self.image_sift.detect_place(ifeat[0])
                         tot_geral_pos_locations += res.count(1)
@@ -272,7 +284,7 @@ class FeatureExtraction(object):
 
                         if res.count(1) >= T:
                             tot_geral_locations += 1
-                            self.logging.log.debug(":: found {0} place(s)!".format(1))
+                            self.logger.debug(":: found {0} place(s)!".format(1))
 
 
                         image = self.image_cnn.preprocess_image(ifeat[0])
@@ -280,12 +292,12 @@ class FeatureExtraction(object):
                         tot_faces_cnn = self.image_cnn.detect_faces(image)
                         if tot_faces_cnn > 0:
                             tot_geral_faces_cnn += 1
-                            self.logging.log.debug(":: found {0} faces!".format(tot_faces))
+                            self.logger.debug(":: found {0} faces!".format(tot_faces))
                         # ----- logo recognition -----
                         tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
                         if tot_logos_cnn[0] == 1:
                             tot_geral_logos_cnn += 1
-                            self.logging.log.debug(":: found {0} logo(s)!".format(1))
+                            self.logger.debug(":: found {0} logo(s)!".format(1))
                         # ----- place recognition -----
                         res_cnn = self.image_cnn.detect_place_cnn(image)
                         tot_geral_pos_locations_cnn += res_cnn.count(1)
@@ -293,7 +305,7 @@ class FeatureExtraction(object):
 
                         if res_cnn.count(1) >= T:
                             tot_geral_locations_cnn += 1
-                            self.logging.log.debug(":: found {0} place(s)!".format(1))
+                            self.logger.debug(":: found {0} place(s)!".format(1))
 
                         param = []
                         param.append(tot_faces)
@@ -331,7 +343,7 @@ class FeatureExtraction(object):
                 horus_matrix[index][35] = dist_cv_indicator_cnn  # 4
                 horus_matrix[index][36] = place_cv_indicator_cnn  # 5
 
-                self.logging.log.debug(':: CV statistics:'
+                self.logger.debug(':: CV statistics:'
                                    '(BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)'
                                        '(CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)' %
                                    (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
@@ -356,7 +368,7 @@ class FeatureExtraction(object):
 
                     nr_results_txt = len(rows)
                     if nr_results_txt == 0:
-                        self.logging.log.debug(":: term has not returned web sites!")
+                        self.logger.debug(":: term has not returned web sites!")
                     limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
 
                     for itxt in range(limit_txt):
@@ -404,12 +416,12 @@ class FeatureExtraction(object):
                     horus_matrix[index][24] = dist_tx_indicator
                     horus_matrix[index][25] = nr_results_txt
 
-                    self.logging.log.debug(':: TX statistics:'
+                    self.logger.debug(':: TX statistics:'
                                        '(LOC=%s, ORG=%s, PER=%s, DIST=%s, LOC_TM=%s, ORG_TM=%s, PER_TM=%s)' %
                                        (str(gpb[0]).zfill(2), str(gpb[1]).zfill(2), str(gpb[2]).zfill(2),
                                         str(dist_tx_indicator).zfill(2),
                                         str(yytm[0]).zfill(2), str(yytm[1]).zfill(2), str(yytm[2]).zfill(2)))
-                    self.logging.log.debug('-------------------------------------------------------------')
+                    self.logger.debug('-------------------------------------------------------------')
 
                     if limit_txt != 0:
                         horus_matrix[index][26] = definitions.KLASSES[horus_tx_ner]
@@ -431,23 +443,23 @@ class FeatureExtraction(object):
         try:
             if file is None:
                 raise Exception("Provide an input file format to be annotated")
-            self.logging.log.info(':: processing CoNLL format -> %s' % label)
+            self.logger.info(':: processing CoNLL format -> %s' % label)
             file = self.config.dataset_path + file
             sent_tokenize_list = self.util.process_ds_conll_format(file, label, token_index, ner_index, '')
             self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
             if len(self.horus_matrix) > 0:
-                self.util.download_and_cache_results()
-                self.horus_matrix = self.detect_objects(self.horus_matrix)
+                self.util.download_and_cache_results(self.horus_matrix)
+                self.detect_objects(self.horus_matrix)
                 outfilename = self.util.path_leaf(file) + ".horus"
                 self.__export_data(outfilename, out_subfolder, 'tsv')
-                self.logging.log.info(':: feature extraction completed! filename = ' + outfilename)
+                self.logger.info(':: feature extraction completed! filename = ' + outfilename)
             else:
-                self.logging.log.warn(':: nothing to do...')
+                self.logger.warn(':: nothing to do...')
 
             return self.horus_matrix
 
         except Exception as error:
-            self.logging.log.error('caught this error here: ' + repr(error))
+            self.logger.error('caught this error here: ' + repr(error))
 
 
 if __name__ == "__main__":
