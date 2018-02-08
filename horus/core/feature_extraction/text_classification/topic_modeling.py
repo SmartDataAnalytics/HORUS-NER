@@ -20,8 +20,8 @@ class TopicModeling():
         try:
             dict = self.classifier_tm.score(text)
             predictions.append(dict.get('loc'))
-            predictions.append(dict.get('per'))
             predictions.append(dict.get('org'))
+            predictions.append(dict.get('per'))
             predictions.append(0)
             predictions.append(0)
             return predictions

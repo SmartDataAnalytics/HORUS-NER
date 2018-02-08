@@ -347,8 +347,8 @@ class FeatureExtraction(object):
                 horus_matrix[index][36] = place_cv_indicator_cnn  # 5
 
                 self.logger.debug(':: CV statistics:'
-                                   '(BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)'
-                                       '(CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s)' %
+                                   '[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
+                                    'CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s]' %
                                    (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
                                     str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator,
                                     str(tot_geral_locations_cnn).zfill(2), str(tot_geral_logos_cnn).zfill(2),
@@ -403,23 +403,25 @@ class FeatureExtraction(object):
                     horus_matrix[index][21] = gpb[1]
                     horus_matrix[index][22] = gpb[2]
                     horus_matrix[index][23] = 0
-                    horus_matrix[index][28] = yytm[0]
-                    horus_matrix[index][29] = yytm[1]
-                    horus_matrix[index][30] = yytm[2]
+
+                    horus_matrix[index][28] = numpy.sum(yytm, axis=0)[0]
+                    horus_matrix[index][29] = numpy.sum(yytm, axis=0)[1]
+                    horus_matrix[index][30] = numpy.sum(yytm, axis=0)[2]
 
                     maxs_tx = heapq.nlargest(2, gpb)
-                    maxs_tm = heapq.nlargest(2, yytm)
+                    maxs_tm = heapq.nlargest(2, numpy.sum(yytm, axis=0))
                     dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
                     dist_tx_indicator_tm = max(maxs_tm) - min(maxs_tm)
-                    horus_matrix[index][31] = dist_tx_indicator_tm
+
                     horus_matrix[index][24] = dist_tx_indicator
                     horus_matrix[index][25] = nr_results_txt
+                    horus_matrix[index][31] = dist_tx_indicator_tm
 
                     self.logger.debug(':: TX statistics:'
-                                       '(LOC=%s, ORG=%s, PER=%s, DIST=%s, LOC_TM=%s, ORG_TM=%s, PER_TM=%s)' %
-                                       (str(gpb[0]).zfill(2), str(gpb[1]).zfill(2), str(gpb[2]).zfill(2),
-                                        str(dist_tx_indicator).zfill(2),
-                                        str(yytm[0]).zfill(2), str(yytm[1]).zfill(2), str(yytm[2]).zfill(2)))
+                                       '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | '
+                                         'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s]' %
+                                       (str(gpb[0]).zfill(2), str(gpb[1]).zfill(2), str(gpb[2]).zfill(2), str(dist_tx_indicator).zfill(2),
+                                        str(numpy.sum(yytm, axis=0)[0]).zfill(2), str(numpy.sum(yytm, axis=0)[1]).zfill(2), str(numpy.sum(yytm, axis=0)[2]).zfill(2), str(dist_tx_indicator_tm).zfill(2)))
                     self.logger.debug('-------------------------------------------------------------')
 
                     if limit_txt != 0:

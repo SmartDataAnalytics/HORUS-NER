@@ -1027,7 +1027,7 @@ class Util(object):
             self.logger.error(':: an error has occurred: ', e)
             raise
 
-    def path_leaf(path):
+    def path_leaf(self, path):
         head, tail = ntpath.split(path)
         return tail or ntpath.basename(head)
 
