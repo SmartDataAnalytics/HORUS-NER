@@ -231,6 +231,7 @@ class FeatureExtraction(object):
                 tot_geral_pos_locations_cnn =0
                 tot_geral_neg_locations_cnn =0
 
+
                 T = int(self.config.models_location_theta)  # location threshold
 
                 # -----------------------------------------------------------------
@@ -271,47 +272,55 @@ class FeatureExtraction(object):
                         tot_geral_neg_locations_cnn += (ifeat[16:25].count(0) * -1)
 
                     else:
+                        tot_faces = 0
+                        tot_logos = 0
+                        res = [0] * 10
+                        tot_faces_cnn = 0
+                        tot_logos_cnn = 0
+                        res_cnn = [0] * 10
 
-                        # ----- face recognition -----
-                        tot_faces = self.image_sift.detect_faces(ifeat[0])
-                        if tot_faces > 0:
-                            tot_geral_faces += 1
-                            self.logger.debug(":: found {0} faces!".format(tot_faces))
-                        # ----- logo recognition -----
-                        tot_logos = self.image_sift.detect_logo(ifeat[0])
-                        if tot_logos > 0:
-                            tot_geral_logos += 1
-                            self.logger.debug(":: found {0} logo(s)!".format(1))
-                        # ----- place recognition -----
-                        res = self.image_sift.detect_place(ifeat[0])
-                        tot_geral_pos_locations += res.count(1)
-                        tot_geral_neg_locations += (res.count(0) * -1)
+                        try:
+                            # ----- face recognition -----
+                            tot_faces = self.image_sift.detect_faces(ifeat[0])
+                            if tot_faces > 0:
+                                tot_geral_faces += 1
+                                self.logger.debug(":: found {0} faces!".format(tot_faces))
+                            # ----- logo recognition -----
+                            tot_logos = self.image_sift.detect_logo(ifeat[0])
+                            if tot_logos > 0:
+                                tot_geral_logos += 1
+                                self.logger.debug(":: found {0} logo(s)!".format(1))
+                            # ----- place recognition -----
+                            res = self.image_sift.detect_place(ifeat[0])
+                            tot_geral_pos_locations += res.count(1)
+                            tot_geral_neg_locations += (res.count(0) * -1)
 
-                        if res.count(1) >= T:
-                            tot_geral_locations += 1
-                            self.logger.debug(":: found {0} place(s)!".format(1))
+                            if res.count(1) >= T:
+                                tot_geral_locations += 1
+                                self.logger.debug(":: found {0} place(s)!".format(1))
 
+                            image = self.image_cnn.preprocess_image(ifeat[0])
 
-                        image = self.image_cnn.preprocess_image(ifeat[0])
+                            # ----- face recognition -----
+                            tot_faces_cnn = self.image_cnn.detect_faces(image)
+                            if tot_faces_cnn > 0:
+                                tot_geral_faces_cnn += 1
+                                self.logger.debug(":: found {0} faces!".format(tot_faces))
+                            # ----- logo recognition -----
+                            tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
+                            if tot_logos_cnn > 0:
+                                tot_geral_logos_cnn += 1
+                                self.logger.debug(":: found {0} logo(s)!".format(1))
+                            # ----- place recognition -----
+                            res_cnn = self.image_cnn.detect_place_cnn(image)
+                            tot_geral_pos_locations_cnn += res_cnn.count(1)
+                            tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
-                        # ----- face recognition -----
-                        tot_faces_cnn = self.image_cnn.detect_faces(image)
-                        if tot_faces_cnn > 0:
-                            tot_geral_faces_cnn += 1
-                            self.logger.debug(":: found {0} faces!".format(tot_faces))
-                        # ----- logo recognition -----
-                        tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
-                        if tot_logos_cnn > 0:
-                            tot_geral_logos_cnn += 1
-                            self.logger.debug(":: found {0} logo(s)!".format(1))
-                        # ----- place recognition -----
-                        res_cnn = self.image_cnn.detect_place_cnn(image)
-                        tot_geral_pos_locations_cnn += res_cnn.count(1)
-                        tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
-
-                        if res_cnn.count(1) >= T:
-                            tot_geral_locations_cnn += 1
-                            self.logger.debug(":: found {0} place(s)!".format(1))
+                            if res_cnn.count(1) >= T:
+                                tot_geral_locations_cnn += 1
+                                self.logger.debug(":: found {0} place(s)!".format(1))
+                        except Exception as e:
+                            self.logger.error(e)
 
                         param = []
                         param.append(tot_faces)
@@ -326,7 +335,6 @@ class FeatureExtraction(object):
                 self.conn.commit()
 
                 self.logger.debug(' - computing vars')
-
                 outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
                 maxs_cv = heapq.nlargest(2, outs)
                 dist_cv_indicator = max(maxs_cv) - min(maxs_cv)

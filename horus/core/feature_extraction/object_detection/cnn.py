@@ -27,20 +27,27 @@ class CNN(nn.Module):
         self.config = config
 
     def __postprocess_image(self, image):
-        img = torch.from_numpy(image / float(255)).float()
-        img.unsqueeze_(-1)
-        img = img.expand(28, 28, 3)
-        img = img.transpose(2, 0)
-        img.unsqueeze_(0)
-        return Variable(img)
+        try:
+            img = torch.from_numpy(image / float(255)).float()
+            img.unsqueeze_(-1)
+            img = img.expand(28, 28, 3)
+            img = img.transpose(2, 0)
+            img.unsqueeze_(0)
+            return Variable(img)
+        except Exception as e:
+            raise(e)
 
     def preprocess_image(self, img):
-        img = mpimg.imread(img)
-        if len(img.shape) == 3:
-            r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
-        img = 0.2989 * r + 0.5870 * g + 0.1140 * b
-        resized_image = cv2.resize(img, (28, 28))
-        return self.__postprocess_image(resized_image)
+        try:
+            img = mpimg.imread(img)
+            if len(img.shape) == 3:
+                r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+            img = 0.2989 * r + 0.5870 * g + 0.1140 * b
+            resized_image = cv2.resize(img, (28, 28))
+            return self.__postprocess_image(resized_image)
+        except Exception as e:
+            raise(e)
+
 
 #    def preprocess_image(self, img):
 #
@@ -62,79 +69,88 @@ class CNN(nn.Module):
         return out
 
     def detect_faces(self, image):
-        self.load_state_dict(torch.load(self.config.models_cnn_per))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        return predicted.numpy().sum()
+        try:
+            self.load_state_dict(torch.load(self.config.models_cnn_per))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            return predicted.numpy().sum()
+        except:
+            return 0
 
     def detect_logo_cnn(self, image):
-        self.load_state_dict(torch.load(self.config.models_cnn_org))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        return predicted.numpy().sum()
+        try:
+            self.load_state_dict(torch.load(self.config.models_cnn_org))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            return predicted.numpy().sum()
+        except:
+            return 0
 
     def detect_place_cnn(self, image):
-        ret = []
-        # loc1
-        self.load_state_dict(torch.load(self.config.models_cnn_loc1))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc2
-        self.load_state_dict(torch.load(self.config.models_cnn_loc2))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc3
-        self.load_state_dict(torch.load(self.config.models_cnn_loc3))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc4
-        self.load_state_dict(torch.load(self.config.models_cnn_loc4))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc5
-        self.load_state_dict(torch.load(self.config.models_cnn_loc5))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc6
-        self.load_state_dict(torch.load(self.config.models_cnn_loc6))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc7
-        self.load_state_dict(torch.load(self.config.models_cnn_loc7))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc8
-        self.load_state_dict(torch.load(self.config.models_cnn_loc8))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc9
-        self.load_state_dict(torch.load(self.config.models_cnn_loc9))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        # loc10
-        self.load_state_dict(torch.load(self.config.models_cnn_loc10))
-        self.eval()
-        outputs = self(image)
-        _, predicted = torch.max(outputs.data, 1)
-        ret.append(predicted.numpy().sum())
-        return ret
+        try:
+            ret = []
+            # loc1
+            self.load_state_dict(torch.load(self.config.models_cnn_loc1))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc2
+            self.load_state_dict(torch.load(self.config.models_cnn_loc2))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc3
+            self.load_state_dict(torch.load(self.config.models_cnn_loc3))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc4
+            self.load_state_dict(torch.load(self.config.models_cnn_loc4))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc5
+            self.load_state_dict(torch.load(self.config.models_cnn_loc5))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc6
+            self.load_state_dict(torch.load(self.config.models_cnn_loc6))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc7
+            self.load_state_dict(torch.load(self.config.models_cnn_loc7))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc8
+            self.load_state_dict(torch.load(self.config.models_cnn_loc8))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc9
+            self.load_state_dict(torch.load(self.config.models_cnn_loc9))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            # loc10
+            self.load_state_dict(torch.load(self.config.models_cnn_loc10))
+            self.eval()
+            outputs = self(image)
+            _, predicted = torch.max(outputs.data, 1)
+            ret.append(predicted.numpy().sum())
+            return ret
+        except:
+            return [0] * 10

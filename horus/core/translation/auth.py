@@ -46,7 +46,7 @@ class AzureAuthClient(object):
             response = requests.post(token_service_url, headers=request_headers)
             response.raise_for_status()
 
-            self.token = response.text
-            #self.reuse_token_until = datetime.utcnow() + timedelta(minutes=5)
+            self.token = response.content
+            self.reuse_token_until = datetime.utcnow() + timedelta(minutes=5)
 
         return self.token

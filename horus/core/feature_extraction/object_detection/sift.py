@@ -73,7 +73,7 @@ class SIFT():
             return p
 
         except Exception as error:
-            raise(error)
+            return 0
 
     def detect_place(self, img):
         try:
@@ -160,8 +160,8 @@ class SIFT():
 
             return ret
 
-        except Exception as error:
-            raise
+        except:
+            return [0] * 10
 
     def detect_faces(self, img):
         try:
@@ -182,4 +182,4 @@ class SIFT():
             # cv2.waitKey(0)
 
         except Exception as error:
-            raise(error)
+            return 0

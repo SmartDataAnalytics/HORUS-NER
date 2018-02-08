@@ -13,11 +13,14 @@ from horus.core.translation.auth import AzureAuthClient
 class BingTranslator(object):
 
     def __init__(self, config):
-        auth_client = AzureAuthClient(config.translation_secret)
-        self.final_token = 'Bearer ' + auth_client.get_access_token()
         self.headers = {'Accept': 'application/xml'}
         self.detectUrl = "https://api.microsofttranslator.com/V2/Http.svc/Detect"
         self.translateUrl = "https://api.microsofttranslator.com/v2/Http.svc/Translate"
+        self.config = config
+
+    def get_token(self):
+        auth_client = AzureAuthClient(self.config.translation_secret)
+        return 'Bearer ' + auth_client.get_access_token()
 
     def clean_text(self, text):
         return re.sub('\W+',' ', text)
@@ -29,7 +32,7 @@ class BingTranslator(object):
                 return 'en'
             if isinstance(text, unicode) == True:
                 text = text.encode('ascii','ignore')
-            params = {'appid': self.final_token, 'text': text}
+            params = {'appid': self.get_token(), 'text': text}
             translationData = requests.get(self.detectUrl, params=params ,headers=self.headers)
             if translationData.status_code != 200:
                 raise Exception(':: error: bing lang detection status code: ' + str(translationData.status_code) + ' - ' + str(translationData.text))
@@ -46,7 +49,7 @@ class BingTranslator(object):
             if isinstance(text, unicode) == True:
                 text = text.encode('ascii','ignore')
 
-            params = {'appid': self.final_token, 'text': text, 'to': to_lang}
+            params = {'appid': self.get_token(), 'text': text, 'to': to_lang}
             translationData = requests.get(self.translateUrl, params=params, headers=self.headers) #urllib.urlencode()
             if translationData.status_code != 200:
                 raise Exception(':: error: bing translation status code: ' + str(translationData.status_code) + ' - ' +
