@@ -155,35 +155,35 @@ class FeatureExtraction(object):
 
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
         try:
-
-            t1final = t1
-            t2final = t1
             if isinstance(t1, str):
                 t1 = unicode(t1, "utf-8")
             if isinstance(t2, str):
                 t2 = unicode(t2, "utf-8")
+
             c = self.conn.cursor()
-            if t1en is None:
+            if t1en is None or t1en == '':
                 lt1 = self.translator.detect_language(t1)
                 if lt1 != 'en':
-                    t1final = self.translator.translate(t1, 'en')
+                    temp = self.translator.translate(t1, 'en')
+                else:
+                    temp = t1
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_title_en = ? WHERE id = ?"""
-                c.execute(sql, (t1final.encode("utf-8"), id))
-            else:
-                t1final = t1en
+                c.execute(sql, (temp.encode("utf-8"), id))
+                t1en = temp
 
-            if t2en is None:
+            if t2en is None or t2en == '':
                 lt2 = self.translator.detect_language(t2)
                 if lt2 != 'en':
-                    t2final = self.translator.translate(t2, 'en')
+                    temp = self.translator.translate(t2, 'en')
+                else:
+                    temp = t2
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_description_en = ? WHERE id = ?"""
-                c.execute(sql, (t2final.encode("utf-8"), id))
-            else:
-                t2final = t2en
+                c.execute(sql, (temp.encode("utf-8"), id))
+                t2en = temp
 
             c.close()
 
-            return "{} {}".format(t1final.encode("utf-8"), t2final.encode("utf-8"))
+            return "{} {}".format(t1en.encode("utf-8"), t2en.encode("utf-8"))
 
         except Exception as e:
             self.sys.log.error(':: Error: ' + str(e))
@@ -331,10 +331,10 @@ class FeatureExtraction(object):
                 place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
 
                 horus_matrix[index][11] = limit_img
-                horus_matrix[index][12] = tot_geral_locations_cnn  # 1
-                horus_matrix[index][13] = tot_geral_logos_cnn  # 2
-                horus_matrix[index][14] = tot_geral_faces_cnn  # 3
-                horus_matrix[index][15] = dist_cv_indicator_cnn  # 4
+                horus_matrix[index][12] = tot_geral_locations  # 1
+                horus_matrix[index][13] = tot_geral_logos  # 2
+                horus_matrix[index][14] = tot_geral_faces  # 3
+                horus_matrix[index][15] = dist_cv_indicator  # 4
                 horus_matrix[index][16] = place_cv_indicator  # 5
                 horus_matrix[index][17] = nr_results_img  # 5
 
@@ -373,15 +373,11 @@ class FeatureExtraction(object):
                     limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
 
                     for itxt in range(limit_txt):
-
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
                             merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                            if self.config.text_classification_type in (-1, 0):
-                                ret_bow = self.text_bow.detect_text_klass(merged_en)
-                            else: ret_bow = [0,0,0,0,0]
-                            if self.config.text_classification_type in (-1, 1):
-                                ret_tm = self.text_tm.detect_text_klass(merged_en)
-                            else: ret_tm = [0,0,0,0,0]
+                            ret_bow = self.text_bow.detect_text_klass(merged_en)
+                            ret_tm = self.text_tm.detect_text_klass(merged_en)
+
 
                             y_bow.append(ret_bow)
                             y_tm.append(ret_tm)
