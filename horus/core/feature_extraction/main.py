@@ -261,9 +261,9 @@ class FeatureExtraction(object):
                         if (ifeat[16:25]).count(1) >= int(T):
                             tot_geral_locations_cnn += 1
                         tot_geral_pos_locations += ifeat[5:14].count(1)
-                        tot_geral_neg_locations += (ifeat[5:14].count(-1) * -1)
+                        tot_geral_neg_locations += (ifeat[5:14].count(0) * -1)
                         tot_geral_pos_locations_cnn += ifeat[16:25].count(1)
-                        tot_geral_neg_locations_cnn += (ifeat[16:25].count(-1) * -1)
+                        tot_geral_neg_locations_cnn += (ifeat[16:25].count(0) * -1)
 
                     else:
 
@@ -364,7 +364,7 @@ class FeatureExtraction(object):
                 y_bow, y_tm = [], []
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute(sql_text_sel % (id_term_txt, id_ner_type))
+                    cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                     rows = cursor.fetchall()
 
                     nr_results_txt = len(rows)
@@ -386,7 +386,7 @@ class FeatureExtraction(object):
                             y_bow.append(ret_bow)
                             y_tm.append(ret_tm)
 
-                            cursor.execute(sql_text_upd % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
+                            cursor.execute(SQL_TEXT_CLASS_UPD % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
                                                            ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
                                                            rows[itxt][0]))
                         else:
