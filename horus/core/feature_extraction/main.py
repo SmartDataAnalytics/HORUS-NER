@@ -213,6 +213,9 @@ class FeatureExtraction(object):
                 term = horus_matrix[index][3]
                 self.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
 
+                if term == 'Green Newsfeed':
+                    a=1
+
                 id_term_img = horus_matrix[index][10]
                 id_term_txt = horus_matrix[index][9]
                 id_ner_type = 0
@@ -321,6 +324,8 @@ class FeatureExtraction(object):
                         cursor.execute(SQL_OBJECT_DETECTION_UPD, param)
 
                 self.conn.commit()
+
+                self.logger.debug(' - computing vars')
 
                 outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
                 maxs_cv = heapq.nlargest(2, outs)

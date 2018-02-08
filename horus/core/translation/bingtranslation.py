@@ -16,23 +16,27 @@ class BingTranslator(object):
         self.headers = {"Authorization ": self.final_token}
     def detect_language(self, text):
         try:
+            if len(str(text)) == 0:
+                return 'en'
             detectUrl = "https://api.microsofttranslator.com/V2/Http.svc/Detect?text={}".format(text.encode('ascii','ignore'))
             translationData = requests.get(detectUrl, headers=self.headers)
             if translationData.status_code != 200:
-                raise(':: error: bing lang detection status code: ' + str(translationData.status_code))
+                raise Exception(':: error: bing lang detection status code: ' + str(translationData.status_code))
             translation = ElementTree.fromstring(translationData.text.encode('utf-8'))
             return translation.text
-        except:
-            raise
+        except Exception as e:
+             raise e
 
     def translate(self, input_text, to_lang):
         try:
+            if len(str(input_text)) == 0:
+                return ''
             url = "http://api.microsofttranslator.com/v2/Http.svc/Translate"
             params = {'to': to_lang, 'text': input_text.encode('ascii','ignore')}
             translateUrl = "{}?{}".format(url, urllib.urlencode(params))
             translationData = requests.get(translateUrl, headers=self.headers)
             if translationData.status_code != 200:
-                raise(':: error: bing translation status code: ' + str(translationData.status_code))
+                raise Exception(':: error: bing translation status code: ' + str(translationData.status_code))
             translation = ElementTree.fromstring(translationData.text.encode('utf-8'))
             return translation.text
         except:

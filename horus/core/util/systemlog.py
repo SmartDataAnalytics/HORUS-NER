@@ -23,7 +23,7 @@ class SysLogger:
     def __init__(self):
         self.logger = logging.getLogger('horus')
         if len(self.logger.handlers) == 0:
-            self.logger.setLevel(logging.INFO)
+            self.logger.setLevel(logging.DEBUG)
             now = datetime.datetime.now()
             handler = logging.FileHandler('horus_'
                                           + now.strftime("%Y-%m-%d")

@@ -52,8 +52,8 @@ class HorusDB(object):
             values = (term, id_searchengine, id_searchtype, search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
             id = self.conn.cursor().execute(SQL_TERM_SEARCH_INS, values)
             return id.lastrowid
-        except:
-            raise
+        except Exception as e:
+            raise e
 
     def save_website_data(self, id_term_search, seq, web_id, web_display_url, web_name, web_snippet):
         try:

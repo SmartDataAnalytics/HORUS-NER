@@ -22,7 +22,7 @@ def query_microsoft_graph(query, top=10):
         return r.json()
 
     except Exception as e:
-        raise ValueError(e)
+        raise e
 
 def query_bing(query, key, top, market='en-us', safe='Moderate', source='Web', version='v5'):
     if version == 'v2':
