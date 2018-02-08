@@ -16,7 +16,7 @@ class BingTranslator(object):
         self.headers = {"Authorization ": self.final_token}
     def detect_language(self, text):
         try:
-            detectUrl = "https://api.microsofttranslator.com/V2/Http.svc/Detect?text={}".format(text)
+            detectUrl = "https://api.microsofttranslator.com/V2/Http.svc/Detect?text={}".format(text.encode('ascii','ignore'))
             translationData = requests.get(detectUrl, headers=self.headers)
             if translationData.status_code != 200:
                 raise(':: error: bing lang detection status code: ' + str(translationData.status_code))
@@ -28,7 +28,7 @@ class BingTranslator(object):
     def translate(self, input_text, to_lang):
         try:
             url = "http://api.microsofttranslator.com/v2/Http.svc/Translate"
-            params = {'to': to_lang, 'text': input_text}
+            params = {'to': to_lang, 'text': input_text.encode('ascii','ignore')}
             translateUrl = "{}?{}".format(url, urllib.urlencode(params))
             translationData = requests.get(translateUrl, headers=self.headers)
             if translationData.status_code != 200:

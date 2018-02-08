@@ -60,8 +60,7 @@ class FeatureExtraction(object):
         self.logger.info(':: loading components...')
         self.util = Util(self.config)
         #self.tools = NLPTools()
-        #self.translator = BingTranslator(self.config)
-        self.translator = None
+        self.translator = BingTranslator(self.config)
         self.logger.info(':: loading CNN')
         self.image_cnn = CNN(self.config)
         self.logger.info(':: loading SIFT')
@@ -155,10 +154,10 @@ class FeatureExtraction(object):
 
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
         try:
-            if isinstance(t1, str):
-                t1 = unicode(t1, "utf-8")
-            if isinstance(t2, str):
-                t2 = unicode(t2, "utf-8")
+            #if isinstance(t1, str):
+            #    t1 = unicode(t1, "utf-8")
+            #if isinstance(t2, str):
+            #    t2 = unicode(t2, "utf-8")
 
             c = self.conn.cursor()
             if t1en is None or t1en == '':
@@ -168,7 +167,9 @@ class FeatureExtraction(object):
                 else:
                     temp = t1
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_title_en = ? WHERE id = ?"""
-                c.execute(sql, (temp.encode("utf-8"), id))
+                if not isinstance(temp, unicode):
+                    temp = temp.decode('utf-8')
+                c.execute(sql, (temp, id))
                 t1en = temp
 
             if t2en is None or t2en == '':
@@ -178,16 +179,17 @@ class FeatureExtraction(object):
                 else:
                     temp = t2
                 sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_description_en = ? WHERE id = ?"""
-                c.execute(sql, (temp.encode("utf-8"), id))
+                if not isinstance(temp, unicode):
+                    temp = temp.decode('utf-8')
+                c.execute(sql, (temp, id)) #.encode("utf-8")
                 t2en = temp
 
             c.close()
 
-            return "{} {}".format(t1en.encode("utf-8"), t2en.encode("utf-8"))
+            return '{} {}'.format(t1en.encode('ascii','ignore'), t2en.encode('ascii','ignore'))
 
         except Exception as e:
-            self.sys.log.error(':: Error: ' + str(e))
-            raise
+            raise e
 
     def detect_objects(self, matrix):
         """
@@ -456,7 +458,7 @@ class FeatureExtraction(object):
             return self.horus_matrix
 
         except Exception as error:
-            self.logger.error('caught this error here: ' + repr(error))
+            self.logger.error('extract_features() error: ' + repr(error))
 
 
 if __name__ == "__main__":
