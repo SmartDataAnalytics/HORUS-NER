@@ -102,7 +102,7 @@ class FeatureExtraction(object):
             pass
 
     def __export_data(self, file, subfolder, format):
-        temp = self.config.output_path + subfolder + '/' + file
+        temp = self.config.output_path + subfolder + file
         self.logger.info(':: exporting metadata to: ' + temp + "." + format)
         if format == 'json':
             with open(temp + '.json', 'wb') as outfile:
@@ -113,7 +113,7 @@ class FeatureExtraction(object):
             # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
             writer.writerows(self.horus_matrix)
         elif format == 'tsv':
-            writer = csv.writer(temp + '.tsv', dialect="excel", delimiter="\t", skipinitialspace=True)
+            writer = csv.writer(open(temp + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
             writer.writerow(definitions.HORUS_MATRIX_HEADER)
             writer.writerows(self.horus_matrix)
         else:
@@ -453,9 +453,8 @@ class FeatureExtraction(object):
                 self.detect_objects(self.horus_matrix)
                 outfilename = self.util.path_leaf(file) + ".horus"
                 self.__export_data(outfilename, out_subfolder, 'tsv')
-                self.logger.info(':: feature extraction completed! filename = ' + outfilename)
             else:
-                self.logger.warn(':: nothing to do...')
+                self.logger.warn(':: well, nothing to do today...')
 
             return self.horus_matrix
 
