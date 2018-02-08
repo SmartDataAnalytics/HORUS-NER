@@ -215,16 +215,16 @@ class FeatureExtraction(object):
                 id_term_txt = horus_matrix[index][9]
                 id_ner_type = 0
 
-                tot_geral_faces =-1
-                tot_geral_logos =-1
-                tot_geral_locations =-1
-                tot_geral_pos_locations =-1
-                tot_geral_neg_locations =-1
-                tot_geral_faces_cnn =-1
-                tot_geral_logos_cnn =-1
-                tot_geral_locations_cnn =-1
-                tot_geral_pos_locations_cnn =-1
-                tot_geral_neg_locations_cnn =-1
+                tot_geral_faces =0
+                tot_geral_logos =0
+                tot_geral_locations =0
+                tot_geral_pos_locations =0
+                tot_geral_neg_locations =0
+                tot_geral_faces_cnn =0
+                tot_geral_logos_cnn =0
+                tot_geral_locations_cnn =0
+                tot_geral_pos_locations_cnn =0
+                tot_geral_neg_locations_cnn =0
 
                 T = int(self.config.models_location_theta)  # location threshold
 
@@ -274,13 +274,13 @@ class FeatureExtraction(object):
                             self.logger.debug(":: found {0} faces!".format(tot_faces))
                         # ----- logo recognition -----
                         tot_logos = self.image_sift.detect_logo(ifeat[0])
-                        if tot_logos[0] == 1:
+                        if tot_logos > 0:
                             tot_geral_logos += 1
                             self.logger.debug(":: found {0} logo(s)!".format(1))
                         # ----- place recognition -----
                         res = self.image_sift.detect_place(ifeat[0])
                         tot_geral_pos_locations += res.count(1)
-                        tot_geral_neg_locations += (res.count(-1) * -1)
+                        tot_geral_neg_locations += (res.count(0) * -1)
 
                         if res.count(1) >= T:
                             tot_geral_locations += 1
@@ -288,6 +288,7 @@ class FeatureExtraction(object):
 
 
                         image = self.image_cnn.preprocess_image(ifeat[0])
+
                         # ----- face recognition -----
                         tot_faces_cnn = self.image_cnn.detect_faces(image)
                         if tot_faces_cnn > 0:
@@ -295,7 +296,7 @@ class FeatureExtraction(object):
                             self.logger.debug(":: found {0} faces!".format(tot_faces))
                         # ----- logo recognition -----
                         tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
-                        if tot_logos_cnn[0] == 1:
+                        if tot_logos_cnn > 0:
                             tot_geral_logos_cnn += 1
                             self.logger.debug(":: found {0} logo(s)!".format(1))
                         # ----- place recognition -----
@@ -309,10 +310,10 @@ class FeatureExtraction(object):
 
                         param = []
                         param.append(tot_faces)
-                        param.append(tot_logos[0]) if tot_logos[0] == 1 else param.append(0)
+                        param.append(tot_logos)
                         param.extend(res)
                         param.append(tot_faces_cnn)
-                        param.append(tot_logos_cnn[0]) if tot_logos_cnn[0] == 1 else param.append(0)
+                        param.append(tot_logos_cnn)
                         param.extend(res_cnn)
                         param.append(ifeat[1])
                         cursor.execute(SQL_OBJECT_DETECTION_UPD, param)

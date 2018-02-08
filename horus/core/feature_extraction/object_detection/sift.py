@@ -66,102 +66,109 @@ class SIFT():
         try:
             f = self.bow_features(img, 'ORG_1');
             if f is None:
-                p = [0]
+                p = -1
             else:
-                p = self.svm_logo.predict(f)
-
+                p = self.svm_logo.predict(f)[0]
+                if p==-1: p=0
             return p
 
         except Exception as error:
-            return -1, repr(error)
+            raise(error)
 
     def detect_place(self, img):
         try:
-
-            self.sys.log.debug(':: detecting places...')
             ret = []
             f = self.bow_features(img, 'LOC_1');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc1.predict(f)[0])
+                y = self.svm_loc1.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_2');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc2.predict(f)[0])
+                y = self.svm_loc2.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_3');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc3.predict(f)[0])
+                y = self.svm_loc3.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_4');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc4.predict(f)[0])
+                y = self.svm_loc4.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_5');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc5.predict(f)[0])
+                y = self.svm_loc5.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_6');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc6.predict(f)[0])
+                y = self.svm_loc6.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_7');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc7.predict(f)[0])
+                y = self.svm_loc7.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_8');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc8.predict(f)[0])
+                y = self.svm_loc8.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_9');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc9.predict(f)[0])
+                y = self.svm_loc9.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             f = self.bow_features(img, 'LOC_10');
             if f is None:
-                self.sys.log.warn(':: feature extraction error!')
                 ret.append(-1)
             else:
-                ret.append(self.svm_loc10.predict(f)[0])
+                y = self.svm_loc10.predict(f)[0]
+                if y==-1:y=0
+                ret.append(y)
 
             return ret
 
         except Exception as error:
-            return -1, repr(error)
+            raise
 
     def detect_faces(self, img):
         try:
             # print cv2.__version__
             image = cv2.imread(img)
             if image is None:
-                self.sys.log.error('could not load the image: ' + img)
-                return -1
+                raise('could not load the image: ' + img)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5, flags=cv2.CASCADE_SCALE_IMAGE)
             return len(faces)
@@ -175,4 +182,4 @@ class SIFT():
             # cv2.waitKey(0)
 
         except Exception as error:
-            return -1, repr(error)
+            raise(error)

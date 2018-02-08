@@ -28,9 +28,9 @@ SQL_OBJECT_DETECTION_SEL = """SELECT filename, id, processed, nr_faces, nr_logos
 SQL_OBJECT_DETECTION_UPD = """UPDATE HORUS_SEARCH_RESULT_IMG 
                       SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, 
                           nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, 
-                          nr_faces_cnn, nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn, nr_place_3_cnn, nr_place_4_cnn, 
-                          nr_place_5_cnn, nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn, nr_place_9_cnn, nr_place_10_cnn 
-                          processed = 1, processed_cnn = 1
+                          nr_faces_cnn = ?, nr_logos_cnn = ?, nr_place_1_cnn= ?, nr_place_2_cnn= ?, nr_place_3_cnn= ?, nr_place_4_cnn= ?, 
+                          nr_place_5_cnn= ?, nr_place_6_cnn= ?, nr_place_7_cnn= ?, nr_place_8_cnn= ?, nr_place_9_cnn= ?, nr_place_10_cnn= ?, 
+                          processed = 1
                       WHERE id = ?"""
 
 SQL_TEXT_CLASS_SEL   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, 
