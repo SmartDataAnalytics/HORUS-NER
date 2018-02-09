@@ -300,25 +300,25 @@ class FeatureExtraction(object):
                                 self.logger.debug(":: found {0} place(s)!".format(1))
 
                             image = self.image_cnn.preprocess_image(ifeat[0])
+                            if image is not False:
+                                # ----- face recognition -----
+                                tot_faces_cnn = self.image_cnn.detect_faces(image)
+                                if tot_faces_cnn > 0:
+                                    tot_geral_faces_cnn += 1
+                                    self.logger.debug(":: found {0} faces!".format(tot_faces))
+                                # ----- logo recognition -----
+                                tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
+                                if tot_logos_cnn > 0:
+                                    tot_geral_logos_cnn += 1
+                                    self.logger.debug(":: found {0} logo(s)!".format(1))
+                                # ----- place recognition -----
+                                res_cnn = self.image_cnn.detect_place_cnn(image)
+                                tot_geral_pos_locations_cnn += res_cnn.count(1)
+                                tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
-                            # ----- face recognition -----
-                            tot_faces_cnn = self.image_cnn.detect_faces(image)
-                            if tot_faces_cnn > 0:
-                                tot_geral_faces_cnn += 1
-                                self.logger.debug(":: found {0} faces!".format(tot_faces))
-                            # ----- logo recognition -----
-                            tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
-                            if tot_logos_cnn > 0:
-                                tot_geral_logos_cnn += 1
-                                self.logger.debug(":: found {0} logo(s)!".format(1))
-                            # ----- place recognition -----
-                            res_cnn = self.image_cnn.detect_place_cnn(image)
-                            tot_geral_pos_locations_cnn += res_cnn.count(1)
-                            tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
-
-                            if res_cnn.count(1) >= T:
-                                tot_geral_locations_cnn += 1
-                                self.logger.debug(":: found {0} place(s)!".format(1))
+                                if res_cnn.count(1) >= T:
+                                    tot_geral_locations_cnn += 1
+                                    self.logger.debug(":: found {0} place(s)!".format(1))
                         except Exception as e:
                             self.logger.error(e)
 

@@ -34,6 +34,7 @@ class SIFT():
         self.voc_loc_9 = joblib.load(config.models_cv_loc_9_dict)
         self.voc_loc_10 = joblib.load(config.models_cv_loc_10_dict)
         self.face_cascade = cv2.CascadeClassifier(config.models_cv_per)
+        self.logger = SysLogger().getLog()
 
     def bow_features(self, fn, ner_type):
         im = cv2.imread(fn, 0)
@@ -72,7 +73,8 @@ class SIFT():
                 if p==-1: p=0
             return p
 
-        except Exception as error:
+        except Exception as e:
+            self.logger.error(e)
             return 0
 
     def detect_place(self, img):
@@ -160,7 +162,8 @@ class SIFT():
 
             return ret
 
-        except:
+        except Exception as e:
+            self.logger.error(e)
             return [0] * 10
 
     def detect_faces(self, img):
@@ -181,5 +184,6 @@ class SIFT():
             # cv2.imshow("Faces found", image)
             # cv2.waitKey(0)
 
-        except Exception as error:
+        except Exception as e:
+            self.logger.error(e)
             return 0
