@@ -13,14 +13,14 @@ from horus.core.translation.auth import AzureAuthClient
 class BingTranslator(object):
 
     def __init__(self, config):
-        self.headers = {'Accept': 'application/xml'}
         self.detectUrl = "https://api.microsofttranslator.com/V2/Http.svc/Detect"
         self.translateUrl = "https://api.microsofttranslator.com/v2/Http.svc/Translate"
         self.config = config
 
-    def get_token(self):
+    def get_header(self):
         auth_client = AzureAuthClient(self.config.translation_secret)
-        return 'Bearer ' + auth_client.get_access_token()
+        token = 'Bearer ' + auth_client.get_access_token()
+        return {'Accept': 'application/xml', 'Authorization': token}
 
     def clean_text(self, text):
         return re.sub('\W+',' ', text)
@@ -32,8 +32,10 @@ class BingTranslator(object):
                 return 'en'
             if isinstance(text, unicode) == True:
                 text = text.encode('ascii','ignore')
-            params = {'appid': self.get_token(), 'text': text}
-            translationData = requests.get(self.detectUrl, params=params ,headers=self.headers)
+            params = {'text': text}
+            h = self.get_header()
+            print(h)
+            translationData = requests.get(self.detectUrl, params=params ,headers=h)
             if translationData.status_code != 200:
                 raise Exception(':: error: bing lang detection status code: ' + str(translationData.status_code) + ' - ' + str(translationData.text))
             translation = ElementTree.fromstring(translationData.text.encode('utf-8'))
@@ -49,8 +51,10 @@ class BingTranslator(object):
             if isinstance(text, unicode) == True:
                 text = text.encode('ascii','ignore')
 
-            params = {'appid': self.get_token(), 'text': text, 'to': to_lang}
-            translationData = requests.get(self.translateUrl, params=params, headers=self.headers) #urllib.urlencode()
+            params = {'text': text, 'to': to_lang}
+            h = self.get_header()
+            print(h)
+            translationData = requests.get(self.translateUrl, params=params, headers=h) #urllib.urlencode()
             if translationData.status_code != 200:
                 raise Exception(':: error: bing translation status code: ' + str(translationData.status_code) + ' - ' +
                                 str(translationData.text))

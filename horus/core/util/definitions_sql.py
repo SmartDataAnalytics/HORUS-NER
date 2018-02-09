@@ -34,7 +34,8 @@ SQL_OBJECT_DETECTION_UPD = """UPDATE HORUS_SEARCH_RESULT_IMG
                       WHERE id = ?"""
 
 SQL_TEXT_CLASS_SEL   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, 
-                             processed, text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
+                             processed, 
+                             text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
                              text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0 
                       FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
 

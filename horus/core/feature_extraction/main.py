@@ -34,6 +34,7 @@ from horus.core.config import HorusConfig
 from horus.core.feature_extraction.object_detection.cnn import CNN
 from horus.core.feature_extraction.object_detection.sift import SIFT
 from horus.core.feature_extraction.util import Util
+from horus.core.translation.azure import *
 from horus.core.util.nlp_tools import NLPTools
 from horus.core.util.systemlog import SysLogger
 from horus.core.util.definitions_sql import *
@@ -60,7 +61,7 @@ class FeatureExtraction(object):
         self.logger.info(':: loading components...')
         self.util = Util(self.config)
         #self.tools = NLPTools()
-        self.translator = BingTranslator(self.config)
+        #self.translator = BingTranslator(self.config)
         self.logger.info(':: loading CNN')
         self.image_cnn = CNN(self.config)
         self.logger.info(':: loading SIFT')
@@ -161,32 +162,47 @@ class FeatureExtraction(object):
 
             c = self.conn.cursor()
             if t1en is None or t1en == '':
-                lt1 = self.translator.detect_language(t1)
-                if lt1 != 'en':
-                    temp = self.translator.translate(t1, 'en')
-                else:
-                    temp = t1
-                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_title_en = ? WHERE id = ?"""
-                if not isinstance(temp, unicode):
-                    temp = temp.decode('utf-8')
-                c.execute(sql, (temp, id))
-                t1en = temp
+                try:
+                    lt1 = bing_detect_language(t1, self.config.translation_secret)
+                    if lt1 != 'en':
+                        temp = bing_translate_text(t1, 'en', self.config.translation_secret)
+                    else:
+                        temp = t1
+                    sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_title_en = ? WHERE id = ?"""
+                    if not isinstance(temp, unicode):
+                        temp = temp.decode('utf-8')
+                    c.execute(sql, (temp, id))
+                    t1en = temp
+                except Exception as e:
+                    sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET error = 1, error_desc = ? WHERE id = ?"""
+                    c.execute(sql, (str(e.message), id))
+
 
             if t2en is None or t2en == '':
-                lt2 = self.translator.detect_language(t2)
-                if lt2 != 'en':
-                    temp = self.translator.translate(t2, 'en')
-                else:
-                    temp = t2
-                sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_description_en = ? WHERE id = ?"""
-                if not isinstance(temp, unicode):
-                    temp = temp.decode('utf-8')
-                c.execute(sql, (temp, id)) #.encode("utf-8")
-                t2en = temp
+                try:
+                    lt2 = bing_detect_language(t2, self.config.translation_secret)
+                    if lt2 != 'en':
+                        temp = bing_translate_text(t2, 'en', self.config.translation_secret)
+                    else:
+                        temp = t2
+                    sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_description_en = ? WHERE id = ?"""
+                    if not isinstance(temp, unicode):
+                        temp = temp.decode('utf-8')
+                    c.execute(sql, (temp, id)) #.encode("utf-8")
+                    t2en = temp
+                except Exception as e:
+                    sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET error = 1, error_desc = ? WHERE id = ?"""
+                    c.execute(sql, (str(e.message), id))
 
             c.close()
 
-            return '{} {}'.format(t1en.encode('ascii','ignore'), t2en.encode('ascii','ignore'))
+            merged = ''
+            if t1en is not None:
+                merged = t1en.encode('ascii','ignore')
+            if t2en is not None:
+                merged = merged + ' ' + t2en.encode('ascii','ignore')
+
+            return merged
 
         except Exception as e:
             raise e
@@ -213,7 +229,7 @@ class FeatureExtraction(object):
                 term = horus_matrix[index][3]
                 self.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
 
-                if term == 'Green Newsfeed':
+                if auxi == 3918:
                     a=1
 
                 id_term_img = horus_matrix[index][10]
@@ -334,7 +350,6 @@ class FeatureExtraction(object):
 
                 self.conn.commit()
 
-                self.logger.debug(' - computing vars')
                 outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
                 maxs_cv = heapq.nlargest(2, outs)
                 dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
@@ -390,9 +405,11 @@ class FeatureExtraction(object):
                     for itxt in range(limit_txt):
                         if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
                             merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                            ret_bow = self.text_bow.detect_text_klass(merged_en)
-                            ret_tm = self.text_tm.detect_text_klass(merged_en)
-
+                            ret_bow = [0,0,0,0,0]
+                            ret_tm = [0,0,0,0,0]
+                            if merged_en != '':
+                                ret_bow = self.text_bow.detect_text_klass(merged_en)
+                                ret_tm = self.text_tm.detect_text_klass(merged_en)
 
                             y_bow.append(ret_bow)
                             y_tm.append(ret_tm)
@@ -402,7 +419,7 @@ class FeatureExtraction(object):
                                                            rows[itxt][0]))
                         else:
                             y_bow.append(rows[itxt][7:12])
-                            y_tm.append(rows[itxt][13:18])
+                            y_tm.append(rows[itxt][12:18])
 
                     self.conn.commit()
 
