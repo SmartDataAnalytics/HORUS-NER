@@ -1025,7 +1025,7 @@ class Util(object):
 
         except Exception as e:
             self.logger.error(':: an error has occurred: ', e)
-            raise
+            raise e
 
     def path_leaf(self, path):
         head, tail = ntpath.split(path)

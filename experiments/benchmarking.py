@@ -52,6 +52,10 @@ def encode(x, n):
     return result
 #keras.utils.np_utils.to_categorical or sparse_categorical_crossentropy
 
+def get_final_dataset(ds):
+    raise('to be implemented')
+
+
 def convert_lstm_shape(ds, y, horus_feat = False):
     if horus_feat == False:
         Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
@@ -321,7 +325,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
 le1 = joblib.load(config.encoder_path + "_encoder_pos.pkl")
 le2 = joblib.load(config.encoder_path + "_encoder_nltk2.pkl")
 
-dataset_prefix = config.output_path + "experiments/EXP_001/"
+dataset_prefix = config.output_path + "experiments/EXP_002/"
 datasets = (("ritter.horus", le1),
             ("wnut15.horus", le1))
 

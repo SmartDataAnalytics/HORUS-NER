@@ -19,13 +19,17 @@ import time
 import datetime
 import logging
 
+from horus.core.config import HorusConfig
+
+
 class SysLogger:
     def __init__(self):
         self.logger = logging.getLogger('horus')
+        self.conf = HorusConfig()
         if len(self.logger.handlers) == 0:
             self.logger.setLevel(logging.DEBUG)
             now = datetime.datetime.now()
-            handler = logging.FileHandler('horus_'
+            handler = logging.FileHandler(self.conf.root_dir + 'log/horus_'
                                           + now.strftime("%Y-%m-%d")
                                           + '.log')
             formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")

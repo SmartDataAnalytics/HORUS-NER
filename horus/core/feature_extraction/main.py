@@ -103,22 +103,25 @@ class FeatureExtraction(object):
             pass
 
     def __export_data(self, file, subfolder, format):
-        temp = self.config.output_path + subfolder + file
-        self.logger.info(':: exporting metadata to: ' + temp + "." + format)
-        if format == 'json':
-            with open(temp + '.json', 'wb') as outfile:
-                json.dump(self.horus_matrix, outfile)
-        elif format == 'csv':
-            writer = csv.writer(open(temp + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
-            writer.writerow(definitions.HORUS_MATRIX_HEADER)
-            # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
-            writer.writerows(self.horus_matrix)
-        elif format == 'tsv':
-            writer = csv.writer(open(temp + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
-            writer.writerow(definitions.HORUS_MATRIX_HEADER)
-            writer.writerows(self.horus_matrix)
-        else:
-            raise Exception('format not implemented')
+        try:
+            temp = self.config.output_path + subfolder + file
+            self.logger.info(':: exporting metadata to: ' + temp + "." + format)
+            if format == 'json':
+                with open(temp + '.json', 'wb') as outfile:
+                    json.dump(self.horus_matrix, outfile)
+            elif format == 'csv':
+                writer = csv.writer(open(temp + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
+                writer.writerow(definitions.HORUS_MATRIX_HEADER)
+                # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
+                writer.writerows(self.horus_matrix)
+            elif format == 'tsv':
+                writer = csv.writer(open(temp + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
+                writer.writerow(definitions.HORUS_MATRIX_HEADER)
+                writer.writerows(self.horus_matrix)
+            else:
+                raise Exception('format not implemented')
+        except Exception as e:
+            raise(e)
 
     def __get_horus_matrix_and_basic_statistics(self, sent_tokenize_list):
 
@@ -223,241 +226,247 @@ class FeatureExtraction(object):
         auxi = 0
         toti = len(horus_matrix)
         for index in range(len(horus_matrix)):
-            auxi += 1
-            if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
+            try:
+                auxi += 1
+                if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
 
-                term = horus_matrix[index][3]
-                self.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
+                    term = horus_matrix[index][3]
+                    self.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
 
-                if auxi == 3918:
-                    a=1
+                    if auxi == 2708:
+                        a=1
 
-                id_term_img = horus_matrix[index][10]
-                id_term_txt = horus_matrix[index][9]
-                id_ner_type = 0
+                    id_term_img = horus_matrix[index][10]
+                    id_term_txt = horus_matrix[index][9]
+                    id_ner_type = 0
 
-                tot_geral_faces =0
-                tot_geral_logos =0
-                tot_geral_locations =0
-                tot_geral_pos_locations =0
-                tot_geral_neg_locations =0
-                tot_geral_faces_cnn =0
-                tot_geral_logos_cnn =0
-                tot_geral_locations_cnn =0
-                tot_geral_pos_locations_cnn =0
-                tot_geral_neg_locations_cnn =0
+                    tot_geral_faces =0
+                    tot_geral_logos =0
+                    tot_geral_locations =0
+                    tot_geral_pos_locations =0
+                    tot_geral_neg_locations =0
+                    tot_geral_faces_cnn =0
+                    tot_geral_logos_cnn =0
+                    tot_geral_locations_cnn =0
+                    tot_geral_pos_locations_cnn =0
+                    tot_geral_neg_locations_cnn =0
 
+                    T = int(self.config.models_location_theta)  # location threshold
 
-                T = int(self.config.models_location_theta)  # location threshold
+                    with self.conn:
+                        # -----------------------------------------------------------------
+                        # image classification
+                        # -----------------------------------------------------------------
+                        filesimg = []
+                        cursor = self.conn.cursor()
+                        cursor.execute(SQL_OBJECT_DETECTION_SEL % (id_term_img, id_ner_type))
+                        rows = cursor.fetchall()
+                        nr_results_img = len(rows)
+                        if nr_results_img == 0:
+                            self.logger.debug(":: term has not returned images!")
+                        limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
-                # -----------------------------------------------------------------
-                # image classification
-                # -----------------------------------------------------------------
+                        # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
+                        # 14 = nr_faces_cnn, 15 = nr_logos_cnn, 16-25=nr_places_1-to-10_cnn
+                        for i in range(limit_img):
+                            temp=[]
+                            temp.append(self.config.cache_img_folder + rows[i][0])
+                            temp.extend(rows[i][1:25])
+                            filesimg.append(temp)
 
-                filesimg = []
-                with self.conn:
-                    cursor = self.conn.cursor()
-                    cursor.execute(SQL_OBJECT_DETECTION_SEL % (id_term_img, id_ner_type))
-                    rows = cursor.fetchall()
-                    nr_results_img = len(rows)
-                    if nr_results_img == 0:
-                        self.logger.debug(":: term has not returned images!")
-                    limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
+                        for ifeat in filesimg:
+                            if ifeat[2] == 1: # processed
+                                tot_geral_faces += ifeat[3] if ifeat[3] != None else 0
+                                tot_geral_logos += ifeat[4] if ifeat[4] != None else 0
+                                tot_geral_faces_cnn += ifeat[14] if ifeat[14] != None else 0
+                                tot_geral_logos_cnn += ifeat[15] if ifeat[15] != None else 0
+                                if (ifeat[5:14]).count(1) >= int(T):
+                                    tot_geral_locations += 1
+                                if (ifeat[16:25]).count(1) >= int(T):
+                                    tot_geral_locations_cnn += 1
+                                tot_geral_pos_locations += ifeat[5:14].count(1)
+                                tot_geral_neg_locations += (ifeat[5:14].count(0) * -1)
+                                tot_geral_pos_locations_cnn += ifeat[16:25].count(1)
+                                tot_geral_neg_locations_cnn += (ifeat[16:25].count(0) * -1)
 
-                    # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
-                    # 14 = nr_faces_cnn, 15 = nr_logos_cnn, 16-25=nr_places_1-to-10_cnn
-                    for i in range(limit_img):
-                        temp=[]
-                        temp.append(self.config.cache_img_folder + rows[i][0])
-                        temp.extend(rows[i][1:25])
-                        filesimg.append(temp)
+                            else:
+                                tot_faces = 0
+                                tot_logos = 0
+                                res = [0] * 10
+                                tot_faces_cnn = 0
+                                tot_logos_cnn = 0
+                                res_cnn = [0] * 10
 
-                for ifeat in filesimg:
-                    if ifeat[2] == 1: # processed
-                        tot_geral_faces += ifeat[3] if ifeat[3] != None else 0
-                        tot_geral_logos += ifeat[4] if ifeat[4] != None else 0
-                        tot_geral_faces_cnn += ifeat[14] if ifeat[14] != None else 0
-                        tot_geral_logos_cnn += ifeat[15] if ifeat[15] != None else 0
-                        if (ifeat[5:14]).count(1) >= int(T):
-                            tot_geral_locations += 1
-                        if (ifeat[16:25]).count(1) >= int(T):
-                            tot_geral_locations_cnn += 1
-                        tot_geral_pos_locations += ifeat[5:14].count(1)
-                        tot_geral_neg_locations += (ifeat[5:14].count(0) * -1)
-                        tot_geral_pos_locations_cnn += ifeat[16:25].count(1)
-                        tot_geral_neg_locations_cnn += (ifeat[16:25].count(0) * -1)
-
-                    else:
-                        tot_faces = 0
-                        tot_logos = 0
-                        res = [0] * 10
-                        tot_faces_cnn = 0
-                        tot_logos_cnn = 0
-                        res_cnn = [0] * 10
-
-                        try:
-                            # ----- face recognition -----
-                            tot_faces = self.image_sift.detect_faces(ifeat[0])
-                            if tot_faces > 0:
-                                tot_geral_faces += 1
-                                self.logger.debug(":: found {0} faces!".format(tot_faces))
-                            # ----- logo recognition -----
-                            tot_logos = self.image_sift.detect_logo(ifeat[0])
-                            if tot_logos > 0:
-                                tot_geral_logos += 1
-                                self.logger.debug(":: found {0} logo(s)!".format(1))
-                            # ----- place recognition -----
-                            res = self.image_sift.detect_place(ifeat[0])
-                            tot_geral_pos_locations += res.count(1)
-                            tot_geral_neg_locations += (res.count(0) * -1)
-
-                            if res.count(1) >= T:
-                                tot_geral_locations += 1
-                                self.logger.debug(":: found {0} place(s)!".format(1))
-
-                            image = self.image_cnn.preprocess_image(ifeat[0])
-                            if image is not False:
                                 # ----- face recognition -----
-                                tot_faces_cnn = self.image_cnn.detect_faces(image)
-                                if tot_faces_cnn > 0:
-                                    tot_geral_faces_cnn += 1
+                                tot_faces = self.image_sift.detect_faces(ifeat[0])
+                                if tot_faces > 0:
+                                    tot_geral_faces += 1
                                     self.logger.debug(":: found {0} faces!".format(tot_faces))
                                 # ----- logo recognition -----
-                                tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
-                                if tot_logos_cnn > 0:
-                                    tot_geral_logos_cnn += 1
+                                tot_logos = self.image_sift.detect_logo(ifeat[0])
+                                if tot_logos > 0:
+                                    tot_geral_logos += 1
                                     self.logger.debug(":: found {0} logo(s)!".format(1))
                                 # ----- place recognition -----
-                                res_cnn = self.image_cnn.detect_place_cnn(image)
-                                tot_geral_pos_locations_cnn += res_cnn.count(1)
-                                tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
+                                res = self.image_sift.detect_place(ifeat[0])
+                                tot_geral_pos_locations += res.count(1)
+                                tot_geral_neg_locations += (res.count(0) * -1)
 
-                                if res_cnn.count(1) >= T:
-                                    tot_geral_locations_cnn += 1
+                                if res.count(1) >= T:
+                                    tot_geral_locations += 1
                                     self.logger.debug(":: found {0} place(s)!".format(1))
-                        except Exception as e:
-                            self.logger.error(e)
 
-                        param = []
-                        param.append(tot_faces)
-                        param.append(tot_logos)
-                        param.extend(res)
-                        param.append(tot_faces_cnn)
-                        param.append(tot_logos_cnn)
-                        param.extend(res_cnn)
-                        param.append(ifeat[1])
-                        cursor.execute(SQL_OBJECT_DETECTION_UPD, param)
+                                image = self.image_cnn.preprocess_image(ifeat[0])
+                                if image is not False:
+                                    # ----- face recognition -----
+                                    tot_faces_cnn = self.image_cnn.detect_faces(image)
+                                    if tot_faces_cnn > 0:
+                                        tot_geral_faces_cnn += 1
+                                        self.logger.debug(":: found {0} faces!".format(tot_faces))
+                                    # ----- logo recognition -----
+                                    tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
+                                    if tot_logos_cnn > 0:
+                                        tot_geral_logos_cnn += 1
+                                        self.logger.debug(":: found {0} logo(s)!".format(1))
+                                    # ----- place recognition -----
+                                    res_cnn = self.image_cnn.detect_place_cnn(image)
+                                    tot_geral_pos_locations_cnn += res_cnn.count(1)
+                                    tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
-                self.conn.commit()
+                                    if res_cnn.count(1) >= T:
+                                        tot_geral_locations_cnn += 1
+                                        self.logger.debug(":: found {0} place(s)!".format(1))
 
-                outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
-                maxs_cv = heapq.nlargest(2, outs)
-                dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
-                place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
+                                param = []
+                                param.append(tot_faces)
+                                param.append(tot_logos)
+                                param.extend(res)
+                                param.append(tot_faces_cnn)
+                                param.append(tot_logos_cnn)
+                                param.extend(res_cnn)
+                                param.append(ifeat[1])
+                                cursor.execute(SQL_OBJECT_DETECTION_UPD, param)
 
-                outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, tot_geral_faces_cnn]
-                maxs_cv_cnn = heapq.nlargest(2, outs_cnn)
-                dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
-                place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
+                        self.conn.commit()
 
-                horus_matrix[index][11] = limit_img
-                horus_matrix[index][12] = tot_geral_locations  # 1
-                horus_matrix[index][13] = tot_geral_logos  # 2
-                horus_matrix[index][14] = tot_geral_faces  # 3
-                horus_matrix[index][15] = dist_cv_indicator  # 4
-                horus_matrix[index][16] = place_cv_indicator  # 5
-                horus_matrix[index][17] = nr_results_img  # 5
+                        outs = [tot_geral_locations, tot_geral_logos, tot_geral_faces]
+                        maxs_cv = heapq.nlargest(2, outs)
+                        dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
+                        place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
 
-                horus_matrix[index][32] = tot_geral_locations_cnn  # 1
-                horus_matrix[index][33] = tot_geral_logos_cnn  # 2
-                horus_matrix[index][34] = tot_geral_faces_cnn  # 3
-                horus_matrix[index][35] = dist_cv_indicator_cnn  # 4
-                horus_matrix[index][36] = place_cv_indicator_cnn  # 5
+                        outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, tot_geral_faces_cnn]
+                        maxs_cv_cnn = heapq.nlargest(2, outs_cnn)
+                        dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
+                        place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
 
-                self.logger.debug(':: CV statistics:'
-                                   '[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
-                                    'CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s]' %
-                                   (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
-                                    str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator,
-                                    str(tot_geral_locations_cnn).zfill(2), str(tot_geral_logos_cnn).zfill(2),
-                                    str(tot_geral_faces_cnn).zfill(2), str(dist_cv_indicator_cnn).zfill(2), place_cv_indicator_cnn
-                                    ))
+                        horus_matrix[index][11] = limit_img
+                        horus_matrix[index][12] = tot_geral_locations  # 1
+                        horus_matrix[index][13] = tot_geral_logos  # 2
+                        horus_matrix[index][14] = tot_geral_faces  # 3
+                        horus_matrix[index][15] = dist_cv_indicator  # 4
+                        horus_matrix[index][16] = place_cv_indicator  # 5
+                        horus_matrix[index][17] = nr_results_img  # 5
 
-                if limit_img != 0:
-                    horus_matrix[index][18] = definitions.KLASSES[outs.index(max(outs)) + 1]
-                else:
-                    horus_matrix[index][18] = definitions.KLASSES[4]
+                        horus_matrix[index][32] = tot_geral_locations_cnn  # 1
+                        horus_matrix[index][33] = tot_geral_logos_cnn  # 2
+                        horus_matrix[index][34] = tot_geral_faces_cnn  # 3
+                        horus_matrix[index][35] = dist_cv_indicator_cnn  # 4
+                        horus_matrix[index][36] = place_cv_indicator_cnn  # 5
 
-                # -----------------------------------------------------------------
-                # text classification
-                # -----------------------------------------------------------------
-                y_bow, y_tm = [], []
-                with self.conn:
-                    cursor = self.conn.cursor()
-                    cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
-                    rows = cursor.fetchall()
+                        self.logger.debug(':: CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
+                                          'CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s]' %
+                                          (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
+                                           str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2),
+                                           place_cv_indicator,
+                                           str(tot_geral_locations_cnn).zfill(2), str(tot_geral_logos_cnn).zfill(2),
+                                           str(tot_geral_faces_cnn).zfill(2), str(dist_cv_indicator_cnn).zfill(2),
+                                           place_cv_indicator_cnn))
 
-                    nr_results_txt = len(rows)
-                    if nr_results_txt == 0:
-                        self.logger.debug(":: term has not returned web sites!")
-                    limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
-
-                    for itxt in range(limit_txt):
-                        if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                            merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                            ret_bow = [0,0,0,0,0]
-                            ret_tm = [0,0,0,0,0]
-                            if merged_en != '':
-                                ret_bow = self.text_bow.detect_text_klass(merged_en)
-                                ret_tm = self.text_tm.detect_text_klass(merged_en)
-
-                            y_bow.append(ret_bow)
-                            y_tm.append(ret_tm)
-
-                            cursor.execute(SQL_TEXT_CLASS_UPD % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
-                                                           ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
-                                                           rows[itxt][0]))
+                        if limit_img != 0:
+                            horus_matrix[index][18] = definitions.KLASSES[outs.index(max(outs)) + 1]
                         else:
-                            y_bow.append(rows[itxt][7:12])
-                            y_tm.append(rows[itxt][12:18])
+                            horus_matrix[index][18] = definitions.KLASSES[4]
 
-                    self.conn.commit()
+                        # -----------------------------------------------------------------
+                        # text classification
+                        # -----------------------------------------------------------------
+                        y_bow, y_tm = [], []
+                        cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
+                        rows = cursor.fetchall()
 
-                    yyb = numpy.array(y_bow)
-                    yytm = numpy.array(y_tm)
-                    gpb = [numpy.count_nonzero(yyb == 1), numpy.count_nonzero(yyb == 2), numpy.count_nonzero(yyb == 3)]
-                    horus_tx_ner = gpb.index(max(gpb)) + 1
+                        nr_results_txt = len(rows)
+                        if nr_results_txt == 0:
+                            self.logger.debug(":: term has not returned web sites!")
+                        limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
 
-                    horus_matrix[index][19] = limit_txt
-                    horus_matrix[index][20] = gpb[0]
-                    horus_matrix[index][21] = gpb[1]
-                    horus_matrix[index][22] = gpb[2]
-                    horus_matrix[index][23] = 0
+                        for itxt in range(limit_txt):
+                            try:
+                                if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
+                                    merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                                    ret_bow = [0,0,0,0,0]
+                                    ret_tm = [0,0,0,0,0]
+                                    if merged_en != '':
+                                        ret_bow = self.text_bow.detect_text_klass(merged_en)
+                                        ret_tm = self.text_tm.detect_text_klass(merged_en)
 
-                    horus_matrix[index][28] = numpy.sum(yytm, axis=0)[0]
-                    horus_matrix[index][29] = numpy.sum(yytm, axis=0)[1]
-                    horus_matrix[index][30] = numpy.sum(yytm, axis=0)[2]
+                                    y_bow.append(ret_bow)
+                                    y_tm.append(ret_tm)
 
-                    maxs_tx = heapq.nlargest(2, gpb)
-                    maxs_tm = heapq.nlargest(2, numpy.sum(yytm, axis=0))
-                    dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
-                    dist_tx_indicator_tm = max(maxs_tm) - min(maxs_tm)
+                                    cursor.execute(SQL_TEXT_CLASS_UPD % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
+                                                                   ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
+                                                                   rows[itxt][0]))
+                                else:
+                                    y_bow.append(rows[itxt][7:12])
+                                    y_tm.append(rows[itxt][12:18])
+                            except Exception as e:
+                                self.logger.error(str(e.message))
+                                pass
 
-                    horus_matrix[index][24] = dist_tx_indicator
-                    horus_matrix[index][25] = nr_results_txt
-                    horus_matrix[index][31] = dist_tx_indicator_tm
+                        self.conn.commit()
 
-                    self.logger.debug(':: TX statistics:'
-                                       '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | '
-                                         'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s]' %
-                                       (str(gpb[0]).zfill(2), str(gpb[1]).zfill(2), str(gpb[2]).zfill(2), str(dist_tx_indicator).zfill(2),
-                                        str(numpy.sum(yytm, axis=0)[0]).zfill(2), str(numpy.sum(yytm, axis=0)[1]).zfill(2), str(numpy.sum(yytm, axis=0)[2]).zfill(2), str(dist_tx_indicator_tm).zfill(2)))
-                    self.logger.debug('-------------------------------------------------------------')
+                        yyb = numpy.array(y_bow)
+                        yytm = numpy.array(y_tm)
 
-                    if limit_txt != 0:
-                        horus_matrix[index][26] = definitions.KLASSES[horus_tx_ner]
-                    else:
-                        horus_matrix[index][26] = definitions.KLASSES[4]
+                        gpb = [numpy.count_nonzero(yyb == 1), numpy.count_nonzero(yyb == 2), numpy.count_nonzero(yyb == 3)]
+                        horus_tx_ner = gpb.index(max(gpb)) + 1
+
+                        horus_matrix[index][19] = limit_txt
+                        horus_matrix[index][20] = gpb[0]
+                        horus_matrix[index][21] = gpb[1]
+                        horus_matrix[index][22] = gpb[2]
+                        horus_matrix[index][23] = 0
+
+                        horus_matrix[index][28] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[0]
+                        horus_matrix[index][29] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[1]
+                        horus_matrix[index][30] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[2]
+
+                        maxs_tx = heapq.nlargest(2, gpb)
+                        maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, numpy.sum(yytm, axis=0))
+                        dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
+                        dist_tx_indicator_tm = 0 if len(y_tm) == 0 else (max(maxs_tm) - min(maxs_tm))
+
+                        horus_matrix[index][24] = dist_tx_indicator
+                        horus_matrix[index][25] = nr_results_txt
+                        horus_matrix[index][31] = dist_tx_indicator_tm
+
+                        self.logger.debug(':: TX statistics:'
+                                           '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s]' %
+                                           (str(horus_matrix[index][20]).zfill(2), str(horus_matrix[index][21]).zfill(2),
+                                            str(horus_matrix[index][22]).zfill(2), str(dist_tx_indicator).zfill(2),
+                                            str(horus_matrix[index][28]).zfill(2), str(horus_matrix[index][29]).zfill(2),
+                                            str(horus_matrix[index][30]).zfill(2), str(dist_tx_indicator_tm).zfill(2)))
+                        self.logger.debug('-------------------------------------------------------------')
+
+                        if limit_txt != 0:
+                            horus_matrix[index][26] = definitions.KLASSES[horus_tx_ner]
+                        else:
+                            horus_matrix[index][26] = definitions.KLASSES[4]
+
+
+            except Exception as e:
+                self.logger.error(repr(e))
+                self.conn.rollback()
+                horus_matrix[index] = [0] * 52
 
         return horus_matrix
 
