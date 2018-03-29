@@ -24,3 +24,5 @@ build/
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
 "examples/~\\data.txt"
+
+/horus/temp/

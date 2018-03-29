@@ -51,9 +51,9 @@ class FeatureExtraction(object):
         Attributes:
             None
     """
-    def __init__(self):
+    def __init__(self, config, load_sift=True, load_tfidf=True, load_cnn=False, load_topic_modeling=False):
         self.horus_matrix = []
-        self.config = HorusConfig()
+        self.config = config
         self.logger = SysLogger().getLog()
         self.logger.info('------------------------------------------------------------------')
         self.logger.info('::                       HORUS ' + self.config.version + '                            ::')
@@ -62,14 +62,26 @@ class FeatureExtraction(object):
         self.util = Util(self.config)
         #self.tools = NLPTools()
         #self.translator = BingTranslator(self.config)
-        self.logger.info(':: loading CNN')
-        self.image_cnn = CNN(self.config)
-        self.logger.info(':: loading SIFT')
-        self.image_sift = SIFT(self.config)
-        self.logger.info(':: loading BoW')
-        self.text_bow = BowTfidf(self.config)
-        self.logger.info(':: loading TM')
-        self.text_tm = TopicModeling(self.config)
+        if load_cnn:
+            self.logger.info(':: loading CNN')
+            self.image_cnn = CNN(self.config)
+        else:
+            self.image_cnn = None
+        if load_sift:
+            self.logger.info(':: loading SIFT')
+            self.image_sift = SIFT(self.config)
+        else:
+            self.image_sift = None
+        if load_tfidf:
+            self.logger.info(':: loading BoW')
+            self.text_bow = BowTfidf(self.config)
+        else:
+            self.text_bow = None
+        if load_topic_modeling:
+            self.logger.info(':: loading TM')
+            self.text_tm = TopicModeling(self.config)
+        else:
+            self.text_tm = None
         self.logger.info(':: database connecting ...')
         self.conn = sqlite3.connect(self.config.database_db)
 
@@ -102,20 +114,22 @@ class FeatureExtraction(object):
         except:
             pass
 
-    def __export_data(self, file, subfolder, format):
+    def jsonDefault(object):
+        return object.__dict__
+
+    def __export_data(self, path, format):
         try:
-            temp = self.config.output_path + subfolder + file
-            self.logger.info(':: exporting metadata to: ' + temp + "." + format)
+            self.logger.info(':: exporting metadata to: ' + path + "." + format)
             if format == 'json':
-                with open(temp + '.json', 'wb') as outfile:
-                    json.dump(self.horus_matrix, outfile)
+                with open(path + '.json', 'wb') as outfile:
+                    json.dump(self.horus_matrix, outfile) #indent=4, sort_keys=True
             elif format == 'csv':
-                writer = csv.writer(open(temp + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
+                writer = csv.writer(open(path + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
                 writer.writerows(self.horus_matrix)
             elif format == 'tsv':
-                writer = csv.writer(open(temp + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
+                writer = csv.writer(open(path + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 writer.writerows(self.horus_matrix)
             else:
@@ -233,9 +247,6 @@ class FeatureExtraction(object):
                     term = horus_matrix[index][3]
                     self.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
 
-                    if auxi == 2708:
-                        a=1
-
                     id_term_img = horus_matrix[index][10]
                     id_term_txt = horus_matrix[index][9]
                     id_ner_type = 0
@@ -297,45 +308,47 @@ class FeatureExtraction(object):
                                 tot_logos_cnn = 0
                                 res_cnn = [0] * 10
 
-                                # ----- face recognition -----
-                                tot_faces = self.image_sift.detect_faces(ifeat[0])
-                                if tot_faces > 0:
-                                    tot_geral_faces += 1
-                                    self.logger.debug(":: found {0} faces!".format(tot_faces))
-                                # ----- logo recognition -----
-                                tot_logos = self.image_sift.detect_logo(ifeat[0])
-                                if tot_logos > 0:
-                                    tot_geral_logos += 1
-                                    self.logger.debug(":: found {0} logo(s)!".format(1))
-                                # ----- place recognition -----
-                                res = self.image_sift.detect_place(ifeat[0])
-                                tot_geral_pos_locations += res.count(1)
-                                tot_geral_neg_locations += (res.count(0) * -1)
+                                if self.image_sift is not None:
+                                    # ----- face recognition -----
+                                    tot_faces = self.image_sift.detect_faces(ifeat[0])
+                                    if tot_faces > 0:
+                                        tot_geral_faces += 1
+                                        self.logger.debug(":: found {0} faces!".format(tot_faces))
+                                    # ----- logo recognition -----
+                                    tot_logos = self.image_sift.detect_logo(ifeat[0])
+                                    if tot_logos > 0:
+                                        tot_geral_logos += 1
+                                        self.logger.debug(":: found {0} logo(s)!".format(1))
+                                    # ----- place recognition -----
+                                    res = self.image_sift.detect_place(ifeat[0])
+                                    tot_geral_pos_locations += res.count(1)
+                                    tot_geral_neg_locations += (res.count(0) * -1)
 
                                 if res.count(1) >= T:
                                     tot_geral_locations += 1
                                     self.logger.debug(":: found {0} place(s)!".format(1))
 
-                                image = self.image_cnn.preprocess_image(ifeat[0])
-                                if image is not False:
-                                    # ----- face recognition -----
-                                    tot_faces_cnn = self.image_cnn.detect_faces(image)
-                                    if tot_faces_cnn > 0:
-                                        tot_geral_faces_cnn += 1
-                                        self.logger.debug(":: found {0} faces!".format(tot_faces))
-                                    # ----- logo recognition -----
-                                    tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
-                                    if tot_logos_cnn > 0:
-                                        tot_geral_logos_cnn += 1
-                                        self.logger.debug(":: found {0} logo(s)!".format(1))
-                                    # ----- place recognition -----
-                                    res_cnn = self.image_cnn.detect_place_cnn(image)
-                                    tot_geral_pos_locations_cnn += res_cnn.count(1)
-                                    tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
+                                if self.image_cnn is not None:
+                                    image = self.image_cnn.preprocess_image(ifeat[0])
+                                    if image is not False:
+                                        # ----- face recognition -----
+                                        tot_faces_cnn = self.image_cnn.detect_faces(image)
+                                        if tot_faces_cnn > 0:
+                                            tot_geral_faces_cnn += 1
+                                            self.logger.debug(":: found {0} faces!".format(tot_faces))
+                                        # ----- logo recognition -----
+                                        tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
+                                        if tot_logos_cnn > 0:
+                                            tot_geral_logos_cnn += 1
+                                            self.logger.debug(":: found {0} logo(s)!".format(1))
+                                        # ----- place recognition -----
+                                        res_cnn = self.image_cnn.detect_place_cnn(image)
+                                        tot_geral_pos_locations_cnn += res_cnn.count(1)
+                                        tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
-                                    if res_cnn.count(1) >= T:
-                                        tot_geral_locations_cnn += 1
-                                        self.logger.debug(":: found {0} place(s)!".format(1))
+                                        if res_cnn.count(1) >= T:
+                                            tot_geral_locations_cnn += 1
+                                            self.logger.debug(":: found {0} place(s)!".format(1))
 
                                 param = []
                                 param.append(tot_faces)
@@ -406,8 +419,10 @@ class FeatureExtraction(object):
                                     ret_bow = [0,0,0,0,0]
                                     ret_tm = [0,0,0,0,0]
                                     if merged_en != '':
-                                        ret_bow = self.text_bow.detect_text_klass(merged_en)
-                                        ret_tm = self.text_tm.detect_text_klass(merged_en)
+                                        if self.text_bow is not None:
+                                            ret_bow = self.text_bow.detect_text_klass(merged_en)
+                                        if self.text_tm is not None:
+                                            ret_tm = self.text_tm.detect_text_klass(merged_en)
 
                                     y_bow.append(ret_bow)
                                     y_tm.append(ret_tm)
@@ -470,7 +485,36 @@ class FeatureExtraction(object):
 
         return horus_matrix
 
-    def extract_features(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
+
+    def extract_features_text(self, text):
+        """
+        extracts the HORUS features for a given input text
+        :param text: the input text
+        :return: the features
+        """
+        try:
+            if text is None:
+                raise Exception("Provide an input text")
+            self.logger.info(':: text: ' + text)
+            self.logger.info(':: tokenizing sentences ...')
+            sent_tokenize_list = nltk.sent_tokenize(text, language='english')
+            self.logger.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
+            sentences = []
+            for sentence in sent_tokenize_list:
+                sentences.append(self.util.process_and_save_sentence(-1, sentence))
+
+            self.horus_matrix = self.util.sentence_to_horus_matrix(sentences)
+            self.util.download_and_cache_results(self.horus_matrix)
+            self.detect_objects(self.horus_matrix)
+            self.__export_data('outfeatures.horus', 'json')
+
+            return self.horus_matrix
+
+        except Exception as error:
+            self.logger.error('extract_features() error: ' + repr(error))
+
+
+    def extract_features_conll(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
         """
         generates the feature_extraction data for HORUS
         do not use the config file to choose the models, exports all features (self.detect_objects())
@@ -490,8 +534,10 @@ class FeatureExtraction(object):
             if len(self.horus_matrix) > 0:
                 self.util.download_and_cache_results(self.horus_matrix)
                 self.detect_objects(self.horus_matrix)
-                outfilename = self.util.path_leaf(file) + ".horus"
-                self.__export_data(outfilename, out_subfolder, 'tsv')
+                filename = self.util.path_leaf(file) + ".horus"
+
+                path = self.config.output_path + out_subfolder + filename
+                self.__export_data(path, 'tsv')
             else:
                 self.logger.warn(':: well, nothing to do today...')
 
@@ -505,5 +551,25 @@ if __name__ == "__main__":
     if len(sys.argv) not in (1,2,3,4):
         print "please inform: 1: data set and 2: column indexes ([1, .., n])"
     else:
-        #args[0], args[1], args[2], args[3]
-        FeatureExtraction().extract_features()
+        config = HorusConfig()
+        # args[0], args[1], args[2], args[3]
+        tot_args = 1 #len(sys.argv)
+        data = 'coNLL2003/coNLL2003.eng.testb'  # args[0]
+        data = 'paris hilton was once the toast of the town' #args[0]
+
+        if tot_args == 1:
+            extractor = FeatureExtraction(config, True, True, False, False)
+            out = extractor.extract_features_text(data)
+            outjson = json.dumps(out)
+            print(out)
+            print(outjson)
+        else:
+            exp_folder = 'EXP_002/' #
+            extractor = FeatureExtraction(config, True, True, True, True)
+            # extractor.extract_features('Ritter/ner.txt', exp_folder, 'ritter')
+            # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
+            # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
+            # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
+            ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
+            # extractor.extract_features('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
+            extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)

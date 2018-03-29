@@ -10,14 +10,11 @@ import logging
 import ntpath
 import re
 import nltk
-from horus.core.config import HorusConfig
-from horus.core.util import definitions
-from nltk.tokenize import sent_tokenize
+
 
 from horus.core.util.definitions_sql import SQL_SENTENCE_SAVE
 from horus.core.util.nlp_tools import NLPTools
 from horus.core.util.sqlite_helper import SQLiteHelper, HorusDB
-from horus.core.config import HorusConfig
 from horus.core.search_engines import query_bing, query_flickr, query_wikipedia
 from horus.core.util import definitions
 from horus.core.util.nlp_tools import NLPTools
@@ -854,27 +851,34 @@ class Util(object):
             # exit(0)
 
             with open(dspath) as f:
+                docstart = False
                 for line in f:
                     if line.strip() != '':
                         if separator == '': separator = None
                         token = line.split(separator)[token_index]
                         ner = line.split(separator)[ner_index].replace('\r', '').replace('\n', '')
                     if line.strip() == '':
-                        if len(tokens) != 0:
-                            self.logger.debug(':: processing sentence %s' % str(tot_sentences))
-                            sentences.append(
-                                self.process_and_save_sentence(has3NER, s, dataset_name, tokens, tags_ner_y))
-                            tokens = []
-                            tags_ner_y = []
-                            s = ''
-                            has3NER = -1
-                            tot_sentences += 1
+                        if docstart is False:
+                            if len(tokens) != 0:
+                                self.logger.debug(':: processing sentence %s' % str(tot_sentences))
+                                sentences.append(
+                                    self.process_and_save_sentence(has3NER, s, dataset_name, tokens, tags_ner_y))
+                                tokens = []
+                                tags_ner_y = []
+                                s = ''
+                                has3NER = -1
+                                tot_sentences += 1
+                        else:
+                            docstart = False
                     else:
-                        s += token + ' '
-                        tokens.append(token)
-                        tags_ner_y.append(ner)
-                        if ner in definitions.NER_RITTER:
-                            has3NER = 1
+                        if token != '-DOCSTART-':
+                            s += token + ' '
+                            tokens.append(token)
+                            tags_ner_y.append(ner)
+                            if ner in definitions.NER_RITTER:
+                                has3NER = 1
+                        else:
+                            docstart = True
 
             self.logger.info(':: %s sentences processed successfully' % str(len(sentences)))
             return sentences

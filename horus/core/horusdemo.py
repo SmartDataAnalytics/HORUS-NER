@@ -25,24 +25,25 @@ import logging
 
 import re
 
-from horus.core.config import HorusConfig
-from horus.core.feature_extraction.main import FeatureExtraction
-from horus.core.feature_extraction.util import Util
-from horus.core.util import definitions
-from horus.core.util.systemlog import SystemLog
+from horusner.components.systemlog import SystemLog
 from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 
+from horus.core.config import HorusConfig
+from horus.core.feature_extraction.features import FeatureExtraction
+from horus.core.feature_extraction.util import Util
+from horus.core.util import definitions
 
-class Horus(object):
+
+class HorusDemo(object):
 
     def __init__(self):
         self.logging = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
-        self.util = Util()
+        self.util = Util(self.config)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)
-        self.features = FeatureExtraction()
+        self.features = FeatureExtraction(self.config)
 
     def run_final_classifier(self):
         self.logging.log.info(':: running final classifier...')
@@ -84,16 +85,7 @@ class Horus(object):
         except Exception as error:
             raise error
 
-    def __process_input_text(self, text):
-        self.logging.log.info(':: text: ' + text)
-        self.logging.log.info(':: tokenizing sentences ...')
-        sent_tokenize_list = sent_tokenize(text)
-        self.logging.log.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
-        sentences = []
-        for sentence in sent_tokenize_list:
-            sentences.append(self.util.process_and_save_sentence(-1, sentence))
 
-        return sentences
 
     def update_rules_cv_predictions(self):
         '''
@@ -136,6 +128,8 @@ class Horus(object):
                         for k in range(i_c_size[z]):
                             self.horus_matrix[i + k][39] = i_y[z]  # KLASS_4
 
+
+
     def annotate_text(self, text):
         """
         annotates an input text with HORUS
@@ -146,7 +140,7 @@ class Horus(object):
             print self.version_label
             if text is not None:
                 self.logging.log.info(':: annotating text: %s' % text)
-                sent_tokenize_list = self.util.process_input_text(text.strip('"\''))
+                sent_tokenize_list = self.__process_input_text(text.strip('"\''))
                 self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
             else:
                 raise Exception("err: missing text to be annotated")
@@ -164,4 +158,4 @@ class Horus(object):
 
 if __name__ == '__main__':
     #args[0], args[1], args[2], args[3]
-    Horus().annotate_text('diego')
+    HorusDemo().annotate_text('diego')

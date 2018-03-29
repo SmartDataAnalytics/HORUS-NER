@@ -58,6 +58,6 @@ def bing_detect_language(text, key):
 if __name__ == "__main__":
     config = HorusConfig()
     for i in range(100):
-        print(bing_detect_language('fala viado', config.translation_secret) + ' - ' + str(i))
-        print(bing_translate_text('Olá super gay! como voce esta? Hup &%5', 'asdasdas', config.translation_secret) + ' - ' + str(i))
+        print(bing_detect_language('ola tomas tudo bem?', config.translation_secret) + ' - ' + str(i))
+        print(bing_translate_text('sim sim por aqui tudo bem e com voce? Hup &%5', 'asdasdas', config.translation_secret) + ' - ' + str(i))
         time.sleep(3)
