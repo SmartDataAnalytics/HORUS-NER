@@ -25,7 +25,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 #b = np.zeros((N,N+1))
 #b[:,:-1] = a
 
-from config import HorusConfig
+from src.config import HorusConfig
 config = HorusConfig()
 
 #CONST_WIKI_PER_FILE = config.dir_datasets + '/Wikipedia/wiki_PER2.csv'

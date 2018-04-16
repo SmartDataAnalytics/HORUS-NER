@@ -19,7 +19,7 @@ from sklearn.metrics import f1_score
 from sklearn.naive_bayes import GaussianNB
 
 from src.core.util import definitions
-from config import HorusConfig
+from src.config import HorusConfig
 
 config = HorusConfig()
 #file1reader = csv.reader(open(config.dir_output + "experiments/ritter/EXP_000/out_exp000_1.csv"), delimiter=",")

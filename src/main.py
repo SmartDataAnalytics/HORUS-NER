@@ -10,28 +10,28 @@ designed for short-text, i.e., microblogs and other noisy
 datasets existing on the web, e.g.: social media, some web-
 sites, blogs and etc..
 
-It is a simplistic approach based on multi-level machine
-learning combined with computer vision techniques.
+It is a multi-level machine learning framework
+which combines computer vision and text mining
+techniques to boost NLP tasks.
 
-more info at: https://github.com/dnes85/components-models
+more info at: http://horus-ner.org/
 
 """
 
 # Author: Esteves <diegoesteves@gmail.com>
-# Version: 1.0
-# Version Label: HORUS_NER_2016_1.0
-# License: BSD 3 clause
+# License: Apache License
 from optparse import OptionParser
 
+from src.config import HorusConfig
+from src.core.feature_extraction.features import FeatureExtraction
 
 
 def main():
 
-    op = OptionParser(usage='usage: %prog [options] arguments (example: main.py --input_text="diego esteves was born in'
-                            ' rio de janeiro" --ds_format=0 --output_file="out" --output_format="csv"')
+    op = OptionParser(usage='usage: %prog [options] arguments (example: main.py --text="paris hilton was once the toast of the town."')
 
-    op.add_option("--input_text", dest="input_text", help="The text to be annotated")
-    op.add_option("--input_file", dest="input_file", help="The file to be annotated")
+    op.add_option("--text", dest="text", help="The text to be annotated")
+    op.add_option("--file", dest="file", help="The file to be annotated")
     op.add_option("--ds_format", dest="ds_format", default=0, help="The format to be annotated [0 = input text (default), 1 = Ritter, 2 = CoNNL]")
     op.add_option("--output_file", dest="output_file", default="horus_out", help="The output file")
     op.add_option("--output_format", dest="output_format", default="json", help="The output file type")
@@ -40,12 +40,13 @@ def main():
     print(__doc__)
     op.print_help()
 
-    if not opts.input_text and not opts.input_file:
-        op.error('inform either an [input_text] or [input_file] as parameter!')
+    if not opts.text and not opts.file:
+        op.error('inform either an [text] or [file] as parameter!')
 
-    horus = Core()
-    ret = horus.export_features(opts.input_text, opts.input_file, opts.ds_format, opts.output_file, opts.output_format)
-    print ret
+    config = HorusConfig()
+    extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=1)
+    print(extractor.extract_features_text(opts.text))
+
 
 if __name__ == '__main__':
     main()

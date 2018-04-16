@@ -20,7 +20,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from time import time
 
-from config import HorusConfig
+from src.config import HorusConfig
 
 config = HorusConfig()
 

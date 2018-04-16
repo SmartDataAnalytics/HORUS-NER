@@ -18,7 +18,7 @@ from sklearn.cross_validation import train_test_split
 #http://miriamposner.com/blog/very-basic-strategies-for-interpreting-results-from-the-topic-modeling-tool/
 #https://www.analyticsvidhya.com/blog/2016/08/beginners-guide-to-topic-modeling-in-python/
 #https://radimrehurek.com/gensim/wiki.html
-from config import HorusConfig
+from src.config import HorusConfig
 
 config = HorusConfig()
 

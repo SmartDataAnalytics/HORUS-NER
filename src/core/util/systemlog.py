@@ -15,7 +15,7 @@
 import datetime
 import logging
 
-from config import HorusConfig
+from src.config import HorusConfig
 
 
 class SysLogger:

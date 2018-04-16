@@ -10,7 +10,7 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
 from src.core.util import definitions
-from config import HorusConfig
+from src.config import HorusConfig
 
 config = HorusConfig()
 #file1reader = csv.reader(open(config.dir_output + "experiments/ritter/EXP_000/out_exp000_1_NLTK.csv"), delimiter=",")

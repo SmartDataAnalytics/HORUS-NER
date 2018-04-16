@@ -547,26 +547,25 @@ if __name__ == "__main__":
     if len(sys.argv) not in (1,2,3,4):
         print "please inform: 1: data set and 2: column indexes ([1, .., n])"
     else:
-        print('here we go!')
         config = HorusConfig()
         # args[0], args[1], args[2], args[3]
-        tot_args = 1 #len(sys.argv)
+        tot_args = 2 #len(sys.argv)
         data = 'coNLL2003/coNLL2003.eng.testb'  # args[0]
         data = 'paris hilton was once the toast of the town' #args[0]
 
         if tot_args == 1:
-            extractor = FeatureExtraction(config, True, True, False, False)
+            extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=1)
             out = extractor.extract_features_text(data)
             #outjson = json.dumps(out)
             print(out)
             #print(outjson)
         else:
             exp_folder = 'EXP_002/' #
-            extractor = FeatureExtraction(config, True, True, True, True)
-            # extractor.extract_features('Ritter/ner.txt', exp_folder, 'ritter')
+            extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=0)
+            extractor.extract_features_conll('Ritter/ner.txt', exp_folder, label='ritter')
             # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
             # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
             # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
             ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
             # extractor.extract_features('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
-            extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)
+            #extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)

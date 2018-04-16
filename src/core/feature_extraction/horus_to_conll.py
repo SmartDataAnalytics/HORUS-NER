@@ -6,7 +6,7 @@ from src.core.util import definitions
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
 
-from config import HorusConfig
+from src.config import HorusConfig
 
 lancaster_stemmer = LancasterStemmer()
 stop = set(stopwords.words('english'))

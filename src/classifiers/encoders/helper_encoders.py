@@ -2,7 +2,7 @@ import numpy
 from sklearn import preprocessing
 from sklearn.externals import joblib
 
-from config import HorusConfig
+from src.config import HorusConfig
 from src.core.util.nlp_tools import NLPTools
 
 

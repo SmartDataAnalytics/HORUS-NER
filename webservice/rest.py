@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-import json
 import urllib2
 
-import flask
-import web
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, request, jsonify
 import os
 
 #urls = (
@@ -13,7 +10,7 @@ import os
 
 #app = web.application(urls, globals())
 
-from config import HorusConfig
+from src.config import HorusConfig
 from src.core.feature_extraction.features import FeatureExtraction
 
 global config

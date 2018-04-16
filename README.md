@@ -24,17 +24,16 @@ python main.py --input_text="whitney houston has been honored in nyc" --ds_forma
 python main.py --input_file="sentences.txt" --ds_format=0
 
 python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
-```
 
 1. to process an input file (e.g., conll) and generate the horus feature file format
-- examples/process_input_file.py
+    - examples/process_input_file.py
 
 2. to convert a horus input file format to conll
-- horus/core/data_conversion.py
+    - horus/core/data_conversion.py
 
 3. to run some benchmarks
-- experiments/benchmarking.py
-
+    - experiments/benchmarking.py
+```
 #### REST
 ```python
 export FLASK_APP=rest.py
@@ -42,6 +41,17 @@ user$ flask run
 
 browser:
 http://localhost:5000/annotate?text=paris hilton
+```
+
+#### pip
+```python
+pip install horus
+
+import horus
+config = HorusConfig()
+sentence = "paris hilton was once the toast of the town"
+extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=1)
+print(extractor.extract_features_text(sentence))
 ```
 ## Version
 - 0.1.0 initial version

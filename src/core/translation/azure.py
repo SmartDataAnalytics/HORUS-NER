@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 #adapter = requests.adapters.HTTPAdapter(max_retries = 20)
 #sess.mount('http://', adapter)
 
-from config import HorusConfig
+from src.config import HorusConfig
 import time
 
 detect_url = "https://api.microsofttranslator.com/V2/Http.svc/Detect"

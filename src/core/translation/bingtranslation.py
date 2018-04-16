@@ -4,7 +4,7 @@ from xml.etree import ElementTree
 
 import re
 import requests
-from config import HorusConfig
+from src.config import HorusConfig
 from src.core.translation.auth import AzureAuthClient
 
 

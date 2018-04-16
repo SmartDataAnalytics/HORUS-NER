@@ -3,7 +3,7 @@ from nltk.tag import StanfordPOSTagger
 from nltk.tag.stanford import StanfordNERTagger
 
 from src.core.util import definitions, CMUTweetTagger
-from config import HorusConfig
+from src.config import HorusConfig
 #from src.resources.models.tweetnlp import CMUTweetTagger
 
 

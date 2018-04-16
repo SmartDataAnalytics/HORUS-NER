@@ -12,7 +12,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn_crfsuite import metrics
 
 plt.style.use('ggplot')
-from config import HorusConfig
+from src.config import HorusConfig
 from src.core.util import definitions
 from sklearn.externals import joblib
 import scipy.stats
