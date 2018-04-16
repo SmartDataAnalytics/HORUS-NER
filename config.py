@@ -20,11 +20,14 @@ class HorusConfig(object):
             try:
                 self.version = "0.2.0"
                 self.version_label = "HORUS 0.2.0"
+                self.description = "A framework to boost NLP tasks"
                 with open(os.path.join(ini_file, "horus.ini")) as source:
 
                     #config.readfp(source)
                     parser = SafeConfigParser()
                     parser.read(source.name)
+
+                    print(parser.get('conf', 'code'))
 
 
                     self.root_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -134,6 +137,11 @@ class HorusConfig(object):
                     self.object_detection_type = int(parser.get('models-param', 'object_detection_type'))
                     self.text_classification_type = int(parser.get('models-param', 'text_classification_type'))
                     self.embeddings_path = parser.get('models-param', 'embeddings_path')
+
+                    self.mod_text_tfidf_active = int(parser.get('rest-interface', 'mod_text_tfidf_active'))
+                    self.mod_text_topic_active = int(parser.get('rest-interface', 'mod_text_topic_active'))
+                    self.mod_image_sift_active = int(parser.get('rest-interface', 'mod_image_sift_active'))
+                    self.mod_image_cnn_active = int(parser.get('rest-interface', 'mod_image_cnn_active'))
 
                     fine = True
 

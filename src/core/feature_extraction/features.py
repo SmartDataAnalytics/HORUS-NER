@@ -47,7 +47,7 @@ class FeatureExtraction(object):
         Attributes:
             None
     """
-    def __init__(self, config, load_sift=True, load_tfidf=True, load_cnn=False, load_topic_modeling=False):
+    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=0):
         self.horus_matrix = []
         self.config = config
         self.logger = SysLogger().getLog()
@@ -58,22 +58,22 @@ class FeatureExtraction(object):
         self.util = Util(self.config)
         #self.tools = NLPTools()
         #self.translator = BingTranslator(self.config)
-        if load_cnn:
+        if load_cnn==1:
             self.logger.info(':: loading CNN')
             self.image_cnn = CNN(self.config)
         else:
             self.image_cnn = None
-        if load_sift:
+        if load_sift==1:
             self.logger.info(':: loading SIFT')
             self.image_sift = SIFT(self.config)
         else:
             self.image_sift = None
-        if load_tfidf:
+        if load_tfidf==1:
             self.logger.info(':: loading BoW')
             self.text_bow = BowTfidf(self.config)
         else:
             self.text_bow = None
-        if load_topic_modeling:
+        if load_topic_modeling==1:
             self.logger.info(':: loading TM')
             self.text_tm = TopicModeling(self.config)
         else:

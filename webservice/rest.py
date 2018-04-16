@@ -20,18 +20,32 @@ global config
 global extractor
 
 config = HorusConfig()
-extractor = FeatureExtraction(config, True, True, False, False)
+extractor = FeatureExtraction(config, config.mod_image_sift_active, config.mod_text_tfidf_active,
+                              config.mod_image_cnn_active, config.mod_text_topic_active)
+
+print(config.mod_image_sift_active, config.mod_text_tfidf_active,
+                              config.mod_image_cnn_active, config.mod_text_topic_active)
 
 app = Flask(__name__)
 
 #with app.app_context():
 #    # within this block, current_app points to app.
 
+#TODO: implement conll processing - eg.: http://www.patricksoftwareblog.com/receiving-files-with-a-flask-rest-api/
 
 @app.route('/')
 @app.route('/index')
 def index():
-    return "HORUS framework"
+    global config
+    _html = "<b>HORUS Framework</b><br>"
+    _html += config.description + "<br>"
+    _html += "version " + config.version + "<br>"
+    _html += "SIFT=" + str(config.mod_image_sift_active) + ", TF-IDF=" + str(config.mod_text_tfidf_active) + \
+             ", CNN=" + str(config.mod_image_cnn_active) + ", TopicModeling=" + str(config.mod_text_topic_active) + "<br>"
+    _html += "<br>SDA Research<br>"
+    _html += "more info: <a href='http://horus-ner.org/'>horus-ner.org</a>"
+
+    return _html
 
 @app.route('/annotate', methods=['GET'])
 def annotate():

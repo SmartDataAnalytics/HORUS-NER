@@ -35,8 +35,21 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
 3. to run some benchmarks
 - experiments/benchmarking.py
 
+#### REST
+```python
+export FLASK_APP=rest.py
+user$ flask run
+
+browser:
+http://localhost:5000/annotate?text=paris hilton
+```
 ## Version
 - 0.1.0 initial version
 - 0.1.1 adding text classification
 - 0.1.2 adding map detection
-- 0.1.5 paper version
+- 0.1.5
+    - text-classification enhancements
+    - bug-fix
+- 0.2.0
+    - web service
+    - topic modeling
