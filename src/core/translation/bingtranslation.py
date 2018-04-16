@@ -1,12 +1,10 @@
 # -*- coding: utf8 -*-
-import urllib
-from urlparse import urlparse
 
 from xml.etree import ElementTree
 
 import re
 import requests
-from src.core.config import HorusConfig
+from config import HorusConfig
 from src.core.translation.auth import AzureAuthClient
 
 

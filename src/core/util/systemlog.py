@@ -1,5 +1,3 @@
-import logging
-
 #class SystemLog:
 #    def __init__(self, file, level1, level2):
 #        logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -14,12 +12,10 @@ import logging
 #        rootLogger.setLevel(level2)
 #        self.log = logging
 
-import os
-import time
 import datetime
 import logging
 
-from src.core.config import HorusConfig
+from config import HorusConfig
 
 
 class SysLogger:
@@ -29,9 +25,7 @@ class SysLogger:
         if len(self.logger.handlers) == 0:
             self.logger.setLevel(logging.DEBUG)
             now = datetime.datetime.now()
-            handler = logging.FileHandler(self.conf.root_dir + 'log/horus_'
-                                          + now.strftime("%Y-%m-%d")
-                                          + '.log')
+            handler = logging.FileHandler(self.conf.dir_log + 'horus_' + now.strftime("%Y-%m-%d") + '.log')
             formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)

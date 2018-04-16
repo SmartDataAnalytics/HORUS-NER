@@ -1,0 +1,737 @@
+/Users/diegoesteves/anaconda3/envs/horus_27_cv310/bin/python /Applications/PyCharm.app/Contents/helpers/pydev/pydevd.py --multiproc --qt-support=auto --client 127.0.0.1 --port 57203 --file /Users/diegoesteves/Github/named-entity-recognition/horus-ner/experiments/algorithms/benchmarking.py
+pydev debugger: process 10550 is connecting
+
+Connected to pydev debugger (build 172.4343.24)
+Backend MacOSX is interactive backend. Turning interactive mode on.
+Using TensorFlow backend.
+shaping datasets...
+/Users/diegoesteves/Github/named-entity-recognition/horus-ner/output/experiments/EXP_do_tokenization/out_exp003_ritter_en_tweetNLP.csv
+total of sentences 2392
+total of tokens 47259
+/Users/diegoesteves/Github/named-entity-recognition/horus-ner/output/experiments/EXP_do_tokenization/out_exp003_wnut15_en_tweetNLP.csv
+total of sentences 998
+total of tokens 16423
+/Users/diegoesteves/Github/named-entity-recognition/horus-ner/output/experiments/EXP_do_tokenization/out_exp003_wnut16_en_tweetNLP.csv
+total of sentences 3848
+total of tokens 62343
+/Users/diegoesteves/Github/named-entity-recognition/horus-ner/output/experiments/EXP_do_tokenization/out_exp003_coNLL2003testA_en_NLTK.csv
+total of sentences 3245
+total of tokens 51593
+HORUS?  False
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.688     0.455     0.547       121
+        LOC      0.778     0.368     0.500        57
+        ORG      0.938     0.341     0.500        44
+
+avg / total      0.760     0.410     0.526       222
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.859     0.471     0.608       155
+        LOC      0.727     0.414     0.527        58
+        ORG      0.875     0.412     0.560        34
+
+avg / total      0.830     0.449     0.583       247
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.761     0.446     0.562       121
+        LOC      0.720     0.295     0.419        61
+        ORG      1.000     0.462     0.632        39
+
+avg / total      0.792     0.407     0.535       221
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.716     0.500     0.589       126
+        LOC      0.679     0.224     0.336        85
+        ORG      0.600     0.375     0.462        40
+
+avg / total      0.685     0.386     0.483       251
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.678     0.440     0.534       134
+        LOC      0.587     0.474     0.524        57
+        ORG      0.929     0.250     0.394        52
+
+avg / total      0.710     0.407     0.502       243
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.492     0.459     0.475       270
+        LOC      0.641     0.259     0.369       158
+        ORG      0.444     0.163     0.239        49
+
+avg / total      0.536     0.363     0.416       477
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.414     0.529     0.464       789
+        LOC      0.753     0.382     0.507      1110
+        ORG      0.377     0.102     0.160       906
+
+avg / total      0.536     0.333     0.383      2805
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.646     0.538     0.587      3160
+        LOC      0.688     0.250     0.367      2112
+        ORG      0.474     0.017     0.033      2097
+
+avg / total      0.609     0.307     0.366      7369
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.725     0.174     0.280       668
+        LOC      0.831     0.149     0.253       328
+        ORG      0.957     0.215     0.351       205
+
+avg / total      0.793     0.174     0.285      1201
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.429     0.245     0.312        49
+        LOC      0.667     0.105     0.182        19
+        ORG      1.000     0.188     0.316        16
+
+avg / total      0.591     0.202     0.283        84
+
+--CRF
+             precision    recall  f1-score   support
+/Users/diegoesteves/anaconda3/envs/horus_27_cv310/lib/python2.7/site-packages/sklearn/metrics/classification.py:1074: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples.
+
+  'precision', 'predicted', average, warn_for)
+        PER      1.000     0.136     0.240        66
+        LOC      0.615     0.222     0.327        36
+        ORG      0.000     0.000     0.000        13
+
+avg / total      0.767     0.148     0.240       115
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.533     0.186     0.276        43
+        LOC      0.286     0.143     0.190        14
+        ORG      1.000     0.062     0.118        16
+
+avg / total      0.588     0.151     0.225        73
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.895     0.250     0.391        68
+        LOC      0.667     0.143     0.235        28
+        ORG      1.000     0.167     0.286         6
+
+avg / total      0.838     0.216     0.342       102
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.600     0.231     0.333        65
+        LOC      0.500     0.241     0.326        29
+        ORG      1.000     0.083     0.154        12
+
+avg / total      0.618     0.217     0.311       106
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.506     0.265     0.348       789
+        LOC      0.647     0.167     0.265      1110
+        ORG      0.745     0.113     0.196       906
+
+avg / total      0.639     0.177     0.266      2805
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.724     0.296     0.420      3160
+        LOC      0.733     0.151     0.250      2112
+        ORG      0.417     0.002     0.005      2097
+
+avg / total      0.639     0.171     0.253      7369
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.861     0.204     0.329       668
+        LOC      0.755     0.329     0.459       328
+        ORG      0.833     0.268     0.406       205
+
+avg / total      0.827     0.249     0.378      1201
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.821     0.289     0.427       270
+        LOC      0.662     0.285     0.398       158
+        ORG      0.800     0.082     0.148        49
+
+avg / total      0.766     0.266     0.389       477
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.878     0.291     0.437       148
+        LOC      0.811     0.541     0.649       222
+        ORG      0.866     0.442     0.585       190
+
+avg / total      0.847     0.441     0.571       560
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.632     0.308     0.414       156
+        LOC      0.880     0.573     0.694       218
+        ORG      0.789     0.449     0.572       216
+
+avg / total      0.781     0.458     0.576       590
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.462     0.122     0.193       148
+        LOC      0.848     0.572     0.683       264
+        ORG      0.911     0.362     0.518       199
+
+avg / total      0.775     0.394     0.511       611
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.672     0.283     0.398       145
+        LOC      0.818     0.611     0.699       221
+        ORG      0.897     0.624     0.736       181
+
+avg / total      0.805     0.528     0.632       547
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.818     0.269     0.405       167
+        LOC      0.788     0.533     0.636       195
+        ORG      0.884     0.500     0.639       214
+
+avg / total      0.832     0.444     0.570       576
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.719     0.186     0.295      3160
+        LOC      0.803     0.331     0.469      2112
+        ORG      0.847     0.024     0.046      2097
+
+avg / total      0.780     0.181     0.274      7369
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.381     0.548     0.449       668
+        LOC      0.463     0.338     0.391       328
+        ORG      0.031     0.078     0.045       205
+
+avg / total      0.344     0.410     0.364      1201
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.304     0.559     0.394       270
+        LOC      0.348     0.361     0.354       158
+        ORG      0.032     0.204     0.055        49
+
+avg / total      0.290     0.457     0.346       477
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.217     0.565     0.314       789
+        LOC      0.467     0.414     0.439      1110
+        ORG      0.101     0.141     0.118       906
+
+avg / total      0.278     0.369     0.300      2805
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.917     0.913     0.915       664
+        LOC      0.925     0.897     0.911       439
+        ORG      0.865     0.804     0.834       408
+
+avg / total      0.905     0.879     0.892      1511
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.891     0.928     0.909       657
+        LOC      0.925     0.863     0.893       454
+        ORG      0.859     0.803     0.830       396
+
+avg / total      0.893     0.876     0.884      1507
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.895     0.941     0.918       615
+        LOC      0.927     0.917     0.922       385
+        ORG      0.925     0.792     0.853       403
+
+avg / total      0.912     0.892     0.900      1403
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.895     0.944     0.919       738
+        LOC      0.905     0.903     0.904       422
+        ORG      0.928     0.777     0.846       430
+
+avg / total      0.906     0.888     0.895      1590
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.922     0.934     0.928       633
+        LOC      0.894     0.907     0.900       408
+        ORG      0.905     0.772     0.833       430
+
+avg / total      0.909     0.879     0.892      1471
+
+HORUS?  False
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.688     0.455     0.547       121
+        LOC      0.778     0.368     0.500        57
+        ORG      0.938     0.341     0.500        44
+
+avg / total      0.760     0.410     0.526       222
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.859     0.471     0.608       155
+        LOC      0.727     0.414     0.527        58
+        ORG      0.875     0.412     0.560        34
+
+avg / total      0.830     0.449     0.583       247
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.761     0.446     0.562       121
+        LOC      0.720     0.295     0.419        61
+        ORG      1.000     0.462     0.632        39
+
+avg / total      0.792     0.407     0.535       221
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.716     0.500     0.589       126
+        LOC      0.679     0.224     0.336        85
+        ORG      0.600     0.375     0.462        40
+
+avg / total      0.685     0.386     0.483       251
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.678     0.440     0.534       134
+        LOC      0.587     0.474     0.524        57
+        ORG      0.929     0.250     0.394        52
+
+avg / total      0.710     0.407     0.502       243
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.492     0.459     0.475       270
+        LOC      0.641     0.259     0.369       158
+        ORG      0.444     0.163     0.239        49
+
+avg / total      0.536     0.363     0.416       477
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.414     0.529     0.464       789
+        LOC      0.753     0.382     0.507      1110
+        ORG      0.377     0.102     0.160       906
+
+avg / total      0.536     0.333     0.383      2805
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_ritter_en_tweetNLP.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.646     0.538     0.587      3160
+        LOC      0.688     0.250     0.367      2112
+        ORG      0.474     0.017     0.033      2097
+
+avg / total      0.609     0.307     0.366      7369
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.725     0.174     0.280       668
+        LOC      0.831     0.149     0.253       328
+        ORG      0.957     0.215     0.351       205
+
+avg / total      0.793     0.174     0.285      1201
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.429     0.245     0.312        49
+        LOC      0.667     0.105     0.182        19
+        ORG      1.000     0.188     0.316        16
+
+avg / total      0.591     0.202     0.283        84
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      1.000     0.136     0.240        66
+        LOC      0.615     0.222     0.327        36
+        ORG      0.000     0.000     0.000        13
+
+avg / total      0.767     0.148     0.240       115
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.533     0.186     0.276        43
+        LOC      0.286     0.143     0.190        14
+        ORG      1.000     0.062     0.118        16
+
+avg / total      0.588     0.151     0.225        73
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.895     0.250     0.391        68
+        LOC      0.667     0.143     0.235        28
+        ORG      1.000     0.167     0.286         6
+
+avg / total      0.838     0.216     0.342       102
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.600     0.231     0.333        65
+        LOC      0.500     0.241     0.326        29
+        ORG      1.000     0.083     0.154        12
+
+avg / total      0.618     0.217     0.311       106
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.506     0.265     0.348       789
+        LOC      0.647     0.167     0.265      1110
+        ORG      0.745     0.113     0.196       906
+
+avg / total      0.639     0.177     0.266      2805
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut15_en_tweetNLP.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.724     0.296     0.420      3160
+        LOC      0.733     0.151     0.250      2112
+        ORG      0.417     0.002     0.005      2097
+
+avg / total      0.639     0.171     0.253      7369
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.861     0.204     0.329       668
+        LOC      0.755     0.329     0.459       328
+        ORG      0.833     0.268     0.406       205
+
+avg / total      0.827     0.249     0.378      1201
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.821     0.289     0.427       270
+        LOC      0.662     0.285     0.398       158
+        ORG      0.800     0.082     0.148        49
+
+avg / total      0.766     0.266     0.389       477
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.878     0.291     0.437       148
+        LOC      0.811     0.541     0.649       222
+        ORG      0.866     0.442     0.585       190
+
+avg / total      0.847     0.441     0.571       560
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.632     0.308     0.414       156
+        LOC      0.880     0.573     0.694       218
+        ORG      0.789     0.449     0.572       216
+
+avg / total      0.781     0.458     0.576       590
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.462     0.122     0.193       148
+        LOC      0.848     0.572     0.683       264
+        ORG      0.911     0.362     0.518       199
+
+avg / total      0.775     0.394     0.511       611
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.672     0.283     0.398       145
+        LOC      0.818     0.611     0.699       221
+        ORG      0.897     0.624     0.736       181
+
+avg / total      0.805     0.528     0.632       547
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.818     0.269     0.405       167
+        LOC      0.788     0.533     0.636       195
+        ORG      0.884     0.500     0.639       214
+
+avg / total      0.832     0.444     0.570       576
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_wnut16_en_tweetNLP.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.719     0.186     0.295      3160
+        LOC      0.803     0.331     0.469      2112
+        ORG      0.847     0.024     0.046      2097
+
+avg / total      0.780     0.181     0.274      7369
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_ritter_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.381     0.548     0.449       668
+        LOC      0.463     0.338     0.391       328
+        ORG      0.031     0.078     0.045       205
+
+avg / total      0.344     0.410     0.364      1201
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_wnut15_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.304     0.559     0.394       270
+        LOC      0.348     0.361     0.354       158
+        ORG      0.032     0.204     0.055        49
+
+avg / total      0.290     0.457     0.346       477
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_wnut16_en_tweetNLP.csv
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.217     0.565     0.314       789
+        LOC      0.467     0.414     0.439      1110
+        ORG      0.101     0.141     0.118       906
+
+avg / total      0.278     0.369     0.300      2805
+
+--CRF
+---------------------------------------------------
+dataset 1 =  out_exp003_coNLL2003testA_en_NLTK.csv
+dataset 2 =  out_exp003_coNLL2003testA_en_NLTK.csv
+do cross validation
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.917     0.913     0.915       664
+        LOC      0.925     0.897     0.911       439
+        ORG      0.865     0.804     0.834       408
+
+avg / total      0.905     0.879     0.892      1511
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.891     0.928     0.909       657
+        LOC      0.925     0.863     0.893       454
+        ORG      0.859     0.803     0.830       396
+
+avg / total      0.893     0.876     0.884      1507
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.895     0.941     0.918       615
+        LOC      0.927     0.917     0.922       385
+        ORG      0.925     0.792     0.853       403
+
+avg / total      0.912     0.892     0.900      1403
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.895     0.944     0.919       738
+        LOC      0.905     0.903     0.904       422
+        ORG      0.928     0.777     0.846       430
+
+avg / total      0.906     0.888     0.895      1590
+
+--CRF
+             precision    recall  f1-score   support
+
+        PER      0.922     0.934     0.928       633
+        LOC      0.894     0.907     0.900       408
+        ORG      0.905     0.772     0.833       430
+
+avg / total      0.909     0.879     0.892      1471
+
+
+Process finished with exit code 0

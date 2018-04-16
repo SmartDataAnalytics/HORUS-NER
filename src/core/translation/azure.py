@@ -1,21 +1,15 @@
 # -*- coding: utf8 -*-
 # import logging
-import urllib2
 
 import re
-import urllib3
-import urllib
 import requests
 from xml.etree import ElementTree
 #sess = requests.Session()
 #adapter = requests.adapters.HTTPAdapter(max_retries = 20)
 #sess.mount('http://', adapter)
-from requests.auth import HTTPBasicAuth
-import json
 
-from src.core.config import HorusConfig
+from config import HorusConfig
 import time
-import unidecode
 
 detect_url = "https://api.microsofttranslator.com/V2/Http.svc/Detect"
 translate_url = "https://api.microsofttranslator.com/v2/Http.svc/Translate"

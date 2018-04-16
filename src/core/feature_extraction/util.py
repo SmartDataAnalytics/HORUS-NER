@@ -1,29 +1,20 @@
-import json
-import logging
-import ntpath
 import sqlite3
 
 import numpy
 
 import json
-import logging
 import ntpath
-import re
 import nltk
 
 
 from src.core.util.definitions_sql import SQL_SENTENCE_SAVE
-from src.core.util.nlp_tools import NLPTools
-from src.core.util.sqlite_helper import SQLiteHelper, HorusDB
-from src.core.search_engines import query_bing, query_flickr, query_wikipedia
 from src.core.util import definitions
 from src.core.util.nlp_tools import NLPTools
-from src.core.util.sqlite_helper import SQLiteHelper, HorusDB
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from time import gmtime, strftime
 import requests
-from src.core.search_engines import query_bing, query_flickr, query_wikipedia
+from src.core.util.search_engines import query_bing, query_flickr, query_wikipedia
 from src.core.util.sqlite_helper import SQLiteHelper, HorusDB
 import string
 import unicodedata

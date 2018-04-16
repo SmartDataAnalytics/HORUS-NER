@@ -23,7 +23,6 @@ more info at: https://github.com/dnes85/components-models
 # License: BSD 3 clause
 from optparse import OptionParser
 
-from src.core.feature_extraction import Core
 
 
 def main():

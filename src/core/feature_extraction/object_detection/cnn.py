@@ -1,11 +1,8 @@
 import torch
 import torch.nn as nn
-import torchvision.datasets as dsets
-import torchvision.transforms as transforms
 import matplotlib.image as mpimg
 from torch.autograd import Variable
 import cv2
-from src.core.config import HorusConfig
 from src.core.util.systemlog import SysLogger
 
 

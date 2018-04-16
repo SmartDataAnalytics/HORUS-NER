@@ -24,24 +24,20 @@ more info at: https://github.com/dnes85/components-models
 import csv
 import heapq
 import json
-import logging
 import sys
 import sqlite3
 import nltk
 import numpy
 import pandas as pd
-from src.core.config import HorusConfig
 from src.core.feature_extraction.object_detection.cnn import CNN
 from src.core.feature_extraction.object_detection.sift import SIFT
 from src.core.feature_extraction.util import Util
 from src.core.translation.azure import *
-from src.core.util.nlp_tools import NLPTools
 from src.core.util.systemlog import SysLogger
 from src.core.util.definitions_sql import *
 # print cv2.__version__
 from src.core.feature_extraction.text_classification.bow_tfidf import BowTfidf
 from src.core.feature_extraction.text_classification.topic_modeling import TopicModeling
-from src.core.translation.bingtranslation import BingTranslator
 from src.core.util import definitions
 
 
@@ -506,12 +502,12 @@ class FeatureExtraction(object):
             self.horus_matrix = self.util.sentence_to_horus_matrix(sentences)
             self.util.download_and_cache_results(self.horus_matrix)
             self.detect_objects(self.horus_matrix)
-            self.__export_data('outfeatures.horus', 'json')
+            self.__export_data(self.config.dir_output + 'outfeatures.horus', 'json')
 
             return self.horus_matrix
 
         except Exception as error:
-            self.logger.error('extract_features() error: ' + repr(error))
+            self.logger.error('extract_features1() error: ' + repr(error))
 
 
     def extract_features_conll(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
@@ -528,7 +524,7 @@ class FeatureExtraction(object):
             if file is None:
                 raise Exception("Provide an input file format to be annotated")
             self.logger.info(':: processing CoNLL format -> %s' % label)
-            file = self.config.dataset_path + file
+            file = self.config.dir_datasets + file
             sent_tokenize_list = self.util.process_ds_conll_format(file, label, token_index, ner_index, '')
             self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
             if len(self.horus_matrix) > 0:
@@ -536,7 +532,7 @@ class FeatureExtraction(object):
                 self.detect_objects(self.horus_matrix)
                 filename = self.util.path_leaf(file) + ".horus"
 
-                path = self.config.output_path + out_subfolder + filename
+                path = self.config.dir_output + out_subfolder + filename
                 self.__export_data(path, 'tsv')
             else:
                 self.logger.warn(':: well, nothing to do today...')
@@ -544,25 +540,26 @@ class FeatureExtraction(object):
             return self.horus_matrix
 
         except Exception as error:
-            self.logger.error('extract_features() error: ' + repr(error))
+            self.logger.error('extract_features2() error: ' + repr(error))
 
 
 if __name__ == "__main__":
     if len(sys.argv) not in (1,2,3,4):
         print "please inform: 1: data set and 2: column indexes ([1, .., n])"
     else:
+        print('here we go!')
         config = HorusConfig()
         # args[0], args[1], args[2], args[3]
         tot_args = 1 #len(sys.argv)
         data = 'coNLL2003/coNLL2003.eng.testb'  # args[0]
-        data = 'paris hilton' #args[0]
+        data = 'paris hilton was once the toast of the town' #args[0]
 
         if tot_args == 1:
             extractor = FeatureExtraction(config, True, True, False, False)
             out = extractor.extract_features_text(data)
-            outjson = json.dumps(out)
+            #outjson = json.dumps(out)
             print(out)
-            print(outjson)
+            #print(outjson)
         else:
             exp_folder = 'EXP_002/' #
             extractor = FeatureExtraction(config, True, True, True, True)

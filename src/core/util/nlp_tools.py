@@ -2,9 +2,9 @@ import nltk
 from nltk.tag import StanfordPOSTagger
 from nltk.tag.stanford import StanfordNERTagger
 
-from src.core.util import definitions
-from src.core.config import HorusConfig
-from src.resources.models.tweetnlp import CMUTweetTagger
+from src.core.util import definitions, CMUTweetTagger
+from config import HorusConfig
+#from src.resources.models.tweetnlp import CMUTweetTagger
 
 
 #text = 'Diego Esteves works at Microsoft'

@@ -26,10 +26,9 @@ import logging
 import re
 
 from horusner.components.systemlog import SystemLog
-from nltk.tokenize import sent_tokenize
 from sklearn.externals import joblib
 
-from src.core.config import HorusConfig
+from config import HorusConfig
 from src.core.feature_extraction.features import FeatureExtraction
 from src.core.feature_extraction.util import Util
 from src.core.util import definitions
@@ -38,8 +37,8 @@ from src.core.util import definitions
 class HorusDemo(object):
 
     def __init__(self):
-        self.logging = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
         self.config = HorusConfig()
+        self.logging = SystemLog(self.config.root_dir + "horus.log", logging.DEBUG, logging.DEBUG)
         self.util = Util(self.config)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)
@@ -85,8 +84,6 @@ class HorusDemo(object):
         except Exception as error:
             raise error
 
-
-
     def update_rules_cv_predictions(self):
         '''
         updates the predictions based on inner rules
@@ -128,8 +125,6 @@ class HorusDemo(object):
                         for k in range(i_c_size[z]):
                             self.horus_matrix[i + k][39] = i_y[z]  # KLASS_4
 
-
-
     def annotate_text(self, text):
         """
         annotates an input text with HORUS
@@ -137,7 +132,6 @@ class HorusDemo(object):
         :return:
         """
         try:
-            print self.version_label
             if text is not None:
                 self.logging.log.info(':: annotating text: %s' % text)
                 sent_tokenize_list = self.__process_input_text(text.strip('"\''))
