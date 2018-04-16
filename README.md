@@ -17,14 +17,17 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 
 (*) - setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
 
-#### Usage 
+#### Demo
 ```python
-python main.py --input_text="whitney houston has been honored in nyc" --ds_format=0 --output_format="csv"
+python main.py --text="whitney houston has been honored in nyc"
 
-python main.py --input_file="sentences.txt" --ds_format=0
+python main.py --file="sentences.txt" --ds_format=0
 
-python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
+python main.py --file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
+```
 
+#### Features
+```python
 1. to process an input file (e.g., conll) and generate the horus feature file format
     - examples/process_input_file.py
 
@@ -34,7 +37,8 @@ python main.py --input_file="ritter_ner.tsv" --ds_format=1 --output_file="metada
 3. to run some benchmarks
     - experiments/benchmarking.py
 ```
-#### REST
+
+#### Web Service
 ```python
 export FLASK_APP=rest.py
 user$ flask run
@@ -43,7 +47,7 @@ browser:
 http://localhost:5000/annotate?text=paris hilton
 ```
 
-#### Ppip (soon :-))
+#### pip (soon :-))
 ```python
 pip install horus
 
@@ -53,7 +57,7 @@ sentence = "paris hilton was once the toast of the town"
 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=1)
 print(extractor.extract_features_text(sentence))
 ```
-## Version
+#### Changelog
 - 0.1.0 initial version
 - 0.1.1 adding text classification
 - 0.1.2 adding map detection
