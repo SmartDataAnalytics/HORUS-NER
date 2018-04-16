@@ -43,7 +43,7 @@ browser:
 http://localhost:5000/annotate?text=paris hilton
 ```
 
-#### pip
+#### Ppip (soon :-))
 ```python
 pip install horus
 
