@@ -29,6 +29,8 @@ import sqlite3
 import nltk
 import numpy
 import pandas as pd
+
+from src.classifiers.computer_vision.inception import InceptionCV
 from src.core.feature_extraction.object_detection.cnn import CNN
 from src.core.feature_extraction.object_detection.sift import SIFT
 from src.core.feature_extraction.util import Util
@@ -57,11 +59,12 @@ class FeatureExtraction(object):
         self.logger.info('------------------------------------------------------------------')
         self.logger.info(':: loading components...')
         self.util = Util(self.config)
-        self.tools = NLPTools()
+        self.tools = NLPTools(self.config)
         #self.translator = BingTranslator(self.config)
         if load_cnn==1:
             self.logger.info(':: loading CNN')
-            self.image_cnn = CNN(self.config)
+            #self.image_cnn = CNN(self.config)
+            self.image_cnn = InceptionCV(self.config)
         else:
             self.image_cnn = None
         if load_sift==1:
@@ -347,12 +350,12 @@ class FeatureExtraction(object):
                                             tot_geral_faces_cnn += 1
                                             self.logger.debug(":: found {0} faces!".format(tot_faces))
                                         # ----- logo recognition -----
-                                        tot_logos_cnn = self.image_cnn.detect_logo_cnn(image)
+                                        tot_logos_cnn = self.image_cnn.detect_logo(image)
                                         if tot_logos_cnn > 0:
                                             tot_geral_logos_cnn += 1
                                             self.logger.debug(":: found {0} logo(s)!".format(1))
                                         # ----- place recognition -----
-                                        res_cnn = self.image_cnn.detect_place_cnn(image)
+                                        res_cnn = self.image_cnn.detect_place(image)
                                         tot_geral_pos_locations_cnn += res_cnn.count(1)
                                         tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
@@ -413,6 +416,10 @@ class FeatureExtraction(object):
                         # -----------------------------------------------------------------
                         # text classification
                         # -----------------------------------------------------------------
+                        cnn_labels = []
+                        tot_union_embeedings_cnn_classes = self.__get_number_classes_in_embeedings(term, cnn_labels)
+                        #TODO: export this new feature
+
                         y_bow, y_tm = [], []
                         cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                         rows = cursor.fetchall()
@@ -495,7 +502,6 @@ class FeatureExtraction(object):
 
         return horus_matrix
 
-
     def extract_features_text(self, text):
         """
         extracts the HORUS features for a given input text
@@ -522,7 +528,6 @@ class FeatureExtraction(object):
 
         except Exception as error:
             self.logger.error('extract_features1() error: ' + repr(error))
-
 
     def extract_features_conll(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
         """

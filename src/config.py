@@ -37,6 +37,7 @@ class HorusConfig(object):
 
                     # not attached to a root project directory, once it normally can be stored somewhere else (i.e., full path here)
                     self.database_db = parser.get('path', 'database_path')
+                    self.root_dir_tensorflow = parser.get('path', 'tensorflow_data')
 
                     # under \data folder
                     self.dir_datasets = self.root_dir_output + 'datasets/'

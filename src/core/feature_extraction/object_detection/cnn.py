@@ -79,7 +79,7 @@ class CNN(nn.Module):
             self.logger.error(e)
             return 0
 
-    def detect_logo_cnn(self, image):
+    def detect_logo(self, image):
         try:
             self.load_state_dict(torch.load(self.config.models_cnn_org))
             self.eval()
@@ -90,7 +90,7 @@ class CNN(nn.Module):
             self.logger.error(e)
             return 0
 
-    def detect_place_cnn(self, image):
+    def detect_place(self, image):
         try:
             ret = []
             # loc1
