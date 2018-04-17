@@ -33,6 +33,7 @@ from src.core.feature_extraction.object_detection.cnn import CNN
 from src.core.feature_extraction.object_detection.sift import SIFT
 from src.core.feature_extraction.util import Util
 from src.core.translation.azure import *
+from src.core.util.nlp_tools import NLPTools
 from src.core.util.systemlog import SysLogger
 from src.core.util.definitions_sql import *
 # print cv2.__version__
@@ -56,7 +57,7 @@ class FeatureExtraction(object):
         self.logger.info('------------------------------------------------------------------')
         self.logger.info(':: loading components...')
         self.util = Util(self.config)
-        #self.tools = NLPTools()
+        self.tools = NLPTools()
         #self.translator = BingTranslator(self.config)
         if load_cnn==1:
             self.logger.info(':: loading CNN')
@@ -219,6 +220,19 @@ class FeatureExtraction(object):
 
         except Exception as e:
             raise e
+
+    def __get_number_classes_in_embeedings(self, w, k):
+        '''
+        returns the number of terms existing in the set of returned words similar to w
+        :param w: an input word
+        :param k: a set of (predicted) classes
+        :return: the number of elements from both k and the embeedings function
+        '''
+        try:
+            most_similar = set(self.tools.word2vec_google.most_similar(positive=w, topn=5))
+            return len(most_similar.union(set(k)))
+        except:
+            raise
 
     def detect_objects(self, matrix):
         """
@@ -549,7 +563,7 @@ if __name__ == "__main__":
     else:
         config = HorusConfig()
         # args[0], args[1], args[2], args[3]
-        tot_args = 2 #len(sys.argv)
+        tot_args = 1 #len(sys.argv)
         data = 'coNLL2003/coNLL2003.eng.testb'  # args[0]
         data = 'paris hilton was once the toast of the town' #args[0]
 

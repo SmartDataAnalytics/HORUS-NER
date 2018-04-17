@@ -1,19 +1,12 @@
+import gensim
 import nltk
 from nltk.tag import StanfordPOSTagger
 from nltk.tag.stanford import StanfordNERTagger
-
 from src.core.util import definitions, CMUTweetTagger
 from src.config import HorusConfig
-#from src.resources.models.tweetnlp import CMUTweetTagger
-
-
-#text = 'Diego Esteves works at Microsoft'
-#tag1 = st.tag(text.split())
 
 
 class NLPTools(object):
-
-    config = HorusConfig()
 
     def tokenize_and_pos_nltk(self, text):
         #TODO: esta trocando '' por ``
@@ -93,6 +86,8 @@ class NLPTools(object):
         return penn_tag
 
     def __init__(self):
+        config = HorusConfig()
         self.stanford_ner = StanfordNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
         self.stanford_pos = StanfordPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
         self.stanford_pos.java_options='-mx8g'
+        self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(config.embeddings_path, binary=True)
