@@ -1,10 +1,15 @@
+from itertools import chain
+
+import shorttext
 import tensorflow as tf
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow.contrib.framework import arg_scope
 from tensorflow.contrib.slim.python.slim.nets import inception
+from nltk.corpus import wordnet as wn
 
+from src.classifiers.text_classification.topic_modeling_cnn import TopicModelingShortCNN
 from src.classifiers.util.inception import dataset_utils, imagenet, inception_preprocessing
 from src.config import HorusConfig
 from src.core.util.systemlog import SysLogger
@@ -21,7 +26,12 @@ class InceptionCV():
             self.INCEPTION_V4_URL = self.TF_MODELS_URL + "inception_v4_2016_09_09.tar.gz"
             self.INCEPTION_V3_CKPT_PATH = self.DIR_MODELS + "inception_v3.ckpt"
             self.INCEPTION_V4_CKPT_PATH = self.DIR_MODELS + "inception_v4.ckpt"
+            seed_PER = ['person', 'human being', 'man', 'woman', 'human body', 'human face']
+            seed_ORG = ['logo', 'logotype']
+            seed_LOC = ['volcano', 'stone', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake',
+                        'square']
 
+            self.seeds = {'PER': seed_PER, 'ORG': seed_ORG, 'LOC': seed_LOC}
 
             if not tf.gfile.Exists(self.DIR_MODELS):
                 tf.gfile.MakeDirs(self.DIR_MODELS)
@@ -63,7 +73,7 @@ class InceptionCV():
         plt.imshow(image.astype(np.uint8), interpolation='nearest')
         plt.axis('off')
 
-    def predict(self, image, version='V3'):
+    def predict(self, image, version='V3', top=5):
         '''
         :param image: a path for an image
         :param version: inception's model version
@@ -111,12 +121,14 @@ class InceptionCV():
             # Plot the image
             #self.plot_color_image(raw_image)
             #plt.show()
-            print("Using Inception_{} CNN\nPrediction: Probability\n".format(version))
+            #print("Using Inception_{} CNN\nPrediction: Probability\n".format(version))
             # Display the image and predictions
-            for i in range(10):
-                predicted_class = class_names[prediction_values[i][0]]
-                probability = prediction_values[i][1]
-                print("{}: {:.2f}%".format(predicted_class, probability * 100))
+            #for i in range(top):
+            #    predicted_class = class_names[prediction_values[i][0]]
+            #    probability = prediction_values[i][1]
+            #    print("{}: {:.2f}%".format(predicted_class, probability * 100))
+
+            return prediction_values[0:top]
 
         # If the predictions do not come out right
         except:
@@ -145,15 +157,3 @@ class InceptionCV():
         except Exception as e:
             self.logger.error(e)
             return 0
-
-if __name__ == '__main__':
-    #args[0], args[1], args[2], args[3]
-    config = HorusConfig()
-    model = InceptionCV(config)
-    model.predict('4_0_1.jpg')
-    model.predict('10_0_4.jpg')
-    model.predict('10_0_5.jpg')
-    model.predict('10_0_7.jpg')
-    model.predict('18_0_2.jpg')
-    model.predict('16_0_9.jpg')
-

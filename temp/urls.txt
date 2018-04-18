@@ -1,1 +1,3 @@
 https://arxiv.org/abs/1802.07862
+
+https://pypi.org/project/imagenetscraper/
