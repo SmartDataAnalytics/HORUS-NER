@@ -45,8 +45,9 @@ print(set(ids_LOC))
 print(set(ids_ORG))
 
 pos_img_places = ['18_0_3', '18_0_4', '18_0_5', '18_0_9', '18_0_10', '20_0_1', '20_0_2', '20_0_3', '20_0_4', '20_0_5',
-                  '20_0_6', '20_0_7', '20_0_8', '20_0_9', '20_0_10', '38_0_1', '38_0_2', '38_0_3', '38_0_4']
-dict_img_places = []
+                  '20_0_6', '20_0_7', '20_0_8', '20_0_9', '20_0_10', '38_0_1', '38_0_2', '38_0_3']
+pos_img_logos = ['28_0_1', '28_0_2', '28_0_3', '28_0_10', '68_0_8', '102_0_10', '104_0_8', '104_0_4', '114_0_8', '134_0_4',
+                 '188_0_1', '188_0_2', '188_0_4', '188_0_5', '198_0_2', '200_0_4']
 
 #model.predict('4_0_1.jpg')
 #model.predict('10_0_4.jpg')
@@ -57,26 +58,30 @@ dict_img_places = []
 _version = 'V4'
 print('---------------------')
 
-for img in pos_img_places:
-    prediction_values = incep_model.predict(img + '.jpg', top=5)
-    K = []
-    tot_loc = 0
-    tot_per = 0
-    tot_org = 0
-    tot_none = 0
-    i = 0
-    for i in range(0,len(prediction_values)):
-        labels = class_names[prediction_values[i][0]]
-        probability = prediction_values[i][1]
-        for l in labels.split(','):
-            i+=1
-            d = topicCNN.predict(l)
-            tot_loc += (d.get('loc') * probability)
-            tot_per += (d.get('per') * probability)
-            tot_org += (d.get('org') * probability)
-            tot_none += (d.get('none') * probability)
+for img in pos_img_logos:
+    try:
+        prediction_values = incep_model.predict(img + '.jpg', top=5)
+        K = []
+        tot_loc = 0
+        tot_per = 0
+        tot_org = 0
+        tot_none = 0
+        i = 0
+        for i in range(0,len(prediction_values)):
+            labels = class_names[prediction_values[i][0]]
+            print('-- labels: ', labels)
+            probability = prediction_values[i][1]
+            for l in labels.split(','):
+                i+=1
+                d = topicCNN.predict(l)
+                tot_loc += (d.get('loc') * probability)
+                tot_per += (d.get('per') * probability)
+                tot_org += (d.get('org') * probability)
+                tot_none += (d.get('none') * probability)
 
-    print('img', img, 'LOC', tot_loc/i, 'ORG', tot_org/i, 'PER', tot_per/i, 'NONE', tot_none/i)
+        print('img', img, 'LOC', tot_loc/i, 'ORG', tot_org/i, 'PER', tot_per/i, 'NONE', tot_none/i)
+    except:
+        pass
 
 print('OK')
     #    probability = prediction_values[i][1]

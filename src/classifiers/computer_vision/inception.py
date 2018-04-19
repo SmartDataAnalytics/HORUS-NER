@@ -29,7 +29,7 @@ class InceptionCV():
             seed_PER = ['person', 'human being', 'man', 'woman', 'human body', 'human face']
             seed_ORG = ['logo', 'logotype']
             seed_LOC = ['volcano', 'stone', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake',
-                        'square']
+                        'square', 'map', 'flag']
 
             self.seeds = {'PER': seed_PER, 'ORG': seed_ORG, 'LOC': seed_LOC}
 

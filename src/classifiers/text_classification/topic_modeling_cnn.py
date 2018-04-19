@@ -11,9 +11,10 @@ nlp = en_core_web_sm.load()
 #spacy.load('en')
 
 class TopicModelingShortCNN():
-    def __init__(self, config):
+    def __init__(self, config, mode='test'):
         try:
             self.config = config
+            self.mode = mode
             self.logger = SysLogger().getLog()
             self.trainclassdict = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
                 'students', 'education', 'coach', 'football', 'turkish',
@@ -28,7 +29,8 @@ class TopicModelingShortCNN():
                 'highway', 'forest', 'sea', 'lake', 'stadium', 'hospital',
                 'temple', 'beach', 'hotel', 'country', 'city', 'state', 'home',
                 'world', 'mountain', 'landscape', 'island', 'land' ,'waterfall',
-                'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle'],
+                'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle',
+                'flag', 'map'],
         'org': ['microsoft', 'bloomberg', 'google', 'company', 'business',
                 'contract', 'project', 'research', 'office', 'startup',
                 'enterprise', 'venture', 'capital', 'milestones', 'risk',
@@ -42,11 +44,12 @@ class TopicModelingShortCNN():
                  'internet', 'connection', 'pencil', 'earphone', 'shopping', 'buy',
                  'headphones', 'bread', 'food', 'cake', 'bottle', 'table', 'jacket',
                  'politics', 'computer', 'laptop', 'blue', 'green', 'bucket', 'orange', 'rose',
-                 'key']}
+                 'key', 'clock', 'connector']}
             print('loading embeedings...')
             self.wvmodel = shorttext.utils.load_word2vec_model(config.embeddings_path)
-            print('load model...')
-            self.classifier = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel, config.dir_models + 'cnn_topic_modeling/4classes_text_double_cnn_word_embed.bin')
+            if mode=='test':
+                print('load model...')
+                self.classifier = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel, config.dir_models + 'cnn_topic_modeling/4classes_text_double_cnn_word_embed.bin')
             self.graph = tf.get_default_graph()
         except Exception as e:
             raise e
@@ -61,6 +64,9 @@ class TopicModelingShortCNN():
 
     def train(self, epochs=5000):
         try:
+            if self.mode == 'test':
+                raise Exception('error, set param "mode=train"')
+
             print self.trainclassdict.keys()
 
             kmodel1 = shorttext.classifiers.frameworks.CNNWordEmbed(len(self.trainclassdict.keys()), vecsize=self.wvmodel.vector_size)
@@ -72,8 +78,8 @@ class TopicModelingShortCNN():
             classifier3 = shorttext.classifiers.VarNNEmbeddedVecClassifier(self.wvmodel)
 
             classifier1.train(self.trainclassdict, kmodel1, nb_epoch=epochs)
-            classifier2.train(self.trainclassdict, kmodel1, nb_epoch=epochs)
-            classifier3.train(self.trainclassdict, kmodel1, nb_epoch=epochs)
+            classifier2.train(self.trainclassdict, kmodel2, nb_epoch=epochs)
+            classifier3.train(self.trainclassdict, kmodel3, nb_epoch=epochs)
 
             classifier1.save_compact_model(self.config.dir_models + 'cnn_topic_modeling/4classes_text_cnn_word_embed_plo.bin')
             classifier2.save_compact_model(self.config.dir_models + 'cnn_topic_modeling/4classes_text_clstm_word_embed.bin')
@@ -86,7 +92,9 @@ class TopicModelingShortCNN():
 if __name__ == '__main__':
 
     config = HorusConfig()
-    topic = TopicModelingShortCNN(config)
+    topic = TopicModelingShortCNN(config, mode='train')
+    topic.train()
+    exit(0)
 
     print topic.predict('orlando')
     print topic.predict('river')
