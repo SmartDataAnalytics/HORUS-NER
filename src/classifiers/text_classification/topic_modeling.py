@@ -4,7 +4,7 @@ import os
 
 from src.core.util.systemlog import SysLogger
 
-
+#TODO: merge with /topic_modeling_short_cnn !!!
 class TopicModeling():
     def __init__(self, config):
         try:

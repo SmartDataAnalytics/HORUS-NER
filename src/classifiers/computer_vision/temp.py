@@ -1,6 +1,6 @@
 from src.classifiers.computer_vision.inception import InceptionCV
 from src.classifiers.computer_vision.places365 import Places365CV
-from src.classifiers.text_classification.topic_modeling_cnn import TopicModelingShortCNN
+from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 from src.classifiers.util.inception import imagenet
 from src.config import HorusConfig
 from nltk.corpus import wordnet as wn
