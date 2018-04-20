@@ -31,16 +31,15 @@ import numpy
 import pandas as pd
 
 from src.classifiers.computer_vision.inception import InceptionCV
-from src.core.feature_extraction.object_detection.cnn import CNN
-from src.core.feature_extraction.object_detection.sift import SIFT
+from src.classifiers.computer_vision.sift import SIFT
 from src.core.feature_extraction.util import Util
 from src.core.translation.azure import *
 from src.core.util.nlp_tools import NLPTools
 from src.core.util.systemlog import SysLogger
 from src.core.util.definitions_sql import *
 # print cv2.__version__
-from src.core.feature_extraction.text_classification.bow_tfidf import BowTfidf
-from src.core.feature_extraction.text_classification.topic_modeling import TopicModeling
+from src.classifiers.text_classification.bow_tfidf import BowTfidf
+from src.classifiers.text_classification.topic_modeling import TopicModeling
 from src.core.util import definitions
 
 
