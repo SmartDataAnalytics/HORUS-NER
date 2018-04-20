@@ -1,11 +1,15 @@
 from src.classifiers.computer_vision.inception import InceptionCV
+from src.classifiers.computer_vision.places365 import Places365CV
 from src.classifiers.text_classification.topic_modeling_cnn import TopicModelingShortCNN
 from src.classifiers.util.inception import imagenet
 from src.config import HorusConfig
 from nltk.corpus import wordnet as wn
+import re
 
 config = HorusConfig()
 
+print('loading places 365 CNN model...')
+placesCNN = Places365CV(config)
 print('loading topic model CNN model...')
 topicCNN = TopicModelingShortCNN(config)
 print('loading inception model...')
@@ -40,6 +44,7 @@ for k, V in incep_model.seeds.iteritems():
                 raise('key error')
 
 
+print('seeds...')
 print(set(ids_PER))
 print(set(ids_LOC))
 print(set(ids_ORG))
@@ -48,6 +53,8 @@ pos_img_places = ['18_0_3', '18_0_4', '18_0_5', '18_0_9', '18_0_10', '20_0_1', '
                   '20_0_6', '20_0_7', '20_0_8', '20_0_9', '20_0_10', '38_0_1', '38_0_2', '38_0_3']
 pos_img_logos = ['28_0_1', '28_0_2', '28_0_3', '28_0_10', '68_0_8', '102_0_10', '104_0_8', '104_0_4', '114_0_8', '134_0_4',
                  '188_0_1', '188_0_2', '188_0_4', '188_0_5', '198_0_2', '200_0_4']
+
+pos_img_per = ['4_0_3', '4_0_4', '4_0_5', '4_0_6', '4_0_7', '6_0_7', '6_0_6', '8_0_6', '6_0_8']
 
 #model.predict('4_0_1.jpg')
 #model.predict('10_0_4.jpg')
@@ -58,30 +65,58 @@ pos_img_logos = ['28_0_1', '28_0_2', '28_0_3', '28_0_10', '68_0_8', '102_0_10', 
 _version = 'V4'
 print('---------------------')
 
-for img in pos_img_logos:
+for img in pos_img_per:
     try:
-        prediction_values = incep_model.predict(img + '.jpg', top=5)
+        try:
+            print('predicting places365...')
+            prediction_values_places365 = placesCNN.predict(img + '.jpg')
+        except Exception as e:
+            print('error..')
+            pass
+
+        try:
+            print('predicting inception...')
+            prediction_values_inception = incep_model.predict(img + '.jpg', top=5)
+        except Exception as e:
+            print('error..')
+            pass
+
         K = []
         tot_loc = 0
         tot_per = 0
         tot_org = 0
         tot_none = 0
         i = 0
-        for i in range(0,len(prediction_values)):
-            labels = class_names[prediction_values[i][0]]
-            print('-- labels: ', labels)
-            probability = prediction_values[i][1]
-            for l in labels.split(','):
+        # image classification CNN
+        print('places365', prediction_values_places365)
+        print('inception', prediction_values_inception)
+        print('')
+
+        final_label_prob_vector = prediction_values_inception
+        final_label_prob_vector.extend(prediction_values_places365)
+        print('final', final_label_prob_vector)
+
+        # text classification Topic Modeling+CNN
+        for i in range(0,len(final_label_prob_vector)):
+            labels = final_label_prob_vector[i][0]
+            s = 'sda'
+
+            print('-- label(s): ', labels)
+            prob = final_label_prob_vector[i][1]
+            for l in re.split(', | ; | /', labels):
+                l = l.replace('_', ' ').replace('/outdoor', '').replace('/indoor', '')
+
                 i+=1
                 d = topicCNN.predict(l)
-                tot_loc += (d.get('loc') * probability)
-                tot_per += (d.get('per') * probability)
-                tot_org += (d.get('org') * probability)
-                tot_none += (d.get('none') * probability)
+                tot_loc += (d.get('loc') * prob)
+                tot_per += (d.get('per') * prob)
+                tot_org += (d.get('org') * prob)
+                tot_none += (d.get('none') * prob)
 
         print('img', img, 'LOC', tot_loc/i, 'ORG', tot_org/i, 'PER', tot_per/i, 'NONE', tot_none/i)
-    except:
-        pass
+
+    except Exception as e:
+        print(e)
 
 print('OK')
     #    probability = prediction_values[i][1]

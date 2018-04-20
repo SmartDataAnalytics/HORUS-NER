@@ -123,16 +123,19 @@ class InceptionCV():
             #plt.show()
             #print("Using Inception_{} CNN\nPrediction: Probability\n".format(version))
             # Display the image and predictions
-            #for i in range(top):
-            #    predicted_class = class_names[prediction_values[i][0]]
-            #    probability = prediction_values[i][1]
-            #    print("{}: {:.2f}%".format(predicted_class, probability * 100))
+            out = []
+            for i in range(0,top):
+                predicted_class = class_names[prediction_values[i][0]]
+                probability = prediction_values[i][1]
+                out.append((predicted_class, probability))
+                #print("{}: {:.2f}%".format(predicted_class, probability * 100))
 
-            return prediction_values[0:top]
+            return out
 
         # If the predictions do not come out right
         except:
-            print(predictions)
+            raise
+            #print(predictions)
 
     def detect_faces(self, image):
         try:
