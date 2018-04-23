@@ -1,11 +1,11 @@
 import cv2
 from sklearn.externals import joblib
 
-from src.core.util.systemlog import SysLogger
-
 
 class SIFT():
     def __init__(self, config):
+        self.config.logger.debug(':: loading SIFT')
+        self.logger.info(':: loading SIFT')
         self.detect = cv2.xfeatures2d.SIFT_create()
         self.extract = cv2.xfeatures2d.SIFT_create()
         self.flann_params = dict(algorithm=1, trees=config.models_kmeans_trees)
@@ -34,7 +34,7 @@ class SIFT():
         self.voc_loc_9 = joblib.load(config.models_cv_loc_9_dict)
         self.voc_loc_10 = joblib.load(config.models_cv_loc_10_dict)
         self.face_cascade = cv2.CascadeClassifier(config.models_cv_per)
-        self.logger = SysLogger().getLog()
+
 
     def bow_features(self, fn, ner_type):
         im = cv2.imread(fn, 0)

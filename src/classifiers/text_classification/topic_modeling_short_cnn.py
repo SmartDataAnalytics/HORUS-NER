@@ -3,19 +3,21 @@ import en_core_web_sm
 import os
 import shorttext
 from src.config import HorusConfig
-from src.core.util.systemlog import SysLogger
 import tensorflow as tf
+
+from src.core.util.nlp_tools import NLPTools
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 nlp = en_core_web_sm.load()
 #spacy.load('en')
 
 class TopicModelingShortCNN():
-    def __init__(self, config, mode='test'):
+    def __init__(self, config, w2v, mode='test'):
         try:
             self.config = config
+            self.config.logger.info('loading TopicModelingShortCNN')
+            self.wvmodel = w2v
             self.mode = mode
-            self.logger = SysLogger().getLog()
             self.trainclassdict = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
                 'students', 'education', 'coach', 'football', 'turkish',
                 'albanian', 'romanian', 'professor', 'lawyer', 'president',
@@ -45,11 +47,10 @@ class TopicModelingShortCNN():
                  'headphones', 'bread', 'food', 'cake', 'bottle', 'table', 'jacket',
                  'politics', 'computer', 'laptop', 'blue', 'green', 'bucket', 'orange', 'rose',
                  'key', 'clock', 'connector']}
-            print('loading embeedings...')
-            self.wvmodel = shorttext.utils.load_word2vec_model(config.embeddings_path)
+            #self.config.logger.debug('loading embeedings')
+            #self.wvmodel = shorttext.utils.load_word2vec_model(config.embeddings_path)
             if mode=='test':
-                print('load model...')
-                self.classifier = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel, config.dir_models + 'cnn_topic_modeling/4classes_text_double_cnn_word_embed.bin')
+                self.classifier = shorttext.classifiers.load_varnnlibvec_classifier(self.wvmodel, config.models_1_text_cnn)
             self.graph = tf.get_default_graph()
         except Exception as e:
             raise e
@@ -80,7 +81,7 @@ class TopicModelingShortCNN():
             if self.mode == 'test':
                 raise Exception('error, set param "mode=train"')
 
-            print self.trainclassdict.keys()
+            print(self.trainclassdict.keys())
 
             kmodel1 = shorttext.classifiers.frameworks.CNNWordEmbed(len(self.trainclassdict.keys()), vecsize=self.wvmodel.vector_size)
             kmodel2 = shorttext.classifiers.frameworks.CLSTMWordEmbed(len(self.trainclassdict.keys()), vecsize=self.wvmodel.vector_size)
@@ -105,14 +106,16 @@ class TopicModelingShortCNN():
 if __name__ == '__main__':
 
     config = HorusConfig()
-    topic = TopicModelingShortCNN(config, mode='train')
-    topic.train()
-    exit(0)
+    tools = NLPTools(config)
+    topic = TopicModelingShortCNN(config, tools.word2vec_google, mode='test')
+    #topic.train()
+    #exit(0)
 
-    print topic.predict('orlando')
-    print topic.predict('river')
-    print topic.predict('chile')
-    print topic.predict('jack')
-    print topic.predict('esteves')
-    print topic.predict('global co.')
-    print topic.predict('global solutions')
+    print(topic.predict('orlando'))
+    print(topic.predict('river'))
+    print(topic.predict('chile'))
+    print(topic.predict('jack'))
+    print(topic.predict('esteves'))
+    print(topic.predict('global co.'))
+    print(topic.predict('global solutions'))
+    print(topic.predict('jack watson'))

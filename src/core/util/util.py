@@ -20,12 +20,12 @@ import string
 import unicodedata
 import re
 import langdetect
-from src.core.util.systemlog import SysLogger
 
 
 class Util(object):
     def __init__(self, config):
-        #self.sys = SystemLog("horus.log", logging.DEBUG, logging.DEBUG)
+        self.config = config
+        self.config.logger.info(':: loading utils ...')
         self.tools = NLPTools()
         self.html_escape_table = {
             "&": "&amp;",
@@ -34,8 +34,7 @@ class Util(object):
             ">": "&gt;",
             "<": "&lt;",
         }
-        self.config = config
-        self.logger = SysLogger().getLog()
+
         self.conn = sqlite3.connect(self.config.database_db)
 
     def translate_old(self, t1, t2, id, t1en, t2en):

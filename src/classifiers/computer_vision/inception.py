@@ -12,14 +12,15 @@ from nltk.corpus import wordnet as wn
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 from src.classifiers.util.inception import dataset_utils, imagenet, inception_preprocessing
 from src.config import HorusConfig
-from src.core.util.systemlog import SysLogger
 
 
 class InceptionCV():
     def __init__(self, config):
         try:
             self.config = config
-            self.logger = SysLogger().getLog()
+            sself.config.logger.debug(':: loading InceptionCV')
+            self.logger.debug(':: loading InceptionCV')
+
             self.DIR_MODELS = config.dir_models + "/inception/"
             self.TF_MODELS_URL = "http://download.tensorflow.org/models/"
             self.INCEPTION_V3_URL = self.TF_MODELS_URL + "inception_v3_2016_08_28.tar.gz"

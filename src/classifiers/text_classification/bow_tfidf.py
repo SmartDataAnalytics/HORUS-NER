@@ -2,12 +2,10 @@
 from sklearn.externals import joblib
 from sklearn.feature_extraction.text import TfidfTransformer
 
-from src.core.util.systemlog import SysLogger
-
-
 class BowTfidf():
     def __init__(self, config):
         try:
+            self.config.logger.debug(':: loading TF-IDF')
             self.text_checking_model_1 = joblib.load(config.models_1_text)
             self.text_checking_model_2 = joblib.load(config.models_2_text)
             self.text_checking_model_3 = joblib.load(config.models_3_text)

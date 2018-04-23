@@ -45,7 +45,7 @@ def main():
 
     config = HorusConfig()
     extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=1)
-    print(extractor.extract_features_text(opts.text))
+    print(extractor.extract_features_from_text(opts.text))
 
 
 if __name__ == '__main__':

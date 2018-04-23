@@ -7,14 +7,12 @@ import os
 from PIL import Image
 
 from src.config import HorusConfig
-from src.core.util.systemlog import SysLogger
 
 
 class Places365CV():
     def __init__(self, config):
         try:
             self.config = config
-            self.logger = SysLogger().getLog()
             self.arch = 'resnet18'
             # load the pre-trained weights
             self.model_file = 'whole_%s_places365.pth.tar' % self.arch

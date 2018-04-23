@@ -1,7 +1,6 @@
 import gensim
 import nltk
-from nltk.tag import StanfordPOSTagger
-from nltk.tag.stanford import StanfordNERTagger
+from nltk.tag.stanford import CoreNLPNERTagger, CoreNLPPOSTagger
 from src.core.util import definitions, CMUTweetTagger
 from src.config import HorusConfig
 
@@ -87,7 +86,8 @@ class NLPTools():
 
     def __init__(self, config):
         self.config = config
-        self.stanford_ner = StanfordNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
-        self.stanford_pos = StanfordPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
+        self.config.logger.info('loading NLP components, word2vec will take some time...')
+        self.stanford_ner = CoreNLPNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
+        self.stanford_pos = CoreNLPPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
         self.stanford_pos.java_options='-mx8g'
         self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)

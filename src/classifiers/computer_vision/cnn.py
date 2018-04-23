@@ -3,8 +3,6 @@ import torch.nn as nn
 import matplotlib.image as mpimg
 from torch.autograd import Variable
 import cv2
-from src.core.util.systemlog import SysLogger
-
 
 class CNN(nn.Module):
     def __init__(self, config):

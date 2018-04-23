@@ -1,6 +1,10 @@
+import logging
 import os
 from ConfigParser import SafeConfigParser
+
+import datetime
 import pkg_resources
+
 
 class Singleton(type):
     _instances = {}
@@ -16,11 +20,14 @@ class HorusConfig(object):
     def __init__(self):
         fine = False
         config = None
+        self.logger = logging.getLogger('horus')
+
         for ini_file in os.curdir, os.path.expanduser("~"), "/etc/horus", os.environ.get('HORUS_CONF'):
             try:
                 self.version = "0.2.0"
                 self.version_label = "HORUS 0.2.0"
                 self.description = "A framework to boost NLP tasks"
+
                 with open(os.path.join(ini_file, "horus.ini")) as source:
 
                     #config.readfp(source)
@@ -89,7 +96,6 @@ class HorusConfig(object):
                     self.models_cv_org_dict = self.dir_models + parser.get('models-cv', 'horus_org_voc')
                     self.models_cv_per = self.dir_models + parser.get('models-cv', 'horus_per')
 
-                    self.models_text_root =  self.dir_models + parser.get('models-text', 'root')
                     self.models_1_text = self.dir_models + parser.get('models-text', 'horus_textchecking_1')
                     self.models_2_text = self.dir_models + parser.get('models-text', 'horus_textchecking_2')
                     self.models_3_text = self.dir_models + parser.get('models-text', 'horus_textchecking_3')
@@ -148,13 +154,27 @@ class HorusConfig(object):
 
                     break
                     #config.readfp(source)
+
             except IOError:
                 pass
 
         if fine is False:
             raise ValueError('error on trying to read the conf file (horus.conf)! Please set HORUS_CONF with its '
                              'path or place it at your home dir')
+        else:
+            if len(self.logger.handlers) == 0:
+                self.logger.setLevel(logging.DEBUG)
+                now = datetime.datetime.now()
+                handler = logging.FileHandler(self.dir_log + 'horus_' + now.strftime("%Y-%m-%d") + '.log')
+                formatter = logging.Formatter(
+                    "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+                handler.setFormatter(formatter)
+                self.logger.addHandler(handler)
+                consoleHandler = logging.StreamHandler()
+                consoleHandler.setFormatter(formatter)
+                self.logger.addHandler(consoleHandler)
 
+        self.logger.info('configuration file loaded successfully')
         #ini_file = pkg_resources.resource_filename('resource', "horus.conf")
         #rootdir = os.getcwd()
         #

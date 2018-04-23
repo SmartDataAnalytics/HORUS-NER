@@ -55,7 +55,7 @@ def annotate():
     out = ''
     try:
         #ext = flask.g.get('extractor', None)
-        out = extractor.extract_features_text(text)
+        out = extractor.extract_features_from_text(text)
     except BaseException as inst:
         error = str(type(inst).__name__) + ' ' + str(inst)
     return jsonify(text=text, output=out, error=error)

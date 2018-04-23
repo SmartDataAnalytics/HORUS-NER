@@ -141,7 +141,7 @@ class HorusDemo(object):
 
             if len(self.horus_matrix) > 0:
                 self.util.download_and_cache_results(self.horus_matrix)
-                self.features.detect_objects()
+                self.features.extract_features()
                 self.update_compound_predictions()
                 self.run_final_classifier()
                 self.util.print_annotated_sentence()
