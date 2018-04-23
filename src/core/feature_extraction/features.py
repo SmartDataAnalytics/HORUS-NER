@@ -44,7 +44,7 @@ from src.core.util import definitions
 
 
 class FeatureExtraction(object):
-    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=0):
+    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1):
         '''
         The HORUS feature_extraction class
         :param config: the configuration file
@@ -538,7 +538,7 @@ class FeatureExtraction(object):
 
 if __name__ == "__main__":
     if len(sys.argv) not in (1,2,3,4):
-        print "please inform: 1: data set and 2: column indexes ([1, .., n])"
+        print("please inform: 1: data set and 2: column indexes ([1, .., n])")
     else:
         config = HorusConfig()
         # args[0], args[1], args[2], args[3]
@@ -547,7 +547,7 @@ if __name__ == "__main__":
         data = 'paris hilton was once the toast of the town' #args[0]
 
         if tot_args == 1:
-            extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=1)
+            extractor = FeatureExtraction(config)
             out = extractor.extract_features_from_text(data)
             #outjson = json.dumps(out)
             print(out)

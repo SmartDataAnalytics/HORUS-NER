@@ -4,8 +4,8 @@ from sklearn.externals import joblib
 
 class SIFT():
     def __init__(self, config):
+        self.config = config
         self.config.logger.debug(':: loading SIFT')
-        self.logger.info(':: loading SIFT')
         self.detect = cv2.xfeatures2d.SIFT_create()
         self.extract = cv2.xfeatures2d.SIFT_create()
         self.flann_params = dict(algorithm=1, trees=config.models_kmeans_trees)
@@ -74,7 +74,7 @@ class SIFT():
             return p
 
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0
 
     def detect_place(self, img):
@@ -163,7 +163,7 @@ class SIFT():
             return ret
 
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return [0] * 10
 
     def detect_faces(self, img):
@@ -185,5 +185,5 @@ class SIFT():
             # cv2.waitKey(0)
 
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0

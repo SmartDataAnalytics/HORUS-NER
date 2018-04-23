@@ -18,8 +18,8 @@ class InceptionCV():
     def __init__(self, config):
         try:
             self.config = config
-            sself.config.logger.debug(':: loading InceptionCV')
-            self.logger.debug(':: loading InceptionCV')
+            self.config.logger.debug(':: loading InceptionCV')
+       
 
             self.DIR_MODELS = config.dir_models + "/inception/"
             self.TF_MODELS_URL = "http://download.tensorflow.org/models/"
@@ -143,7 +143,7 @@ class InceptionCV():
             out = self.predict(image, version='V4')
             print(out)
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0
 
     def detect_logos(self, image):
@@ -151,7 +151,7 @@ class InceptionCV():
             out = self.predict(image, version='V4')
             print(out)
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0
 
     def detect_place(self, image):
@@ -159,5 +159,5 @@ class InceptionCV():
             out = self.predict(image, version='V4')
             print(out)
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0

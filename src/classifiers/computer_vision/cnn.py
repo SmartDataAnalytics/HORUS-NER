@@ -20,7 +20,6 @@ class CNN(nn.Module):
         self.fc1 = nn.Linear(7 * 7 * 32, 100)
         self.fc2 = nn.Linear(100, 10)
         self.config = config
-        self.logger = SysLogger().getLog()
 
     def __postprocess_image(self, image):
         try:
@@ -31,7 +30,7 @@ class CNN(nn.Module):
             img.unsqueeze_(0)
             return Variable(img)
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return False
 
     def preprocess_image(self, img):
@@ -43,7 +42,7 @@ class CNN(nn.Module):
             resized_image = cv2.resize(img, (28, 28))
             return self.__postprocess_image(resized_image)
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return False
 
 
@@ -74,7 +73,7 @@ class CNN(nn.Module):
             _, predicted = torch.max(outputs.data, 1)
             return predicted.numpy().sum()
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0
 
     def detect_logo(self, image):
@@ -85,7 +84,7 @@ class CNN(nn.Module):
             _, predicted = torch.max(outputs.data, 1)
             return predicted.numpy().sum()
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return 0
 
     def detect_place(self, image):
@@ -153,5 +152,5 @@ class CNN(nn.Module):
             ret.append(predicted.numpy().sum())
             return ret
         except Exception as e:
-            self.logger.error(e)
+            self.config.logger.error(e)
             return [0] * 10
