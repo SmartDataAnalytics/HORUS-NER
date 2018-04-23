@@ -30,6 +30,7 @@ import nltk
 import numpy
 import pandas as pd
 
+from src.classifiers.computer_vision.cls_dlib import DLib_Classifier
 from src.classifiers.computer_vision.inception import InceptionCV
 from src.classifiers.computer_vision.sift import SIFT
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
@@ -69,6 +70,7 @@ class FeatureExtraction(object):
         self.image_sift = None
         self.text_bow = None
         self.text_tm = None
+        self.dlib_cnn = DLib_Classifier(self.config)
         if load_cnn==1: self.image_cnn = InceptionCV(self.config)
         if load_sift==1: self.image_sift = SIFT(self.config)
         if load_tfidf==1: self.text_bow = BowTfidf(self.config)
@@ -253,6 +255,8 @@ class FeatureExtraction(object):
                     tot_geral_locations_cnn =0
                     tot_geral_pos_locations_cnn =0
                     tot_geral_neg_locations_cnn =0
+                    tot_geral_faces_dlib = 0
+
 
                     with self.conn:
                         # -----------------------------------------------------------------
@@ -271,7 +275,7 @@ class FeatureExtraction(object):
                             # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
                             # 14 = nr_faces_cnn, 15 = nr_logos_cnn, 16-25=nr_places_1-to-10_cnn
                             for i in range(limit_img):
-                                img_path = self.config.cache_img_folder + rows[i][0]
+                                img_full_path = self.config.cache_img_folder + rows[i][0]
                                 if rows[i][2] == 1: # processed
                                     tot_geral_faces += rows[i][3] if rows[i][3] != None else 0
                                     tot_geral_logos += rows[i][4] if rows[i][4] != None else 0
@@ -285,6 +289,8 @@ class FeatureExtraction(object):
                                     tot_geral_neg_locations += (rows[i][5:14].count(0) * -1)
                                     tot_geral_pos_locations_cnn += rows[i][16:25].count(1)
                                     tot_geral_neg_locations_cnn += (rows[i][16:25].count(0) * -1)
+                                    # TODO: to integrate (check index)
+                                    tot_geral_faces_dlib += rows[i][26] if rows[i][26] != None else 0
 
                                 else:
                                     tot_faces = 0
@@ -293,6 +299,7 @@ class FeatureExtraction(object):
                                     tot_faces_cnn = 0
                                     tot_logos_cnn = 0
                                     res_cnn = [0] * 10
+                                    tot_faces_dlib = 0
 
                                     if self.image_sift is not None:
                                         # ----- face recognition -----
@@ -335,6 +342,9 @@ class FeatureExtraction(object):
                                             if res_cnn.count(1) >= T:
                                                 tot_geral_locations_cnn += 1
                                                 self.config.logger.debug(":: found {0} place(s)!".format(1))
+
+                                    if self.dlib_cnn is not None:
+                                        tot_geral_faces_dlib += self.dlib_cnn.detect_faces_cnn(img_full_path)
 
                                     param = []
                                     param.append(tot_faces)
