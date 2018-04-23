@@ -30,7 +30,7 @@ from sklearn.externals import joblib
 
 from config import HorusConfig
 from src.core.feature_extraction.features import FeatureExtraction
-from src.core.feature_extraction.util import Util
+from src.core.util.util import Util
 from src.core.util import definitions
 
 

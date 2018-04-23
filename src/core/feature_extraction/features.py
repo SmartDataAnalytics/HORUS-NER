@@ -32,14 +32,14 @@ import pandas as pd
 
 from src.classifiers.computer_vision.inception import InceptionCV
 from src.classifiers.computer_vision.sift import SIFT
-from src.core.feature_extraction.util import Util
+from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
+from src.core.util.util import Util
 from src.core.translation.azure import *
 from src.core.util.nlp_tools import NLPTools
 from src.core.util.systemlog import SysLogger
 from src.core.util.definitions_sql import *
 # print cv2.__version__
 from src.classifiers.text_classification.bow_tfidf import BowTfidf
-from src.classifiers.text_classification.topic_modeling import TopicModeling
 from src.core.util import definitions
 
 
@@ -78,7 +78,7 @@ class FeatureExtraction(object):
             self.text_bow = None
         if load_topic_modeling==1:
             self.logger.info(':: loading TM')
-            self.text_tm = TopicModeling(self.config)
+            self.text_tm = TopicModelingShortCNN(self.config)
         else:
             self.text_tm = None
         self.logger.info(':: database connecting ...')

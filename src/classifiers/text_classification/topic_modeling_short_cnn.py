@@ -62,6 +62,19 @@ class TopicModelingShortCNN():
         except:
             raise
 
+    def detect_text_klass(self, text):
+        predictions = []
+        try:
+            dict = self.classifier.score(text)
+            predictions.append(dict.get('loc'))
+            predictions.append(dict.get('org'))
+            predictions.append(dict.get('per'))
+            predictions.append(0)
+            predictions.append(0)
+            return predictions
+        except Exception as e:
+            raise e
+
     def train(self, epochs=5000):
         try:
             if self.mode == 'test':
