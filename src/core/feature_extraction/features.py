@@ -164,6 +164,7 @@ class FeatureExtraction(object):
             #    t1 = unicode(t1, "utf-8")
             #if isinstance(t2, str):
             #    t2 = unicode(t2, "utf-8")
+            error = 0
 
             c = self.conn.cursor()
             if t1en is None or t1en == '':
@@ -181,6 +182,7 @@ class FeatureExtraction(object):
                 except Exception as e:
                     sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET error = 1, error_desc = ? WHERE id = ?"""
                     c.execute(sql, (str(e.message), id))
+                    error+=1
 
 
             if t2en is None or t2en == '':
@@ -198,6 +200,7 @@ class FeatureExtraction(object):
                 except Exception as e:
                     sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET error = 1, error_desc = ? WHERE id = ?"""
                     c.execute(sql, (str(e.message), id))
+                    error+=1
 
             c.close()
 
@@ -207,7 +210,7 @@ class FeatureExtraction(object):
             if t2en is not None:
                 merged = merged + ' ' + t2en.encode('ascii','ignore')
 
-            return merged
+            return merged, error
 
         except Exception as e:
             raise e
@@ -383,12 +386,12 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_DIST_CV_I] = dist_cv_indicator  # 4
                             self.horus_matrix[index][definitions.INDEX_PL_CV_I] = place_cv_indicator  # 5
                             self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_IMG] = nr_results_img  # 5
-                            self.horus_matrix[index][definitions.TOT_CV_LOC_CNN] = tot_geral_locations_cnn  # 1
-                            self.horus_matrix[index][definitions.TOT_CV_ORG_CNN] = tot_geral_logos_cnn  # 2
-                            self.horus_matrix[index][definitions.TOT_CV_PER_CNN] = tot_geral_faces_cnn  # 3
-                            self.horus_matrix[index][definitions.TOT_CV_PER_DLIB_CNN] = tot_geral_faces_dlib_cnn  # 4
-                            self.horus_matrix[index][definitions.DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
-                            self.horus_matrix[index][definitions.PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_CNN] = tot_geral_locations_cnn  # 1
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_ORG_CNN] = tot_geral_logos_cnn  # 2
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_PER_CNN] = tot_geral_faces_cnn  # 3
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_PER_DLIB_CNN] = tot_geral_faces_dlib_cnn  # 4
+                            self.horus_matrix[index][definitions.INDEX_DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
+                            self.horus_matrix[index][definitions.INDEX_PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
 
                             self.config.logger.debug(':: CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
                                               'CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s]' %
@@ -401,6 +404,11 @@ class FeatureExtraction(object):
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[outs.index(max(outs)) + 1]
                             else:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[4]
+
+                            if limit_img != 0:
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[outs_cnn.index(max(outs_cnn)) + 1]
+                            else:
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[4]
 
                         # -----------------------------------------------------------------
                         # text classification
@@ -415,7 +423,7 @@ class FeatureExtraction(object):
                             if nr_results_txt == 0:
                                 self.config.logger.debug(":: term has not returned web sites!")
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
-
+                            tot_error_translation = 0
                             for itxt in range(limit_txt):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
@@ -425,9 +433,10 @@ class FeatureExtraction(object):
                                                                                                     definitions.SEED_LOC)
                                         tot_union_emb_org = self.__get_number_classes_in_embeedings(term,
                                                                                                     definitions.SEED_ORG)
-                                        merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
-                                        ret_bow = [0,0,0,0,0]
-                                        ret_tm = [0,0,0,0,0]
+                                        merged_en, error_translation = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
+                                        tot_error_translation += error_translation
+                                        ret_bow = [0] * 5
+                                        ret_tm = [0] * 5
                                         if merged_en != '':
                                             if self.text_bow is not None:
                                                 ret_bow = self.text_bow.detect_text_klass(merged_en)
@@ -442,8 +451,12 @@ class FeatureExtraction(object):
                                                                              tot_union_emb_loc, tot_union_emb_org,
                                                                        rows[itxt][0]))
                                     else:
-                                        y_bow.append(rows[itxt][7:12])
-                                        y_tm.append(rows[itxt][12:18])
+                                        y_bow.append(rows[itxt][7:11])
+                                        y_tm.append(rows[itxt][12:16])
+                                        tot_union_emb_per = rows[itxt][17]
+                                        tot_union_emb_loc = rows[itxt][18]
+                                        tot_union_emb_org = rows[itxt][19]
+
                                 except Exception as e:
                                     self.config.logger.error(str(e.message))
                                     pass
@@ -454,31 +467,41 @@ class FeatureExtraction(object):
                             yytm = numpy.array(y_tm)
 
                             gpb = [numpy.count_nonzero(yyb == 1), numpy.count_nonzero(yyb == 2), numpy.count_nonzero(yyb == 3)]
+                            #TODO: check this logic...
+                            gpbtm = [numpy.count_nonzero(yytm == 1), numpy.count_nonzero(yytm == 2),
+                                   numpy.count_nonzero(yytm == 3)]
+
                             horus_tx_ner = gpb.index(max(gpb)) + 1
+                            horus_tx_cnn_ner = gpb.index(max(gpbtm)) + 1
 
-                            self.horus_matrix[index][19] = limit_txt
-                            self.horus_matrix[index][20] = gpb[0]
-                            self.horus_matrix[index][21] = gpb[1]
-                            self.horus_matrix[index][22] = gpb[2]
-                            self.horus_matrix[index][23] = 0
+                            self.horus_matrix[index][definitions.INDEX_TOT_RESULTS_TX] = limit_txt
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC] = gpb[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG] = gpb[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER] = gpb[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_ERR_TRANS] = tot_error_translation
 
-                            self.horus_matrix[index][28] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[0]
-                            self.horus_matrix[index][29] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[1]
-                            self.horus_matrix[index][30] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[2]
 
                             maxs_tx = heapq.nlargest(2, gpb)
                             maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, numpy.sum(yytm, axis=0))
                             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
                             dist_tx_indicator_tm = 0 if len(y_tm) == 0 else (max(maxs_tm) - min(maxs_tm))
 
-                            self.horus_matrix[index][24] = dist_tx_indicator
-                            self.horus_matrix[index][25] = nr_results_txt
-                            self.horus_matrix[index][31] = dist_tx_indicator_tm
+                            self.horus_matrix[index][definitions.INDEX_DIST_TX_I] = dist_tx_indicator
+                            self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_TX] = nr_results_txt
+                            self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN] = dist_tx_indicator_tm
 
                             if limit_txt != 0:
-                                self.horus_matrix[index][26] = definitions.KLASSES[horus_tx_ner]
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[horus_tx_ner]
                             else:
-                                self.horus_matrix[index][26] = definitions.KLASSES[4]
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[4]
+
+                            if limit_txt != 0:
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[horus_tx_cnn_ner]
+                            else:
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[4]
 
                         self.config.logger.debug(':: TX statistics:'
                                            '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s]' %
