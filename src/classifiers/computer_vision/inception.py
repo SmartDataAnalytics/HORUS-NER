@@ -12,6 +12,7 @@ from nltk.corpus import wordnet as wn
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 from src.classifiers.util.inception import dataset_utils, imagenet, inception_preprocessing
 from src.config import HorusConfig
+from src.core.util import definitions
 
 
 class InceptionCV():
@@ -27,12 +28,9 @@ class InceptionCV():
             self.INCEPTION_V4_URL = self.TF_MODELS_URL + "inception_v4_2016_09_09.tar.gz"
             self.INCEPTION_V3_CKPT_PATH = self.DIR_MODELS + "inception_v3.ckpt"
             self.INCEPTION_V4_CKPT_PATH = self.DIR_MODELS + "inception_v4.ckpt"
-            seed_PER = ['person', 'human being', 'man', 'woman', 'human body', 'human face']
-            seed_ORG = ['logo', 'logotype']
-            seed_LOC = ['volcano', 'stone', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake',
-                        'square', 'map', 'flag']
 
-            self.seeds = {'PER': seed_PER, 'ORG': seed_ORG, 'LOC': seed_LOC}
+
+            self.seeds = {'PER': definitions.seed_PER, 'ORG': definitions.seed_ORG, 'LOC': definitions.seed_LOC}
 
             if not tf.gfile.Exists(self.DIR_MODELS):
                 tf.gfile.MakeDirs(self.DIR_MODELS)
@@ -139,6 +137,11 @@ class InceptionCV():
             #print(predictions)
 
     def detect_faces(self, image):
+        '''
+        ImageNET taxonomy: detect person?
+        :param image:
+        :return:
+        '''
         try:
             out = self.predict(image, version='V4')
             print(out)
@@ -160,4 +163,4 @@ class InceptionCV():
             print(out)
         except Exception as e:
             self.config.logger.error(e)
-            return 0
+            return [0] * 10

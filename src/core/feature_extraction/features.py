@@ -415,6 +415,9 @@ class FeatureExtraction(object):
                         # -----------------------------------------------------------------
                         if 1==1:
 
+                            tot_union_emb_loc = 0
+                            tot_union_emb_org = 0
+                            tot_union_emb_per = 0
                             y_bow, y_tm = [], []
                             cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                             rows = cursor.fetchall()
@@ -428,11 +431,11 @@ class FeatureExtraction(object):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
                                         tot_union_emb_per = self.__get_number_classes_in_embeedings(term,
-                                                                                                    definitions.SEED_PER)
+                                                                                                    definitions.seed_PER)
                                         tot_union_emb_loc = self.__get_number_classes_in_embeedings(term,
-                                                                                                    definitions.SEED_LOC)
+                                                                                                    definitions.seed_LOC)
                                         tot_union_emb_org = self.__get_number_classes_in_embeedings(term,
-                                                                                                    definitions.SEED_ORG)
+                                                                                                    definitions.seed_ORG)
                                         merged_en, error_translation = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                         tot_error_translation += error_translation
                                         ret_bow = [0] * 5
@@ -493,6 +496,10 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_TX] = nr_results_txt
                             self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN] = dist_tx_indicator_tm
 
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC] = tot_union_emb_loc
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG] = tot_union_emb_org
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER] = tot_union_emb_per
+
                             if limit_txt != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[horus_tx_ner]
                             else:
@@ -504,11 +511,20 @@ class FeatureExtraction(object):
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[4]
 
                         self.config.logger.debug(':: TX statistics:'
-                                           '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s]' %
-                                           (str(self.horus_matrix[index][20]).zfill(2), str(self.horus_matrix[index][21]).zfill(2),
-                                            str(self.horus_matrix[index][22]).zfill(2), str(dist_tx_indicator).zfill(2),
-                                            "{:.2f}".format(self.horus_matrix[index][28]).zfill(2), "{:.2f}".format(self.horus_matrix[index][29]).zfill(2),
-                                            "{:.2f}".format(self.horus_matrix[index][30]).zfill(2), "{:.2f}".format(dist_tx_indicator_tm).zfill(2)))
+                                           '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s, '
+                                                 'TOT_EMB_LOC=%s, TOT_EMB_ORG=%s, TOT_EMB_PER=%s]' %
+                                           (str(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_DIST_TX_I]).zfill(2),
+                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN]).zfill(2),
+                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN]).zfill(2),
+                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN]).zfill(2),
+                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER]).zfill(2)
+                                            ))
                         self.config.logger.debug('-------------------------------------------------------------')
 
 

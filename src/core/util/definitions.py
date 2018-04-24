@@ -95,10 +95,10 @@ PENN_UNI_TAG = [['#', 'SYM'],['$', 'SYM'], ['','PUNCT'],[',','PUNCT'],['-LRB-','
                     ['VBD','VERB'],['VBG','VERB'],['VBN','VERB'],['VBP','VERB'],['VBZ','VERB'],['WDT','DET'],['WP','PRON'],['WP$', 'DET'],['WRB', 'ADV']]
 
 
-# TODO: define seeds
-SEED_PER = {}
-SEED_LOC = {}
-SEED_ORG = {}
+seed_PER = ['person', 'human being', 'man', 'woman', 'human body', 'human face']
+seed_ORG = ['logo', 'logotype']
+seed_LOC = ['volcano', 'stone', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake',
+                        'square', 'map', 'flag']
 
 INDEX_IS_ENTITY = 0
 INDEX_ID_SENTENCE = 1
@@ -139,12 +139,12 @@ INDEX_DIST_CV_I_CNN = 35
 INDEX_PL_CV_I_CNN = 36
 INDEX_TOT_CV_PER_DLIB_CNN = 37
 INDEX_MAX_KLASS_PREDICT_TX_CNN = 38
-INDEX_KLASS_04 = 39
-INDEX_KLASS_05 = 40
+INDEX_MAX_KLASS_PREDICT_COMPOUND = 39
+INDEX_KLASS_FINAL_MODEL = 40
 INDEX_MAX_KLASS_PREDICT_CV_CNN = 41
-INDEX_KLASS_07 = 42
-INDEX_KLASS_08 = 43
-INDEX_KLASS_09 = 44
+INDEX_TOT_EMB_SIMILAR_LOC = 42
+INDEX_TOT_EMB_SIMILAR_ORG = 43
+INDEX_TOT_EMB_SIMILAR_PER = 44
 INDEX_KLASS_10 = 45
 INDEX_KLASS_11 = 46
 INDEX_KLASS_12 = 47

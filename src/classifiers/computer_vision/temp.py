@@ -6,14 +6,18 @@ from src.config import HorusConfig
 from nltk.corpus import wordnet as wn
 import re
 
-config = HorusConfig()
+from src.core.util.nlp_tools import NLPTools
 
+config = HorusConfig()
+print('loading utils...')
+utils = NLPTools(config)
 print('loading places 365 CNN model...')
 placesCNN = Places365CV(config)
 print('loading topic model CNN model...')
-topicCNN = TopicModelingShortCNN(config)
+topicCNN = TopicModelingShortCNN(w2v=utils.word2vec_google, config=config, mode='test')
 print('loading inception model...')
 incep_model = InceptionCV(config)
+
 print('getting imageNET labels...')
 class_names = imagenet.create_readable_names_for_imagenet_labels()
 print('done')
@@ -42,7 +46,6 @@ for k, V in incep_model.seeds.iteritems():
                 #ids_LOC.extend(syns.hyponyms())
             else:
                 raise('key error')
-
 
 print('seeds...')
 print(set(ids_PER))
@@ -88,9 +91,9 @@ for img in pos_img_per:
         tot_none = 0
         i = 0
         # image classification CNN
-        print('places365', prediction_values_places365)
-        print('inception', prediction_values_inception)
-        print('')
+        #print('places365', prediction_values_places365)
+        #print('inception', prediction_values_inception)
+        #print('')
 
         final_label_prob_vector = prediction_values_inception
         final_label_prob_vector.extend(prediction_values_places365)
@@ -101,13 +104,48 @@ for img in pos_img_per:
             labels = final_label_prob_vector[i][0]
             s = 'sda'
 
-            print('-- label(s): ', labels)
+            #print('-- label(s): ', labels)
             prob = final_label_prob_vector[i][1]
-            for l in re.split(', | ; | /', labels):
-                l = l.replace('_', ' ').replace('/outdoor', '').replace('/indoor', '')
-
+            cleaned_tokens = ' '.join((re.sub('[^0-9a-zA-Z]+', ' ', l) for l in labels.split()))
+            T = [l.replace('/outdoor', '').replace('/indoor', '') for l in cleaned_tokens.split()]
+            T = set(T)
+            for t in T:
                 i+=1
-                d = topicCNN.predict(l)
+                print('word=', t)
+                d = topicCNN.predict(t)
+
+                try:
+                    print('loc similarirty', utils.word2vec_google.similarity('location', t))
+                except:pass
+
+                try:
+                    print('org similarirty', utils.word2vec_google.similarity('organization', t))
+                except:pass
+
+                try:
+                    print('per similarirty', utils.word2vec_google.similarity('person', t))
+                except: pass
+
+                print('---')
+
+                try:
+                    print('loc dist', utils.word2vec_google.similarity(t, 'location'))
+                    print('loc dist', utils.word2vec_google.similarity(t, 'landscape'))
+                    print('loc dist', utils.word2vec_google.similarity(t, 'place'))
+                except: pass
+
+                try:
+                    print('org dist', utils.word2vec_google.similarity(t, 'organization'))
+                    print('org dist', utils.word2vec_google.similarity(t, 'company'))
+                    print('org dist', utils.word2vec_google.similarity(t, 'office'))
+                except: pass
+
+                try:
+                    print('per dist', utils.word2vec_google.similarity(t, 'person'))
+                    print('per dist', utils.word2vec_google.similarity(t, 'human being'))
+                    print('per dist', utils.word2vec_google.similarity(t, 'people'))
+                except: pass
+
                 tot_loc += (d.get('loc') * prob)
                 tot_per += (d.get('per') * prob)
                 tot_org += (d.get('org') * prob)
