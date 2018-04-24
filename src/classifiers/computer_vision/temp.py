@@ -111,7 +111,7 @@ for img in pos_img_per:
             T = set(T)
             for t in T:
                 i+=1
-                print('word=', t)
+                print('word=', t.lower())
                 d = topicCNN.predict(t)
 
                 try:
