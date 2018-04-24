@@ -35,6 +35,7 @@ from src.classifiers.computer_vision.inception import InceptionCV
 from src.classifiers.computer_vision.sift import SIFT
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 from src.core.translation.bingtranslation import BingTranslator
+from src.core.util.definitions import INDEX_TOT_CV_LOC, INDEX_TOT_IMG
 from src.core.util.util import Util
 from src.core.translation.azure import *
 from src.core.util.nlp_tools import NLPTools
@@ -54,7 +55,7 @@ class FeatureExtraction(object):
         :param load_cnn: 1/0 (yes/no)
         :param load_topic_modeling: 1/0 (yes/no)
         '''
-        self.horus_matrix = []
+        self.horus_matrix = [] # TODO: convert to pandas dataframe => pd.DataFrame(columns=definitions.HORUS_MATRIX_HEADER)
         self.config = config
         self.config.logger.info('==================================================================')
         self.config.logger.info(':: HORUS Framework - Feature Extractor')
@@ -255,7 +256,7 @@ class FeatureExtraction(object):
                     tot_geral_locations_cnn =0
                     tot_geral_pos_locations_cnn =0
                     tot_geral_neg_locations_cnn =0
-                    tot_geral_faces_dlib = 0
+                    tot_geral_faces_dlib_cnn = 0
 
 
                     with self.conn:
@@ -263,7 +264,6 @@ class FeatureExtraction(object):
                         # image classification
                         # -----------------------------------------------------------------
                         if 1==1:
-                            filesimg = []
                             cursor = self.conn.cursor()
                             cursor.execute(SQL_OBJECT_DETECTION_SEL % (id_term_img, id_ner_type))
                             rows = cursor.fetchall()
@@ -275,22 +275,26 @@ class FeatureExtraction(object):
                             # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
                             # 14 = nr_faces_cnn, 15 = nr_logos_cnn, 16-25=nr_places_1-to-10_cnn
                             for i in range(limit_img):
+                                _id = rows[i][1]
+
                                 img_full_path = self.config.cache_img_folder + rows[i][0]
                                 if rows[i][2] == 1: # processed
                                     tot_geral_faces += rows[i][3] if rows[i][3] != None else 0
                                     tot_geral_logos += rows[i][4] if rows[i][4] != None else 0
-                                    tot_geral_faces_cnn += rows[i][14] if rows[i][14] != None else 0
-                                    tot_geral_logos_cnn += rows[i][15] if rows[i][15] != None else 0
                                     if (rows[i][5:14]).count(1) >= int(self.config.models_location_theta):
                                         tot_geral_locations += 1
-                                    if (rows[i][16:25]).count(1) >= int(self.config.models_location_theta):
-                                        tot_geral_locations_cnn += 1
                                     tot_geral_pos_locations += rows[i][5:14].count(1)
                                     tot_geral_neg_locations += (rows[i][5:14].count(0) * -1)
-                                    tot_geral_pos_locations_cnn += rows[i][16:25].count(1)
-                                    tot_geral_neg_locations_cnn += (rows[i][16:25].count(0) * -1)
-                                    # TODO: to integrate (check index)
-                                    tot_geral_faces_dlib += rows[i][26] if rows[i][26] != None else 0
+
+                                    tot_geral_faces_cnn += rows[i][15] if rows[i][15] != None else 0
+                                    tot_geral_logos_cnn += rows[i][16] if rows[i][16] != None else 0
+
+                                    if (rows[i][17:26]).count(1) >= int(self.config.models_location_theta):
+                                        tot_geral_locations_cnn += 1
+                                    tot_geral_pos_locations_cnn += rows[i][17:26].count(1)
+                                    tot_geral_neg_locations_cnn += (rows[i][17:26].count(0) * -1)
+
+                                    tot_geral_faces_dlib_cnn += rows[i][27] if rows[i][27] != None else 0
 
                                 else:
                                     tot_faces = 0
@@ -299,52 +303,54 @@ class FeatureExtraction(object):
                                     tot_faces_cnn = 0
                                     tot_logos_cnn = 0
                                     res_cnn = [0] * 10
-                                    tot_faces_dlib = 0
+                                    tot_faces_dlib_cnn = 0
 
                                     if self.image_sift is not None:
                                         # ----- face recognition -----
-                                        tot_faces = self.image_sift.detect_faces(rows[i][0])
+                                        tot_faces = self.image_sift.detect_faces(img_full_path)
                                         if tot_faces > 0:
                                             tot_geral_faces += 1
                                             self.config.logger.debug(":: found {0} faces!".format(tot_faces))
                                         # ----- logo recognition -----
-                                        tot_logos = self.image_sift.detect_logo(rows[i][0])
+                                        tot_logos = self.image_sift.detect_logo(img_full_path)
                                         if tot_logos > 0:
                                             tot_geral_logos += 1
                                             self.config.logger.debug(":: found {0} logo(s)!".format(1))
                                         # ----- place recognition -----
-                                        res = self.image_sift.detect_place(rows[i][0])
+                                        res = self.image_sift.detect_place(img_full_path)
                                         tot_geral_pos_locations += res.count(1)
                                         tot_geral_neg_locations += (res.count(0) * -1)
 
-                                    if res.count(1) >= int(self.config.models_location_theta):
-                                        tot_geral_locations += 1
-                                        self.config.logger.debug(":: found {0} place(s)!".format(1))
+                                        if res.count(1) >= int(self.config.models_location_theta):
+                                            tot_geral_locations += 1
+                                            self.config.logger.debug(":: found {0} place(s)!".format(1))
+
+                                    #TODO: add blob detection classifier (can we detect logos lke that?)
 
                                     if self.image_cnn is not None:
-                                        image = self.image_cnn.preprocess_image(rows[i][0])
-                                        if image is not False:
-                                            # ----- face recognition -----
-                                            tot_faces_cnn = self.image_cnn.detect_faces(image)
-                                            if tot_faces_cnn > 0:
-                                                tot_geral_faces_cnn += 1
-                                                self.config.logger.debug(":: found {0} faces!".format(tot_faces))
-                                            # ----- logo recognition -----
-                                            tot_logos_cnn = self.image_cnn.detect_logo(image)
-                                            if tot_logos_cnn > 0:
-                                                tot_geral_logos_cnn += 1
-                                                self.config.logger.debug(":: found {0} logo(s)!".format(1))
-                                            # ----- place recognition -----
-                                            res_cnn = self.image_cnn.detect_place(image)
-                                            tot_geral_pos_locations_cnn += res_cnn.count(1)
-                                            tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
+                                        # ----- face recognition -----
+                                        tot_faces_cnn = self.image_cnn.detect_faces(img_full_path)
+                                        if tot_faces_cnn > 0:
+                                            tot_geral_faces_cnn += 1
+                                            self.config.logger.debug(":: found {0} faces!".format(tot_faces))
+                                        # ----- logo recognition -----
+                                        tot_logos_cnn = self.image_cnn.detect_logo(img_full_path)
+                                        if tot_logos_cnn > 0:
+                                            tot_geral_logos_cnn += 1
+                                            self.config.logger.debug(":: found {0} logo(s)!".format(1))
+                                        # ----- place recognition -----
+                                        res_cnn = self.image_cnn.detect_place(img_full_path)
+                                        tot_geral_pos_locations_cnn += res_cnn.count(1)
+                                        tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
-                                            if res_cnn.count(1) >= T:
-                                                tot_geral_locations_cnn += 1
-                                                self.config.logger.debug(":: found {0} place(s)!".format(1))
+                                        if res_cnn.count(1) >= int(self.config.models_location_theta):
+                                            tot_geral_locations_cnn += 1
+                                            self.config.logger.debug(":: found {0} place(s)!".format(1))
 
                                     if self.dlib_cnn is not None:
-                                        tot_geral_faces_dlib += self.dlib_cnn.detect_faces_cnn(img_full_path)
+                                        tot_faces_dlib_cnn = self.dlib_cnn.detect_faces_cnn(img_full_path)
+                                        if tot_faces_dlib_cnn > 0:
+                                            tot_geral_faces_dlib_cnn += 1
 
                                     param = []
                                     param.append(tot_faces)
@@ -353,7 +359,8 @@ class FeatureExtraction(object):
                                     param.append(tot_faces_cnn)
                                     param.append(tot_logos_cnn)
                                     param.extend(res_cnn)
-                                    param.append(rows[i][1])
+                                    param.append(tot_faces_dlib_cnn)
+                                    param.append(_id)
                                     cursor.execute(SQL_OBJECT_DETECTION_UPD, param)
 
                             self.conn.commit()
@@ -363,46 +370,42 @@ class FeatureExtraction(object):
                             dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
                             place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
 
-                            outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, tot_geral_faces_cnn]
+                            max_faces = tot_geral_faces_cnn if tot_geral_faces_cnn > tot_geral_faces_dlib_cnn else tot_geral_faces_dlib_cnn
+                            outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, max_faces]
                             maxs_cv_cnn = heapq.nlargest(2, outs_cnn)
                             dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
                             place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
 
-                            self.horus_matrix[index][11] = limit_img
-                            self.horus_matrix[index][12] = tot_geral_locations  # 1
-                            self.horus_matrix[index][13] = tot_geral_logos  # 2
-                            self.horus_matrix[index][14] = tot_geral_faces  # 3
-                            self.horus_matrix[index][15] = dist_cv_indicator  # 4
-                            self.horus_matrix[index][16] = place_cv_indicator  # 5
-                            self.horus_matrix[index][17] = nr_results_img  # 5
-
-                            self.horus_matrix[index][32] = tot_geral_locations_cnn  # 1
-                            self.horus_matrix[index][33] = tot_geral_logos_cnn  # 2
-                            self.horus_matrix[index][34] = tot_geral_faces_cnn  # 3
-                            self.horus_matrix[index][35] = dist_cv_indicator_cnn  # 4
-                            self.horus_matrix[index][36] = place_cv_indicator_cnn  # 5
+                            self.horus_matrix[index][definitions.INDEX_TOT_IMG] = limit_img
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC] = tot_geral_locations  # 1
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_ORG] = tot_geral_logos  # 2
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_PER] = tot_geral_faces  # 3
+                            self.horus_matrix[index][definitions.INDEX_DIST_CV_I] = dist_cv_indicator  # 4
+                            self.horus_matrix[index][definitions.INDEX_PL_CV_I] = place_cv_indicator  # 5
+                            self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_IMG] = nr_results_img  # 5
+                            self.horus_matrix[index][definitions.TOT_CV_LOC_CNN] = tot_geral_locations_cnn  # 1
+                            self.horus_matrix[index][definitions.TOT_CV_ORG_CNN] = tot_geral_logos_cnn  # 2
+                            self.horus_matrix[index][definitions.TOT_CV_PER_CNN] = tot_geral_faces_cnn  # 3
+                            self.horus_matrix[index][definitions.TOT_CV_PER_DLIB_CNN] = tot_geral_faces_dlib_cnn  # 4
+                            self.horus_matrix[index][definitions.DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
+                            self.horus_matrix[index][definitions.PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
 
                             self.config.logger.debug(':: CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
                                               'CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s]' %
                                               (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
-                                               str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2),
-                                               place_cv_indicator,
+                                               str(max_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator,
                                                str(tot_geral_locations_cnn).zfill(2), str(tot_geral_logos_cnn).zfill(2),
-                                               str(tot_geral_faces_cnn).zfill(2), str(dist_cv_indicator_cnn).zfill(2),
-                                               place_cv_indicator_cnn))
+                                               str(tot_geral_faces_cnn).zfill(2), str(dist_cv_indicator_cnn).zfill(2), place_cv_indicator_cnn))
 
                             if limit_img != 0:
-                                self.horus_matrix[index][18] = definitions.KLASSES[outs.index(max(outs)) + 1]
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[outs.index(max(outs)) + 1]
                             else:
-                                self.horus_matrix[index][18] = definitions.KLASSES[4]
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[4]
 
                         # -----------------------------------------------------------------
                         # text classification
                         # -----------------------------------------------------------------
                         if 1==1:
-                            cnn_labels = []
-                            tot_union_embeedings_cnn_classes = self.__get_number_classes_in_embeedings(term, cnn_labels)
-                            #TODO: export this new feature
 
                             y_bow, y_tm = [], []
                             cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
@@ -416,6 +419,12 @@ class FeatureExtraction(object):
                             for itxt in range(limit_txt):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
+                                        tot_union_emb_per = self.__get_number_classes_in_embeedings(term,
+                                                                                                    definitions.SEED_PER)
+                                        tot_union_emb_loc = self.__get_number_classes_in_embeedings(term,
+                                                                                                    definitions.SEED_LOC)
+                                        tot_union_emb_org = self.__get_number_classes_in_embeedings(term,
+                                                                                                    definitions.SEED_ORG)
                                         merged_en = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                         ret_bow = [0,0,0,0,0]
                                         ret_tm = [0,0,0,0,0]
@@ -429,7 +438,8 @@ class FeatureExtraction(object):
                                         y_tm.append(ret_tm)
 
                                         cursor.execute(SQL_TEXT_CLASS_UPD % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
-                                                                       ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
+                                                                       ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4], tot_union_emb_per,
+                                                                             tot_union_emb_loc, tot_union_emb_org,
                                                                        rows[itxt][0]))
                                     else:
                                         y_bow.append(rows[itxt][7:12])

@@ -104,7 +104,7 @@
   </tr>
   <tr>
     <td>18</td>
-    <td>KLASS_PREDICT_CV</td>
+    <td>MAX_KLASS_PREDICT_CV</td>
     <td>max out of 3cvs</td>
   </tr>
   <tr>
@@ -144,7 +144,7 @@
   </tr>
   <tr>
     <td>26</td>
-    <td>TX_KLASS</td>
+    <td>MAX_KLASS_PREDICT_TX</td>
     <td>max out of 3txts</td>
   </tr>
   <tr>
@@ -174,38 +174,38 @@
   </tr>
     <tr>
     <td>32</td>
-    <td>FEATURE_EXTRA_06</td>
-    <td>empty</td>
+    <td>TOT_CV_LOC_CNN</td>
+    <td>number of resources classified as LOC (computer vision module) - CNN</td>
   </tr>
     <tr>
     <td>33</td>
-    <td>FEATURE_EXTRA_07</td>
-    <td>empty</td>
+    <td>TOT_CV_ORG_CNN</td>
+    <td>number of resources classified as ORG (computer vision module) - CNN</td>
   </tr>
     <tr>
     <td>34</td>
-    <td>FEATURE_EXTRA_08</td>
-    <td>empty</td>
+    <td>TOT_CV_PER_CNN</td>
+    <td>number of resources classified as PER (computer vision module) - CNN</td>
   </tr>
     <tr>
     <td>35</td>
-    <td>FEATURE_EXTRA_09</td>
-    <td>empty</td>
+    <td>DIST_CV_I_CNN</td>
+    <td>distance (subtraction) between 2 max values of (TOT_CV_LOC, TOT_CV_ORG and TOT_CV_PER) (computer vision module) - CNN</td>
   </tr>
   <tr>
     <td>36</td>
-    <td>KLASS_01</td>
-    <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta else 'NONE')</td>
+    <td>PL_CV_I_CNN</td>
+    <td>sum of all LOC classifiers (computer vision module) - CNN</td>
   </tr>
   <tr>
     <td>37</td>
     <td>KLASS_02</td>
-    <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+1 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+1 else 'NONE')</td>
+    <td>empty</td>
   </tr>
   <tr>
     <td>38</td>
     <td>KLASS_03</td>
-    <td>CV_KLASS if DIST_CV_I &gt;= self.config.models_distance_theta+2 else TX_KLASS if DIST_TX_I &gt;= self.config.models_distance_theta+2 else 'NONE')</td>
+    <td>empty</td>
   </tr>
   <tr>
     <td>39</td>

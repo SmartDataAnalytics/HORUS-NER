@@ -146,7 +146,7 @@ class InceptionCV():
             self.config.logger.error(e)
             return 0
 
-    def detect_logos(self, image):
+    def detect_logo(self, image):
         try:
             out = self.predict(image, version='V4')
             print(out)

@@ -1,12 +1,8 @@
 import sqlite3
-
 import numpy
-
 import json
 import ntpath
 import nltk
-
-
 from src.core.util.definitions_sql import SQL_SENTENCE_SAVE
 from src.core.util import definitions
 from src.core.util.nlp_tools import NLPTools
@@ -20,7 +16,7 @@ import string
 import unicodedata
 import re
 import langdetect
-
+import pandas as pd
 
 class Util(object):
     def __init__(self, config):
@@ -129,7 +125,7 @@ class Util(object):
                 return t2final  # error vector
             else:
 
-                if config.config.text_classification_type == 0:  # TFIDF
+                if self.config.config.text_classification_type == 0:  # TFIDF
                     predictions = [self.text_checking_model_1.predict(docs)[0],
                                    self.text_checking_model_2.predict(docs)[0],
                                    self.text_checking_model_3.predict(docs)[0],
