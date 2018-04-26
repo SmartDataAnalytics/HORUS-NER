@@ -28,17 +28,18 @@ import re
 from horusner.components.systemlog import SystemLog
 from sklearn.externals import joblib
 
-from config import HorusConfig
+from src.config import HorusConfig
 from src.core.feature_extraction.features import FeatureExtraction
 from src.core.util.util import Util
 from src.core.util import definitions
+import numpy as np
 
 
 class HorusDemo(object):
 
     def __init__(self):
         self.config = HorusConfig()
-        self.logging = SystemLog(self.config.root_dir + "horus.log", logging.DEBUG, logging.DEBUG)
+        #self.logging = SystemLog(self.config.root_dir + "horus.log", logging.DEBUG, logging.DEBUG)
         self.util = Util(self.config)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)
@@ -75,7 +76,7 @@ class HorusDemo(object):
                                  int(self.horus_matrix[index][24]),  # int(self.horus_matrix[index][25])
                                  one_char_token, special_char, first_capitalized, capitalized))
 
-                features = numpy.array(features)
+                features = np.array(features)
                 features[0][0] = self.final_encoder.transform(features[0][0])
                 features[0][1] = self.final_encoder.transform(features[0][1])
                 features[0][2] = self.final_encoder.transform(features[0][2])

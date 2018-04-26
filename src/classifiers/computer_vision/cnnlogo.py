@@ -4,9 +4,9 @@ import matplotlib.image as mpimg
 from torch.autograd import Variable
 import cv2
 
-class CNN(nn.Module):
+class CNNLogo(nn.Module):
     def __init__(self, config):
-        super(CNN, self).__init__()
+        super(CNNLogo, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=5, padding=2),
             nn.BatchNorm2d(16),
@@ -78,6 +78,8 @@ class CNN(nn.Module):
 
     def detect_logo(self, image):
         try:
+            # TODO: to train a logo classifier
+            return 0
             self.load_state_dict(torch.load(self.config.models_cnn_org))
             self.eval()
             outputs = self(image)

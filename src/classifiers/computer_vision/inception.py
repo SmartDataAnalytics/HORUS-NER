@@ -29,9 +29,6 @@ class InceptionCV():
             self.INCEPTION_V3_CKPT_PATH = self.DIR_MODELS + "inception_v3.ckpt"
             self.INCEPTION_V4_CKPT_PATH = self.DIR_MODELS + "inception_v4.ckpt"
 
-
-            self.seeds = {'PER': definitions.seed_PER, 'ORG': definitions.seed_ORG, 'LOC': definitions.seed_LOC}
-
             if not tf.gfile.Exists(self.DIR_MODELS):
                 tf.gfile.MakeDirs(self.DIR_MODELS)
 

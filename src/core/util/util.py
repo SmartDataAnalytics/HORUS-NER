@@ -18,11 +18,20 @@ import re
 import langdetect
 import pandas as pd
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 class Util(object):
+    __metaclass__ = Singleton
+
     def __init__(self, config):
         self.config = config
-        self.config.logger.info(':: loading utils ...')
-        self.tools = NLPTools()
+        self.config.logger.info('loading utils ...')
         self.html_escape_table = {
             "&": "&amp;",
             '"': "&quot;",

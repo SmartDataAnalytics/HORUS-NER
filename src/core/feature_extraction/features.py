@@ -27,11 +27,15 @@ import json
 import sys
 import sqlite3
 import nltk
-import numpy
+import numpy as np
 import pandas as pd
+from sklearn import preprocessing
+from sklearn.preprocessing import normalize
 
 from src.classifiers.computer_vision.cls_dlib import DLib_Classifier
+from src.classifiers.computer_vision.cnnlogo import CNNLogo
 from src.classifiers.computer_vision.inception import InceptionCV
+from src.classifiers.computer_vision.places365 import Places365CV
 from src.classifiers.computer_vision.sift import SIFT
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 from src.core.translation.bingtranslation import BingTranslator
@@ -43,10 +47,10 @@ from src.core.util.definitions_sql import *
 # print cv2.__version__
 from src.classifiers.text_classification.bow_tfidf import BowTfidf
 from src.core.util import definitions
-
+from nltk.corpus import wordnet as wn
 
 class FeatureExtraction(object):
-    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1):
+    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1, utils=None, tools=None):
         '''
         The HORUS feature_extraction class
         :param config: the configuration file
@@ -57,27 +61,36 @@ class FeatureExtraction(object):
         '''
         self.horus_matrix = [] # TODO: convert to pandas dataframe => pd.DataFrame(columns=definitions.HORUS_MATRIX_HEADER)
         self.config = config
-        self.config.logger.info('==================================================================')
-        self.config.logger.info(':: HORUS Framework - Feature Extractor')
-        self.config.logger.info(':: ' + self.config.version)
-        self.config.logger.info(':: more info: http://horus-ner.org/')
-        self.config.logger.info('==================================================================')
         self.config.logger.info('loading components...')
-        self.util = Util(self.config)
-        self.tools = NLPTools(self.config)
+        if utils is None:
+            self.util = Util(self.config)
+        else:
+            self.utils = utils
+        if tools is None:
+            self.tools = NLPTools(self.config)
+        else:
+            self.tools = tools
         self.translator = BingTranslator(self.config)
-        self.config.logger.info('loading extractors...')
-        self.image_cnn = None
+        self.config.logger.info('loading extractors...that might take awhile...')
+        self.image_cnn_logo = None
         self.image_sift = None
         self.text_bow = None
         self.text_tm = None
-        self.dlib_cnn = DLib_Classifier(self.config)
-        if load_cnn==1: self.image_cnn = InceptionCV(self.config)
+        self.dlib_cnn = None
+        if load_cnn==1:
+            self.image_cnn_placesCNN = Places365CV(self.config)
+            self.image_cnn_incep_model = InceptionCV(self.config)
+            self.image_cnn_logo = CNNLogo(self.config)
+            self.dlib_cnn = DLib_Classifier(self.config)
         if load_sift==1: self.image_sift = SIFT(self.config)
         if load_tfidf==1: self.text_bow = BowTfidf(self.config)
         if load_topic_modeling==1: self.text_tm = TopicModelingShortCNN(self.config)
         self.config.logger.info('database connecting ...')
         self.conn = sqlite3.connect(self.config.database_db)
+        self.extended_seeds_PER = []
+        self.extended_seeds_ORG = []
+        self.extended_seeds_LOC = []
+        self.extended_seeds_NONE = []
         if bool(int(self.config.models_force_download)) is True:
             self.config.logger.info('downloading NLTK data...')
             try:
@@ -228,6 +241,138 @@ class FeatureExtraction(object):
         except:
             raise
 
+    def __set_str_extended_seeds(self):
+        try:
+            if not self.image_cnn.seeds:
+                raise ('image seeds is empty!')
+
+            self.config.logger.debug('extending seeds')
+            for k, V in self.image_cnn.seeds.iteritems():
+                for v in V:
+                    for i, syns in enumerate(wn.synsets(v)):
+                        # print(' hypernyms = ', ' '.join(list(chain(*[l.lemma_names() for l in syns.hypernyms()]))))
+                        # print(' hyponyms = ', ' '.join(list(chain(*[l.lemma_names() for l in syns.hyponyms()]))))
+                        _s = wn.synset_from_pos_and_offset(syns.pos(), syns.offset())
+                        if k == 'PER':
+                            self.extended_seeds_PER.append(str(_s._name).split('.')[0])
+                            self.extended_seeds_PER.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            # ids_PER.extend(syns.hyponyms())
+                        elif k == 'ORG':
+                            self.extended_seeds_ORG.append(str(_s._name).split('.')[0])
+                            self.extended_seeds_ORG.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            # ids_ORG.extend(syns.hyponyms())
+                        elif k == 'LOC':
+                            self.extended_seeds_LOC.append(str(_s._name).split('.')[0])
+                            self.extended_seeds_LOC.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            # ids_LOC.extend(syns.hyponyms())
+                        elif k == 'NONE':
+                            self.extended_seeds_NONE.append(str(_s._name).split('.')[0])
+                            self.extended_seeds_NONE.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                        else:
+                            raise ('key error')
+
+            self.extended_seeds_LOC = set(self.extended_seeds_LOC)
+            self.extended_seeds_ORG = set(self.extended_seeds_ORG)
+            self.extended_seeds_PER = set(self.extended_seeds_PER)
+            self.extended_seeds_NONE = set(self.extended_seeds_NONE)
+
+            self.config.logger.debug('done!')
+            self.config.logger.debug('LOC seeds: ', self.extended_seeds_PER)
+            self.config.logger.debug('ORG seeds: ', self.extended_seeds_PER)
+            self.config.logger.debug('PER seeds: ', self.extended_seeds_PER)
+            self.config.logger.debug('NONE seeds: ', self.extended_seeds_PER)
+
+        except:
+            raise
+
+    def __get_cnn_features_vector(self, image):
+        try:
+
+            min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+
+            try:
+                self.config.logger.debug('predicting places365...')
+                pred_places365 = self.image_cnn_placesCNN.predict(image + '.jpg')
+            except Exception as e:
+                self.config.logger.debug('error: ' + str(e))
+                pass
+
+            try:
+                self.config.logger.debug('predicting inception...')
+                pred_inception = self.image_cnn_incep_model.predict(image + '.jpg', top=5)
+            except Exception as e:
+                self.config.logger.debug('error: ' + str(e))
+                pass
+
+            pred_prob = pred_places365.extend(pred_inception)
+
+            tot_loc = 0
+            tot_org = 0
+            tot_per = 0
+            tot_none = 0
+
+            sim_loc = []
+            sim_org = []
+            sim_per = []
+            sim_none = []
+
+            assert len(pred_prob) > 0
+
+            # text classification Topic Modeling+CNN
+            for i in range(0, len(pred_prob)):
+                out = []
+                labels = pred_prob[i][0]
+                prob = pred_prob[i][1]
+                cleaned_tokens = ' '.join((re.sub('[^0-9a-zA-Z]+', ' ', l) for l in labels.split()))
+                T = [l.replace('/outdoor', '').replace('/indoor', '') for l in cleaned_tokens.split()]
+                T = set(T)
+                for t in T:
+                    i += 1
+                    d = self.text_tm.predict(t.lower())
+                    tot_loc += (d.get('loc') * prob)
+                    tot_per += (d.get('per') * prob)
+                    tot_org += (d.get('org') * prob)
+                    tot_none += (d.get('none') * prob)
+
+
+                    for s in self.extended_seeds_LOC:
+                        try:
+                            sim_loc.append(self.tools.word2vec_google.similarity(s, t))
+                        except:pass
+
+                    for s in self.extended_seeds_ORG:
+                        try:
+                            sim_org.append(self.tools.word2vec_google.similarity(s, t))
+                        except:pass
+
+                    for s in self.extended_seeds_PER:
+                        try:
+                            sim_per.append(self.tools.word2vec_google.similarity(s, t))
+                        except:pass
+
+                    for s in self.extended_seeds_NONE:
+                        try:
+                            sim_none.append(self.tools.word2vec_google.similarity(s, t))
+                        except:pass
+
+
+            assert i>0
+
+            sim_loc = min_max_scaler.fit_transform(np.array(sim_loc))
+            sim_org = min_max_scaler.fit_transform(np.array(sim_org))
+            sim_per = min_max_scaler.fit_transform(np.array(sim_per))
+            sim_none = min_max_scaler.fit_transform(np.array(sim_none))
+
+            return [tot_loc/i, tot_org/i, tot_per/i, tot_none/i,
+                    (sim_loc / len(sim_loc)) if len(sim_loc) > 0 else 0,
+                    (sim_org / len(sim_org)) if len(sim_org) > 0 else 0,
+                    (sim_per / len(sim_per)) if len(sim_per) > 0 else 0,
+                    (sim_none / len(sim_none)) if len(sim_none) > 0 else 0]
+
+        except:
+            raise
+
+
     def extract_features(self):
         """
         receives a horus_matrix and iterate over the tokens, detecting objects for each image/document
@@ -235,11 +380,13 @@ class FeatureExtraction(object):
         :param horus_matrix: the horus_matrix
         :return: an updated horus matrix
         """
-        self.config.logger.info(':: detecting %s objects...' % len(self.horus_matrix))
-        auxi = 0
-        toti = len(self.horus_matrix)
-        for index in range(len(self.horus_matrix)):
-            try:
+        try:
+            self.config.logger.info(':: setting the seeds ')
+            self.__set_str_extended_seeds()
+            self.config.logger.info(':: detecting %s objects...' % len(self.horus_matrix))
+            auxi = 0
+            toti = len(self.horus_matrix)
+            for index in range(len(self.horus_matrix)):
                 auxi += 1
                 if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
 
@@ -249,18 +396,18 @@ class FeatureExtraction(object):
                     id_term_img = self.horus_matrix[index][10]
                     id_term_txt = self.horus_matrix[index][9]
                     id_ner_type = 0
-                    tot_geral_faces =0
-                    tot_geral_logos =0
-                    tot_geral_locations =0
-                    tot_geral_pos_locations =0
-                    tot_geral_neg_locations =0
-                    tot_geral_faces_cnn =0
-                    tot_geral_logos_cnn =0
-                    tot_geral_locations_cnn =0
-                    tot_geral_pos_locations_cnn =0
-                    tot_geral_neg_locations_cnn =0
-                    tot_geral_faces_dlib_cnn = 0
-
+                    tot_geral_faces = 0
+                    tot_geral_logos = 0
+                    tot_geral_locations = 0
+                    tot_geral_pos_locations = 0
+                    tot_geral_neg_locations = 0
+                    tot_geral_faces_cnn = 0
+                    tot_geral_logos_cnn = 0
+                    out_geral_cnn_features_loc = []
+                    #tot_geral_locations_cnn = 0
+                    #tot_geral_pos_locations_cnn = 0
+                    #tot_geral_neg_locations_cnn = 0
+                    #location_cnn_feats = []
 
                     with self.conn:
                         # -----------------------------------------------------------------
@@ -292,12 +439,12 @@ class FeatureExtraction(object):
                                     tot_geral_faces_cnn += rows[i][15] if rows[i][15] != None else 0
                                     tot_geral_logos_cnn += rows[i][16] if rows[i][16] != None else 0
 
-                                    if (rows[i][17:26]).count(1) >= int(self.config.models_location_theta):
-                                        tot_geral_locations_cnn += 1
-                                    tot_geral_pos_locations_cnn += rows[i][17:26].count(1)
-                                    tot_geral_neg_locations_cnn += (rows[i][17:26].count(0) * -1)
+                                    out_geral_cnn_features_loc.extend(rows[i][17:26])
 
-                                    tot_geral_faces_dlib_cnn += rows[i][27] if rows[i][27] != None else 0
+                                    #if (rows[i][17:26]).count(1) >= int(self.config.models_location_theta):
+                                    #    tot_geral_locations_cnn += 1
+                                    #tot_geral_pos_locations_cnn += rows[i][17:26].count(1)
+                                    #tot_geral_neg_locations_cnn += (rows[i][17:26].count(0) * -1)
 
                                 else:
                                     tot_faces = 0
@@ -305,9 +452,10 @@ class FeatureExtraction(object):
                                     res = [0] * 10
                                     tot_faces_cnn = 0
                                     tot_logos_cnn = 0
-                                    res_cnn = [0] * 10
-                                    tot_faces_dlib_cnn = 0
+                                    out_cnn = [0] * 8
 
+
+                                    #CV - SIFT detection
                                     if self.image_sift is not None:
                                         # ----- face recognition -----
                                         tot_faces = self.image_sift.detect_faces(img_full_path)
@@ -328,41 +476,37 @@ class FeatureExtraction(object):
                                             tot_geral_locations += 1
                                             self.config.logger.debug(":: found {0} place(s)!".format(1))
 
-                                    #TODO: add blob detection classifier (can we detect logos lke that?)
-
-                                    if self.image_cnn is not None:
-                                        # ----- face recognition -----
-                                        tot_faces_cnn = self.image_cnn.detect_faces(img_full_path)
-                                        if tot_faces_cnn > 0:
-                                            tot_geral_faces_cnn += 1
-                                            self.config.logger.debug(":: found {0} faces!".format(tot_faces))
-                                        # ----- logo recognition -----
-                                        tot_logos_cnn = self.image_cnn.detect_logo(img_full_path)
+                                    # CV - CNN detection (logo feature)
+                                    if self.image_cnn_logo is not None:
+                                        tot_logos_cnn = self.image_cnn_logo.detect_logo(img_full_path)
                                         if tot_logos_cnn > 0:
                                             tot_geral_logos_cnn += 1
                                             self.config.logger.debug(":: found {0} logo(s)!".format(1))
-                                        # ----- place recognition -----
-                                        res_cnn = self.image_cnn.detect_place(img_full_path)
-                                        tot_geral_pos_locations_cnn += res_cnn.count(1)
-                                        tot_geral_neg_locations_cnn += (res_cnn.count(0) * -1)
 
-                                        if res_cnn.count(1) >= int(self.config.models_location_theta):
-                                            tot_geral_locations_cnn += 1
-                                            self.config.logger.debug(":: found {0} place(s)!".format(1))
+                                    # CV - CNN detection (place features)
+                                    if ((self.image_cnn_placesCNN is not None) or (self.image_cnn_incep_model is not None)):
+                                        out_cnn_features_loc=self.__get_cnn_features_vector(img_full_path)
+                                        out_geral_cnn_features_loc.extend(out_geral_cnn_features_loc)
 
+                                    # CV - CNN detection (face feature)
                                     if self.dlib_cnn is not None:
-                                        tot_faces_dlib_cnn = self.dlib_cnn.detect_faces_cnn(img_full_path)
-                                        if tot_faces_dlib_cnn > 0:
-                                            tot_geral_faces_dlib_cnn += 1
+                                        tot_faces_cnn = self.dlib_cnn.detect_faces_cnn(img_full_path)
+                                        if tot_faces_cnn > 0:
+                                            tot_geral_faces_cnn += 1
+                                        self.config.logger.debug(":: found {0} faces!".format(tot_faces_cnn))
+
+                                    # CV - blob detection for logos
+                                    # TODO: to create this function
 
                                     param = []
                                     param.append(tot_faces)
                                     param.append(tot_logos)
                                     param.extend(res)
+
                                     param.append(tot_faces_cnn)
                                     param.append(tot_logos_cnn)
-                                    param.extend(res_cnn)
-                                    param.append(tot_faces_dlib_cnn)
+                                    param.extend(out_cnn_features_loc)
+
                                     param.append(_id)
                                     cursor.execute(SQL_OBJECT_DETECTION_UPD, param)
 
@@ -373,11 +517,10 @@ class FeatureExtraction(object):
                             dist_cv_indicator = max(maxs_cv) - min(maxs_cv)
                             place_cv_indicator = tot_geral_pos_locations + tot_geral_neg_locations
 
-                            max_faces = tot_geral_faces_cnn if tot_geral_faces_cnn > tot_geral_faces_dlib_cnn else tot_geral_faces_dlib_cnn
-                            outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, max_faces]
-                            maxs_cv_cnn = heapq.nlargest(2, outs_cnn)
-                            dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
-                            place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
+                            #outs_cnn = [tot_geral_locations_cnn, tot_geral_logos_cnn, tot_geral_faces_cnn]
+                            #maxs_cv_cnn = heapq.nlargest(2, outs_cnn)
+                            #dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
+                            #place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
 
                             self.horus_matrix[index][definitions.INDEX_TOT_IMG] = limit_img
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC] = tot_geral_locations  # 1
@@ -386,28 +529,43 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_DIST_CV_I] = dist_cv_indicator  # 4
                             self.horus_matrix[index][definitions.INDEX_PL_CV_I] = place_cv_indicator  # 5
                             self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_IMG] = nr_results_img  # 5
-                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_CNN] = tot_geral_locations_cnn  # 1
+                            x=np.sum(out_geral_cnn_features_loc, axis=0)
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_1_CNN] = x[0]  # 1
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_2_CNN] = x[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_3_CNN] = x[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_4_CNN] = x[3]
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_5_CNN] = x[4]
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_6_CNN] = x[5]
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_7_CNN] = x[6]
+                            self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_8_CNN] = x[7]
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_ORG_CNN] = tot_geral_logos_cnn  # 2
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_PER_CNN] = tot_geral_faces_cnn  # 3
-                            self.horus_matrix[index][definitions.INDEX_TOT_CV_PER_DLIB_CNN] = tot_geral_faces_dlib_cnn  # 4
-                            self.horus_matrix[index][definitions.INDEX_DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
-                            self.horus_matrix[index][definitions.INDEX_PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
+                            #self.horus_matrix[index][definitions.INDEX_DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
+                            #self.horus_matrix[index][definitions.INDEX_PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
 
                             self.config.logger.debug(':: CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
-                                              'CNN: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s]' %
+                                              'CNN: LOC1=%s,LOC2=%s,LOC3=%s,LOC4=%s,LOC5=%s,LOC6=%s,LOC7=%s,LOC8=%s, '
+                                                     'ORG=%s, PER=%s]' %
                                               (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
-                                               str(max_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator,
-                                               str(tot_geral_locations_cnn).zfill(2), str(tot_geral_logos_cnn).zfill(2),
-                                               str(tot_geral_faces_cnn).zfill(2), str(dist_cv_indicator_cnn).zfill(2), place_cv_indicator_cnn))
+                                               str(tot_geral_faces).zfill(2), str(dist_cv_indicator).zfill(2), place_cv_indicator,
+                                               str(x[0]).zfill(4),
+                                               str(x[1]).zfill(4),
+                                               str(x[2]).zfill(4),
+                                               str(x[3]).zfill(4),
+                                               str(x[4]).zfill(4),
+                                               str(x[5]).zfill(4),
+                                               str(x[6]).zfill(4),
+                                               str(x[7]).zfill(4),
+                                               str(tot_geral_logos_cnn).zfill(2),
+                                               str(tot_geral_faces_cnn).zfill(2)))
 
                             if limit_img != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[outs.index(max(outs)) + 1]
+                                #self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[outs_cnn.index(max(outs_cnn)) + 1]
+                                #TODO: this does not make sense now, since CNN classifiers are a bit more complex...thinkg about that later...it does not impact the algorithm
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[4]
                             else:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[4]
-
-                            if limit_img != 0:
-                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[outs_cnn.index(max(outs_cnn)) + 1]
-                            else:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[4]
 
                         # -----------------------------------------------------------------
@@ -466,13 +624,12 @@ class FeatureExtraction(object):
 
                             self.conn.commit()
 
-                            yyb = numpy.array(y_bow)
-                            yytm = numpy.array(y_tm)
+                            yyb = np.array(y_bow)
+                            yytm = np.array(y_tm)
 
-                            gpb = [numpy.count_nonzero(yyb == 1), numpy.count_nonzero(yyb == 2), numpy.count_nonzero(yyb == 3)]
+                            gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
                             #TODO: check this logic...
-                            gpbtm = [numpy.count_nonzero(yytm == 1), numpy.count_nonzero(yytm == 2),
-                                   numpy.count_nonzero(yytm == 3)]
+                            gpbtm = [np.count_nonzero(yytm == 1), np.count_nonzero(yytm == 2), np.count_nonzero(yytm == 3)]
 
                             horus_tx_ner = gpb.index(max(gpb)) + 1
                             horus_tx_cnn_ner = gpb.index(max(gpbtm)) + 1
@@ -483,12 +640,12 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_TOT_TX_PER] = gpb[2]
                             self.horus_matrix[index][definitions.INDEX_TOT_ERR_TRANS] = tot_error_translation
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[0]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[1]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(y_tm) == 0 else numpy.sum(yytm, axis=0)[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(y_tm) == 0 else np.sum(yytm, axis=0)[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(y_tm) == 0 else np.sum(yytm, axis=0)[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(y_tm) == 0 else np.sum(yytm, axis=0)[2]
 
                             maxs_tx = heapq.nlargest(2, gpb)
-                            maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, numpy.sum(yytm, axis=0))
+                            maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, np.sum(yytm, axis=0))
                             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
                             dist_tx_indicator_tm = 0 if len(y_tm) == 0 else (max(maxs_tm) - min(maxs_tm))
 
@@ -527,11 +684,10 @@ class FeatureExtraction(object):
                                             ))
                         self.config.logger.debug('-------------------------------------------------------------')
 
-
-            except Exception as e:
-                self.config.logger.error(repr(e))
-                self.conn.rollback()
-                self.horus_matrix[index] = [0] * int(definitions.HORUS_TOT_FEATURES)
+        except Exception as e:
+            self.config.logger.error(repr(e))
+            self.conn.rollback()
+            self.horus_matrix[index] = [0] * int(definitions.HORUS_TOT_FEATURES)
 
         return self.horus_matrix
 

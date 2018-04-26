@@ -95,10 +95,39 @@ PENN_UNI_TAG = [['#', 'SYM'],['$', 'SYM'], ['','PUNCT'],[',','PUNCT'],['-LRB-','
                     ['VBD','VERB'],['VBG','VERB'],['VBN','VERB'],['VBP','VERB'],['VBZ','VERB'],['WDT','DET'],['WP','PRON'],['WP$', 'DET'],['WRB', 'ADV']]
 
 
-seed_PER = ['person', 'human being', 'man', 'woman', 'human body', 'human face']
-seed_ORG = ['logo', 'logotype']
-seed_LOC = ['volcano', 'stone', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake',
-                        'square', 'map', 'flag']
+seeds_dict_img_classes = {'per': ['person', 'human being', 'man', 'woman', 'human body', 'human face'],
+                      'loc': ['location', 'place', 'volcano', 'stone', 'country', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake', 'square', 'map', 'flag', 'city', 'forest', 'residence'],
+                      'org': ['organisation', 'logo', 'logotype']}
+
+seeds_dict_topics = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
+                'student', 'education', 'coach', 'football', 'turkish',
+                'albanian', 'romanian', 'professor', 'lawyer', 'president',
+                'king', 'man', 'woman', 'danish', 'we', 'he', 'their', 'born',
+                'directed', 'died', 'lives', 'boss', 'syrian', 'elected',
+                'minister', 'candidate', 'daniel', 'robert', 'dude', 'guy',
+                'girl', 'woman', 'husband', 'actor', 'people', 'celebrity', 'human'],
+        'loc': ['china', 'usa', 'germany', 'leipzig', 'alaska', 'poland',
+                'jakarta', 'kitchen', 'house', 'brazil', 'fuji', 'prison',
+                'portugal', 'lisbon', 'france', 'oslo', 'airport', 'road',
+                'highway', 'forest', 'sea', 'lake', 'stadium', 'hospital',
+                'temple', 'beach', 'hotel', 'country', 'city', 'state', 'home',
+                'world', 'mountain', 'landscape', 'island', 'land' ,'waterfall',
+                'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle',
+                'flag', 'map'],
+        'org': ['microsoft', 'bloomberg', 'google', 'company', 'business', 'office',
+                'contract', 'project', 'research', 'office', 'startup', 'organisation'
+                'enterprise', 'venture', 'capital', 'milestones', 'risk',
+                'funded', 'idea', 'industry', 'headquarters', 'product',
+                'client', 'investment', 'certification', 'news', 'logo',
+                'trademark', 'job', 'foundation'],
+        'none': ['frog', 'animal', 'monkey', 'dog', 'skate', 'cup', 'money', 'cash',
+                 'mouse', 'snake', 'telephone', 'glass', 'monitor', 'bible', 'book',
+                 'dictionary', 'religion', 'politics', 'sports', 'question', 'linux',
+                 'java', 'python', 'months', 'time', 'wallet', 'umbrella', 'cable',
+                 'internet', 'connection', 'pencil', 'earphone', 'shopping', 'buy',
+                 'headphones', 'bread', 'food', 'cake', 'bottle', 'table', 'jacket',
+                 'politics', 'computer', 'laptop', 'blue', 'green', 'bucket', 'orange', 'rose',
+                 'key', 'clock', 'connector']}
 
 INDEX_IS_ENTITY = 0
 INDEX_ID_SENTENCE = 1
@@ -132,12 +161,12 @@ INDEX_TOT_TX_LOC_TM_CNN = 28
 INDEX_TOT_TX_ORG_TM_CNN = 29
 INDEX_TOT_TX_PER_TM_CNN = 30
 INDEX_DIST_TX_I_TM_CNN = 31
-INDEX_TOT_CV_LOC_CNN = 32
+INDEX_TOT_CV_LOC_1_CNN = 32
 INDEX_TOT_CV_ORG_CNN = 33
 INDEX_TOT_CV_PER_CNN = 34
-INDEX_DIST_CV_I_CNN = 35
-INDEX_PL_CV_I_CNN = 36
-INDEX_TOT_CV_PER_DLIB_CNN = 37
+INDEX_TOT_CV_LOC_2_CNN = 35
+INDEX_TOT_CV_LOC_3_CNN = 36
+INDEX_TOT_CV_LOC_4_CNN = 37
 INDEX_MAX_KLASS_PREDICT_TX_CNN = 38
 INDEX_MAX_KLASS_PREDICT_COMPOUND = 39
 INDEX_KLASS_FINAL_MODEL = 40
@@ -145,10 +174,10 @@ INDEX_MAX_KLASS_PREDICT_CV_CNN = 41
 INDEX_TOT_EMB_SIMILAR_LOC = 42
 INDEX_TOT_EMB_SIMILAR_ORG = 43
 INDEX_TOT_EMB_SIMILAR_PER = 44
-INDEX_KLASS_10 = 45
-INDEX_KLASS_11 = 46
-INDEX_KLASS_12 = 47
-INDEX_KLASS_13 = 48
+INDEX_TOT_CV_LOC_5_CNN = 45
+INDEX_TOT_CV_LOC_6_CNN = 46
+INDEX_TOT_CV_LOC_7_CNN = 47
+INDEX_TOT_CV_LOC_8_CNN = 48
 INDEX_KLASS_14 = 49
 INDEX_KLASS_15 = 50
 INDEX_TARGET_NER = 51

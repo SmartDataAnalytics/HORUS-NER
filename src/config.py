@@ -19,7 +19,7 @@ class HorusConfig(object):
 
     def __init__(self):
         fine = False
-        config = None
+
         self.logger = logging.getLogger('horus')
 
         for ini_file in os.curdir, os.path.expanduser("~"), "/etc/horus", os.environ.get('HORUS_CONF'):
@@ -174,7 +174,11 @@ class HorusConfig(object):
                 consoleHandler.setFormatter(formatter)
                 self.logger.addHandler(consoleHandler)
 
-        self.logger.info('configuration file loaded successfully')
+        self.logger.info('==================================================================')
+        self.logger.info(':: HORUS Framework - Feature Extractor')
+        self.logger.info(':: ' + self.version)
+        self.logger.info(':: more info: http://horus-ner.org/')
+        self.logger.info('==================================================================')
         #ini_file = pkg_resources.resource_filename('resource', "horus.conf")
         #rootdir = os.getcwd()
         #
