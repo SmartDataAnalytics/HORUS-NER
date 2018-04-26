@@ -50,7 +50,7 @@ from src.core.util import definitions
 from nltk.corpus import wordnet as wn
 
 class FeatureExtraction(object):
-    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1, utils=None, tools=None):
+    def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1):
         '''
         The HORUS feature_extraction class
         :param config: the configuration file
@@ -62,14 +62,8 @@ class FeatureExtraction(object):
         self.horus_matrix = [] # TODO: convert to pandas dataframe => pd.DataFrame(columns=definitions.HORUS_MATRIX_HEADER)
         self.config = config
         self.config.logger.info('loading components...')
-        if utils is None:
-            self.util = Util(self.config)
-        else:
-            self.utils = utils
-        if tools is None:
-            self.tools = NLPTools(self.config)
-        else:
-            self.tools = tools
+        self.util = Util(self.config)
+        self.tools = NLPTools(self.config)
         self.translator = BingTranslator(self.config)
         self.config.logger.info('loading extractors...that might take awhile...')
         self.image_cnn_logo = None
@@ -84,7 +78,7 @@ class FeatureExtraction(object):
             self.dlib_cnn = DLib_Classifier(self.config)
         if load_sift==1: self.image_sift = SIFT(self.config)
         if load_tfidf==1: self.text_bow = BowTfidf(self.config)
-        if load_topic_modeling==1: self.text_tm = TopicModelingShortCNN(self.config)
+        if load_topic_modeling==1: self.text_tm = TopicModelingShortCNN(self.config, w2v=self.tools.word2vec_google)
         self.config.logger.info('database connecting ...')
         self.conn = sqlite3.connect(self.config.database_db)
         self.extended_seeds_PER = []
