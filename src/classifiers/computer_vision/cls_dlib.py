@@ -6,7 +6,7 @@ class DLib_Classifier():
     def __init__(self, config):
         try:
             self.config = config
-            self.config.logger.debug(':: loading DLib')
+            self.config.logger.debug('loading DLib')
             self.detector = dlib.get_frontal_face_detector()
             self.cnn_face_detector = dlib.cnn_face_detection_model_v1(config.dir_models + 'dlib/mmod_human_face_detector.dat')
         except Exception:

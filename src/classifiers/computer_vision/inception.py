@@ -19,7 +19,7 @@ class InceptionCV():
     def __init__(self, config):
         try:
             self.config = config
-            self.config.logger.debug(':: loading InceptionCV')
+            self.config.logger.debug('loading InceptionCV')
        
 
             self.DIR_MODELS = config.dir_models + "/inception/"

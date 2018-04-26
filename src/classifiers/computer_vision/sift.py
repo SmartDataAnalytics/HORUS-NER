@@ -5,7 +5,7 @@ from sklearn.externals import joblib
 class SIFT():
     def __init__(self, config):
         self.config = config
-        self.config.logger.debug(':: loading SIFT')
+        self.config.logger.debug('loading SIFT')
         self.detect = cv2.xfeatures2d.SIFT_create()
         self.extract = cv2.xfeatures2d.SIFT_create()
         self.flann_params = dict(algorithm=1, trees=config.models_kmeans_trees)
