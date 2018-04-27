@@ -70,7 +70,7 @@ class TopicModelingShortCNN():
             predictions.append(dict.get('loc'))
             predictions.append(dict.get('org'))
             predictions.append(dict.get('per'))
-            predictions.append(0)
+            predictions.append(dict.get('none'))
             predictions.append(0)
             return predictions
         except Exception as e:

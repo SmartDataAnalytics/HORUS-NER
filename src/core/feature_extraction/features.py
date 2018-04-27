@@ -73,7 +73,7 @@ class FeatureExtraction(object):
         self.dlib_cnn = None
         if load_cnn==1:
             self.image_cnn_placesCNN = Places365CV(self.config)
-            self.image_cnn_incep_model = InceptionCV(self.config)
+            self.image_cnn_incep_model = InceptionCV(self.config, version='V3')
             self.image_cnn_logo = CNNLogo(self.config)
             self.dlib_cnn = DLib_Classifier(self.config)
         if load_sift==1: self.image_sift = SIFT(self.config)
@@ -85,6 +85,7 @@ class FeatureExtraction(object):
         self.extended_seeds_ORG = []
         self.extended_seeds_LOC = []
         self.extended_seeds_NONE = []
+        self.min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
         if bool(int(self.config.models_force_download)) is True:
             self.config.logger.info('downloading NLTK data...')
             try:
@@ -222,16 +223,25 @@ class FeatureExtraction(object):
         except Exception as e:
             raise e
 
-    def __get_number_classes_in_embeedings(self, w, k):
+    def __get_number_classes_in_embeedings(self, w):
         '''
         returns the number of terms existing in the set of returned words similar to w
         :param w: an input word
-        :param k: a set of (predicted) classes
         :return: the number of elements from both k and the embeedings function
         '''
         try:
+
             most_similar = set(self.tools.word2vec_google.most_similar(positive=w, topn=5))
-            return len(most_similar.union(set(k)))
+
+            t_per = len(most_similar.union(set(definitions.seeds_dict_topics['per'])))
+            t_org = len(most_similar.union(set(definitions.seeds_dict_topics['org'])))
+            t_loc = len(most_similar.union(set(definitions.seeds_dict_topics['loc'])))
+            t_none = len(most_similar.union(set(definitions.seeds_dict_topics['none'])))
+
+            return t_per, t_org, t_loc, t_none
+
+        except KeyError:
+            return 0, 0, 0, 0
         except:
             raise
 
@@ -282,7 +292,21 @@ class FeatureExtraction(object):
     def __get_cnn_features_vector(self, image):
         try:
 
-            min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+            p1=[]
+            p2=[]
+
+            from PIL import Image
+            from os.path import splitext
+            file_name, extension = splitext(image)
+            if extension not in ('.jpg', '.jpeg', '.png'):
+                try:
+                    im = Image.open(image)
+                    rgb_im = im.convert('RGB')
+                    newfilename=str(image).replace(extension, '.jpg')
+                    rgb_im.save(newfilename)
+                    image=newfilename
+                except:
+                    pass
 
             try:
                 self.config.logger.debug('predicting CNN places365...')
@@ -352,10 +376,10 @@ class FeatureExtraction(object):
 
             assert i>0
 
-            sim_loc = min_max_scaler.fit_transform(np.array(sim_loc).reshape(1,-1))
-            sim_org = min_max_scaler.fit_transform(np.array(sim_org).reshape(1,-1))
-            sim_per = min_max_scaler.fit_transform(np.array(sim_per).reshape(1,-1))
-            sim_none = min_max_scaler.fit_transform(np.array(sim_none).reshape(1,-1))
+            sim_loc = self.min_max_scaler.fit_transform(np.array(sim_loc).reshape(1,-1))
+            sim_org = self.min_max_scaler.fit_transform(np.array(sim_org).reshape(1,-1))
+            sim_per = self.min_max_scaler.fit_transform(np.array(sim_per).reshape(1,-1))
+            sim_none = self.min_max_scaler.fit_transform(np.array(sim_none).reshape(1,-1))
 
             return [tot_loc/i, tot_org/i, tot_per/i, tot_none/i,
                     np.mean(sim_loc) if len(sim_loc) > 0 else 0,
@@ -433,7 +457,7 @@ class FeatureExtraction(object):
                                     tot_geral_faces_cnn += rows[i][15] if rows[i][15] != None else 0
                                     tot_geral_logos_cnn += rows[i][16] if rows[i][16] != None else 0
 
-                                    out_geral_cnn_features_loc.extend(rows[i][17:26])
+                                    out_geral_cnn_features_loc.append(rows[i][17:26])
 
                                     #if (rows[i][17:26]).count(1) >= int(self.config.models_location_theta):
                                     #    tot_geral_locations_cnn += 1
@@ -479,7 +503,7 @@ class FeatureExtraction(object):
                                     # CV - CNN detection (place features)
                                     if ((self.image_cnn_placesCNN is not None) or (self.image_cnn_incep_model is not None)):
                                         out_cnn_features_loc=self.__get_cnn_features_vector(img_full_path)
-                                        out_geral_cnn_features_loc.extend(out_cnn_features_loc)
+                                        out_geral_cnn_features_loc.append(out_cnn_features_loc)
 
                                     # CV - CNN detection (face feature)
                                     if self.dlib_cnn is not None:
@@ -568,6 +592,7 @@ class FeatureExtraction(object):
                             tot_union_emb_loc = 0
                             tot_union_emb_org = 0
                             tot_union_emb_per = 0
+                            tot_union_emb_none = 0
                             y_bow, y_tm = [], []
                             cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                             rows = cursor.fetchall()
@@ -580,12 +605,10 @@ class FeatureExtraction(object):
                             for itxt in range(limit_txt):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                                        tot_union_emb_per = self.__get_number_classes_in_embeedings(term,
-                                                                                                    definitions.seed_PER)
-                                        tot_union_emb_loc = self.__get_number_classes_in_embeedings(term,
-                                                                                                    definitions.seed_LOC)
-                                        tot_union_emb_org = self.__get_number_classes_in_embeedings(term,
-                                                                                                    definitions.seed_ORG)
+                                        tot_union_emb_per, tot_union_emb_org, tot_union_emb_loc, tot_union_emb_none = \
+                                            self.__get_number_classes_in_embeedings(term)
+
+
                                         merged_en, error_translation = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                         tot_error_translation += error_translation
                                         ret_bow = [0] * 5
@@ -597,11 +620,17 @@ class FeatureExtraction(object):
                                                 ret_tm = self.text_tm.detect_text_klass(merged_en)
 
                                         y_bow.append(ret_bow)
+
+                                        ret_tm = self.min_max_scaler.fit_transform(np.array(ret_tm).reshape(1,-1))[0]
+
                                         y_tm.append(ret_tm)
 
                                         cursor.execute(SQL_TEXT_CLASS_UPD % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
-                                                                       ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4], tot_union_emb_per,
-                                                                             tot_union_emb_loc, tot_union_emb_org,
+                                                                       ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
+                                                                             tot_union_emb_per,
+                                                                             tot_union_emb_loc,
+                                                                             tot_union_emb_org,
+                                                                             tot_union_emb_none,
                                                                        rows[itxt][0]))
                                     else:
                                         y_bow.append(rows[itxt][7:11])
@@ -609,6 +638,7 @@ class FeatureExtraction(object):
                                         tot_union_emb_per = rows[itxt][17]
                                         tot_union_emb_loc = rows[itxt][18]
                                         tot_union_emb_org = rows[itxt][19]
+                                        tot_union_emb_none = rows[itxt][20]
 
                                 except Exception as e:
                                     self.config.logger.error(str(e.message))
@@ -620,11 +650,10 @@ class FeatureExtraction(object):
                             yytm = np.array(y_tm)
 
                             gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
-                            #TODO: check this logic...
-                            gpbtm = [np.count_nonzero(yytm == 1), np.count_nonzero(yytm == 2), np.count_nonzero(yytm == 3)]
+                            gpbtm = [np.sum(yytm[0], axis=0), np.sum(yytm[1], axis=0), np.sum(yytm[2], axis=0), np.sum(yytm[3], axis=0)]
 
                             horus_tx_ner = gpb.index(max(gpb)) + 1
-                            horus_tx_cnn_ner = gpb.index(max(gpbtm)) + 1
+                            horus_tx_cnn_ner = gpbtm.index(max(gpbtm)) + 1
 
                             self.horus_matrix[index][definitions.INDEX_TOT_RESULTS_TX] = limit_txt
                             self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC] = gpb[0]
@@ -632,14 +661,15 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_TOT_TX_PER] = gpb[2]
                             self.horus_matrix[index][definitions.INDEX_TOT_ERR_TRANS] = tot_error_translation
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(y_tm) == 0 else np.sum(yytm, axis=0)[0]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(y_tm) == 0 else np.sum(yytm, axis=0)[1]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(y_tm) == 0 else np.sum(yytm, axis=0)[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_NONE_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[3]
 
                             maxs_tx = heapq.nlargest(2, gpb)
-                            maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, np.sum(yytm, axis=0))
+                            maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, gpbtm)
                             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
-                            dist_tx_indicator_tm = 0 if len(y_tm) == 0 else (max(maxs_tm) - min(maxs_tm))
+                            dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
 
                             self.horus_matrix[index][definitions.INDEX_DIST_TX_I] = dist_tx_indicator
                             self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_TX] = nr_results_txt
@@ -648,6 +678,7 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC] = tot_union_emb_loc
                             self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG] = tot_union_emb_org
                             self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER] = tot_union_emb_per
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE] = tot_union_emb_none
 
                             if limit_txt != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[horus_tx_ner]
@@ -659,9 +690,9 @@ class FeatureExtraction(object):
                             else:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[4]
 
-                        self.config.logger.debug(':: TX statistics:'
+                        self.config.logger.debug('TX statistics:'
                                            '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s, '
-                                                 'TOT_EMB_LOC=%s, TOT_EMB_ORG=%s, TOT_EMB_PER=%s]' %
+                                                 'TOT_EMB_LOC=%s, TOT_EMB_ORG=%s, TOT_EMB_PER=%s, TOT_EMB_NONE=%s]' %
                                            (str(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC]).zfill(2),
                                             str(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG]).zfill(2),
                                             str(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER]).zfill(2),
@@ -672,8 +703,9 @@ class FeatureExtraction(object):
                                             "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN]).zfill(2),
                                             str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC]).zfill(2),
                                             str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER]).zfill(2)
-                                            ))
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER]).zfill(2),
+                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE]).zfill(2))
+                                            )
                         self.config.logger.debug('-------------------------------------------------------------')
 
         except Exception as e:

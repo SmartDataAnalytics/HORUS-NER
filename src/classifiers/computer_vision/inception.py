@@ -16,7 +16,7 @@ from src.core.util import definitions
 
 
 class InceptionCV():
-    def __init__(self, config):
+    def __init__(self, config, version='V3'):
         try:
             self.config = config
             self.config.logger.debug('loading InceptionCV')
@@ -39,6 +39,24 @@ class InceptionCV():
                 dataset_utils.download_and_uncompress_tarball(self.INCEPTION_V4_URL, self.DIR_MODELS)
 
             self.class_names = imagenet.create_readable_names_for_imagenet_labels()
+            self.version = version
+            tf.reset_default_graph()
+            self.X = tf.placeholder(tf.float32, [None, 299, 299, 3], name="X")
+            if self.version.upper() == 'V3':
+                self.model_ckpt_path = self.INCEPTION_V3_CKPT_PATH
+                with arg_scope(inception.inception_v3_arg_scope()):
+                    # Set the number of classes and is_training parameter
+                    self.logits, self.end_points = inception.inception_v3(self.X, num_classes=1001, is_training=False)
+
+            elif self.version.upper() == 'V4':
+                self.model_ckpt_path = self.INCEPTION_V4_CKPT_PATH
+                with arg_scope(inception.inception_v3_arg_scope()):
+                    # Set the number of classes and is_training parameter
+                    # Logits
+                    self.logits, self.end_points = inception.inception_v4(self.X, num_classes=1001, is_training=False)
+
+            self.predictions = self.end_points.get('Predictions', 'No key named predictions')
+            self.saver = tf.train.Saver()
 
         except Exception as e:
             raise e
@@ -70,27 +88,27 @@ class InceptionCV():
         plt.imshow(image.astype(np.uint8), interpolation='nearest')
         plt.axis('off')
 
-    def predict(self, image, version='V3', top=5):
+    def predict(self, image, top=5):
         '''
         :param image: a path for an image
         :param version: inception's model version
         :return: top 10 predictions
         '''
         try:
-            tf.reset_default_graph()
+            #tf.reset_default_graph()
 
             # Process the image
             raw_image, processed_image = self.process_image(image)
 
 
             # Create a placeholder for the images
-            X = tf.placeholder(tf.float32, [None, 299, 299, 3], name="X")
+            #X = tf.placeholder(tf.float32, [None, 299, 299, 3], name="X")
 
             '''
             inception_v3 function returns logits and end_points dictionary
             logits are output of the network before applying softmax activation
             '''
-
+            '''
             if version.upper() == 'V3':
                 model_ckpt_path = self.INCEPTION_V3_CKPT_PATH
                 with arg_scope(inception.inception_v3_arg_scope()):
@@ -106,10 +124,11 @@ class InceptionCV():
 
             predictions = end_points.get('Predictions', 'No key named predictions')
             saver = tf.train.Saver()
+            '''
 
             with tf.Session() as sess:
-                saver.restore(sess, model_ckpt_path)
-                prediction_values = predictions.eval({X: processed_image})
+                self.saver.restore(sess, self.model_ckpt_path)
+                prediction_values = self.predictions.eval({self.X: processed_image})
 
             try:
                 # Add an index to predictions and then sort by probability
@@ -144,7 +163,7 @@ class InceptionCV():
         :return:
         '''
         try:
-            out = self.predict(image, version='V4')
+            out = self.predict(image)
             print(out)
         except Exception as e:
             self.config.logger.error(e)
@@ -152,7 +171,7 @@ class InceptionCV():
 
     def detect_logo(self, image):
         try:
-            out = self.predict(image, version='V4')
+            out = self.predict(image)
             print(out)
         except Exception as e:
             self.config.logger.error(e)
@@ -160,7 +179,7 @@ class InceptionCV():
 
     def detect_place(self, image):
         try:
-            out = self.predict(image, version='V4')
+            out = self.predict(image)
             print(out)
         except Exception as e:
             self.config.logger.error(e)

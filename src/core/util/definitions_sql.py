@@ -38,13 +38,13 @@ SQL_OBJECT_DETECTION_UPD = """UPDATE HORUS_SEARCH_RESULT_IMG
 SQL_TEXT_CLASS_SEL   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, 
                                   processed, 
                              text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
-                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0, tot_union_emb_per, tot_union_emb_loc, tot_union_emb_org   
+                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0, tot_union_emb_per, tot_union_emb_loc, tot_union_emb_org, tot_union_emb_none   
                       FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
 
 SQL_TEXT_CLASS_UPD   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, 
                            text_1_klass = %s, text_2_klass = %s, text_3_klass = %s, text_4_klass = %s, text_5_klass = %s, 
                            text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s,
-                           tot_union_emb_per = %s, tot_union_emb_loc = %s, tot_union_emb_org = %s
+                           tot_union_emb_per = %s, tot_union_emb_loc = %s, tot_union_emb_org = %s, tot_union_emb_none = %s
                            WHERE id = %s"""
 
 
