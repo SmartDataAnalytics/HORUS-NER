@@ -136,11 +136,11 @@ class FeatureExtraction(object):
 
         df = pd.DataFrame(sent_tokenize_list)
 
-        self.config.logger.info(':: %s sentence(s) cached' % str(len(sent_tokenize_list)))
+        self.config.logger.info('%s sentence(s) cached' % str(len(sent_tokenize_list)))
         tot_sentences_with_entity = len(df.loc[df[0] == 1])
         tot_others = len(df.loc[df[0] == -1])
-        self.config.logger.info(':: %s sentence(s) with entity' % tot_sentences_with_entity)
-        self.config.logger.info(':: %s sentence(s) without entity' % tot_others)
+        self.config.logger.info('%s sentence(s) with entity' % tot_sentences_with_entity)
+        self.config.logger.info('%s sentence(s) without entity' % tot_others)
         self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
 
         hm = pd.DataFrame(self.horus_matrix)
@@ -154,15 +154,15 @@ class FeatureExtraction(object):
         pos_not_ok_plo = plo[(~plo[5].isin(definitions.POS_NOUN_TAGS))]
         pos_noun_but_not_entity = not_plo[(not_plo[5].isin(definitions.POS_NOUN_TAGS))]
 
-        self.config.logger.info(':: [basic statistics]')
-        self.config.logger.info(':: -> ALL terms: %s ' % a)
-        self.config.logger.info(':: -> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
-        self.config.logger.info(':: -> ALL NNs (no compounds nor entities): %s ' % len(pos_noun_but_not_entity))
-        self.config.logger.info(':: [test dataset statistics]')
-        self.config.logger.info(':: -> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
-        self.config.logger.info(':: -> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
+        self.config.logger.info('[basic statistics]')
+        self.config.logger.info('-> ALL terms: %s ' % a)
+        self.config.logger.info('-> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
+        self.config.logger.info('-> ALL NNs (no compounds nor entities): %s ' % len(pos_noun_but_not_entity))
+        self.config.logger.info('[test dataset statistics]')
+        self.config.logger.info('-> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
+        self.config.logger.info('-> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
                           (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
-        self.config.logger.info(':: -> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
+        self.config.logger.info('-> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
                           (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
 
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
@@ -237,31 +237,31 @@ class FeatureExtraction(object):
 
     def __set_str_extended_seeds(self):
         try:
-            if not self.image_cnn.seeds:
+            if not definitions.seeds_dict_img_classes:
                 raise ('image seeds is empty!')
 
             self.config.logger.debug('extending seeds')
-            for k, V in self.image_cnn.seeds.iteritems():
+            for k, V in definitions.seeds_dict_img_classes.iteritems():
                 for v in V:
                     for i, syns in enumerate(wn.synsets(v)):
                         # print(' hypernyms = ', ' '.join(list(chain(*[l.lemma_names() for l in syns.hypernyms()]))))
                         # print(' hyponyms = ', ' '.join(list(chain(*[l.lemma_names() for l in syns.hyponyms()]))))
                         _s = wn.synset_from_pos_and_offset(syns.pos(), syns.offset())
-                        if k == 'PER':
+                        if k == 'per':
                             self.extended_seeds_PER.append(str(_s._name).split('.')[0])
-                            self.extended_seeds_PER.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            #self.extended_seeds_PER.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
                             # ids_PER.extend(syns.hyponyms())
-                        elif k == 'ORG':
+                        elif k == 'org':
                             self.extended_seeds_ORG.append(str(_s._name).split('.')[0])
-                            self.extended_seeds_ORG.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            #self.extended_seeds_ORG.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
                             # ids_ORG.extend(syns.hyponyms())
-                        elif k == 'LOC':
+                        elif k == 'loc':
                             self.extended_seeds_LOC.append(str(_s._name).split('.')[0])
-                            self.extended_seeds_LOC.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            #self.extended_seeds_LOC.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
                             # ids_LOC.extend(syns.hyponyms())
-                        elif k == 'NONE':
+                        elif k == 'none':
                             self.extended_seeds_NONE.append(str(_s._name).split('.')[0])
-                            self.extended_seeds_NONE.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
+                            #self.extended_seeds_NONE.extend([str(_s._name).split('.')[0] for _s in syns.hypernyms()])
                         else:
                             raise ('key error')
 
@@ -271,10 +271,10 @@ class FeatureExtraction(object):
             self.extended_seeds_NONE = set(self.extended_seeds_NONE)
 
             self.config.logger.debug('done!')
-            self.config.logger.debug('LOC seeds: ', self.extended_seeds_PER)
-            self.config.logger.debug('ORG seeds: ', self.extended_seeds_PER)
-            self.config.logger.debug('PER seeds: ', self.extended_seeds_PER)
-            self.config.logger.debug('NONE seeds: ', self.extended_seeds_PER)
+            self.config.logger.debug('LOC seeds: ' + ','.join(self.extended_seeds_LOC))
+            self.config.logger.debug('ORG seeds: ' + ','.join(self.extended_seeds_ORG))
+            self.config.logger.debug('PER seeds: ' + ','.join(self.extended_seeds_PER))
+            self.config.logger.debug('NON seeds: ' + ','.join(self.extended_seeds_NONE))
 
         except:
             raise
@@ -285,20 +285,20 @@ class FeatureExtraction(object):
             min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
 
             try:
-                self.config.logger.debug('predicting places365...')
-                pred_places365 = self.image_cnn_placesCNN.predict(image + '.jpg')
+                self.config.logger.debug('predicting CNN places365...')
+                p1 = self.image_cnn_placesCNN.predict(image)
             except Exception as e:
                 self.config.logger.debug('error: ' + str(e))
                 pass
 
             try:
-                self.config.logger.debug('predicting inception...')
-                pred_inception = self.image_cnn_incep_model.predict(image + '.jpg', top=5)
+                self.config.logger.debug('predicting CNN inception...')
+                p2 = self.image_cnn_incep_model.predict(image, top=5)
             except Exception as e:
                 self.config.logger.debug('error: ' + str(e))
                 pass
 
-            pred_prob = pred_places365.extend(pred_inception)
+            p1.extend(p2)
 
             tot_loc = 0
             tot_org = 0
@@ -310,13 +310,13 @@ class FeatureExtraction(object):
             sim_per = []
             sim_none = []
 
-            assert len(pred_prob) > 0
+            assert len(p1) > 0
 
             # text classification Topic Modeling+CNN
-            for i in range(0, len(pred_prob)):
+            for i in range(0, len(p1)):
                 out = []
-                labels = pred_prob[i][0]
-                prob = pred_prob[i][1]
+                labels = p1[i][0]
+                prob = p1[i][1]
                 cleaned_tokens = ' '.join((re.sub('[^0-9a-zA-Z]+', ' ', l) for l in labels.split()))
                 T = [l.replace('/outdoor', '').replace('/indoor', '') for l in cleaned_tokens.split()]
                 T = set(T)
@@ -352,19 +352,20 @@ class FeatureExtraction(object):
 
             assert i>0
 
-            sim_loc = min_max_scaler.fit_transform(np.array(sim_loc))
-            sim_org = min_max_scaler.fit_transform(np.array(sim_org))
-            sim_per = min_max_scaler.fit_transform(np.array(sim_per))
-            sim_none = min_max_scaler.fit_transform(np.array(sim_none))
+            sim_loc = min_max_scaler.fit_transform(np.array(sim_loc).reshape(1,-1))
+            sim_org = min_max_scaler.fit_transform(np.array(sim_org).reshape(1,-1))
+            sim_per = min_max_scaler.fit_transform(np.array(sim_per).reshape(1,-1))
+            sim_none = min_max_scaler.fit_transform(np.array(sim_none).reshape(1,-1))
 
             return [tot_loc/i, tot_org/i, tot_per/i, tot_none/i,
-                    (sim_loc / len(sim_loc)) if len(sim_loc) > 0 else 0,
-                    (sim_org / len(sim_org)) if len(sim_org) > 0 else 0,
-                    (sim_per / len(sim_per)) if len(sim_per) > 0 else 0,
-                    (sim_none / len(sim_none)) if len(sim_none) > 0 else 0]
+                    np.mean(sim_loc) if len(sim_loc) > 0 else 0,
+                    np.mean(sim_org) if len(sim_org) > 0 else 0,
+                    np.mean(sim_per) if len(sim_per) > 0 else 0,
+                    np.mean(sim_none) if len(sim_none) > 0 else 0]
 
-        except:
-            raise
+        except Exception as e:
+            self.config.logger.error(str(e))
+            return [0] * 8
 
     def extract_features(self):
         """
@@ -374,9 +375,9 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         try:
-            self.config.logger.info(':: setting the seeds ')
+            self.config.logger.info('setting the seeds ')
             self.__set_str_extended_seeds()
-            self.config.logger.info(':: detecting %s objects...' % len(self.horus_matrix))
+            self.config.logger.info('detecting %s objects...' % len(self.horus_matrix))
             auxi = 0
             toti = len(self.horus_matrix)
             for index in range(len(self.horus_matrix)):
@@ -384,7 +385,7 @@ class FeatureExtraction(object):
                 if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
 
                     term = self.horus_matrix[index][3]
-                    self.config.logger.info(':: token %d of %d [%s]' % (auxi, toti, term))
+                    self.config.logger.info('token %d of %d [%s]' % (auxi, toti, term))
 
                     id_term_img = self.horus_matrix[index][10]
                     id_term_txt = self.horus_matrix[index][9]
@@ -412,7 +413,7 @@ class FeatureExtraction(object):
                             rows = cursor.fetchall()
                             nr_results_img = len(rows)
                             if nr_results_img == 0:
-                                self.config.logger.debug(":: term has not returned images!")
+                                self.config.logger.debug("term has not returned images!")
                             limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
                             # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
@@ -445,8 +446,7 @@ class FeatureExtraction(object):
                                     res = [0] * 10
                                     tot_faces_cnn = 0
                                     tot_logos_cnn = 0
-                                    out_cnn = [0] * 8
-
+                                    out_cnn_features_loc = [0] * 8
 
                                     #CV - SIFT detection
                                     if self.image_sift is not None:
@@ -454,12 +454,12 @@ class FeatureExtraction(object):
                                         tot_faces = self.image_sift.detect_faces(img_full_path)
                                         if tot_faces > 0:
                                             tot_geral_faces += 1
-                                            self.config.logger.debug(":: found {0} faces!".format(tot_faces))
+                                            self.config.logger.debug("found {0} faces!".format(tot_faces))
                                         # ----- logo recognition -----
                                         tot_logos = self.image_sift.detect_logo(img_full_path)
                                         if tot_logos > 0:
                                             tot_geral_logos += 1
-                                            self.config.logger.debug(":: found {0} logo(s)!".format(1))
+                                            self.config.logger.debug("found {0} logo(s)!".format(1))
                                         # ----- place recognition -----
                                         res = self.image_sift.detect_place(img_full_path)
                                         tot_geral_pos_locations += res.count(1)
@@ -467,26 +467,25 @@ class FeatureExtraction(object):
 
                                         if res.count(1) >= int(self.config.models_location_theta):
                                             tot_geral_locations += 1
-                                            self.config.logger.debug(":: found {0} place(s)!".format(1))
+                                            self.config.logger.debug("found {0} place(s)!".format(1))
 
                                     # CV - CNN detection (logo feature)
                                     if self.image_cnn_logo is not None:
                                         tot_logos_cnn = self.image_cnn_logo.detect_logo(img_full_path)
                                         if tot_logos_cnn > 0:
                                             tot_geral_logos_cnn += 1
-                                            self.config.logger.debug(":: found {0} logo(s)!".format(1))
+                                            self.config.logger.debug("found {0} logo(s)!".format(1))
 
                                     # CV - CNN detection (place features)
                                     if ((self.image_cnn_placesCNN is not None) or (self.image_cnn_incep_model is not None)):
                                         out_cnn_features_loc=self.__get_cnn_features_vector(img_full_path)
-                                        out_geral_cnn_features_loc.extend(out_geral_cnn_features_loc)
+                                        out_geral_cnn_features_loc.extend(out_cnn_features_loc)
 
                                     # CV - CNN detection (face feature)
                                     if self.dlib_cnn is not None:
                                         tot_faces_cnn = self.dlib_cnn.detect_faces_cnn(img_full_path)
-                                        if tot_faces_cnn > 0:
-                                            tot_geral_faces_cnn += 1
-                                        self.config.logger.debug(":: found {0} faces!".format(tot_faces_cnn))
+                                        tot_geral_faces_cnn += tot_faces_cnn
+                                        self.config.logger.debug("found {0} faces!".format(tot_faces_cnn))
 
                                     # CV - blob detection for logos
                                     # TODO: to create this function
@@ -536,7 +535,7 @@ class FeatureExtraction(object):
                             #self.horus_matrix[index][definitions.INDEX_DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
                             #self.horus_matrix[index][definitions.INDEX_PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
 
-                            self.config.logger.debug(':: CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
+                            self.config.logger.debug('CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
                                               'CNN: LOC1=%s,LOC2=%s,LOC3=%s,LOC4=%s,LOC5=%s,LOC6=%s,LOC7=%s,LOC8=%s, '
                                                      'ORG=%s, PER=%s]' %
                                               (str(tot_geral_locations).zfill(2), str(tot_geral_logos).zfill(2),
@@ -575,7 +574,7 @@ class FeatureExtraction(object):
 
                             nr_results_txt = len(rows)
                             if nr_results_txt == 0:
-                                self.config.logger.debug(":: term has not returned web sites!")
+                                self.config.logger.debug("term has not returned web sites!")
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
                             tot_error_translation = 0
                             for itxt in range(limit_txt):
@@ -693,15 +692,15 @@ class FeatureExtraction(object):
         try:
             if text is None:
                 raise Exception("Provide an input text")
-            self.config.logger.info(':: text: ' + text)
+            self.config.logger.info('text: ' + text)
             self.config.logger.info(':: tokenizing sentences ...')
             sent_tokenize_list = nltk.sent_tokenize(text, language='english')
-            self.config.logger.info(':: processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
+            self.config.logger.info('processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
             sentences = []
             for sentence in sent_tokenize_list:
                 sentences.append(self.util.process_and_save_sentence(-1, sentence))
 
-            self.util.sentence_to_horus_matrix(sentences)
+            self.horus_matrix = self.util.sentence_to_horus_matrix(sentences)
             self.util.download_and_cache_results(self.horus_matrix)
             self.extract_features()
             self.__export_data(self.config.dir_output + 'outfeatures.horus', 'json')

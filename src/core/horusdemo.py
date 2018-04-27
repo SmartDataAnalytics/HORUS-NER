@@ -39,7 +39,6 @@ class HorusDemo(object):
 
     def __init__(self):
         self.config = HorusConfig()
-        #self.logging = SystemLog(self.config.root_dir + "horus.log", logging.DEBUG, logging.DEBUG)
         self.util = Util(self.config)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)

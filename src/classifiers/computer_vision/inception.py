@@ -38,12 +38,13 @@ class InceptionCV():
             if not os.path.exists(self.INCEPTION_V4_CKPT_PATH):
                 dataset_utils.download_and_uncompress_tarball(self.INCEPTION_V4_URL, self.DIR_MODELS)
 
+            self.class_names = imagenet.create_readable_names_for_imagenet_labels()
+
         except Exception as e:
             raise e
 
     def process_image(self, image):
-        filename = self.config.cache_img_folder + image
-        with open(filename, "rb") as f:
+        with open(image, "rb") as f:
             image_str = f.read()
 
         if image.endswith('jpg'):
@@ -51,8 +52,8 @@ class InceptionCV():
         elif image.endswith('png'):
             raw_image = tf.image.decode_png(image_str, channels=3)
         else:
-            print("Image must be either jpg or png")
-            return
+            self.config.logger.debug('image must be either jpg or png')
+            raise Exception
 
         image_size = 299  # ImageNet image size, different models may be sized differently
         processed_image = inception_preprocessing.preprocess_image(raw_image, image_size,
@@ -75,63 +76,66 @@ class InceptionCV():
         :param version: inception's model version
         :return: top 10 predictions
         '''
-        tf.reset_default_graph()
-
-        # Process the image
-        raw_image, processed_image = self.process_image(image)
-        class_names = imagenet.create_readable_names_for_imagenet_labels()
-
-        # Create a placeholder for the images
-        X = tf.placeholder(tf.float32, [None, 299, 299, 3], name="X")
-
-        '''
-        inception_v3 function returns logits and end_points dictionary
-        logits are output of the network before applying softmax activation
-        '''
-
-        if version.upper() == 'V3':
-            model_ckpt_path = self.INCEPTION_V3_CKPT_PATH
-            with arg_scope(inception.inception_v3_arg_scope()):
-                # Set the number of classes and is_training parameter
-                logits, end_points = inception.inception_v3(X, num_classes=1001, is_training=False)
-
-        elif version.upper() == 'V4':
-            model_ckpt_path = self.INCEPTION_V4_CKPT_PATH
-            with arg_scope(inception.inception_v3_arg_scope()):
-                # Set the number of classes and is_training parameter
-                # Logits
-                logits, end_points = inception.inception_v4(X, num_classes=1001, is_training=False)
-
-        predictions = end_points.get('Predictions', 'No key named predictions')
-        saver = tf.train.Saver()
-
-        with tf.Session() as sess:
-            saver.restore(sess, model_ckpt_path)
-            prediction_values = predictions.eval({X: processed_image})
-
         try:
-            # Add an index to predictions and then sort by probability
-            prediction_values = [(i, prediction) for i, prediction in enumerate(prediction_values[0, :])]
-            prediction_values = sorted(prediction_values, key=lambda x: x[1], reverse=True)
+            tf.reset_default_graph()
 
-            # Plot the image
-            #self.plot_color_image(raw_image)
-            #plt.show()
-            #print("Using Inception_{} CNN\nPrediction: Probability\n".format(version))
-            # Display the image and predictions
-            out = []
-            for i in range(0,top):
-                predicted_class = class_names[prediction_values[i][0]]
-                probability = prediction_values[i][1]
-                out.append((predicted_class, probability))
-                #print("{}: {:.2f}%".format(predicted_class, probability * 100))
+            # Process the image
+            raw_image, processed_image = self.process_image(image)
 
-            return out
 
-        # If the predictions do not come out right
+            # Create a placeholder for the images
+            X = tf.placeholder(tf.float32, [None, 299, 299, 3], name="X")
+
+            '''
+            inception_v3 function returns logits and end_points dictionary
+            logits are output of the network before applying softmax activation
+            '''
+
+            if version.upper() == 'V3':
+                model_ckpt_path = self.INCEPTION_V3_CKPT_PATH
+                with arg_scope(inception.inception_v3_arg_scope()):
+                    # Set the number of classes and is_training parameter
+                    logits, end_points = inception.inception_v3(X, num_classes=1001, is_training=False)
+
+            elif version.upper() == 'V4':
+                model_ckpt_path = self.INCEPTION_V4_CKPT_PATH
+                with arg_scope(inception.inception_v3_arg_scope()):
+                    # Set the number of classes and is_training parameter
+                    # Logits
+                    logits, end_points = inception.inception_v4(X, num_classes=1001, is_training=False)
+
+            predictions = end_points.get('Predictions', 'No key named predictions')
+            saver = tf.train.Saver()
+
+            with tf.Session() as sess:
+                saver.restore(sess, model_ckpt_path)
+                prediction_values = predictions.eval({X: processed_image})
+
+            try:
+                # Add an index to predictions and then sort by probability
+                prediction_values = [(i, prediction) for i, prediction in enumerate(prediction_values[0, :])]
+                prediction_values = sorted(prediction_values, key=lambda x: x[1], reverse=True)
+
+                # Plot the image
+                #self.plot_color_image(raw_image)
+                #plt.show()
+                #print("Using Inception_{} CNN\nPrediction: Probability\n".format(version))
+                # Display the image and predictions
+                out = []
+                for i in range(0,top):
+                    predicted_class = self.class_names[prediction_values[i][0]]
+                    probability = prediction_values[i][1]
+                    out.append((predicted_class, probability))
+                    #print("{}: {:.2f}%".format(predicted_class, probability * 100))
+
+                return out
+
+            # If the predictions do not come out right
+            except:
+                raise
+                #print(predictions)
         except:
             raise
-            #print(predictions)
 
     def detect_faces(self, image):
         '''

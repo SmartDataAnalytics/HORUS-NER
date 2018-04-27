@@ -61,7 +61,6 @@ class Places365CV():
 
     def predict(self, img_name, top=5):
         try:
-            img_name = self.config.cache_img_folder + img_name
             img = Image.open(img_name)
             input_img = V(self.centre_crop(img).unsqueeze(0), volatile=True)
             # forward pass
@@ -82,4 +81,4 @@ if __name__ == '__main__':
 
     config = HorusConfig()
     placesCNN = Places365CV(config)
-    print(placesCNN.predict('172_0_9.jpg'))
+    print(placesCNN.predict(config.cache_img_folder + '172_0_9.jpg'))

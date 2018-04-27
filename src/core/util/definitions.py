@@ -97,7 +97,8 @@ PENN_UNI_TAG = [['#', 'SYM'],['$', 'SYM'], ['','PUNCT'],[',','PUNCT'],['-LRB-','
 
 seeds_dict_img_classes = {'per': ['person', 'human being', 'man', 'woman', 'human body', 'human face'],
                       'loc': ['location', 'place', 'volcano', 'stone', 'country', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake', 'square', 'map', 'flag', 'city', 'forest', 'residence'],
-                      'org': ['organisation', 'logo', 'logotype']}
+                      'org': ['organisation', 'logo', 'logotype'],
+                     'none': ['clipper', 'animal', 'telephone', 'time', 'cup', 'table', 'bottle', 'window', 'vehicle' 'monitor']}
 
 seeds_dict_topics = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
                 'student', 'education', 'coach', 'football', 'turkish',

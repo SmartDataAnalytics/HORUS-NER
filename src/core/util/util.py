@@ -40,6 +40,7 @@ class Util(object):
             "<": "&lt;",
         }
         self.conn = sqlite3.connect(self.config.database_db)
+        self.tools = NLPTools(config)
 
     def translate_old(self, t1, t2, id, t1en, t2en):
         from translate import Translator
@@ -629,7 +630,7 @@ class Util(object):
         :param sentences
         :return: horus_matrix
         '''
-        self.config.logger.info(':: starting conversion to horus_matrix based on system parameters')
+        self.config.logger.info('starting conversion to horus_matrix based on system parameters')
         converted = []
         sent_index = 0
         try:
@@ -708,9 +709,8 @@ class Util(object):
                     converted.append(temp)
                     ipositionstartterm += (len(term) + 1)
 
-        except Exception as error:
-            self.config.logger.error(':: Erro! %s' % str(error))
-            exit(-1)
+        except:
+            raise
 
         return converted
 
@@ -935,18 +935,17 @@ class Util(object):
                 print('-> error: ' + repr(error))
         return auxtype
 
-    def download_and_cache_results(self, matrix):
+    def download_and_cache_results(self, horus_matrix):
         try:
-            self.config.logger.info(':: caching results...')
+            self.config.logger.info('caching results...')
             auxc = 1
-            horus_matrix = matrix
             with SQLiteHelper(self.config.database_db) as sqlcon:
                 t = HorusDB(sqlcon)
                 for index in range(len(horus_matrix)):
                     term = horus_matrix[index][3]
                     if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
                         if auxc%1000==0:
-                            self.config.logger.debug(':: processing term %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
+                            self.config.logger.debug('processing term %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                         res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
                             '''
@@ -954,7 +953,7 @@ class Util(object):
                             Downloading resources...
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.info(':: not cached, querying -> [%s]' % term)
+                            self.config.logger.info('not cached, querying -> [%s]' % term)
 
                             # Microsoft Bing
                             if int(self.config.search_engine_api) == 1:
@@ -971,7 +970,7 @@ class Util(object):
                             Caching Documents (Texts)
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.debug(':: caching (web sites) -> [%s]' % term)
+                            self.config.logger.debug('caching (web sites) -> [%s]' % term)
                             id_term_search = t.save_term(term, self.config.search_engine_tot_resources,
                                                          len(result_txts), self.config.search_engine_api,
                                                          1, self.config.search_engine_features_text,
@@ -979,7 +978,7 @@ class Util(object):
                             horus_matrix[index][9] = id_term_search
                             seq = 0
                             for web_result_txt in result_txts:
-                                self.config.logger.info(':: caching (web site) -> [%s]' % web_result_txt['displayUrl'])
+                                self.config.logger.info('caching (web site) -> [%s]' % web_result_txt['displayUrl'])
                                 seq += 1
                                 t.save_website_data(id_term_search, seq, web_result_txt['id'], web_result_txt['displayUrl'],
                                                     web_result_txt['name'], web_result_txt['snippet'])
@@ -988,7 +987,7 @@ class Util(object):
                             Caching Documents (Images)
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.info(':: caching (web images) -> [%s]' % term)
+                            self.config.logger.info('caching (web images) -> [%s]' % term)
                             id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
                                                       len(result_imgs), self.config.search_engine_api,
                                                       2, self.config.search_engine_features_img,
@@ -996,14 +995,14 @@ class Util(object):
                             horus_matrix[index][10] = id_term_img
                             seq = 0
                             for web_result_img in result_imgs:
-                                self.config.logger.debug(':: downloading image [%s]' % (web_result_img['name']))
+                                self.config.logger.debug('downloading image [%s]' % (web_result_img['name']))
                                 seq += 1
                                 auxtype = self.download_image_local(web_result_img['contentUrl'],
                                                                     web_result_img['encodingFormat'],
                                                                     web_result_img['thumbnailUrl'],
                                                                     web_result_img['encodingFormat'], id_term_img, 0,
                                                                     seq)
-                                self.config.logger.debug(':: caching image  ...')
+                                self.config.logger.debug('caching image  ...')
                                 t.save_image_data(id_term_img, seq, web_result_img['contentUrl'],
                                                   web_result_img['name'],
                                                   web_result_img['encodingFormat'], web_result_img['height'],
@@ -1022,7 +1021,6 @@ class Util(object):
             #eturn horus_matrix
 
         except Exception as e:
-            self.config.logger.error(':: an error has occurred: ', e)
             raise e
 
     def path_leaf(self, path):
