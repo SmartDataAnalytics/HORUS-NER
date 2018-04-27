@@ -39,7 +39,6 @@ class Util(object):
             ">": "&gt;",
             "<": "&lt;",
         }
-
         self.conn = sqlite3.connect(self.config.database_db)
 
     def translate_old(self, t1, t2, id, t1en, t2en):

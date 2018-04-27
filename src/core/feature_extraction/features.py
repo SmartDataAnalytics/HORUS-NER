@@ -366,7 +366,6 @@ class FeatureExtraction(object):
         except:
             raise
 
-
     def extract_features(self):
         """
         receives a horus_matrix and iterate over the tokens, detecting objects for each image/document
@@ -743,6 +742,10 @@ class FeatureExtraction(object):
 
         except Exception as error:
             self.config.logger.error('extract_features2() error: ' + repr(error))
+
+    def predict(self, features):
+        raise('to implement')
+        # TODO: call the final classifier here
 
 
 if __name__ == "__main__":

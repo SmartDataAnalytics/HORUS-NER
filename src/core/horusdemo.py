@@ -43,7 +43,7 @@ class HorusDemo(object):
         self.util = Util(self.config)
         self.final = joblib.load(self.config.model_final)
         self.final_encoder = joblib.load(self.config.model_final_encoder)
-        self.features = FeatureExtraction(self.config)
+        self.extractor = FeatureExtraction(self.config)
 
     def run_final_classifier(self):
         self.logging.log.info(':: running final classifier...')
@@ -126,31 +126,12 @@ class HorusDemo(object):
                         for k in range(i_c_size[z]):
                             self.horus_matrix[i + k][39] = i_y[z]  # KLASS_4
 
-    def annotate_text(self, text):
-        """
-        annotates an input text with HORUS
-        :param text:
-        :return:
-        """
-        try:
-            if text is not None:
-                self.logging.log.info(':: annotating text: %s' % text)
-                sent_tokenize_list = self.__process_input_text(text.strip('"\''))
-                self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
-            else:
-                raise Exception("err: missing text to be annotated")
 
-            if len(self.horus_matrix) > 0:
-                self.util.download_and_cache_results(self.horus_matrix)
-                self.features.extract_features()
-                self.update_compound_predictions()
-                self.run_final_classifier()
-                self.util.print_annotated_sentence()
-                return self.horus_matrix
-
-        except Exception as error:
-            self.logging.log.error('sorry: ' + repr(error))
 
 if __name__ == '__main__':
     #args[0], args[1], args[2], args[3]
-    HorusDemo().annotate_text('diego')
+    try:
+        horus = HorusDemo()
+        horus_matrix = horus.extractor.extract_features_from_text('paris hilton was once the toast of the town')
+    except:
+        raise
