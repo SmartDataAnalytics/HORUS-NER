@@ -1,25 +1,37 @@
+from __future__ import division
+
 import torch
 import torch.nn as nn
 import matplotlib.image as mpimg
 from torch.autograd import Variable
 import cv2
 
+from src.classifiers.computer_vision.places365 import Places365CV
+from src.config import HorusConfig
+
+
 class CNNLogo(nn.Module):
     def __init__(self, config):
-        super(CNNLogo, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=5, padding=2),
-            nn.BatchNorm2d(16),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=5, padding=2),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(2))
-        self.fc1 = nn.Linear(7 * 7 * 32, 100)
-        self.fc2 = nn.Linear(100, 10)
-        self.config = config
+        try:
+            super(CNNLogo, self).__init__()
+            self.layer1 = nn.Sequential(
+                nn.Conv2d(3, 16, kernel_size=5, padding=2),
+                nn.BatchNorm2d(16),
+                nn.ReLU(),
+                nn.MaxPool2d(2))
+            self.layer2 = nn.Sequential(
+                nn.Conv2d(16, 32, kernel_size=5, padding=2),
+                nn.BatchNorm2d(32),
+                nn.ReLU(),
+                nn.MaxPool2d(2))
+            self.fc1 = nn.Linear(7 * 7 * 32, 100)
+            self.fc2 = nn.Linear(100, 10)
+            self.config = config
+
+            self.load_state_dict(torch.load(self.config.models_cnn_org))
+            self.eval()
+        except:
+            raise
 
     def __postprocess_image(self, image):
         try:
@@ -65,94 +77,47 @@ class CNNLogo(nn.Module):
         out = self.fc2(out)
         return out
 
-    def detect_faces(self, image):
+    def predict(self, image):
         try:
-            self.load_state_dict(torch.load(self.config.models_cnn_per))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            return predicted.numpy().sum()
+            image = self.preprocess_image(image)
+            if image is not False:
+                outputs = self(image)
+                _, predicted = torch.max(outputs.data, 1)
+                return predicted.numpy().sum()
+            else:
+                raise Exception('pre-processing error')
         except Exception as e:
             self.config.logger.error(e)
             return 0
 
-    def detect_logo(self, image):
-        try:
-            # TODO: to train a logo classifier
-            return 0
-            self.load_state_dict(torch.load(self.config.models_cnn_org))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            return predicted.numpy().sum()
-        except Exception as e:
-            self.config.logger.error(e)
-            return 0
 
-    def detect_place(self, image):
+if __name__ == '__main__':
+
+    config = HorusConfig()
+    image = config.cache_img_folder + '172_0_9.jpg'
+    classifier = CNNLogo(config)
+
+    import pathlib
+
+
+    dir = pathlib.Path(config.cache_img_folder + '../temp-tests/not-logo/')
+    pat = "*.jpg"
+    max=9999999
+    i=0
+    tot_logo=0
+
+    for file in dir.glob(pat):
+        if i>max:
+            break
+        i+=1
         try:
-            ret = []
-            # loc1
-            self.load_state_dict(torch.load(self.config.models_cnn_loc1))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc2
-            self.load_state_dict(torch.load(self.config.models_cnn_loc2))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc3
-            self.load_state_dict(torch.load(self.config.models_cnn_loc3))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc4
-            self.load_state_dict(torch.load(self.config.models_cnn_loc4))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc5
-            self.load_state_dict(torch.load(self.config.models_cnn_loc5))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc6
-            self.load_state_dict(torch.load(self.config.models_cnn_loc6))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc7
-            self.load_state_dict(torch.load(self.config.models_cnn_loc7))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc8
-            self.load_state_dict(torch.load(self.config.models_cnn_loc8))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc9
-            self.load_state_dict(torch.load(self.config.models_cnn_loc9))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            # loc10
-            self.load_state_dict(torch.load(self.config.models_cnn_loc10))
-            self.eval()
-            outputs = self(image)
-            _, predicted = torch.max(outputs.data, 1)
-            ret.append(predicted.numpy().sum())
-            return ret
-        except Exception as e:
-            self.config.logger.error(e)
-            return [0] * 10
+            y=classifier.predict(file)
+            print(file, y)
+            if y==1:
+                tot_logo+=1
+        except:
+            raise
+
+    print(tot_logo, i, tot_logo/i)
+
+
