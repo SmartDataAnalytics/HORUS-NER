@@ -103,6 +103,8 @@ class FeatureExtraction(object):
             try:
                 nltk.data.find('words.zip')
             except LookupError: nltk.download('words')
+        self.config.logger.info('setting the seeds ')
+        self.__set_str_extended_seeds()
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -399,20 +401,18 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         try:
-            self.config.logger.info('setting the seeds ')
-            self.__set_str_extended_seeds()
             self.config.logger.info('detecting %s objects...' % len(self.horus_matrix))
             auxi = 0
             toti = len(self.horus_matrix)
             for index in range(len(self.horus_matrix)):
                 auxi += 1
-                if (self.horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][7] == 1:
+                if (self.horus_matrix[index][definitions.INDEX_POS] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][definitions.INDEX_IS_COMPOUND] == 1:
 
-                    term = self.horus_matrix[index][3]
+                    term = self.horus_matrix[index][definitions.INDEX_TOKEN]
                     self.config.logger.info('token %d of %d [%s]' % (auxi, toti, term))
 
-                    id_term_img = self.horus_matrix[index][10]
-                    id_term_txt = self.horus_matrix[index][9]
+                    id_term_img = self.horus_matrix[index][definitions.INDEX_ID_TERM_IMG]
+                    id_term_txt = self.horus_matrix[index][definitions.INDEX_ID_TERM_TXT]
                     id_ner_type = 0
                     tot_geral_faces = 0
                     tot_geral_logos = 0
@@ -495,7 +495,7 @@ class FeatureExtraction(object):
 
                                     # CV - CNN detection (logo feature)
                                     if self.image_cnn_logo is not None:
-                                        tot_logos_cnn = self.image_cnn_logo.detect_logo(img_full_path)
+                                        tot_logos_cnn = self.image_cnn_logo.predict(img_full_path)
                                         if tot_logos_cnn > 0:
                                             tot_geral_logos_cnn += 1
                                             self.config.logger.debug("found {0} logo(s)!".format(1))
@@ -774,9 +774,6 @@ class FeatureExtraction(object):
         except Exception as error:
             self.config.logger.error('extract_features2() error: ' + repr(error))
 
-    def predict(self, features):
-        raise('to implement')
-        # TODO: call the final classifier here
 
 
 if __name__ == "__main__":

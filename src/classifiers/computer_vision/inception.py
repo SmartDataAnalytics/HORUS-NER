@@ -57,6 +57,8 @@ class InceptionCV():
 
             self.predictions = self.end_points.get('Predictions', 'No key named predictions')
             self.saver = tf.train.Saver()
+            with tf.Session() as sess:
+                self.saver.restore(sess, self.model_ckpt_path)
 
         except Exception as e:
             raise e
@@ -126,9 +128,9 @@ class InceptionCV():
             saver = tf.train.Saver()
             '''
 
-            with tf.Session() as sess:
-                self.saver.restore(sess, self.model_ckpt_path)
-                prediction_values = self.predictions.eval({self.X: processed_image})
+            #with tf.Session() as sess:
+            #    self.saver.restore(sess, self.model_ckpt_path)
+            prediction_values = self.predictions.eval({self.X: processed_image})
 
             try:
                 # Add an index to predictions and then sort by probability
