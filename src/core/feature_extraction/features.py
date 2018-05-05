@@ -29,9 +29,12 @@ import sqlite3
 import nltk
 import numpy as np
 import pandas as pd
+from keras.applications.imagenet_utils import decode_predictions
+from keras.applications.inception_v3 import preprocess_input
 from sklearn import preprocessing
 from sklearn.preprocessing import normalize
-
+from tensorflow.python.keras._impl.keras.applications import InceptionV3
+from tensorflow.python.keras.preprocessing import image as ppimg
 from src.classifiers.computer_vision.cls_dlib import DLib_Classifier
 from src.classifiers.computer_vision.cnnlogo import CNNLogo
 from src.classifiers.computer_vision.inception import InceptionCV
@@ -73,7 +76,8 @@ class FeatureExtraction(object):
         self.dlib_cnn = None
         if load_cnn==1:
             self.image_cnn_placesCNN = Places365CV(self.config)
-            self.image_cnn_incep_model = InceptionCV(self.config, version='V3')
+            #self.image_cnn_incep_model = InceptionCV(self.config, version='V3')
+            self.image_cnn_incep_model = InceptionV3(weights='imagenet')
             self.image_cnn_logo = CNNLogo(self.config)
             self.dlib_cnn = DLib_Classifier(self.config)
         if load_sift==1: self.image_sift = SIFT(self.config)
@@ -291,7 +295,7 @@ class FeatureExtraction(object):
         except:
             raise
 
-    def __get_cnn_features_vector(self, image):
+    def __get_cnn_features_vector(self, imgpath):
         try:
 
             p1=[]
@@ -299,27 +303,37 @@ class FeatureExtraction(object):
 
             from PIL import Image
             from os.path import splitext
-            file_name, extension = splitext(image)
+            file_name, extension = splitext(imgpath)
             if extension not in ('.jpg', '.jpeg', '.png'):
                 try:
-                    im = Image.open(image)
+                    im = Image.open(imgpath)
                     rgb_im = im.convert('RGB')
-                    newfilename=str(image).replace(extension, '.jpg')
+                    newfilename=str(imgpath).replace(extension, '.jpg')
                     rgb_im.save(newfilename)
-                    image=newfilename
+                    imgpath=newfilename
                 except:
                     pass
 
             try:
                 self.config.logger.debug('predicting CNN places365...')
-                p1 = self.image_cnn_placesCNN.predict(image)
+                p1 = self.image_cnn_placesCNN.predict(imgpath)
             except Exception as e:
                 self.config.logger.debug('error: ' + str(e))
                 pass
 
             try:
                 self.config.logger.debug('predicting CNN inception...')
-                p2 = self.image_cnn_incep_model.predict(image, top=5)
+                img = ppimg.load_img(imgpath, target_size=(299, 299))
+                x = ppimg.img_to_array(img)
+                x = np.expand_dims(x, axis=0)
+                x = preprocess_input(x)
+                y = self.image_cnn_incep_model.predict(x)
+                for index, res in enumerate(decode_predictions(y)[0]):
+                    p2.append((res[1], res[2]))
+                    #print('{}. {}: {:.3f}%'.format(index + 1, res[1], 100 * res[2]))
+                    if index>5:
+                        break
+
             except Exception as e:
                 self.config.logger.debug('error: ' + str(e))
                 pass
@@ -378,10 +392,10 @@ class FeatureExtraction(object):
 
             assert i>0
 
-            sim_loc = self.min_max_scaler.fit_transform(np.array(sim_loc).reshape(1,-1))
-            sim_org = self.min_max_scaler.fit_transform(np.array(sim_org).reshape(1,-1))
-            sim_per = self.min_max_scaler.fit_transform(np.array(sim_per).reshape(1,-1))
-            sim_none = self.min_max_scaler.fit_transform(np.array(sim_none).reshape(1,-1))
+            sim_loc = self.min_max_scaler.fit_transform(np.array(sim_loc).reshape(-1,1))
+            sim_org = self.min_max_scaler.fit_transform(np.array(sim_org).reshape(-1,1))
+            sim_per = self.min_max_scaler.fit_transform(np.array(sim_per).reshape(-1,1))
+            sim_none = self.min_max_scaler.fit_transform(np.array(sim_none).reshape(-1,1))
 
             return [tot_loc/i, tot_org/i, tot_per/i, tot_none/i,
                     np.mean(sim_loc) if len(sim_loc) > 0 else 0,
@@ -602,13 +616,11 @@ class FeatureExtraction(object):
                                 self.config.logger.debug("term has not returned web sites!")
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
                             tot_error_translation = 0
+                            tot_union_emb_per, tot_union_emb_org, tot_union_emb_loc, tot_union_emb_none = \
+                                self.__get_number_classes_in_embeedings(term)
                             for itxt in range(limit_txt):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                                        tot_union_emb_per, tot_union_emb_org, tot_union_emb_loc, tot_union_emb_none = \
-                                            self.__get_number_classes_in_embeedings(term)
-
-
                                         merged_en, error_translation = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                         tot_error_translation += error_translation
                                         ret_bow = [0] * 5
@@ -782,9 +794,9 @@ if __name__ == "__main__":
     else:
         config = HorusConfig()
         # args[0], args[1], args[2], args[3]
-        tot_args = 1 #len(sys.argv)
-        data = 'coNLL2003/coNLL2003.eng.testb'  # args[0]
-        data = 'paris hilton was once the toast of the town' #args[0]
+        tot_args = 2 #len(sys.argv)
+        data = 'Ritter/ner.txt'  # args[0]
+        #data = 'paris hilton was once the toast of the town' #args[0]
 
         if tot_args == 1:
             extractor = FeatureExtraction(config)
@@ -794,7 +806,7 @@ if __name__ == "__main__":
             #print(outjson)
         else:
             exp_folder = 'EXP_002/' #
-            extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=0, load_topic_modeling=0)
+            extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
             extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
             # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
             # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')

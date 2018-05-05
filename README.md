@@ -1,5 +1,13 @@
 [![HitCount](http://hits.dwyl.io/SmartDataAnalytics/horus-ner.svg)](http://hits.dwyl.io/SmartDataAnalytics/horus-ner)
 [![NSP Status](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466/badge)](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/SmartDataAnalytics/horus-ner/issues)
+[![Build Status](https://travis-ci.org/SmartDataAnalytics/horus-ner.svg?branch=master)](https://travis-ci.org/SmartDataAnalytics/horus-ner)
+[![bitHound Overall Score](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/score.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)
+[![bitHound Code](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/code.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)
+[![Coverage Status](https://coveralls.io/repos/SmartDataAnalytics/horus-ner/badge.svg?branch=master&service=github)](https://coveralls.io/github/SmartDataAnalytics/horus-ner?branch=master)
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/SmartDataAnalytics/horus-ner/graphs/commit-activity)
+[![GitHub license](https://img.shields.io/github/license/SmartDataAnalytics/horus-ner.svg)](https://github.com/SmartDataAnalytics/horus-ner/blob/master/LICENSE)
 
 ### Boosting NER
 HORUS is meta and multi-level framework designed to provide a set of features at word-level to boost natural language frameworks. It's architecure is based on image processing and text classification clustering algorithms and shows to be helpful especially to noisy data, such as microblogs. 

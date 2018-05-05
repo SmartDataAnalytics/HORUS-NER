@@ -59,6 +59,7 @@ class InceptionCV():
             self.saver = tf.train.Saver()
             with tf.Session() as sess:
                 self.saver.restore(sess, self.model_ckpt_path)
+                sess.run(tf.global_variables_initializer())
 
         except Exception as e:
             raise e
@@ -80,7 +81,7 @@ class InceptionCV():
                                                                    image_size, is_training=False)
 
         with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+            #sess.run(tf.global_variables_initializer())
             raw_image, processed_image = sess.run([raw_image, processed_image])
 
         return raw_image, processed_image.reshape(-1, 299, 299, 3)
@@ -128,9 +129,9 @@ class InceptionCV():
             saver = tf.train.Saver()
             '''
 
-            #with tf.Session() as sess:
-            #    self.saver.restore(sess, self.model_ckpt_path)
-            prediction_values = self.predictions.eval({self.X: processed_image})
+            with tf.Session() as sess:
+                #self.saver.restore(sess, self.model_ckpt_path)
+                prediction_values = self.predictions.eval({self.X: processed_image},session=sess)
 
             try:
                 # Add an index to predictions and then sort by probability
