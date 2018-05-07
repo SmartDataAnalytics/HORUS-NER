@@ -773,21 +773,21 @@ class Util(object):
         else:
 
             _tokens_nltk, _pos_nltk, _pos_uni_nltk = self.tokenize_and_pos(s, 1)
-            _tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 2)
+            #_tokens_st, _pos_st, _pos_uni_st = self.tokenize_and_pos(s, 2)
             _tokens_twe, _pos_twe, _pos_uni_twe = self.tokenize_and_pos(s, 3)
 
             _pos_nltk = numpy.array(_pos_nltk)
             _pos_uni_nltk = numpy.array(_pos_uni_nltk)
-            _pos_st = numpy.array(_pos_st)
-            _pos_uni_st = numpy.array(_pos_uni_st)
+            #_pos_st = numpy.array(_pos_st)
+            #_pos_uni_st = numpy.array(_pos_uni_st)
             _pos_twe = numpy.array(_pos_twe)
             _pos_uni_twe = numpy.array(_pos_uni_twe)
 
             # nltk tok has the same length of corpus tok?
             _same_tok_nltk = (len(_tokens_nltk) == len(tokens_gold_standard))
 
-            # stanford tok has the same length of corpus tok?
-            _same_tok_stanf = (len(_tokens_st) == len(tokens_gold_standard))
+            ## stanford tok has the same length of corpus tok?
+            #_same_tok_stanf = (len(_tokens_st) == len(tokens_gold_standard))
 
             # tweetNLP tok has the same length of corpus tok?
             _same_tok_tweet = (len(_tokens_twe) == len(tokens_gold_standard))
@@ -796,21 +796,31 @@ class Util(object):
             nernltktags = self.tools.annotate_ner_nltk(_pos_nltk)
 
             # stanford NER
-            nerstantags = self.tools.annotate_ner_stanford(s)
-            nerstantags = numpy.array(nerstantags)
+            #nerstantags = self.tools.annotate_ner_stanford(s)
+            #nerstantags = numpy.array(nerstantags)
 
             comp_nltk = self.__get_compounds(_pos_nltk)
-            comp_st = self.__get_compounds(_pos_st)
+            #comp_st = self.__get_compounds(_pos_st)
             comp_twe = self.__get_compounds(_pos_twe)
 
             # saving to database (pos_uni_sta not implemented yet)
             sent = [hasNER,
-                    [s, 1 if _same_tok_nltk else 0, 1 if _same_tok_stanf else 0, 1 if _same_tok_tweet else 0],
-                    [tokens_gold_standard, _tokens_nltk, _tokens_st, _tokens_twe],
-                    [ner_gold_standard, nernltktags, nerstantags[:, 1].tolist(), []],
-                    [[], _pos_nltk[:, 1].tolist(), _pos_st[:, 1].tolist(), _pos_twe[:, 1].tolist()],
+                    [s, 1 if _same_tok_nltk else 0,
+                     1,
+                     #1 if _same_tok_stanf else 0,
+                     1 if _same_tok_tweet else 0],
+                    [tokens_gold_standard, _tokens_nltk, #_tokens_st,
+                     [],
+                     _tokens_twe],
+                    [ner_gold_standard, nernltktags, #nerstantags[:, 1].tolist(),
+                     [], []],
+                    [[], _pos_nltk[:, 1].tolist(), #_pos_st[:, 1].tolist(),
+                     [],
+                     _pos_twe[:, 1].tolist()],
                     [[], _pos_uni_nltk[:, 1].tolist(), [], _pos_uni_twe[:, 1].tolist()],
-                    [[], comp_nltk, comp_st, comp_twe]
+                    [[], comp_nltk, #comp_st,
+                     [],
+                     comp_twe]
                     ]
 
             self.__db_save_sentence(sent, dataset_name)
@@ -854,7 +864,7 @@ class Util(object):
                     if line.strip() == '':
                         if docstart is False:
                             if len(tokens) != 0:
-                                self.config.logger.debug(':: processing sentence %s' % str(tot_sentences))
+                                self.config.logger.debug('processing sentence %s' % str(tot_sentences))
                                 sentences.append(
                                     self.process_and_save_sentence(has3NER, s, dataset_name, tokens, tags_ner_y))
                                 tokens = []
@@ -874,7 +884,7 @@ class Util(object):
                         else:
                             docstart = True
 
-            self.config.logger.info(':: %s sentences processed successfully' % str(len(sentences)))
+            self.config.logger.info('%s sentences processed successfully' % str(len(sentences)))
             return sentences
         except Exception as error:
             self.config.logger.error('caught this error: ' + repr(error))
@@ -945,7 +955,7 @@ class Util(object):
                     term = horus_matrix[index][3]
                     if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
                         if auxc%1000==0:
-                            self.config.logger.debug('processing term %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
+                            self.config.logger.debug('processing token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                         res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
                         if res is None or len(res) == 0:
                             '''
@@ -1111,7 +1121,7 @@ class Util(object):
         compound_ok = 0
         for sent in sentence_list:
 
-            self.config.logger.info(':: processing sentence: ' + sent[1])
+            self.config.logger.info('processing sentence: ' + sent[1])
             if int(sent[1])==29:
                 aaa=1
 
@@ -1167,7 +1177,7 @@ class Util(object):
         compound_ok = 0
         for sent in sentence_list:
 
-            self.config.logger.info(':: processing sentence: ' + sent[1])
+            self.config.logger.info('processing sentence: ' + sent[1])
             if int(sent[1])==29:
                 aaa=1
 
@@ -1229,6 +1239,7 @@ class Util(object):
         self.config.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
+    '''
     def __cache_sentence(self, sentence_format, sentence_list):
         if sentence_format == 1:
             self.__cache_sentence_ritter(sentence_list)
@@ -1264,7 +1275,7 @@ class Util(object):
         except Exception as e:
             print e
             self.conn.rollback()
-
+    '''
     def __db_save_sentence(self, sent, corpus):
         try:
             c = self.conn.cursor()

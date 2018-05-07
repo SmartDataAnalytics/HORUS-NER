@@ -1,6 +1,6 @@
 import gensim
 import nltk
-from nltk.tag.stanford import CoreNLPNERTagger, CoreNLPPOSTagger
+#from nltk.tag.stanford import CoreNLPNERTagger, CoreNLPPOSTagger
 from src.core.util import definitions, CMUTweetTagger
 from src.config import HorusConfig
 
@@ -33,13 +33,13 @@ class NLPTools(object):
             ret.append(xi.split(' ')[2])
         return ret
 
-    def annotate_ner_stanford(self, text):
-        return self.stanford_ner.tag(text.split())
+    #def annotate_ner_stanford(self, text):
+    #    return self.stanford_ner.tag(text.split())
 
-    def tokenize_and_pos_stanford(self, text):
-        t = text.decode('utf-8')
-        #sd = [s.decode('utf8') for s in text.split()]
-        return t.split(), self.stanford_pos.tag(t.split()), []
+    #def tokenize_and_pos_stanford(self, text):
+    #    t = text.decode('utf-8')
+    #    #sd = [s.decode('utf8') for s in text.split()]
+    #    return t.split(), self.stanford_pos.tag(t.split()), []
 
     def tokenize_and_pos_twitter(self, text):
         tokens = []
@@ -94,7 +94,7 @@ class NLPTools(object):
     def __init__(self, config):
         self.config = config
         self.config.logger.info('loading NLP components, word2vec will take some time...')
-        self.stanford_ner = CoreNLPNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
-        self.stanford_pos = CoreNLPPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
-        self.stanford_pos.java_options='-mx8g'
+        #self.stanford_ner = CoreNLPNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
+        #self.stanford_pos = CoreNLPPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
+        #self.stanford_pos.java_options='-mx8g'
         self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)

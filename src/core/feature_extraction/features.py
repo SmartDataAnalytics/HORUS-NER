@@ -136,6 +136,7 @@ class FeatureExtraction(object):
                 writer.writerows(self.horus_matrix)
             else:
                 raise Exception('format not implemented')
+            self.config.logger.info("data exported successfully")
         except Exception as e:
             raise(e)
 
@@ -560,6 +561,8 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_PL_CV_I] = place_cv_indicator  # 5
                             self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_IMG] = nr_results_img  # 5
                             x=np.sum(out_geral_cnn_features_loc, axis=0)
+                            if isinstance(x,list) == False:
+                                x=[0] * 8
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_1_CNN] = x[0]  # 1
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_2_CNN] = x[1]
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC_3_CNN] = x[2]
@@ -662,7 +665,7 @@ class FeatureExtraction(object):
                             yytm = np.array(y_tm)
 
                             gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
-                            gpbtm = [np.sum(yytm[0], axis=0), np.sum(yytm[1], axis=0), np.sum(yytm[2], axis=0), np.sum(yytm[3], axis=0)]
+                            gpbtm = [np.sum(yytm[0][0], axis=0), np.sum(yytm[0][1], axis=0), np.sum(yytm[0][2], axis=0), np.sum(yytm[0][3], axis=0)]
 
                             horus_tx_ner = gpb.index(max(gpb)) + 1
                             horus_tx_cnn_ner = gpbtm.index(max(gpbtm)) + 1
@@ -789,28 +792,30 @@ class FeatureExtraction(object):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) not in (1,2,3,4):
-        print("please inform: 1: data set and 2: column indexes ([1, .., n])")
-    else:
-        config = HorusConfig()
-        # args[0], args[1], args[2], args[3]
-        tot_args = 2 #len(sys.argv)
-        data = 'Ritter/ner.txt'  # args[0]
-        #data = 'paris hilton was once the toast of the town' #args[0]
-
-        if tot_args == 1:
-            extractor = FeatureExtraction(config)
-            out = extractor.extract_features_from_text(data)
-            #outjson = json.dumps(out)
-            print(out)
-            #print(outjson)
+    try:
+        if len(sys.argv) not in (1,2,3,4):
+            print("please inform: 1: data set and 2: column indexes ([1, .., n])")
         else:
-            exp_folder = 'EXP_002/' #
-            extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-            extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
-            # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
-            # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
-            # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
-            ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
-            # extractor.extract_features('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
-            #extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)
+            config = HorusConfig()
+            # args[0], args[1], args[2], args[3]
+            tot_args = 1 #len(sys.argv)
+
+            if tot_args == 2:
+                data = 'paris hilton was once the toast of the town'  # args[0]
+                extractor = FeatureExtraction(config)
+                out = extractor.extract_features_from_text(data)
+                #outjson = json.dumps(out)
+                print(out)
+                #print(outjson)
+            else:
+                exp_folder = 'EXP_002/' #
+                extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
+                out = extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
+                # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
+                # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
+                # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
+                ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
+                # extractor.extract_features('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
+                #extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)
+    except Exception as e:
+        print(e)
