@@ -7,25 +7,27 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 
 0. Pre-requisites
 
-install CMake, Boost, Boost.Python, and X11
+    1. install CMake, Boost, Boost.Python, and X11
 
-**Ubuntu**
+    **Ubuntu**
 
-- sudo apt-get install build-essential cmake
-- sudo apt-get install libgtk-3-dev
-- sudo apt-get install libboost-all-dev
+    - sudo apt-get install build-essential cmake
+    - sudo apt-get install libgtk-3-dev
+    - sudo apt-get install libboost-all-dev
 
-**OSX**
+    **OSX**
 
-- wget https://bootstrap.pypa.io/get-pip.py
-- sudo python get-pip.py
+    - wget https://bootstrap.pypa.io/get-pip.py
+    - sudo python get-pip.py
 
-1. Setup the python environment
-- setup [Anaconda](https://anaconda.org/)
-- conda env create -f horus.v015.yml (tested for OSX) (*)
-- source activate horus_27_cv310
+    2. Setup the python environment
+    - setup [Anaconda](https://anaconda.org/)
+    - conda env create -f horus.v015.yml (tested for OSX) (*)
+    - source activate horus_27_cv310
+    
+    3. run src/core/download_models.py
 
-2. Setup the framework environment
+1. Setup the framework environment
 - setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/diegoesteves/horus-ner/blob/master/horus0.1.5.db.sql) to create the schema
 - get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
 - configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
