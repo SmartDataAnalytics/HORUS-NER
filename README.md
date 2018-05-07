@@ -3,11 +3,9 @@ HORUS is meta and multi-level framework designed to provide a set of features at
 
 We are currently investigating Named Entity Recognition (NER) as use case. This version supports the identification of classical named-entity types (LOC, PER, ORG). 
 
-#### Easy Setup (Python 2.7 based)
+#### Setup (Python 2.7 based)
 
-0. Pre-requisites
-
-    1. install CMake, Boost, Boost.Python, and X11
+1. install CMake, Boost, Boost.Python, and X11
 
     **Ubuntu**
 
@@ -20,17 +18,18 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
     - wget https://bootstrap.pypa.io/get-pip.py
     - sudo python get-pip.py
 
-    2. Setup the python environment
+2. Setup the python environment
+
     - setup [Anaconda](https://anaconda.org/)
     - conda env create -f horus.v015.yml (tested for OSX) (*)
     - source activate horus_27_cv310
     
-    3. run src/core/download_models.py
+3. run ./prerequisites_setup.sh
 
-1. Setup the framework environment
-- setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/diegoesteves/horus-ner/blob/master/horus0.1.5.db.sql) to create the schema
-- get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
-- configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
+4. Setup the framework environment
+    - setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/diegoesteves/horus-ner/blob/master/horus0.1.5.db.sql) to create the schema
+    - get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
+    - configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
 
 (*) - setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
 
