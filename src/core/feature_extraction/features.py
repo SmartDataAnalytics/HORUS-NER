@@ -85,29 +85,6 @@ class FeatureExtraction(object):
         self.logger.info(':: database connecting ...')
         self.conn = sqlite3.connect(self.config.database_db)
 
-        if bool(int(self.config.models_force_download)) is True:
-            self.logger.info(':: downloading NLTK data...')
-            try:
-                nltk.data.find('averaged_perceptron_tagger.zip')
-            except LookupError:
-                nltk.download('averaged_perceptron_tagger')
-            try:
-                nltk.data.find('punkt.zip')
-            except LookupError:
-                nltk.download('punkt')
-            try:
-                nltk.data.find('maxent_ne_chunker.zip')
-            except LookupError:
-                nltk.download('maxent_ne_chunker')
-            try:
-                nltk.data.find('universal_tagset.zip')
-            except LookupError:
-                nltk.download('universal_tagset')
-            try:
-                nltk.data.find('words.zip')
-            except LookupError:
-                nltk.download('words')
-
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             self.conn.close()
