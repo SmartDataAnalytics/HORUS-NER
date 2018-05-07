@@ -5,6 +5,21 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 
 #### Easy Setup (Python 2.7 based)
 
+0. Pre-requisites
+
+install CMake, Boost, Boost.Python, and X11
+
+**Ubuntu**
+
+- sudo apt-get install build-essential cmake
+- sudo apt-get install libgtk-3-dev
+- sudo apt-get install libboost-all-dev
+
+**OSX**
+
+- wget https://bootstrap.pypa.io/get-pip.py
+- sudo python get-pip.py
+
 1. Setup the python environment
 - setup [Anaconda](https://anaconda.org/)
 - conda env create -f horus.v015.yml (tested for OSX) (*)
