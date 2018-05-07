@@ -11,6 +11,7 @@ class SQLiteHelper(object):
         try:
             self.conn = sqlite3.connect(self.DB_PATH)
             self.conn.text_factory = str
+            self.conn.row_factory = self.dict_factory
             return self.conn
         except Exception as error:
             print(error)
@@ -24,6 +25,13 @@ class HorusDB(object):
 
     def __init__(self, conn):
         self.conn = conn
+
+    def dict_factory(cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
+
 
     def commit(self):
         self.conn.commit()
