@@ -90,23 +90,6 @@ class FeatureExtraction(object):
         self.extended_seeds_LOC = []
         self.extended_seeds_NONE = []
         self.min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
-        if bool(int(self.config.models_force_download)) is True:
-            self.config.logger.info('downloading NLTK data...')
-            try:
-                nltk.data.find('averaged_perceptron_tagger.zip')
-            except LookupError: nltk.download('averaged_perceptron_tagger')
-            try:
-                nltk.data.find('punkt.zip')
-            except LookupError: nltk.download('punkt')
-            try:
-                nltk.data.find('maxent_ne_chunker.zip')
-            except LookupError: nltk.download('maxent_ne_chunker')
-            try:
-                nltk.data.find('universal_tagset.zip')
-            except LookupError: nltk.download('universal_tagset')
-            try:
-                nltk.data.find('words.zip')
-            except LookupError: nltk.download('words')
         self.config.logger.info('setting the seeds ')
         self.__set_str_extended_seeds()
 
