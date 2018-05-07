@@ -25,6 +25,13 @@ class HorusDB(object):
     def __init__(self, conn):
         self.conn = conn
 
+    def dict_factory(cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
+
+
     def commit(self):
         self.conn.commit()
 
