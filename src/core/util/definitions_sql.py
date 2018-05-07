@@ -18,30 +18,33 @@ SQL_HORUS_SEARCH_RESULT_IMG_INS = """INSERT INTO HORUS_SEARCH_RESULT_IMG (id_ter
                      result_media_thumb_media_url, result_media_thumb_media_content_type, filename)
                      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)"""
 
-
-SQL_OBJECT_DETECTION_SEL = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, nr_place_2, nr_place_3, nr_place_4, 
-                             nr_place_5, nr_place_6, nr_place_7, nr_place_8, nr_place_9, nr_place_10, nr_faces_cnn, 
-                             nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn, nr_place_3_cnn, nr_place_4_cnn, nr_place_5_cnn, 
-                             nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn, nr_place_9_cnn, nr_place_10_cnn 
+#0-5 | 6-10 | 11-15 | 16-20 | 21-25 | 26-27
+SQL_OBJECT_DETECTION_SEL = """SELECT filename, id, processed, nr_faces, nr_logos, nr_place_1, 
+                                     nr_place_2, nr_place_3, nr_place_4, nr_place_5, nr_place_6, 
+                                     nr_place_7, nr_place_8, nr_place_9, nr_place_10, nr_faces_cnn, 
+                                     nr_logos_cnn, nr_place_1_cnn, nr_place_2_cnn, nr_place_3_cnn, nr_place_4_cnn, 
+                                     nr_place_5_cnn, nr_place_6_cnn, nr_place_7_cnn, nr_place_8_cnn, nr_place_9_cnn, 
+                                     nr_place_10_cnn
                     FROM HORUS_SEARCH_RESULT_IMG WHERE id_term_search = %s AND id_ner_type = %s """
 
 SQL_OBJECT_DETECTION_UPD = """UPDATE HORUS_SEARCH_RESULT_IMG 
                       SET nr_faces = ?, nr_logos = ?, nr_place_1 = ?, nr_place_2 = ?, nr_place_3 = ?, nr_place_4 = ?, 
                           nr_place_5 = ?, nr_place_6 = ?, nr_place_7 = ?, nr_place_8 = ?, nr_place_9 = ?, nr_place_10 = ?, 
                           nr_faces_cnn = ?, nr_logos_cnn = ?, nr_place_1_cnn= ?, nr_place_2_cnn= ?, nr_place_3_cnn= ?, nr_place_4_cnn= ?, 
-                          nr_place_5_cnn= ?, nr_place_6_cnn= ?, nr_place_7_cnn= ?, nr_place_8_cnn= ?, nr_place_9_cnn= ?, nr_place_10_cnn= ?, 
+                          nr_place_5_cnn= ?, nr_place_6_cnn= ?, nr_place_7_cnn= ?, nr_place_8_cnn= ?, nr_place_9_cnn= 0, nr_place_10_cnn= 0, 
                           processed = 1
                       WHERE id = ?"""
 
 SQL_TEXT_CLASS_SEL   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, 
-                             processed, 
+                                  processed, 
                              text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
-                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0 
+                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0, tot_union_emb_per, tot_union_emb_loc, tot_union_emb_org, tot_union_emb_none   
                       FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
 
 SQL_TEXT_CLASS_UPD   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, 
                            text_1_klass = %s, text_2_klass = %s, text_3_klass = %s, text_4_klass = %s, text_5_klass = %s, 
-                           text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s 
+                           text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s,
+                           tot_union_emb_per = %s, tot_union_emb_loc = %s, tot_union_emb_org = %s, tot_union_emb_none = %s
                            WHERE id = %s"""
 
 

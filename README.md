@@ -1,4 +1,15 @@
-### Boosting NER
+### HORUS Framework: Boosting NLP Tasks
+
+[![HitCount](http://hits.dwyl.io/SmartDataAnalytics/horus-ner.svg)](http://hits.dwyl.io/SmartDataAnalytics/horus-ner)
+[![NSP Status](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466/badge)](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/SmartDataAnalytics/horus-ner/issues)
+[![Build Status](https://travis-ci.org/SmartDataAnalytics/horus-ner.svg?branch=master)](https://travis-ci.org/SmartDataAnalytics/horus-ner)
+[![bitHound Overall Score](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/score.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)
+[![bitHound Code](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/code.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)
+[![Coverage Status](https://coveralls.io/repos/SmartDataAnalytics/horus-ner/badge.svg?branch=master&service=github)](https://coveralls.io/github/SmartDataAnalytics/horus-ner?branch=master)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/SmartDataAnalytics/horus-ner/graphs/commit-activity)
+[![GitHub license](https://img.shields.io/github/license/SmartDataAnalytics/horus-ner.svg)](https://github.com/SmartDataAnalytics/horus-ner/blob/master/LICENSE)
+
 HORUS is meta and multi-level framework designed to provide a set of features at word-level to boost natural language frameworks. It's architecure is based on image processing and text classification clustering algorithms and shows to be helpful especially to noisy data, such as microblogs. 
 
 We are currently investigating Named Entity Recognition (NER) as use case. This version supports the identification of classical named-entity types (LOC, PER, ORG). 
@@ -18,6 +29,8 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 (*) - setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
 
 #### Demo
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+
 ```python
 python main.py --text="whitney houston has been honored in nyc"
 

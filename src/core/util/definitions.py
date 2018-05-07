@@ -95,55 +95,92 @@ PENN_UNI_TAG = [['#', 'SYM'],['$', 'SYM'], ['','PUNCT'],[',','PUNCT'],['-LRB-','
                     ['VBD','VERB'],['VBG','VERB'],['VBN','VERB'],['VBP','VERB'],['VBZ','VERB'],['WDT','DET'],['WP','PRON'],['WP$', 'DET'],['WRB', 'ADV']]
 
 
-HORUS_FORMAT_INDEX_COL_IS_ENTITY = 0
-HORUS_FORMAT_INDEX_COL_ID_SENTENCE = 1
-HORUS_FORMAT_INDEX_COL_ID_WORD = 2
-HORUS_FORMAT_INDEX_COL_WORD = 3
-HORUS_FORMAT_INDEX_COL_POS_UNI = 4
-HORUS_FORMAT_INDEX_COL_POS = 5
-HORUS_FORMAT_INDEX_COL_NER = 6
-HORUS_FORMAT_INDEX_COL_IS_COMPOUND = 7
-HORUS_FORMAT_INDEX_COL_COMPOUND_SIZE = 8
-HORUS_FORMAT_INDEX_COL_ID_TERM_TXT = 9
-HORUS_FORMAT_INDEX_COL_ID_TERM_IMG = 10
-HORUS_FORMAT_INDEX_COL_TOT_IMG = 11
-HORUS_FORMAT_INDEX_COL_TOT_CV_LOC = 12
-HORUS_FORMAT_INDEX_COL_TOT_CV_ORG = 13
-HORUS_FORMAT_INDEX_COL_TOT_CV_PER = 14
-HORUS_FORMAT_INDEX_COL_DIST_CV_I = 15
-HORUS_FORMAT_INDEX_COL_PL_CV_I= 16
-HORUS_FORMAT_INDEX_COL_NR_RESULTS_SE_IMG = 17
-HORUS_FORMAT_INDEX_COL_KLASS_PREDICT_CV = 18
-HORUS_FORMAT_INDEX_COL_TOT_RESULTS_TX = 19
-HORUS_FORMAT_INDEX_COL_TOT_TX_LOC = 20
-HORUS_FORMAT_INDEX_COL_TOT_TX_ORG = 21
-HORUS_FORMAT_INDEX_COL_TOT_TX_PER = 22
-HORUS_FORMAT_INDEX_COL_TOT_ERR_TRANS = 23
-HORUS_FORMAT_INDEX_COL_DIST_TX_I = 24
-HORUS_FORMAT_INDEX_COL_NR_RESULTS_SE_TX = 25
-HORUS_FORMAT_INDEX_COL_TX_KLASS = 26
-HORUS_FORMAT_INDEX_COL_INDEX_START_TERM = 27
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_02 = 28
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_03 = 29
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_04 = 30
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_05 = 31
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_06 = 32
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_07 = 33
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_08 = 34
-HORUS_FORMAT_INDEX_COL_FEATURE_EXTRA_09 = 35
-HORUS_FORMAT_INDEX_COL_KLASS_01 = 36
-HORUS_FORMAT_INDEX_COL_KLASS_02 = 37
-HORUS_FORMAT_INDEX_COL_KLASS_03 = 38
-HORUS_FORMAT_INDEX_COL_KLASS_04 = 39
-HORUS_FORMAT_INDEX_COL_KLASS_05 = 40
-HORUS_FORMAT_INDEX_COL_KLASS_06 = 41
-HORUS_FORMAT_INDEX_COL_KLASS_07 = 42
-HORUS_FORMAT_INDEX_COL_KLASS_08 = 43
-HORUS_FORMAT_INDEX_COL_KLASS_09 = 44
-HORUS_FORMAT_INDEX_COL_KLASS_10 = 45
-HORUS_FORMAT_INDEX_COL_KLASS_11 = 46
-HORUS_FORMAT_INDEX_COL_KLASS_12 = 47
-HORUS_FORMAT_INDEX_COL_KLASS_13 = 48
-HORUS_FORMAT_INDEX_COL_KLASS_14 = 49
-HORUS_FORMAT_INDEX_COL_KLASS_15 = 50
-HORUS_FORMAT_INDEX_COL_TARGET_NER = 51
+seeds_dict_img_classes = {'per': ['person', 'human being', 'man', 'woman', 'human body', 'human face'],
+                      'loc': ['location', 'place', 'volcano', 'stone', 'country', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake', 'square', 'map', 'flag', 'city', 'forest', 'residence'],
+                      'org': ['organisation', 'logo', 'logotype'],
+                     'none': ['clipper', 'animal', 'telephone', 'time', 'cup', 'table', 'bottle', 'window', 'vehicle' 'monitor']}
+
+seeds_dict_topics = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
+                'student', 'education', 'coach', 'football', 'turkish',
+                'albanian', 'romanian', 'professor', 'lawyer', 'president',
+                'king', 'man', 'woman', 'danish', 'we', 'he', 'their', 'born',
+                'directed', 'died', 'lives', 'boss', 'syrian', 'elected',
+                'minister', 'candidate', 'daniel', 'robert', 'dude', 'guy',
+                'girl', 'woman', 'husband', 'actor', 'people', 'celebrity', 'human'],
+        'loc': ['china', 'usa', 'germany', 'leipzig', 'alaska', 'poland',
+                'jakarta', 'kitchen', 'house', 'brazil', 'fuji', 'prison',
+                'portugal', 'lisbon', 'france', 'oslo', 'airport', 'road',
+                'highway', 'forest', 'sea', 'lake', 'stadium', 'hospital',
+                'temple', 'beach', 'hotel', 'country', 'city', 'state', 'home',
+                'world', 'mountain', 'landscape', 'island', 'land' ,'waterfall',
+                'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle',
+                'flag', 'map'],
+        'org': ['microsoft', 'bloomberg', 'google', 'company', 'business', 'office',
+                'contract', 'project', 'research', 'office', 'startup', 'organisation'
+                'enterprise', 'venture', 'capital', 'milestones', 'risk',
+                'funded', 'idea', 'industry', 'headquarters', 'product',
+                'client', 'investment', 'certification', 'news', 'logo',
+                'trademark', 'job', 'foundation'],
+        'none': ['frog', 'animal', 'monkey', 'dog', 'skate', 'cup', 'money', 'cash',
+                 'mouse', 'snake', 'telephone', 'glass', 'monitor', 'bible', 'book',
+                 'dictionary', 'religion', 'politics', 'sports', 'question', 'linux',
+                 'java', 'python', 'months', 'time', 'wallet', 'umbrella', 'cable',
+                 'internet', 'connection', 'pencil', 'earphone', 'shopping', 'buy',
+                 'headphones', 'bread', 'food', 'cake', 'bottle', 'table', 'jacket',
+                 'politics', 'computer', 'laptop', 'blue', 'green', 'bucket', 'orange', 'rose',
+                 'key', 'clock', 'connector']}
+
+INDEX_IS_ENTITY = 0
+INDEX_ID_SENTENCE = 1
+INDEX_ID_WORD = 2
+INDEX_TOKEN = 3
+INDEX_POS_UNI = 4
+INDEX_POS = 5
+INDEX_NER = 6
+INDEX_IS_COMPOUND = 7
+INDEX_COMPOUND_SIZE = 8
+INDEX_ID_TERM_TXT = 9
+INDEX_ID_TERM_IMG = 10
+INDEX_TOT_IMG = 11
+INDEX_TOT_CV_LOC = 12
+INDEX_TOT_CV_ORG = 13
+INDEX_TOT_CV_PER = 14
+INDEX_DIST_CV_I = 15
+INDEX_PL_CV_I= 16
+INDEX_NR_RESULTS_SE_IMG = 17
+INDEX_MAX_KLASS_PREDICT_CV = 18
+INDEX_TOT_RESULTS_TX = 19
+INDEX_TOT_TX_LOC = 20
+INDEX_TOT_TX_ORG = 21
+INDEX_TOT_TX_PER = 22
+INDEX_TOT_ERR_TRANS = 23
+INDEX_DIST_TX_I = 24
+INDEX_NR_RESULTS_SE_TX = 25
+INDEX_MAX_KLASS_PREDICT_TX = 26
+INDEX_INDEX_START_TERM = 27
+INDEX_TOT_TX_LOC_TM_CNN = 28
+INDEX_TOT_TX_ORG_TM_CNN = 29
+INDEX_TOT_TX_PER_TM_CNN = 30
+INDEX_DIST_TX_I_TM_CNN = 31
+INDEX_TOT_CV_LOC_1_CNN = 32
+INDEX_TOT_CV_ORG_CNN = 33
+INDEX_TOT_CV_PER_CNN = 34
+INDEX_TOT_CV_LOC_2_CNN = 35
+INDEX_TOT_CV_LOC_3_CNN = 36
+INDEX_TOT_CV_LOC_4_CNN = 37
+INDEX_MAX_KLASS_PREDICT_TX_CNN = 38
+INDEX_MAX_KLASS_PREDICT_COMPOUND = 39
+INDEX_KLASS_FINAL_MODEL = 40
+INDEX_MAX_KLASS_PREDICT_CV_CNN = 41
+INDEX_TOT_EMB_SIMILAR_LOC = 42
+INDEX_TOT_EMB_SIMILAR_ORG = 43
+INDEX_TOT_EMB_SIMILAR_PER = 44
+INDEX_TOT_CV_LOC_5_CNN = 45
+INDEX_TOT_CV_LOC_6_CNN = 46
+INDEX_TOT_CV_LOC_7_CNN = 47
+INDEX_TOT_CV_LOC_8_CNN = 48
+INDEX_TOT_EMB_SIMILAR_NONE = 49
+INDEX_TOT_TX_NONE_TM_CNN = 50
+INDEX_TARGET_NER = 51
+
+HORUS_TOT_FEATURES = 52
