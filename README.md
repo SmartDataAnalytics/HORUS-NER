@@ -1,3 +1,5 @@
+**note: we are currently improving documentation and fixing known env bugs - please be patient :)**
+
 ### Boosting NER
 HORUS is meta and multi-level framework designed to provide a set of features at word-level to boost natural language frameworks. It's architecure is based on image processing and text classification clustering algorithms and shows to be helpful especially to noisy data, such as microblogs. 
 
