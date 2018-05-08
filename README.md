@@ -5,6 +5,14 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 
 #### Setup (Python 2.7 based)
 
+0. Make sure you have Java installed
+
+- test if this runs: 
+```
+java -XX:ParallelGCThreads=2 -Xmx2048m -jar /**X**/horus-ner/data/models/tweetnlp/ark-tweet-nlp-0.3.2.jar --model /**X**/horus-ner/data/models/tweetnlp/model.ritter_ptb_alldata_fixed.20130723
+```
+**X** = local path to the code
+
 1. install CMake, Boost, Boost.Python, and X11
 
     **Ubuntu**
