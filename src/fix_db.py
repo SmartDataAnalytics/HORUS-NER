@@ -5,15 +5,13 @@ from src.core.util.sqlite_helper import SQLiteHelper, HorusDB
 
 
 
-sql0 = "select distinct lower(term) as term  from HORUS_TERM_SEARCH where ignore=0 and id_search_type=2 group by lower(term) having count(lower(term)) > 2"
+sql0 = "select distinct lower(term) as term  from HORUS_TERM_SEARCH where ignore=0 and id_search_type=2 group by lower(term) having count(lower(term)) > 1"
 sql1 = "select id from HORUS_TERM_SEARCH where ignore=0 and id_search_type=2 and lower(term) = ? order by id"
-
-#sql2 = "select count(1) from HORUS_SEARCH_RESULT_TEXT where ignore=0 and id_term_search = ?"
+#sql2 = "select count(1) from HORUS_SEARCH_RESULT_TEXT where id_term_search = ?"
 sql2 = "select count(1) from HORUS_SEARCH_RESULT_IMG where id_term_search = ?"
-
 upd0 = "update horus_term_search set ignore=1 where id=?"
 
-assert 1==2
+#assert 1==2
 '''
 ATTENTION: CHECK BEFORE IF THE PARAMETERS ARE CORRECT! 
 id_search_type=1 => HORUS_SEARCH_RESULT_TEXT
@@ -24,7 +22,7 @@ try:
     with SQLiteHelper(config.database_db) as sqlcon:
         try:
             # connection
-            t = HorusDB(sqlcon)
+            #t = HorusDB(sqlcon)
 
             c0=sqlcon.cursor()
             c1=sqlcon.cursor()
@@ -60,6 +58,7 @@ try:
                             c3.execute(upd0, (id,))
                             print(' -- marked to ignore at pos', str(i))
             sqlcon.commit()
+            print('OK!')
         except Exception as e:
             sqlcon.rollback()
             print(e)
