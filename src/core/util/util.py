@@ -3,6 +3,8 @@ import numpy
 import json
 import ntpath
 import nltk
+
+from src.core.util.definitions import INDEX_ID_TERM_TXT, INDEX_ID_TERM_IMG
 from src.core.util.definitions_sql import SQL_SENTENCE_SAVE, SQL_ALL_TERM_SEARCH_SEL
 from src.core.util import definitions
 from src.core.util.nlp_tools import NLPTools
@@ -954,16 +956,17 @@ class Util(object):
                 t = HorusDB(sqlcon)
                 # getting list of cached terms
                 values = (self.config.search_engine_api, self.config.search_engine_features_text)
-                df_cached_terms = pd.read_sql_query(sql=SQL_ALL_TERM_SEARCH_SEL, con=t.conn, params=values)
-                df_cached_terms.set_index("id", inplace=True)
+                df = pd.read_sql_query(sql=SQL_ALL_TERM_SEARCH_SEL, con=t.conn, params=values)
+                df.set_index("id", inplace=True)
                 for index in range(len(horus_matrix)):
                     term = horus_matrix[index][definitions.INDEX_TOKEN]
+                    term = term.lower()
                     if (horus_matrix[index][definitions.INDEX_POS] in definitions.POS_NOUN_TAGS) or \
                             horus_matrix[index][definitions.INDEX_IS_COMPOUND] == 1:
                         if auxc%1000==0:
                             self.config.logger.debug('processing token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                         #res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
-                        res=df_cached_terms.loc[df_cached_terms['term'] == term]
+                        res=df.loc[df['term'] == term]
                         if res is None or len(res) == 0:
                             '''
                             --------------------------------------------------------------------------
@@ -1024,14 +1027,15 @@ class Util(object):
                                                   web_result_img['name'],
                                                   web_result_img['encodingFormat'], web_result_img['height'],
                                                   web_result_img['width'], web_result_img['thumbnailUrl'], str(auxtype))
-
                         else:
                             if (len(res) != 2):
                                 raise Exception("that should not happen!")
                             if ((1 or 2) not in [row[1] for row in res]):
                                 raise Exception("that should not happen auch!")
-                            horus_matrix[index][9] = res[0][0]
-                            horus_matrix[index][10] = res[1][0]
+                            horus_matrix[index][INDEX_ID_TERM_TXT] = \
+                                df.loc[(df['term'] == term) & (df['id_search_type'] == 1)].index
+                            horus_matrix[index][INDEX_ID_TERM_IMG] = \
+                                df.loc[(df['term'] == term) & (df['id_search_type'] == 2)].index
 
                     auxc += 1
                 t.commit()
