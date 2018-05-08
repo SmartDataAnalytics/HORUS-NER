@@ -804,7 +804,7 @@ if __name__ == "__main__":
             else:
                 exp_folder = 'EXP_002/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                out = extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
+                out = extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
                 # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
                 # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
                 # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')

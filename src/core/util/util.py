@@ -1029,13 +1029,17 @@ class Util(object):
                                                   web_result_img['width'], web_result_img['thumbnailUrl'], str(auxtype))
                         else:
                             if (len(res) != 2):
-                                raise Exception("that should not happen!")
-                            if ((1 or 2) not in [row[1] for row in res]):
-                                raise Exception("that should not happen auch!")
-                            horus_matrix[index][INDEX_ID_TERM_TXT] = \
-                                df.loc[(df['term'] == term) & (df['id_search_type'] == 1)].index
-                            horus_matrix[index][INDEX_ID_TERM_IMG] = \
-                                df.loc[(df['term'] == term) & (df['id_search_type'] == 2)].index
+                                raise Exception("that should not happen! check db integrity")
+                            if ((1) in set(df.loc[(df['term'] == term)]['id_search_type'])):
+                                horus_matrix[index][INDEX_ID_TERM_TXT] = \
+                                    int(df.loc[(df['term'] == term) & (df['id_search_type'] == 1)].index.values)
+                            else:
+                                horus_matrix[index][INDEX_ID_TERM_TXT] = -1
+                            if ((2) in set(df.loc[(df['term'] == term)]['id_search_type'])):
+                                horus_matrix[index][INDEX_ID_TERM_IMG] = \
+                                    int(df.loc[(df['term'] == term) & (df['id_search_type'] == 2)].index.values)
+                            else:
+                                horus_matrix[index][INDEX_ID_TERM_IMG] = -1
 
                     auxc += 1
                 t.commit()
