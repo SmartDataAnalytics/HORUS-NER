@@ -2,9 +2,13 @@ SQL_TERM_SEARCH_INS = """INSERT into HORUS_TERM_SEARCH(term, id_search_engine, i
                      search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
                      VALUES(?,?,?,?,?,?,?,?)"""
 
+SQL_ALL_TERM_SEARCH_SEL = """SELECT id, lower(term) as term, id_search_type, tot_results_returned 
+                             FROM HORUS_TERM_SEARCH 
+                             WHERE id_search_engine = ? AND search_engine_features = ? """
+
 SQL_TERM_SEARCH_SEL = """SELECT id, id_search_type, tot_results_returned 
                              FROM HORUS_TERM_SEARCH 
-                             WHERE upper(term) = upper(?) AND id_search_engine = ? AND search_engine_features = ? 
+                             WHERE lower(term) = lower(?) AND id_search_engine = ? AND search_engine_features = ? 
                              ORDER BY term, id_search_type ASC LIMIT 2"""
 
 SQL_HORUS_SEARCH_RESULT_TEXT_INS = """INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,

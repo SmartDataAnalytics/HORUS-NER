@@ -29,6 +29,7 @@ import sqlite3
 import nltk
 import numpy as np
 import pandas as pd
+from PIL import Image
 from keras.applications.imagenet_utils import decode_predictions
 from keras.applications.inception_v3 import preprocess_input
 from sklearn import preprocessing
@@ -442,10 +443,18 @@ class FeatureExtraction(object):
 
                             # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
                             # 14 = nr_faces_cnn, 15 = nr_logos_cnn, 16-25=nr_places_1-to-10_cnn
+                            tot_processed_img = 0
                             for i in range(limit_img):
                                 _id = rows[i][1]
 
                                 img_full_path = self.config.cache_img_folder + rows[i][0]
+                                try:
+                                    Image.open(img_full_path)
+                                    tot_processed_img+=1
+                                except IOError:
+                                    self.config.logger.error('image error: ' + img_full_path)
+                                    continue
+
                                 if rows[i][2] == 1: # processed
                                     tot_geral_faces += rows[i][3] if rows[i][3] != None else 0
                                     tot_geral_logos += rows[i][4] if rows[i][4] != None else 0
@@ -538,7 +547,7 @@ class FeatureExtraction(object):
                             #dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
                             #place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_IMG] = limit_img
+                            self.horus_matrix[index][definitions.INDEX_TOT_IMG] = tot_processed_img
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC] = tot_geral_locations  # 1
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_ORG] = tot_geral_logos  # 2
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_PER] = tot_geral_faces  # 3
@@ -577,7 +586,7 @@ class FeatureExtraction(object):
                                                str(tot_geral_logos_cnn).zfill(2),
                                                str(tot_geral_faces_cnn).zfill(2)))
 
-                            if limit_img != 0:
+                            if tot_processed_img != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[outs.index(max(outs)) + 1]
                                 #self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[outs_cnn.index(max(outs_cnn)) + 1]
                                 #TODO: this does not make sense now, since CNN classifiers are a bit more complex...thinkg about that later...it does not impact the algorithm
@@ -795,7 +804,7 @@ if __name__ == "__main__":
             else:
                 exp_folder = 'EXP_002/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                out = extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
+                out = extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
                 # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
                 # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
                 # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')

@@ -46,6 +46,17 @@ class HorusDB(object):
         except Exception as e:
             raise e
 
+    def get_list_terms_cached(self, search_engine, search_engine_features = ''):
+        try:
+            values = (search_engine, search_engine_features)
+            ret = self.__exists_record(SQL_ALL_TERM_SEARCH_SEL, values)
+            if ret is not False:
+                return ret
+            else:
+                return None
+        except Exception as e:
+            raise e
+
     def term_cached(self, term, search_engine, search_engine_features = ''):
         values = (term, search_engine, search_engine_features)
         ret = self.__exists_record(SQL_TERM_SEARCH_SEL, values)

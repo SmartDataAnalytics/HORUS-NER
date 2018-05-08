@@ -18,7 +18,7 @@ class DLib_Classifier():
             img = io.imread(img_path)
             return (len(self.cnn_face_detector(img, 1)))
         except Exception as e:
-            self.config.error(e)
+            self.config.logger.error(e)
 
 
 if __name__ == '__main__':
