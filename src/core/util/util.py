@@ -964,7 +964,7 @@ class Util(object):
                     if (horus_matrix[index][definitions.INDEX_POS] in definitions.POS_NOUN_TAGS) or \
                             horus_matrix[index][definitions.INDEX_IS_COMPOUND] == 1:
                         if auxc%1000==0:
-                            self.config.logger.debug('processing token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
+                            self.config.logger.debug('caching token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                         #res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
                         res=df.loc[df['term'] == term]
                         if res is None or len(res) == 0:

@@ -402,7 +402,7 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         try:
-            self.config.logger.info('detecting %s objects...' % len(self.horus_matrix))
+            self.config.logger.info('extracting features for %s tokens...' % len(self.horus_matrix))
             auxi = 0
             toti = len(self.horus_matrix)
             for index in range(len(self.horus_matrix)):
@@ -438,7 +438,7 @@ class FeatureExtraction(object):
                             rows = cursor.fetchall()
                             nr_results_img = len(rows)
                             if nr_results_img == 0:
-                                self.config.logger.debug("term has not returned images!")
+                                self.config.logger.debug("token/term has not returned images!")
                             limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
                             # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
@@ -604,13 +604,14 @@ class FeatureExtraction(object):
                             tot_union_emb_org = 0
                             tot_union_emb_per = 0
                             tot_union_emb_none = 0
-                            y_bow, y_tm = [], []
+                            y_bow = [0] * 5
+                            y_tm = [0] * 5
                             cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                             rows = cursor.fetchall()
 
                             nr_results_txt = len(rows)
                             if nr_results_txt == 0:
-                                self.config.logger.debug("term has not returned web sites!")
+                                self.config.logger.debug("token/term has not returned web sites!")
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
                             tot_error_translation = 0
                             tot_union_emb_per, tot_union_emb_org, tot_union_emb_loc, tot_union_emb_none = \
@@ -781,7 +782,7 @@ class FeatureExtraction(object):
             return self.horus_matrix
 
         except Exception as error:
-            self.config.logger.error('extract_features2() error: ' + repr(error))
+            self.config.logger.error('extract_features_from_conll() error: ' + repr(error))
 
 
 
@@ -804,7 +805,7 @@ if __name__ == "__main__":
             else:
                 exp_folder = 'EXP_002/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                out = extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
+                out = extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
                 # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
                 # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
                 # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
