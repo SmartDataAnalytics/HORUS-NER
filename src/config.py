@@ -53,6 +53,8 @@ class HorusConfig(object):
                     self.dir_models = self.root_dir_output + 'models/'
                     self.dir_output = self.root_dir_output + 'output/'
 
+                    self.nr_thread = parser.get('conf', 'nr_thread')
+
                     '''
                      ----------------------------------- Models -----------------------------------
                     '''

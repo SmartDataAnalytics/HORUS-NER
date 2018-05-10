@@ -53,6 +53,7 @@ from src.classifiers.text_classification.bow_tfidf import BowTfidf
 from src.core.util import definitions
 from nltk.corpus import wordnet as wn
 
+
 class FeatureExtraction(object):
     def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1):
         '''
@@ -65,11 +66,11 @@ class FeatureExtraction(object):
         '''
         self.horus_matrix = [] # TODO: convert to pandas dataframe => pd.DataFrame(columns=definitions.HORUS_MATRIX_HEADER)
         self.config = config
-        self.config.logger.info('loading components...')
+        self.config.logger.info('loading components ...')
         self.util = Util(self.config)
         self.tools = NLPTools(self.config)
         self.translator = BingTranslator(self.config)
-        self.config.logger.info('loading extractors...that might take awhile...')
+        self.config.logger.info('loading extractors! might take awhile...')
         self.image_cnn_logo = None
         self.image_sift = None
         self.text_bow = None
@@ -93,6 +94,7 @@ class FeatureExtraction(object):
         self.min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
         self.config.logger.info('setting the seeds ')
         self.__set_str_extended_seeds()
+        self.config.logger.info('hooray!')
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -108,18 +110,19 @@ class FeatureExtraction(object):
     def __export_data(self, path, format):
         try:
             self.config.logger.info('exporting metadata to: ' + path + "." + format)
+            data=self.horus_matrix
             if format == 'json':
                 with open(path + '.json', 'wb') as outfile:
-                    json.dump(self.horus_matrix, outfile) #indent=4, sort_keys=True
+                    json.dump(data, outfile) #indent=4, sort_keys=True
             elif format == 'csv':
                 writer = csv.writer(open(path + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
-                writer.writerows(self.horus_matrix)
+                writer.writerows(data)
             elif format == 'tsv':
                 writer = csv.writer(open(path + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
-                writer.writerows(self.horus_matrix)
+                writer.writerows(data)
             else:
                 raise Exception('format not implemented')
             self.config.logger.info("data exported successfully")
@@ -402,9 +405,9 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         try:
-            self.config.logger.info('extracting features for %s tokens...' % len(self.horus_matrix))
-            auxi = 0
             toti = len(self.horus_matrix)
+            self.config.logger.info('extracting features for %s terms/tokens' % str(toti))
+            auxi = 0
             for index in range(len(self.horus_matrix)):
                 auxi += 1
                 if (self.horus_matrix[index][definitions.INDEX_POS] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][definitions.INDEX_IS_COMPOUND] == 1:
@@ -734,7 +737,6 @@ class FeatureExtraction(object):
                 self.config.logger.error('error: not possible to save the file! ' + str(e2))
             return False
 
-
     def extract_features_from_text(self, text):
         """
         extracts the HORUS features for a given input text
@@ -813,12 +815,12 @@ if __name__ == "__main__":
             else:
                 exp_folder = 'EXP_002/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
-                # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
-                # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
-                # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
+                extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
+                # extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
+                # extractor.extract_features_from_conll('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
+                # extractor.extract_features_from_conll('wnut/2015.conll.freebase', exp_folder, 'wnut16')
                 ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
-                # extractor.extract_features('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
+                # extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
                 #extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)
     except Exception as e:
         print(e)
