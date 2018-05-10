@@ -107,7 +107,7 @@ class FeatureExtraction(object):
 
     def __export_data(self, path, format):
         try:
-            self.config.logger.info(':: exporting metadata to: ' + path + "." + format)
+            self.config.logger.info('exporting metadata to: ' + path + "." + format)
             if format == 'json':
                 with open(path + '.json', 'wb') as outfile:
                     json.dump(self.horus_matrix, outfile) #indent=4, sort_keys=True
@@ -138,7 +138,7 @@ class FeatureExtraction(object):
         self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
 
         hm = pd.DataFrame(self.horus_matrix)
-        self.config.logger.info(':: basic POS statistics')
+        self.config.logger.info('basic POS statistics')
         a = len(hm)  # all
         a2 = len(hm[(hm[7] == 0)])  # all excluding compounds
         plo = hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
@@ -604,8 +604,8 @@ class FeatureExtraction(object):
                             tot_union_emb_org = 0
                             tot_union_emb_per = 0
                             tot_union_emb_none = 0
-                            y_bow = [0] * 5
-                            y_tm = [0] * 5
+                            y_bow = [[0] * 5] * int(self.config.search_engine_tot_resources)
+                            y_tm = [[0] * 5] * int(self.config.search_engine_tot_resources)
                             cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                             rows = cursor.fetchall()
 
@@ -616,6 +616,9 @@ class FeatureExtraction(object):
                             tot_error_translation = 0
                             tot_union_emb_per, tot_union_emb_org, tot_union_emb_loc, tot_union_emb_none = \
                                 self.__get_number_classes_in_embeedings(term)
+                            if limit_txt > 0:
+                                y_bow =[]
+                                y_tm=[]
                             for itxt in range(limit_txt):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
@@ -718,12 +721,19 @@ class FeatureExtraction(object):
                                             )
                         self.config.logger.debug('-------------------------------------------------------------')
 
+            return True
+
         except Exception as e:
             self.config.logger.error(repr(e))
             self.conn.rollback()
-            self.horus_matrix[index] = [0] * int(definitions.HORUS_TOT_FEATURES)
+            self.config.logger.info('saving partially processed file...')
+            try:
+                #self.horus_matrix[index] = [0] * int(definitions.HORUS_TOT_FEATURES)
+                self.__export_data(self.config.dir_output + 'outfeatures.horus', 'json')
+            except Exception as e2:
+                self.config.logger.error('error: not possible to save the file! ' + str(e2))
+            return False
 
-        return self.horus_matrix
 
     def extract_features_from_text(self, text):
         """
@@ -735,7 +745,7 @@ class FeatureExtraction(object):
             if text is None:
                 raise Exception("Provide an input text")
             self.config.logger.info('text: ' + text)
-            self.config.logger.info(':: tokenizing sentences ...')
+            self.config.logger.info('tokenizing sentences ...')
             sent_tokenize_list = nltk.sent_tokenize(text, language='english')
             self.config.logger.info('processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
             sentences = []
@@ -744,13 +754,13 @@ class FeatureExtraction(object):
 
             self.horus_matrix = self.util.sentence_to_horus_matrix(sentences)
             self.util.download_and_cache_results(self.horus_matrix)
-            self.extract_features()
-            self.__export_data(self.config.dir_output + 'outfeatures.horus', 'json')
+            if self.extract_features() is True:
+                self.__export_data(self.config.dir_output + 'features_horus', 'json')
 
             return self.horus_matrix
 
         except Exception as error:
-            self.config.logger.error('extract_features1() error: ' + repr(error))
+            self.config.logger.error('extract_features_from_text() error: ' + repr(error))
 
     def extract_features_from_conll(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
         """
@@ -765,21 +775,19 @@ class FeatureExtraction(object):
         try:
             if file is None:
                 raise Exception("Provide an input file format to be annotated")
-            self.config.logger.info(':: processing CoNLL format -> %s' % label)
+            self.config.logger.info('processing CoNLL format -> %s' % label)
             file = self.config.dir_datasets + file
             sent_tokenize_list = self.util.process_ds_conll_format(file, label, token_index, ner_index, '')
             self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
             if len(self.horus_matrix) > 0:
                 self.util.download_and_cache_results(self.horus_matrix)
-                self.extract_features()
-                filename = self.util.path_leaf(file) + ".horus"
-
-                path = self.config.dir_output + out_subfolder + filename
-                self.__export_data(path, 'tsv')
+                if self.extract_features() is True:
+                    filename = self.util.path_leaf(file) + ".horus"
+                    path = self.config.dir_output + out_subfolder + filename
+                    self.__export_data(path, 'tsv')
+                    return self.horus_matrix
             else:
-                self.config.logger.warn(':: well, nothing to do today...')
-
-            return self.horus_matrix
+                self.config.logger.warn('well, nothing to do today...')
 
         except Exception as error:
             self.config.logger.error('extract_features_from_conll() error: ' + repr(error))
@@ -805,7 +813,7 @@ if __name__ == "__main__":
             else:
                 exp_folder = 'EXP_002/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                out = extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
+                extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, label='ritter')
                 # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
                 # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
                 # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')

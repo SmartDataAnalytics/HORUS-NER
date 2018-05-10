@@ -30,7 +30,7 @@ def bing_translate_text(text, to, key):
         headers = {'Ocp-Apim-Subscription-Key': key}
         response = requests.get(translate_url, params=params, headers=headers)
         if response.status_code != 200:
-            raise Exception(':: bing translation: ' + str(response.status_code) + ' - ' + str(response.text))
+            raise Exception('bing translation: ' + str(response.status_code) + ' - ' + str(response.text))
         translation = ElementTree.fromstring(response.text.encode('utf-8'))
         return translation.text
     except:
@@ -43,7 +43,7 @@ def bing_detect_language(text, key):
         headers = {'Ocp-Apim-Subscription-Key': key}
         response = requests.get(detect_url, params=params, headers=headers)
         if response.status_code != 200:
-            raise Exception(':: bing lang detection: ' + str(response.status_code) + ' - ' + str(response.text))
+            raise Exception('bing lang detection: ' + str(response.status_code) + ' - ' + str(response.text))
         translation = ElementTree.fromstring(response.text.encode('utf-8'))
         return translation.text
     except:

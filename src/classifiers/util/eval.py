@@ -107,21 +107,21 @@ def example_analysis(horus_matrix):
 
     # F1 = 2 * (precision * recall) / (precision + recall)
 
-    logging.info(':: LOC -> hits-cv: %s | %2f | hits-tx: %s | %2f | hits-final: %s | %2f || %s' % (str(hit_loc),
+    logging.info('LOC -> hits-cv: %s | %2f | hits-tx: %s | %2f | hits-final: %s | %2f || %s' % (str(hit_loc),
                                                                             float(hit_loc) / tot_loc,
                                                                             str(hit_loc_tx),
                                                                             float(hit_loc_tx) / tot_loc,
                                                                             str(hit_loc_final),
                                                                             float(hit_loc_final) / tot_loc,
                                                                             str(tot_loc)))
-    logging.info(':: ORG -> hits-cv: %s | %2f | hits-tx: %s | %2f | hits-final: %s | %2f || %s' % (str(hit_org),
+    logging.info('ORG -> hits-cv: %s | %2f | hits-tx: %s | %2f | hits-final: %s | %2f || %s' % (str(hit_org),
                                                                             float(hit_org) / tot_org,
                                                                             str(hit_org_tx),
                                                                             float(hit_org_tx) / tot_org,
                                                                             str(hit_org_final),
                                                                             float(hit_org_final) / tot_org,
                                                                             str(tot_org)))
-    logging.info(':: PER -> hits-cv: %s | %2f | hits-tx: %s | %2f | hits-final: %s | %2f || %s' % (str(hit_per),
+    logging.info('PER -> hits-cv: %s | %2f | hits-tx: %s | %2f | hits-final: %s | %2f || %s' % (str(hit_per),
                                                                             float(hit_per) / tot_per,
                                                                             str(hit_per_tx),
                                                                             float(hit_per_tx) / tot_per,
@@ -130,8 +130,8 @@ def example_analysis(horus_matrix):
                                                                             str(tot_per)))
 
     logging.info('------------------------------------------------------------------')
-    logging.info(':: statistics')
-    logging.info(':: number of tokens: ' + str(len(horus_matrix)))
+    logging.info('statistics')
+    logging.info('number of tokens: ' + str(len(horus_matrix)))
 
 
 horus = Core(False, 5)

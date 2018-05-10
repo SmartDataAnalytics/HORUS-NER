@@ -85,12 +85,12 @@ class Util(object):
                     try:
                         t1final = self.translator.translate(t1, 'en')
                     except Exception as e1:
-                        self.config.logger.error(':: Error, trying another service: ' + str(e1))
+                        self.config.logger.error('Error, trying another service: ' + str(e1))
                         try:
                             translator2 = Translator(from_lang=lt1, to_lang="en")
                             t1final = translator2.translate(t1)
                         except Exception as e2:
-                            self.config.logger.error(':: Error at service 2: ' + str(e2))
+                            self.config.logger.error('Error at service 2: ' + str(e2))
                             return ret_error
                             # updating
 
@@ -106,12 +106,12 @@ class Util(object):
                     try:
                         t2final = self.translator.translate(t2, 'en')
                     except Exception as e1:
-                        self.config.logger.error(':: Error, trying another service: ' + str(e1))
+                        self.config.logger.error('Error, trying another service: ' + str(e1))
                         try:
                             translator2 = Translator(from_lang=lt2, to_lang="en")
                             t2final = translator2.translate(t2)
                         except Exception as e2:
-                            self.config.logger.error(':: Error at service 2: ' + str(e2))
+                            self.config.logger.error('Error at service 2: ' + str(e2))
                             return ret_error
                             # updating
 
@@ -123,7 +123,7 @@ class Util(object):
 
             c.close()
         except Exception as e:
-            self.config.logger.error(':: Error: ' + str(e))
+            self.config.logger.error('Error: ' + str(e))
             return False, ret_error
 
         return t1final, t2final
@@ -154,7 +154,7 @@ class Util(object):
                     raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
 
         except Exception as e:
-            self.config.logger.error(':: Error: ' + str(e))
+            self.config.logger.error('Error: ' + str(e))
             predictions = [-1, -1, -1, -1, -1]
 
     def __get_compounds(self, tokens):
@@ -294,7 +294,7 @@ class Util(object):
                     return None
 
         except Exception as e:
-            print(':: error on get ner: %s' % e)
+            print('error on get ner: %s' % e)
             exit(-1)
 
         return index_token
@@ -366,7 +366,7 @@ class Util(object):
                                     exit(-1)
 
         except Exception as error:
-            print(':: error on get ner: %s' % error)
+            print('error on get ner: %s' % error)
 
         return index_ner_y
 
@@ -763,7 +763,7 @@ class Util(object):
                     sent.append([json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19]), json.loads(ret[20])])
                     sent.append([json.loads('[]'), json.loads(ret[21]), json.loads(ret[22]), json.loads(ret[23])])
         except Exception as e:
-            self.config.logger.error(':: an error has occurred: ', e)
+            self.config.logger.error('an error has occurred: ', e)
             raise
         return sent
 
@@ -844,7 +844,7 @@ class Util(object):
             s = ''
             has3NER = -1
             tot_sentences = 1
-            self.config.logger.info(':: processing sentences...')
+            self.config.logger.info('processing sentences...')
 
             # hack to find problems in CONLL file
             # linenr = 0
@@ -915,12 +915,12 @@ class Util(object):
                     x4 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[39])
                     x5 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[40])
 
-        self.config.logger.info(':: sentence annotated :: ')
-        self.config.logger.info(':: KLASS 1 -->: ' + x1)
-        self.config.logger.info(':: KLASS 2 -->: ' + x2)
-        self.config.logger.info(':: KLASS 3 -->: ' + x3)
-        self.config.logger.info(':: KLASS 4 -->: ' + x4)
-        self.config.logger.info(':: KLASS 5 -->: ' + x5)
+        self.config.logger.info('sentence annotated :: ')
+        self.config.logger.info('KLASS 1 -->: ' + x1)
+        self.config.logger.info('KLASS 2 -->: ' + x2)
+        self.config.logger.info('KLASS 3 -->: ' + x3)
+        self.config.logger.info('KLASS 4 -->: ' + x4)
+        self.config.logger.info('KLASS 5 -->: ' + x5)
 
     def download_image_local(self, image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
         val = URLValidator()
@@ -1128,7 +1128,7 @@ class Util(object):
         return ' '.join(x for x in unicodedata.normalize('NFKD', data) if x in string.ascii_letters).lower()
 
     def __cache_sentence_ritter(self, sentence_list):
-        self.config.logger.debug(':: caching Ritter dataset...:')
+        self.config.logger.debug('caching Ritter dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
         sent_with_ner = 0
@@ -1180,11 +1180,11 @@ class Util(object):
             i_sent += 1
             i_word = 1
 
-        self.config.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+        self.config.logger.debug('done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     def __cache_sentence_conll(self, sentence_list):
-        self.config.logger.debug(':: caching coNLL 2003 dataset...:')
+        self.config.logger.debug('caching coNLL 2003 dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
         sent_with_ner = 0
@@ -1251,7 +1251,7 @@ class Util(object):
             i_sent += 1
             i_word = 1
 
-        self.config.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+        self.config.logger.debug('done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     '''
@@ -1306,7 +1306,7 @@ class Util(object):
             return id.lastrowid
 
         except Exception as e:
-            self.config.logger.error(':: an error has occurred: ', e)
+            self.config.logger.error('an error has occurred: ', e)
             raise
 
     def __processing_conll_ds(self, dspath):
