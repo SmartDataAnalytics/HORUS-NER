@@ -28,24 +28,24 @@ def horus_to_features(horusfile, le):
 
     df = pd.read_csv(horusfile, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
     oldsentid = df.get_values()[0][1]
-    for index, linha in df.iterrows():
-        if len(linha)>0:
-            if linha[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
-                if linha[definitions.INDEX_ID_SENTENCE] != oldsentid:
+    for index, feat in df.iterrows():
+        if len(feat)>0:
+            if feat[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
+                if feat[definitions.INDEX_ID_SENTENCE] != oldsentid:
                     sentence_shape.append(features)
                     y_sentences_shape.append(targets)
                     targets, features = [], []
 
-                idsent = linha[definitions.INDEX_ID_SENTENCE]
-                idtoken = linha[definitions.INDEX_ID_WORD]
+                idsent = feat[definitions.INDEX_ID_SENTENCE]
+                idtoken = feat[definitions.INDEX_ID_WORD]
                 pos_bef = ''
                 pos_aft = ''
                 if index > 0 and df.get_value(index-1, 7) == 0:
                     pos_bef = df.get_value(index-1,5)
                 if index + 1 < len(df) and df.get_value(index+1, 7) == 0:
                     pos_aft = df.get_value(index+1,5)
-                token = linha[definitions.INDEX_TOKEN]
-                postag = linha[definitions.INDEX_POS]
+                token = feat[definitions.INDEX_TOKEN]
+                postag = feat[definitions.INDEX_POS]
                 one_char_token = len(token) == 1
                 special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
                 first_capitalized = token[0].isupper()
@@ -55,48 +55,68 @@ def horus_to_features(horusfile, le):
                 stop_words = token in stop
                 small = True if len(horusfile[3]) <= 2 else False
                 stemmer_lanc = lancaster_stemmer.stem(token)
-                nr_images_returned = linha[definitions.INDEX_NR_RESULTS_SE_IMG]
-                nr_websites_returned = linha[definitions.INDEX_NR_RESULTS_SE_TX]
+                nr_images_returned = feat[definitions.INDEX_NR_RESULTS_SE_IMG]
+                nr_websites_returned = feat[definitions.INDEX_NR_RESULTS_SE_TX]
                 hyphen = '-' in token
-                cv_loc = float(linha[definitions.INDEX_TOT_CV_LOC])
-                cv_org = float(linha[definitions.INDEX_TOT_CV_ORG])
-                cv_per = float(linha[definitions.INDEX_TOT_CV_PER])
-                cv_dist = float(linha[definitions.INDEX_DIST_CV_I])
-                cv_plc = float(linha[definitions.INDEX_PL_CV_I])
-                tx_loc = float(linha[definitions.INDEX_TOT_TX_LOC])
-                tx_org = float(linha[definitions.INDEX_TOT_TX_ORG])
-                tx_per = float(linha[definitions.INDEX_TOT_TX_PER])
-                tx_err = float(linha[definitions.INDEX_TOT_ERR_TRANS])
-                tx_dist = float(linha[definitions.INDEX_DIST_TX_I])
+                cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
+                cv_org = float(feat[definitions.INDEX_TOT_CV_ORG])
+                cv_per = float(feat[definitions.INDEX_TOT_CV_PER])
+                cv_dist = float(feat[definitions.INDEX_DIST_CV_I])
+                cv_plc = float(feat[definitions.INDEX_PL_CV_I])
+                tx_loc = float(feat[definitions.INDEX_TOT_TX_LOC])
+                tx_org = float(feat[definitions.INDEX_TOT_TX_ORG])
+                tx_per = float(feat[definitions.INDEX_TOT_TX_PER])
+                tx_err = float(feat[definitions.INDEX_TOT_ERR_TRANS])
+                tx_dist = float(feat[definitions.INDEX_DIST_TX_I])
 
-                if linha[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
-                elif linha[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
-                elif linha[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
+                if feat[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
+                elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
+                elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
                 else: ner = u'O'
 
                 #standard shape
-                sel_features = [idsent, idtoken, token, token.lower(), stemmer_lanc,
+                f = [idsent, idtoken, token, token.lower(), stemmer_lanc,
                                 pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
                                 le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
                                 title, digit, one_char_token, special_char, first_capitalized,
                                 hyphen, capitalized, stop_words, small,
                                 nr_images_returned, nr_websites_returned,
                                 cv_org, cv_loc, cv_per, cv_dist, cv_plc,
-                                tx_org, tx_loc, tx_per, tx_dist, tx_err]
+                                tx_org, tx_loc, tx_per, tx_dist, tx_err,
+                                feat[definitions.INDEX_TOT_TX_LOC_TM_CNN],
+                                feat[definitions.INDEX_TOT_TX_ORG_TM_CNN],
+                                feat[definitions.INDEX_TOT_TX_PER_TM_CNN],
+                                feat[definitions.INDEX_DIST_TX_I_TM_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_1_CNN],
+                                feat[definitions.INDEX_TOT_CV_ORG_CNN],
+                                feat[definitions.INDEX_TOT_CV_PER_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_2_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_3_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_4_CNN],
+                                feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC],
+                                feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG],
+                                feat[definitions.INDEX_TOT_EMB_SIMILAR_PER],
+                                feat[definitions.INDEX_TOT_CV_LOC_5_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_6_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_7_CNN],
+                                feat[definitions.INDEX_TOT_CV_LOC_8_CNN],
+                                feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE],
+                                feat[definitions.INDEX_TOT_TX_NONE_TM_CNN]
+                                ]
 
-                features.append(sel_features)
+                features.append(f)
 
-                if linha[51] in definitions.NER_TAGS_LOC: y = u'LOC'
-                elif linha[51] in definitions.NER_TAGS_ORG: y = u'ORG'
-                elif linha[51] in definitions.NER_TAGS_PER: y = u'PER'
+                if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
+                elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
+                elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
                 else: y = u'O'
 
                 targets.append(y)
 
-                tokens_shape.append(sel_features[9:len(sel_features)])
+                tokens_shape.append(f[9:len(f)])
                 y_tokens_shape.append(definitions.KLASSES2[y])
 
-                oldsentid = linha[1]
+                oldsentid = feat[1]
 
     print 'total of sentences', len(sentence_shape)
     print 'total of tokens', len(tokens_shape)

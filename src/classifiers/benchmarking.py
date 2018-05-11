@@ -325,9 +325,10 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
 le1 = joblib.load(config.dir_encoders + "_encoder_pos.pkl")
 le2 = joblib.load(config.dir_encoders + "_encoder_nltk2.pkl")
 
-dataset_prefix = config.dir_output + "EXP_002/"
+dataset_prefix = config.dir_output + "EXP_003/"
 datasets = (("ritter.horus.conll", le1),
             ("wnut16.horus", le1))
+
 
 #("wnut16.horus", le1),
 #            ("coNLL2003_test.a.horus", le2)
