@@ -26,26 +26,26 @@ def horus_to_features(horusfile, le):
     features, sentence_shape = [], []
     targets, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
 
-    df = pd.read_csv(horusfile, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+    df = pd.read_csv(horusfile, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
     oldsentid = df.get_values()[0][1]
     for index, linha in df.iterrows():
         if len(linha)>0:
-            if linha[7] == 0: #no compounds
-                if linha[1] != oldsentid:
+            if linha[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
+                if linha[definitions.INDEX_ID_SENTENCE] != oldsentid:
                     sentence_shape.append(features)
                     y_sentences_shape.append(targets)
                     targets, features = [], []
 
-                idsent = linha[1]
-                idtoken = linha[2]
+                idsent = linha[definitions.INDEX_ID_SENTENCE]
+                idtoken = linha[definitions.INDEX_ID_WORD]
                 pos_bef = ''
                 pos_aft = ''
                 if index > 0 and df.get_value(index-1, 7) == 0:
                     pos_bef = df.get_value(index-1,5)
                 if index + 1 < len(df) and df.get_value(index+1, 7) == 0:
                     pos_aft = df.get_value(index+1,5)
-                token = linha[3]
-                postag = linha[5]
+                token = linha[definitions.INDEX_TOKEN]
+                postag = linha[definitions.INDEX_POS]
                 one_char_token = len(token) == 1
                 special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
                 first_capitalized = token[0].isupper()
@@ -55,23 +55,23 @@ def horus_to_features(horusfile, le):
                 stop_words = token in stop
                 small = True if len(horusfile[3]) <= 2 else False
                 stemmer_lanc = lancaster_stemmer.stem(token)
-                nr_images_returned = linha[17]
-                nr_websites_returned = linha[25]
+                nr_images_returned = linha[definitions.INDEX_NR_RESULTS_SE_IMG]
+                nr_websites_returned = linha[definitions.INDEX_NR_RESULTS_SE_TX]
                 hyphen = '-' in token
-                cv_loc = float(linha[12])
-                cv_org = float(linha[13])
-                cv_per = float(linha[14])
-                cv_dist = float(linha[15])
-                cv_plc = float(linha[16])
-                tx_loc = float(linha[20])
-                tx_org = float(linha[21])
-                tx_per = float(linha[22])
-                tx_err = float(linha[23])
-                tx_dist = float(linha[24])
+                cv_loc = float(linha[definitions.INDEX_TOT_CV_LOC])
+                cv_org = float(linha[definitions.INDEX_TOT_CV_ORG])
+                cv_per = float(linha[definitions.INDEX_TOT_CV_PER])
+                cv_dist = float(linha[definitions.INDEX_DIST_CV_I])
+                cv_plc = float(linha[definitions.INDEX_PL_CV_I])
+                tx_loc = float(linha[definitions.INDEX_TOT_TX_LOC])
+                tx_org = float(linha[definitions.INDEX_TOT_TX_ORG])
+                tx_per = float(linha[definitions.INDEX_TOT_TX_PER])
+                tx_err = float(linha[definitions.INDEX_TOT_ERR_TRANS])
+                tx_dist = float(linha[definitions.INDEX_DIST_TX_I])
 
-                if linha[6] in definitions.NER_TAGS_LOC: ner = u'LOC'
-                elif linha[6] in definitions.NER_TAGS_ORG: ner = u'ORG'
-                elif linha[6] in definitions.NER_TAGS_PER: ner = u'PER'
+                if linha[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
+                elif linha[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
+                elif linha[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
                 else: ner = u'O'
 
                 #standard shape
