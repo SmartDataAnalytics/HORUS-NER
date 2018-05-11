@@ -241,6 +241,7 @@ def klasses_to_CRF_shape(klasses):
     return klasses
 
 def features_to_crf_shape(sent, i, horus_feat):
+    "TODO: need to integrate the new features here too!!!!! better to merge the functions!"
     word = sent[i][2]
     postag = sent[i][6]
 
@@ -403,28 +404,42 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     raw_datasets = get_features_from_datasets(experiment_folder, datasets)
     config.logger.info('done')
     for horus_feat in (False, True):
-        config.logger.info("w/HORUS? " + str(horus_feat))
+        print('----------------------------')
+        print("w/HORUS? " + str(horus_feat))
+        print('----------------------------')
         for ds1 in raw_datasets:
-            if runDT is True: X1_dt = ds1[1][2]
+            if runDT is True:
+                X1_dt = ds1[1][2]
             if runCRF is True:
                 config.logger.info('shaping to CRF format...')
                 X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
-            if runLSTM is True: X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
+            if runLSTM is True:
+                X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
             for ds2 in raw_datasets:
-                if runDT is True:
-                    config.logger.info('DT...')
-                    X2_dt = ds2[1][2]
-                if runCRF is True:
-                    config.logger.info('shaping to CRF format...')
-                    X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
-                if runLSTM is True:
-                    print('--LSTM')
-                    X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
-                    X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                    y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
                 print('')
                 print("dataset 1 = " + ds1[0])
                 print("dataset 2 = " + ds2[0])
+                if ds1[0] == ds2[0]:
+                    if runDT is True:
+                        X2_dt = X1_dt
+                    if runCRF is True:
+                        X2_crf = X1_crf
+                    if runLSTM is True:
+                        X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0],
+                                                                                                    ds2[1][1],
+                                                                                                    horus_feat)
+                        X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
+                        y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
+                else:
+                    if runDT is True:
+                        X2_dt = ds2[1][2]
+                    if runCRF is True:
+                        X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
+                    if runLSTM is True:
+                        print('--LSTM')
+                        X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
+                        X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
+                        y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
                 if ds1[0] == ds2[0]:
                     print("do cross validation")
                     for d in range(len(r)):
