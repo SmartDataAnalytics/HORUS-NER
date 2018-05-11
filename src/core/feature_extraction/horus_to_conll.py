@@ -5,29 +5,27 @@ import logging
 from src.core.util import definitions
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
-
+import argparse
 from src.config import HorusConfig
 
 lancaster_stemmer = LancasterStemmer()
 stop = set(stopwords.words('english'))
+config = HorusConfig()
 
-loggingLevel = logging.INFO
-logger = logging.getLogger()
-logger.setLevel(loggingLevel)
-
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(loggingLevel)
-formatter = logging.Formatter('%(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-def horus_to_features(horusfile, le):
-    print horusfile
+def get_features(horusfile, le):
+    '''
+    converts horus features file to algorithm's expected shapes,
+    adding further traditional features
+    :param horusfile: the horus features file
+    :param le: the encoder
+    :return: a (standard matrix + a CRF + a LSTM) file formats
+    '''
     features, sentence_shape = [], []
     targets, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
 
+    config.logger.info('reading horus features file: ' + horusfile)
     df = pd.read_csv(horusfile, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-    oldsentid = df.get_values()[0][1]
+    oldsentid = df.get_values()[0][definitions.INDEX_ID_SENTENCE]
     for index, feat in df.iterrows():
         if len(feat)>0:
             if feat[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
@@ -83,25 +81,25 @@ def horus_to_features(horusfile, le):
                                 nr_images_returned, nr_websites_returned,
                                 cv_org, cv_loc, cv_per, cv_dist, cv_plc,
                                 tx_org, tx_loc, tx_per, tx_dist, tx_err,
-                                feat[definitions.INDEX_TOT_TX_LOC_TM_CNN],
-                                feat[definitions.INDEX_TOT_TX_ORG_TM_CNN],
-                                feat[definitions.INDEX_TOT_TX_PER_TM_CNN],
-                                feat[definitions.INDEX_DIST_TX_I_TM_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_1_CNN],
-                                feat[definitions.INDEX_TOT_CV_ORG_CNN],
-                                feat[definitions.INDEX_TOT_CV_PER_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_2_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_3_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_4_CNN],
-                                feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC],
-                                feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG],
-                                feat[definitions.INDEX_TOT_EMB_SIMILAR_PER],
-                                feat[definitions.INDEX_TOT_CV_LOC_5_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_6_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_7_CNN],
-                                feat[definitions.INDEX_TOT_CV_LOC_8_CNN],
-                                feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE],
-                                feat[definitions.INDEX_TOT_TX_NONE_TM_CNN]
+                                float(feat[definitions.INDEX_TOT_TX_LOC_TM_CNN]),
+                                float(feat[definitions.INDEX_TOT_TX_ORG_TM_CNN]),
+                                float(feat[definitions.INDEX_TOT_TX_PER_TM_CNN]),
+                                float(feat[definitions.INDEX_DIST_TX_I_TM_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_LOC_1_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_ORG_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_PER_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_LOC_2_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_3_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_3_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_4_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_4_CNN]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_PER] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_PER]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_5_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_5_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_6_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_6_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_7_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_7_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_8_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_8_CNN]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE]),
+                                0 if feat[definitions.INDEX_TOT_TX_NONE_TM_CNN] == 'O' else float(feat[definitions.INDEX_TOT_TX_NONE_TM_CNN])
                                 ]
 
                 features.append(f)
@@ -118,59 +116,61 @@ def horus_to_features(horusfile, le):
 
                 oldsentid = feat[1]
 
-    print 'total of sentences', len(sentence_shape)
-    print 'total of tokens', len(tokens_shape)
+    config.logger.info('total of sentences: ' + str(len(sentence_shape)))
+    config.logger.info('total of tokens: ' + str(len(tokens_shape)))
     return sentence_shape, y_sentences_shape, tokens_shape, y_tokens_shape
 
-def get_remaining_column_indexes(line, cols):
+def __get_remaining_column_indexes(line, cols):
     print("excluding irrelevant indexes...")
     to_exclude = []
     for i in range(len(line)):
-        if (i not in cols) and (i != definitions.HORUS_FORMAT_INDEX_COL_TARGET_NER) \
-                and (i != definitions.HORUS_FORMAT_INDEX_COL_ID_SENTENCE) \
-                and (i != definitions.HORUS_FORMAT_INDEX_COL_ID_WORD):
+        if (i not in cols) and (i != definitions.INDEX_TARGET_NER) \
+                and (i != definitions.INDEX_ID_SENTENCE) \
+                and (i != definitions.INDEX_ID_WORD):
             to_exclude.append(i)
     print("total of columns to exclude: ", str(len(to_exclude)))
     print("total of columns to keep: ", str(len(cols) + 1))
     return to_exclude
 
-def horus_to_conll(dataset, cols, out_path):
+def convert(experiment_folder, input_dataset_file, features_ind=definitions.FEATURES_INDEX):
     '''
     read a horus format file and converts it to CoNLL standard format
     :param dataset: the horus format data set
     :param cols: the column indexes to be converted
     :return:
     '''
-    print("starting data format conversion")
+    config.logger.info("starting data format conversion")
+    dataset=config.dir_output + experiment_folder + "/" + input_dataset_file
+
     y = []
     shouldleave = False
     dt_conll_format = pd.DataFrame()
     i_sentence = 1
-    df = pd.read_csv(dataset, delimiter=",", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+    df = pd.read_csv(dataset, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
     print("dataset shape: ", df.shape)
     # get the columns that should be excluded
-    columns_to_exclude = get_remaining_column_indexes(df.iloc[0], cols)
+    columns_to_exclude = __get_remaining_column_indexes(df.iloc[0], features_ind)
     # removing compounds data
-    df.drop(df[df[definitions.HORUS_FORMAT_INDEX_COL_IS_COMPOUND] == 1].index, inplace=True)
+    df.drop(df[df[definitions.INDEX_IS_COMPOUND] == 1].index, inplace=True)
     print("dataset shape: ", df.shape)
     # removing empty lines
     df.dropna(how="all", inplace=True)
     print("dataset shape: ", df.shape)
     # get targets before excluding
-    y = df.iloc[:, definitions.HORUS_FORMAT_INDEX_COL_TARGET_NER].copy()
-    oldsentid = df.get_values()[0][definitions.HORUS_FORMAT_INDEX_COL_ID_SENTENCE]
+    y = df.iloc[:, definitions.INDEX_TARGET_NER].copy()
+    oldsentid = df.get_values()[0][definitions.INDEX_ID_SENTENCE]
     # exclude irrelevant columns
     df.drop(df.columns[columns_to_exclude], axis=1, inplace=True)
     print("dataset shape: ", df.shape)
     for index, linha in df.iterrows():
         if len(linha) > 0:
-            if linha[definitions.HORUS_FORMAT_INDEX_COL_ID_SENTENCE] == oldsentid:
+            if linha[definitions.INDEX_ID_SENTENCE] == oldsentid:
                 dt_conll_format = dt_conll_format.append(linha)
             else:
                 linhanan = linha.copy()
                 linhanan.loc[:] = np.nan
                 if index + 1 < len(df.index):
-                    oldsentid = df.get_value(index, definitions.HORUS_FORMAT_INDEX_COL_ID_SENTENCE)
+                    oldsentid = df.get_value(index, definitions.INDEX_ID_SENTENCE)
                     i_sentence = i_sentence + 1
                 dt_conll_format = dt_conll_format.append(linhanan)
                 dt_conll_format = dt_conll_format.append(linha)
@@ -180,25 +180,34 @@ def horus_to_conll(dataset, cols, out_path):
 
     print("dataset shape: ", df.shape)
     print("done! %s sentences exported to ConLL format!", str(i_sentence))
+    out_path=dataset + '.conll'
     dt_conll_format.to_csv(path_or_buf=out_path, sep="\t", index=False, header=False, float_format='%.0f')
     print("file saved to: ", out_path)
 
+def main():
+    parser = argparse.ArgumentParser(
+        description='Converts a horus metadata file to CoNLL format (sentence spaces and no extra metadata information). '
+                    'Especially useful for evaluating the performance of the framework in 3rd party scripts (after running the trained models)',
+        prog='horus_to_conll.py',
+        usage='%(prog)s [options]',
+        epilog='http://horus-ner.org')
+
+    parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False,
+                        help='the sub-folder name where the input file is located', default='EXP_003')
+    parser.add_argument('--ds', '--input_dataset', action='store_true', required=False,
+                        help='a dataset name (exported horus features)', default='ritter.horus')
+    parser.add_argument('--f', '--features_ind', action='store_true', required=False,
+                        help='a list contaning the indexes for each feature that should be exported',
+                        default=definitions.FEATURES_INDEX)
+
+    parser.print_help()
+    args = parser.parse_args()
+
+
+    try:
+        convert(experiment_folder=args.exp, input_dataset_file=args.ds, features_ind=args.f)
+    except:
+        raise
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print "please inform: 1: data set and 2: column indexes ([1, .., n])"
-    else:
-        config = HorusConfig()
-        fixed = '/experiments/EXP_001/'
-        features_indexes = [3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25]
-        horus_to_conll(config.dir_output + fixed + "coNLL2003_test.a.horus", features_indexes,
-                       config.dir_output + fixed +  "coNLL2003_test.a.horus.conll")
-
-        horus_to_conll(config.dir_output + fixed + "ritter.horus", features_indexes,
-                       config.dir_output + fixed + "ritter.horus.conll")
-
-        horus_to_conll(config.dir_output + fixed + "wnut15.horus", features_indexes,
-                       config.dir_output + fixed + "wnut15.horus.conll")
-
-        horus_to_conll(config.dir_output + fixed + "wnut16.horus", features_indexes,
-                       config.dir_output + fixed + "wnut16.horus.conll")
+    main()

@@ -1,6 +1,9 @@
+import argparse
 import os
 
-from src.core.feature_extraction.horus_to_conll import horus_to_features
+import time
+
+from src.core.feature_extraction.horus_to_conll import get_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -25,7 +28,8 @@ from keras.layers.core import Activation
 from keras.layers.wrappers import TimeDistributed
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding, LSTM, Dense, Merge
-
+from nltk.corpus import stopwords
+from nltk import LancasterStemmer, re
 """
 ==========================================================
 Experiments: 
@@ -43,8 +47,151 @@ output:
 """
 config = HorusConfig()
 X, Y = [], []
+ds_test_size = 0.25
+lancaster_stemmer = LancasterStemmer()
+stop = set(stopwords.words('english'))
+le1 = joblib.load(config.dir_encoders + "_encoder_pos.pkl")
+le2 = joblib.load(config.dir_encoders + "_encoder_nltk2.pkl")
 
-ds_test_size = 0.2
+def to_check():
+    # feature_extraction
+
+    crf2 = sklearn_crfsuite.CRF(
+        algorithm='lbfgs',
+        c1=0.18687907015736968,
+        c2=0.025503200544851036,
+        max_iterations=100,
+        all_possible_transitions=True
+    )
+    # crf2.fit(X_train_CRF_shape, y_train_CRF_shape)
+
+    # eval
+
+    # y_pred2 = crf2.predict(X_test_CRF_shape)
+
+    # metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
+
+    # labels = list(crf.classes_)
+    # trick for report visualization
+
+    # labels = list(['LOC', 'ORG', 'PER'])
+    # labels.remove('O')
+    # group B and I results
+    # sorted_labels = sorted(
+    #    labels,
+    #    key=lambda name: (name[1:], name[0])
+    # )
+
+
+
+    # print(metrics.flat_classification_report(
+    #    y_test, y_pred2, labels=sorted_labels, digits=3
+    # ))
+    exit(0)
+    # r = [42, 39, 10, 5, 50]
+    # fmeasures = []
+    # for d in range(len(r)):
+    #    cv_X_train, cv_X_test, cv_y_train, cv_y_test = train_test_split(X_train_CRF_shape, y_train_CRF_shape,
+    #                                                        test_size = 0.30, random_state = r[d])
+    #    m = crf.fit(cv_X_train, cv_y_train)
+    #    cv_y_pred = m.predict(cv_X_test)
+    #    print(metrics.flat_classification_report(
+    #        cv_y_test, cv_y_pred, labels=sorted_labels, digits=3
+    #    ))
+    # cv_y_test_bin = MultiLabelBinarizer().fit_transform(cv_y_test)
+    # cv_y_pred_bin = MultiLabelBinarizer().fit_transform(cv_y_pred)
+    # fmeasures.append(f1_score(cv_y_test_bin, cv_y_pred_bin, average='weighted'))
+
+    # print sum(fmeasures)/len(r)
+
+    # scores = cross_val_score(crf, _X, _y, cv=5, scoring='f1_macro')
+    # scores2 = cross_val_score(crf2, _X, _y, cv=5, scoring='f1_macro')
+
+    # rs = ShuffleSplit(n_splits=3, test_size=.20, random_state=0)
+    # for train_index, test_index in rs.split(_X):
+    #    print("TRAIN:", train_index, "TEST:", test_index)
+
+    # print scores
+    # print scores2
+
+    # exit(0)
+
+    # define fixed parameters and parameters to search
+    crf = sklearn_crfsuite.CRF(
+        algorithm='lbfgs',
+        max_iterations=300,
+        all_possible_transitions=True
+    )
+    params_space = {
+        'c1': scipy.stats.expon(scale=0.5),
+        'c2': scipy.stats.expon(scale=0.05),
+    }
+
+    # use the same metric for evaluation
+    f1_scorer = make_scorer(metrics.flat_f1_score,
+                            average='weighted', labels=labels)
+
+    # search
+    rs = RandomizedSearchCV(crf, params_space,
+                            cv=3,
+                            verbose=1,
+                            n_jobs=-1,
+                            n_iter=50,
+                            scoring=f1_scorer)
+    rs.fit(X_train_CRF_shape, y_train_CRF_shape)
+
+    # crf = rs.best_estimator_
+    print('best params:', rs.best_params_)
+    print('best CV score:', rs.best_score_)
+    print('model size: {:0.2f}M'.format(rs.best_estimator_.size_ / 1000000))
+
+    _x = [s.parameters['c1'] for s in rs.grid_scores_]
+    _y = [s.parameters['c2'] for s in rs.grid_scores_]
+    _c = [s.mean_validation_score for s in rs.grid_scores_]
+
+    fig = plt.figure()
+    fig.set_size_inches(12, 12)
+    ax = plt.gca()
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_xlabel('C1')
+    ax.set_ylabel('C2')
+    ax.set_title("Randomized Hyperparameter Search CV Results (min={:0.3}, max={:0.3})".format(
+        min(_c), max(_c)
+    ))
+
+    ax.scatter(_x, _y, c=_c, s=60, alpha=0.9, edgecolors=[0, 0, 0])
+    fig.savefig('crf_optimization.png')
+
+    print("Dark blue => {:0.4}, dark red => {:0.4}".format(min(_c), max(_c)))
+
+    crf = rs.best_estimator_
+    y_pred = crf.predict(X_test_CRF_shape)
+    print(metrics.flat_classification_report(
+        y_test, y_pred, labels=labels, digits=3
+    ))
+
+    from collections import Counter
+
+    def print_transitions(trans_features):
+        for (label_from, label_to), weight in trans_features:
+            print("%-6s -> %-7s %0.6f" % (label_from, label_to, weight))
+
+    print("Top likely transitions:")
+    print_transitions(Counter(crf.transition_features_).most_common(20))
+
+    print("\nTop unlikely transitions:")
+    print_transitions(Counter(crf.transition_features_).most_common()[-20:])
+
+    def print_state_features(state_features):
+        for (attr, label), weight in state_features:
+            print("%0.6f %-8s %s" % (weight, label, attr))
+
+    print("Top positive:")
+    print_state_features(Counter(crf.state_features_).most_common(30))
+
+    print("\nTop negative:")
+    print_state_features(Counter(crf.state_features_).most_common()[-30:])
 
 def encode(x, n):
     result = np.zeros(n)
@@ -52,11 +199,8 @@ def encode(x, n):
     return result
 #keras.utils.np_utils.to_categorical or sparse_categorical_crossentropy
 
-def get_final_dataset(ds):
-    raise('to be implemented')
-
-
 def convert_lstm_shape(ds, y, horus_feat = False):
+    config.logger.info('shaping to LSTM format...')
     if horus_feat == False:
         Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
     else:
@@ -160,11 +304,10 @@ def features_to_crf_shape(sent, i, horus_feat):
 
     return features
 
-def shape_datasets():
-    print 'shaping datasets...'
+def get_features_from_datasets(experiment_folder, datasets):
     ret = []
     for ds in datasets:
-        ret.append([ds[0], horus_to_features(dataset_prefix + ds[0], ds[1])])
+        ret.append([ds, get_features(config.dir_output + experiment_folder + ds, le1)])
     return ret
 
 def score2(yh, pr):
@@ -228,7 +371,18 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print precision_recall_fscore_support(fyh, fpr)
     print('----------------------------------------------------------------------------------')
 
-def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
+def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
+
+    config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
+    experiment_folder+='/'
+    config.logger.info('datasets: ' + str(datasets))
+    datasets=datasets.split()
+
+    #sorted_labels = definitions.KLASSES.copy()
+    #del sorted_labels[4]
+    sorted_labels={'PER': 'PER', 'ORG': 'ORG', 'LOC': 'LOC'}
+    r = [42, 39, 10, 5, 50]
+
     if runCRF:
         _crf = sklearn_crfsuite.CRF(
             algorithm='lbfgs',
@@ -237,8 +391,7 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
             max_iterations=100,
             all_possible_transitions=True
         )
-    if runDT:
-        _dt = ensemble.RandomForestClassifier(n_estimators=50)
+    if runDT: _dt = ensemble.RandomForestClassifier(n_estimators=50)
     if runLSTM:
         embedding_size = 128
         hidden_size = 32
@@ -246,41 +399,43 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
         epochs = 50
         verbose = 0
 
-    raw_datasets = shape_datasets()
-
+    config.logger.info('get the features for each dataset...')
+    raw_datasets = get_features_from_datasets(experiment_folder, datasets)
+    config.logger.info('done')
     for horus_feat in (False, True):
-        print "HORUS? ", horus_feat
+        config.logger.info("w/HORUS? " + str(horus_feat))
         for ds1 in raw_datasets:
-            if runDT: X1_dt = ds1[1][2]
-            if runCRF: X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
-            if runLSTM: X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
+            if runDT is True: X1_dt = ds1[1][2]
+            if runCRF is True:
+                config.logger.info('shaping to CRF format...')
+                X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
+            if runLSTM is True: X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
             for ds2 in raw_datasets:
-                if runDT:
-                    print '--DT'
+                if runDT is True:
+                    config.logger.info('DT...')
                     X2_dt = ds2[1][2]
-                if runCRF:
-                    print '--CRF'
+                if runCRF is True:
+                    config.logger.info('shaping to CRF format...')
                     X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
-                if runLSTM:
-                    pass
-                    print '--LSTM'
+                if runLSTM is True:
+                    print('--LSTM')
                     X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
                     X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
                     y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                print "---------------------------------------------------"
-                print "dataset 1 = ", ds1[0]
-                print "dataset 2 = ", ds2[0]
+                print('')
+                print("dataset 1 = " + ds1[0])
+                print("dataset 2 = " + ds2[0])
                 if ds1[0] == ds2[0]:
-                    print "do cross validation"
+                    print("do cross validation")
                     for d in range(len(r)):
-                        if runCRF:
-                            print '--CRF'
+                        if runCRF is True:
+                            print('--CRF')
                             Xtr, Xte, ytr, yte = train_test_split(X1_crf, ds1[1][1], test_size=ds_test_size, random_state=r[d])
                             m = _crf.fit(Xtr, ytr)
                             ypr = m.predict(Xte)
                             print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                        if runDT:
-                            print '--DT'
+                        if runDT is True:
+                            print('--DT')
                             X_train = X1_dt
                             if horus_feat == False:
                                 X_train = [x[0:12] for x in X1_dt]
@@ -288,20 +443,20 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                             m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(float))
                             ypr = m.predict(np.array(Xte).astype(float))
                             print(skmetrics.classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                        if runLSTM:
-                            print '--LSTM'
+                        if runLSTM is True:
+                            print('--LSTM')
                             Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
                             run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, maxlen_1)
 
 
                 else:
-                    if runCRF:
-                        print '--CRF'
+                    if runCRF is True:
+                        print('--CRF')
                         m = _crf.fit(X1_crf, ds1[1][1])
                         ypr = m.predict(X2_crf)
                         print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                    if runDT:
-                        print '--DT'
+                    if runDT is True:
+                        print('--DT')
                         X_train = X1_dt
                         X_test = X2_dt
                         if horus_feat == False:
@@ -310,178 +465,43 @@ def run_models(runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER =
                         m = _dt.fit(X_train, ds1[1][3])
                         ypr = m.predict(X_test)
                         print(skmetrics.classification_report(ds2[1][3] , ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                    if runLSTM:
-                        print '--LSTM'
+                    if runLSTM is True:
+                        print('--LSTM')
                         max_of_sentences = max(maxlen_1, maxlen_2)
                         X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
                         y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
                         run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
 
-                    if runSTANFORD_NER:
-                        print '--STANFORD_NER'
+                    if runSTANFORD_NER is True:
+                        print('--STANFORD_NER')
                         print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
 
-le1 = joblib.load(config.dir_encoders + "_encoder_pos.pkl")
-le2 = joblib.load(config.dir_encoders + "_encoder_nltk2.pkl")
+def main():
+    parser = argparse.ArgumentParser(
+        description='Creates a benchmark pipeline for different classifiers /datasets comparing performance *with* '
+                    'and *without* the HORUS features list',
+        prog='benchmarking.py',
+        usage='%(prog)s [options]',
+        epilog='http://horus-ner.org')
 
-dataset_prefix = config.dir_output + "EXP_003/"
-datasets = (("ritter.horus.conll", le1),
-            ("wnut16.horus", le1))
-
-
-#("wnut16.horus", le1),
-#            ("coNLL2003_test.a.horus", le2)
-
-#labels = list(crf.classes_)
-# trick for report visualization
-sorted_labels = definitions.KLASSES.copy()
-del sorted_labels[4]
-
-#labels = list(['LOC', 'ORG', 'PER'])
-#labels.remove('O')
-# group B and I results
-#sorted_labels = sorted(
-#    labels,
-#    key=lambda name: (name[1:], name[0])
-#)
-
-r = [42, 39, 10, 5, 50]
-
-run_models(False, True, False, False)
-
-exit(0)
+    parser.add_argument('--ds', '--datasets', nargs='+', default='ritter.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_003')
+    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
+    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
+    parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
+    parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
 
-# feature_extraction
+    parser.print_help()
+    args = parser.parse_args()
+    time.sleep(1)
 
-crf2 = sklearn_crfsuite.CRF(
-    algorithm='lbfgs',
-    c1=0.18687907015736968,
-    c2=0.025503200544851036,
-    max_iterations=100,
-    all_possible_transitions=True
-)
-#crf2.fit(X_train_CRF_shape, y_train_CRF_shape)
+    try:
+        benchmark(experiment_folder=args.exp, datasets=args.ds,
+                  runCRF=bool(args.crf), runDT=bool(args.dt), runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford))
+    except:
+        raise
 
-# eval
-
-
-#y_pred2 = crf2.predict(X_test_CRF_shape)
-
-#metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
-
-
-
-#print(metrics.flat_classification_report(
-#    y_test, y_pred2, labels=sorted_labels, digits=3
-#))
-exit(0)
-#r = [42, 39, 10, 5, 50]
-#fmeasures = []
-#for d in range(len(r)):
-#    cv_X_train, cv_X_test, cv_y_train, cv_y_test = train_test_split(X_train_CRF_shape, y_train_CRF_shape,
-#                                                        test_size = 0.30, random_state = r[d])
-#    m = crf.fit(cv_X_train, cv_y_train)
-#    cv_y_pred = m.predict(cv_X_test)
-#    print(metrics.flat_classification_report(
-#        cv_y_test, cv_y_pred, labels=sorted_labels, digits=3
-#    ))
-    #cv_y_test_bin = MultiLabelBinarizer().fit_transform(cv_y_test)
-    #cv_y_pred_bin = MultiLabelBinarizer().fit_transform(cv_y_pred)
-    #fmeasures.append(f1_score(cv_y_test_bin, cv_y_pred_bin, average='weighted'))
-
-#print sum(fmeasures)/len(r)
-
-
-#scores = cross_val_score(crf, _X, _y, cv=5, scoring='f1_macro')
-#scores2 = cross_val_score(crf2, _X, _y, cv=5, scoring='f1_macro')
-
-#rs = ShuffleSplit(n_splits=3, test_size=.20, random_state=0)
-#for train_index, test_index in rs.split(_X):
-#    print("TRAIN:", train_index, "TEST:", test_index)
-
-#print scores
-#print scores2
-
-#exit(0)
-
-# define fixed parameters and parameters to search
-crf = sklearn_crfsuite.CRF(
-    algorithm='lbfgs',
-    max_iterations=300,
-    all_possible_transitions=True
-)
-params_space = {
-    'c1': scipy.stats.expon(scale=0.5),
-    'c2': scipy.stats.expon(scale=0.05),
-}
-
-# use the same metric for evaluation
-f1_scorer = make_scorer(metrics.flat_f1_score,
-                        average='weighted', labels=labels)
-
-# search
-rs = RandomizedSearchCV(crf, params_space,
-                        cv=3,
-                        verbose=1,
-                        n_jobs=-1,
-                        n_iter=50,
-                        scoring=f1_scorer)
-rs.fit(X_train_CRF_shape, y_train_CRF_shape)
-
-
-# crf = rs.best_estimator_
-print('best params:', rs.best_params_)
-print('best CV score:', rs.best_score_)
-print('model size: {:0.2f}M'.format(rs.best_estimator_.size_ / 1000000))
-
-
-_x = [s.parameters['c1'] for s in rs.grid_scores_]
-_y = [s.parameters['c2'] for s in rs.grid_scores_]
-_c = [s.mean_validation_score for s in rs.grid_scores_]
-
-fig = plt.figure()
-fig.set_size_inches(12, 12)
-ax = plt.gca()
-ax.set_yscale('log')
-ax.set_xscale('log')
-ax.set_xlabel('C1')
-ax.set_ylabel('C2')
-ax.set_title("Randomized Hyperparameter Search CV Results (min={:0.3}, max={:0.3})".format(
-    min(_c), max(_c)
-))
-
-
-ax.scatter(_x, _y, c=_c, s=60, alpha=0.9, edgecolors=[0,0,0])
-fig.savefig('crf_optimization.png')
-
-print("Dark blue => {:0.4}, dark red => {:0.4}".format(min(_c), max(_c)))
-
-crf = rs.best_estimator_
-y_pred = crf.predict(X_test_CRF_shape)
-print(metrics.flat_classification_report(
-    y_test, y_pred, labels=labels, digits=3
-))
-
-from collections import Counter
-
-def print_transitions(trans_features):
-    for (label_from, label_to), weight in trans_features:
-        print("%-6s -> %-7s %0.6f" % (label_from, label_to, weight))
-
-print("Top likely transitions:")
-print_transitions(Counter(crf.transition_features_).most_common(20))
-
-print("\nTop unlikely transitions:")
-print_transitions(Counter(crf.transition_features_).most_common()[-20:])
-
-def print_state_features(state_features):
-    for (attr, label), weight in state_features:
-        print("%0.6f %-8s %s" % (weight, label, attr))
-
-print("Top positive:")
-print_state_features(Counter(crf.state_features_).most_common(30))
-
-print("\nTop negative:")
-print_state_features(Counter(crf.state_features_).most_common()[-30:])
+if __name__ == "__main__":
+    main()
