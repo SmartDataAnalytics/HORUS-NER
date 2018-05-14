@@ -744,7 +744,7 @@ class Util(object):
         try:
             with SQLiteHelper(self.config.database_db) as sqlcon:
                 t = HorusDB(sqlcon)
-                t.conn.text_factory = str
+                #t.conn.text_factory = str
 
                 sSql = """SELECT sentence_has_NER, 
                 sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
@@ -969,7 +969,7 @@ class Util(object):
                         if auxc%1000==0:
                             self.config.logger.debug('caching token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                         #res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
-                        res=df.loc[df['term'] == term]
+                        res=df.loc[df['term'] == term.encode('utf-8')]
                         if res is None or len(res) == 0:
                             '''
                             --------------------------------------------------------------------------
@@ -993,7 +993,7 @@ class Util(object):
                             Caching Documents (Texts)
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.debug('caching (web sites) -> [%s]' % term)
+                            self.config.logger.debug('caching %s web sites -> [%s]' % (len(result_txts), term))
                             id_term_search = t.save_term(term, self.config.search_engine_tot_resources,
                                                          len(result_txts), self.config.search_engine_api,
                                                          1, self.config.search_engine_features_text,
@@ -1010,7 +1010,7 @@ class Util(object):
                             Caching Documents (Images)
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.info('caching (web images) -> [%s]' % term)
+                            self.config.logger.info('caching %s web images -> [%s]' % (len(result_imgs), term))
                             id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
                                                       len(result_imgs), self.config.search_engine_api,
                                                       2, self.config.search_engine_features_img,
@@ -1030,15 +1030,18 @@ class Util(object):
                                                   web_result_img['name'],
                                                   web_result_img['encodingFormat'], web_result_img['height'],
                                                   web_result_img['width'], web_result_img['thumbnailUrl'], str(auxtype))
-                            t.commit()
+                            # t.commit()
                             # adding the new item to the cache dataframe
-                            df_txt = pd.DataFrame([[id_term_search, term, 1, len(result_txts)]],
-                                                  columns=['id', 'term', 'id_search_type', 'tot_results_returned'])
+                            self.config.logger.debug('updating local cache  ...')
+                            cols = ['id', 'term', 'id_search_type', 'tot_results_returned']
+                            df_txt = pd.DataFrame([[id_term_search, term, 1, len(result_txts)]], columns=cols)
                             df_txt.set_index("id", inplace=True)
-                            df_img = pd.DataFrame([[id_term_img, term, 2, len(result_imgs)]],
-                                                  columns=['id', 'term', 'id_search_type', 'tot_results_returned'])
+                            df_img = pd.DataFrame([[id_term_img, term, 2, len(result_imgs)]], columns=cols)
                             df_img.set_index("id", inplace=True)
-                            df=pd.concat([df, df_txt, df_img], ignore_index=False)
+                            print(df_txt)
+                            print(df_img)
+                            df=pd.concat([df, df_txt, df_img], ignore_index=False, verify_integrity=True)
+                            self.config.logger.debug('OK')
 
                             #df.conca(df_txt, ignore_index=False, verify_integrity=True)
                             #df=df.append(df_img, ignore_index=False, verify_integrity=True)
@@ -1046,14 +1049,14 @@ class Util(object):
                         else:
                             if (len(res) != 2):
                                 raise Exception("that should not happen! check db integrity")
-                            if ((1) in set(df.loc[(df['term'] == term)]['id_search_type'])):
+                            if ((1) in set(df.loc[(df['term'] == term.encode('utf-8'))]['id_search_type'])):
                                 horus_matrix[index][INDEX_ID_TERM_TXT] = \
-                                    int(df.loc[(df['term'] == term) & (df['id_search_type'] == 1)].index.values)
+                                    int(df.loc[(df['term'] == term.encode('utf-8')) & (df['id_search_type'] == 1)].index.values)
                             else:
                                 horus_matrix[index][INDEX_ID_TERM_TXT] = -1
-                            if ((2) in set(df.loc[(df['term'] == term)]['id_search_type'])):
+                            if ((2) in set(df.loc[(df['term'] == term.encode('utf-8'))]['id_search_type'])):
                                 horus_matrix[index][INDEX_ID_TERM_IMG] = \
-                                    int(df.loc[(df['term'] == term) & (df['id_search_type'] == 2)].index.values)
+                                    int(df.loc[(df['term'] == term.encode('utf-8')) & (df['id_search_type'] == 2)].index.values)
                             else:
                                 horus_matrix[index][INDEX_ID_TERM_IMG] = -1
 
@@ -1314,7 +1317,7 @@ class Util(object):
         try:
             c = self.conn.cursor()
             #self.conn.text_factory = str
-            self.conn.text_factory = lambda x: unicode(x, "utf-8", "ignore")
+            #self.conn.text_factory = lambda x: unicode(x, "utf-8", "ignore")
             sentence = [corpus, sent[0], sent[1][0], sent[1][1], sent[1][2], sent[1][3],
                         json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]), json.dumps(sent[2][3]),
                         json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]), json.dumps(sent[3][3]),

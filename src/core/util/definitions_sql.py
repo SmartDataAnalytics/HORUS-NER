@@ -1,6 +1,6 @@
 SQL_TERM_SEARCH_INS = """INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
-                     search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
-                     VALUES(?,?,?,?,?,?,?,?)"""
+                     search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery, ignore)
+                     VALUES(?,?,?,?,?,?,?,?,0)"""
 
 SQL_ALL_TERM_SEARCH_SEL = """SELECT id, lower(term) as term, id_search_type, tot_results_returned 
                              FROM HORUS_TERM_SEARCH 

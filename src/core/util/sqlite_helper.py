@@ -11,6 +11,7 @@ class SQLiteHelper(object):
         try:
             self.conn = sqlite3.connect(self.DB_PATH)
             self.conn.text_factory = str
+            #self.conn.text_factory = sqlite3.OptimizedUnicode
             return self.conn
         except Exception as error:
             print(error)

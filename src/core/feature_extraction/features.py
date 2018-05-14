@@ -107,7 +107,7 @@ class FeatureExtraction(object):
     def jsonDefault(object):
         return object.__dict__
 
-    def __export_data(self, path, format):
+    def __export_data(self, path, format='tsv'):
         try:
             self.config.logger.info('exporting metadata to: ' + path)
             data=self.horus_matrix
@@ -120,7 +120,7 @@ class FeatureExtraction(object):
                 # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
                 writer.writerows(data)
             elif format == 'tsv':
-                writer = csv.writer(open(path, 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
+                writer = csv.writer(open(path, 'wb'), dialect="excel", delimiter='\t', skipinitialspace=True)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 writer.writerows(data)
             else:
@@ -789,11 +789,9 @@ class FeatureExtraction(object):
                 if self.extract_features() is True:
                     filename = self.util.path_leaf(file) + ".horus"
                     path = self.config.dir_output + out_subfolder + filename
-                    self.__export_data(path, 'tsv')
-                    return self.horus_matrix
+                    self.__export_data(path)
             else:
                 self.config.logger.warn('well, nothing to do today...')
-
         except Exception as error:
             self.config.logger.error('extract_features_from_conll() error: ' + repr(error))
 
@@ -806,11 +804,11 @@ if __name__ == "__main__":
         else:
             config = HorusConfig()
             # args[0], args[1], args[2], args[3]
-            tot_args = 1 #len(sys.argv)
+            tot_args = 2 #len(sys.argv)
 
-            if tot_args == 2:
+            if tot_args == 1:
                 data = 'paris hilton was once the toast of the town'  # args[0]
-                data = 'avalanche'
+                data = 'comme ça'
                 extractor = FeatureExtraction(config)
                 out = extractor.extract_features_from_text(data)
                 #outjson = json.dumps(out)
@@ -819,12 +817,13 @@ if __name__ == "__main__":
             else:
                 exp_folder = 'EXP_003/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                #extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
-                # extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
-                extractor.extract_features_from_conll('wnut/emerging.test.annotated', exp_folder, 'wnut17')
+                # extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
                 # extractor.extract_features_from_conll('wnut/2015.conll.freebase', exp_folder, 'wnut16')
-                ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
-                # extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
-                #extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)
+                # extractor.extract_features_from_conll('wnut/2016.conll.freebase', exp_folder, 'wnut15')
+                extractor.extract_features_from_conll('wnut/emerging.test.annotated', exp_folder, 'wnut17')
+                '''
+                attention: change POS tag lib in the HORUS.ini to NLTK before run this
+                extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
+                '''
     except Exception as e:
         print(e)

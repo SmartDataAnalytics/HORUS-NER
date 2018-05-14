@@ -35,8 +35,8 @@ def query_bing(query, key, top, market='en-us', safe='Moderate', source='Web', v
 def __bing_api5(query, key, top, market, safe):
     # https://msdn.microsoft.com/en-us/library/dn760794(v=bsynd.50).aspx
     try:
-        txts = None
-        imgs = None
+        txts = []
+        imgs = []
         url = 'https://api.cognitive.microsoft.com/bing/v5.0/search'
         # query string parameters
         if top != 0:
@@ -60,7 +60,7 @@ def __bing_api5(query, key, top, market, safe):
         return query, txts, imgs
     except Exception as e:
         print ('an error has occurred: ', e)
-        return query, None
+        return query, [], []
 
 def __bing_api2(query, key, top, market, source):
 

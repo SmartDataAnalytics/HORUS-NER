@@ -1,7 +1,7 @@
 import json
 
 from src.config import HorusConfig
-from src.core.util.sqlite_helper import SQLiteHelper, HorusDB
+from src.core.util.sqlite_helper import SQLiteHelper
 
 
 
