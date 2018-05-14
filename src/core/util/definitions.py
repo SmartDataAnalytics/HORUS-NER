@@ -10,6 +10,10 @@ else:
 
 RUN_TAGGER_CMD = config.models_tweetnlp_java_param + " -jar " + config.models_tweetnlp_jar + " --model " + config.models_tweetnlp_model
 
+WNUT_PER = ['B-person', 'I-person']
+WNUT_LOC = ['B-location', 'I-location']
+WNUT_ORG = ['B-corporation', 'I-corporation']
+
 NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']
 NER_RITTER_LOC = ['B-geo-loc', 'I-geo-loc']
@@ -31,18 +35,21 @@ NER_TAGS_PER.extend(NER_RITTER_PER)
 NER_TAGS_PER.extend(NER_STANFORD_PER)
 NER_TAGS_PER.extend(NER_NLTK_PER)
 NER_TAGS_PER.extend(NER_CONLL_PER)
+NER_TAGS_PER.extend(WNUT_PER)
 
 NER_TAGS_ORG = ['ORG']
 NER_TAGS_ORG.extend(NER_RITTER_ORG)
 NER_TAGS_ORG.extend(NER_STANFORD_ORG)
 NER_TAGS_ORG.extend(NER_NLTK_ORG)
 NER_TAGS_ORG.extend(NER_CONLL_ORG)
+NER_TAGS_ORG.extend(WNUT_ORG)
 
 NER_TAGS_LOC = ['LOC']
 NER_TAGS_LOC.extend(NER_RITTER_LOC)
 NER_TAGS_LOC.extend(NER_STANFORD_LOC)
 NER_TAGS_LOC.extend(NER_NLTK_LOC)
 NER_TAGS_LOC.extend(NER_CONLL_LOC)
+NER_TAGS_LOC.extend(WNUT_LOC)
 
 #TODO: check if we have here ALL the NOUNs!!!
 # merge of ALL noun tags, from all the POS taggers

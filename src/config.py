@@ -178,7 +178,7 @@ class HorusConfig(object):
 
         self.logger.info('==================================================================')
         self.logger.info('HORUS Framework - Feature Extractor')
-        self.logger.info('' + self.version)
+        self.logger.info('version: ' + self.version)
         self.logger.info('more info: http://horus-ner.org/')
         self.logger.info('==================================================================')
         #ini_file = pkg_resources.resource_filename('resource', "horus.conf")

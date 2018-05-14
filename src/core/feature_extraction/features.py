@@ -109,7 +109,7 @@ class FeatureExtraction(object):
 
     def __export_data(self, path, format):
         try:
-            self.config.logger.info('exporting metadata to: ' + path + "." + format)
+            self.config.logger.info('exporting metadata to: ' + path)
             data=self.horus_matrix
             if format == 'json':
                 with open(path + '.json', 'wb') as outfile:
@@ -120,7 +120,7 @@ class FeatureExtraction(object):
                 # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
                 writer.writerows(data)
             elif format == 'tsv':
-                writer = csv.writer(open(path + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
+                writer = csv.writer(open(path, 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 writer.writerows(data)
             else:
@@ -142,14 +142,17 @@ class FeatureExtraction(object):
 
         hm = pd.DataFrame(self.horus_matrix)
         self.config.logger.info('basic POS statistics')
-        a = len(hm)  # all
-        a2 = len(hm[(hm[7] == 0)])  # all excluding compounds
-        plo = hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
-        not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]  # all PLO entities (not compound)
+        a = len(hm)
+        # all excluding compounds
+        a2 = len(hm[(hm[definitions.INDEX_IS_COMPOUND] == 0)])
+        # all PLO entities (not compound)
+        plo = hm[(hm[definitions.INDEX_IS_COMPOUND] == 0) & (hm[definitions.INDEX_IS_ENTITY] == 1)]
+        # all PLO entities (not compound)
+        not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]
 
-        pos_ok_plo = plo[(plo[5].isin(definitions.POS_NOUN_TAGS))]
-        pos_not_ok_plo = plo[(~plo[5].isin(definitions.POS_NOUN_TAGS))]
-        pos_noun_but_not_entity = not_plo[(not_plo[5].isin(definitions.POS_NOUN_TAGS))]
+        pos_ok_plo = plo[(plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
+        pos_not_ok_plo = plo[(~plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
+        pos_noun_but_not_entity = not_plo[(not_plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
 
         self.config.logger.info('[basic statistics]')
         self.config.logger.info('-> ALL terms: %s ' % a)
@@ -807,17 +810,18 @@ if __name__ == "__main__":
 
             if tot_args == 2:
                 data = 'paris hilton was once the toast of the town'  # args[0]
+                data = 'avalanche'
                 extractor = FeatureExtraction(config)
                 out = extractor.extract_features_from_text(data)
                 #outjson = json.dumps(out)
                 print(out)
                 #print(outjson)
             else:
-                exp_folder = 'EXP_002/' #
+                exp_folder = 'EXP_003/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
+                #extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
                 # extractor.extract_features_from_conll('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
-                # extractor.extract_features_from_conll('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
+                extractor.extract_features_from_conll('wnut/emerging.test.annotated', exp_folder, 'wnut17')
                 # extractor.extract_features_from_conll('wnut/2015.conll.freebase', exp_folder, 'wnut16')
                 ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
                 # extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
