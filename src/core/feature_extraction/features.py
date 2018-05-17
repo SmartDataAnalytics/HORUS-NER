@@ -434,11 +434,11 @@ class FeatureExtraction(object):
         """
         try:
 
-            assert features_text is True and (self.text_tm is not None or self.text_bow is not None)
+            assert (features_text is False or features_text is True and (self.text_tm is not None or self.text_bow is not None))
 
-            assert features_vision is True and ((self.image_cnn_placesCNN is not None and self.dlib_cnn is not None
+            assert (features_vision is False or features_vision is True and ((self.image_cnn_placesCNN is not None and self.dlib_cnn is not None
                                                 and self.image_cnn_incep_model is not None and self.image_cnn_logo is not None) or
-                                                (self.image_sift is not None))
+                                                (self.image_sift is not None)))
 
             toti = len(self.horus_matrix)
             self.config.logger.info('extracting features for %s terms/tokens' % str(toti))
@@ -648,13 +648,13 @@ class FeatureExtraction(object):
                             if self.text_tm is not None:
                                 # TM+CNN - term
                                 tm_cnn_w = self.text_tm.detect_text_klass(term)
-                                tm_cnn_w_exp = [i**2 for i in tm_cnn_w]
+                                tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
 
                             if self.text_tm is not None and top5_sim is not None:
                                 for top in top5_sim:
                                     klass_top.append(self.text_tm.detect_text_klass(top[0]))
                             else:
-                                klass_top = [-1] * 5
+                                klass_top = [[np.math.pow(10, -5)] * 5] * 5
 
                             klass_top.append(tm_cnn_w_exp)
 
