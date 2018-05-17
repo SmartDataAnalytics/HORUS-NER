@@ -10,9 +10,9 @@ else:
 
 RUN_TAGGER_CMD = config.models_tweetnlp_java_param + " -jar " + config.models_tweetnlp_jar + " --model " + config.models_tweetnlp_model
 
-WNUT_PER = ['B-person', 'I-person']
-WNUT_LOC = ['B-location', 'I-location']
-WNUT_ORG = ['B-corporation', 'I-corporation']
+WNUT_PER = ['B-person', 'I-person', 'person']
+WNUT_LOC = ['B-location', 'I-location', 'location']
+WNUT_ORG = ['B-corporation', 'I-corporation', 'corporation']
 
 NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']
@@ -50,6 +50,12 @@ NER_TAGS_LOC.extend(NER_STANFORD_LOC)
 NER_TAGS_LOC.extend(NER_NLTK_LOC)
 NER_TAGS_LOC.extend(NER_CONLL_LOC)
 NER_TAGS_LOC.extend(WNUT_LOC)
+
+NER_TAGS = []
+NER_TAGS.extend(NER_TAGS_LOC)
+NER_TAGS.extend(NER_TAGS_ORG)
+NER_TAGS.extend(NER_TAGS_PER)
+
 
 #TODO: check if we have here ALL the NOUNs!!!
 # merge of ALL noun tags, from all the POS taggers
@@ -102,32 +108,28 @@ PENN_UNI_TAG = [['#', 'SYM'],['$', 'SYM'], ['','PUNCT'],[',','PUNCT'],['-LRB-','
                     ['VBD','VERB'],['VBG','VERB'],['VBN','VERB'],['VBP','VERB'],['VBZ','VERB'],['WDT','DET'],['WP','PRON'],['WP$', 'DET'],['WRB', 'ADV']]
 
 
-seeds_dict_img_classes = {'per': ['person', 'human being', 'man', 'woman', 'human body', 'human face'],
-                      'loc': ['location', 'place', 'volcano', 'stone', 'country', 'landscape', 'beach', 'sky', 'building', 'road', 'ocean', 'sea', 'lake', 'square', 'map', 'flag', 'city', 'forest', 'residence'],
+seeds_dict_img_classes = {'per': ['person', 'human being', 'man', 'woman', 'child', 'human body', 'human face'],
+                      'loc': ['location', 'place', 'residence', 'landscape', 'building', 'volcano', 'stone', 'country', 'beach', 'sky', 'road', 'ocean', 'sea', 'lake', 'square', 'map', 'flag', 'city', 'forest'],
                       'org': ['organisation', 'logo', 'logotype'],
                      'none': ['clipper', 'animal', 'telephone', 'time', 'cup', 'table', 'bottle', 'window', 'vehicle' 'monitor']}
 
-seeds_dict_topics = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
-                'student', 'education', 'coach', 'football', 'turkish',
+seeds_dict_topics = {'per': ['guy', 'girl', 'woman', 'husband', 'baby', 'people', 'human', 'person', 'man', 'child',
+                             'celebrity','arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
+                'student', 'education', 'coach', 'football', 'turkish', 'actor',
                 'albanian', 'romanian', 'professor', 'lawyer', 'president',
-                'king', 'man', 'woman', 'danish', 'we', 'he', 'their', 'born',
+                'king', 'danish', 'we', 'he', 'their', 'born',
                 'directed', 'died', 'lives', 'boss', 'syrian', 'elected',
-                'minister', 'candidate', 'daniel', 'robert', 'dude', 'guy',
-                'girl', 'woman', 'husband', 'actor', 'people', 'celebrity', 'human'],
-        'loc': ['china', 'usa', 'germany', 'leipzig', 'alaska', 'poland',
+                'minister', 'candidate', 'daniel', 'robert', 'dude'],
+        'loc': ['landscape', 'country', 'location', 'place', 'building', 'highway', 'forest', 'sea', 'mountain', 'city',
+                'china', 'usa', 'germany', 'leipzig', 'alaska', 'poland',
                 'jakarta', 'kitchen', 'house', 'brazil', 'fuji', 'prison',
                 'portugal', 'lisbon', 'france', 'oslo', 'airport', 'road',
-                'highway', 'forest', 'sea', 'lake', 'stadium', 'hospital',
-                'temple', 'beach', 'hotel', 'country', 'city', 'state', 'home',
-                'world', 'mountain', 'landscape', 'island', 'land' ,'waterfall',
-                'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle',
-                'flag', 'map'],
-        'org': ['microsoft', 'bloomberg', 'google', 'company', 'business', 'office',
-                'contract', 'project', 'research', 'office', 'startup', 'organisation'
-                'enterprise', 'venture', 'capital', 'milestones', 'risk',
-                'funded', 'idea', 'industry', 'headquarters', 'product',
-                'client', 'investment', 'certification', 'news', 'logo',
-                'trademark', 'job', 'foundation'],
+                'stadium', 'hospital', 'temple', 'beach', 'hotel', 'state', 'home',
+                'world', 'island', 'land' ,'waterfall', 'kitchen', 'room', 'office',
+                'bedroom', 'bathroom', 'hall', 'castle', 'flag', 'map'],
+        'org': ['office', 'startup', 'organisation' 'enterprise', 'venture', 'company', 'business', 'industry', 'headquarters', 'foundation',
+                'microsoft', 'bloomberg', 'google', 'contract', 'project', 'research',  'capital', 'milestones', 'risk',
+                'funded', 'idea', 'product', 'client', 'investment', 'certification', 'news', 'logo', 'trademark', 'job'],
         'none': ['frog', 'animal', 'monkey', 'dog', 'skate', 'cup', 'money', 'cash',
                  'mouse', 'snake', 'telephone', 'glass', 'monitor', 'bible', 'book',
                  'dictionary', 'religion', 'politics', 'sports', 'question', 'linux',
@@ -137,6 +139,7 @@ seeds_dict_topics = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'ge
                  'politics', 'computer', 'laptop', 'blue', 'green', 'bucket', 'orange', 'rose',
                  'key', 'clock', 'connector']}
 
+# basic info
 INDEX_IS_ENTITY = 0
 INDEX_ID_SENTENCE = 1
 INDEX_ID_WORD = 2
@@ -148,6 +151,8 @@ INDEX_IS_COMPOUND = 7
 INDEX_COMPOUND_SIZE = 8
 INDEX_ID_TERM_TXT = 9
 INDEX_ID_TERM_IMG = 10
+
+# basic CV
 INDEX_TOT_IMG = 11
 INDEX_TOT_CV_LOC = 12
 INDEX_TOT_CV_ORG = 13
@@ -156,6 +161,8 @@ INDEX_DIST_CV_I = 15
 INDEX_PL_CV_I= 16
 INDEX_NR_RESULTS_SE_IMG = 17
 INDEX_MAX_KLASS_PREDICT_CV = 18
+
+# basic TX
 INDEX_TOT_RESULTS_TX = 19
 INDEX_TOT_TX_LOC = 20
 INDEX_TOT_TX_ORG = 21
@@ -164,18 +171,60 @@ INDEX_TOT_ERR_TRANS = 23
 INDEX_DIST_TX_I = 24
 INDEX_NR_RESULTS_SE_TX = 25
 INDEX_MAX_KLASS_PREDICT_TX = 26
-INDEX_INDEX_START_TERM = 27
+
+# cnn TX
 INDEX_TOT_TX_LOC_TM_CNN = 28
 INDEX_TOT_TX_ORG_TM_CNN = 29
 INDEX_TOT_TX_PER_TM_CNN = 30
 INDEX_DIST_TX_I_TM_CNN = 31
+
+# stats cnn TX
+INDEX_TX_CNN_STAT_SUM_LOC = 52
+INDEX_TX_CNN_STAT_SUM_ORG = 53
+INDEX_TX_CNN_STAT_SUM_PER = 54
+INDEX_TX_CNN_STAT_SUM_NONE = 55
+INDEX_TX_CNN_STAT_AVG_LOC = 56
+INDEX_TX_CNN_STAT_AVG_ORG = 57
+INDEX_TX_CNN_STAT_AVG_PER = 58
+INDEX_TX_CNN_STAT_AVG_NONE = 59
+INDEX_TX_CNN_STAT_MAX_LOC = 60
+INDEX_TX_CNN_STAT_MAX_ORG = 61
+INDEX_TX_CNN_STAT_MAX_PER = 62
+INDEX_TX_CNN_STAT_MAX_NONE = 63
+INDEX_TX_CNN_STAT_MIN_LOC = 64
+INDEX_TX_CNN_STAT_MIN_ORG = 65
+INDEX_TX_CNN_STAT_MIN_PER = 66
+INDEX_TX_CNN_STAT_MIN_NONE = 67
+
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_LOC = 68
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_ORG = 69
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_PER = 70
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_NONE = 71
+
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_LOC = 72
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_ORG = 73
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_PER = 74
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_NONE = 75
+
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_LOC = 76
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_ORG = 77
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_PER = 78
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_NONE = 79
+
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_LOC = 80
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_ORG = 81
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_PER = 82
+INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_NONE = 83
+
+# cnn CV
 INDEX_TOT_CV_LOC_1_CNN = 32
 INDEX_TOT_CV_ORG_CNN = 33
 INDEX_TOT_CV_PER_CNN = 34
 INDEX_TOT_CV_LOC_2_CNN = 35
 INDEX_TOT_CV_LOC_3_CNN = 36
 INDEX_TOT_CV_LOC_4_CNN = 37
-INDEX_MAX_KLASS_PREDICT_TX_CNN = 38
+#INDEX_MAX_KLASS_PREDICT_TX_CNN = 38
+
 INDEX_MAX_KLASS_PREDICT_COMPOUND = 39
 INDEX_KLASS_FINAL_MODEL = 40
 INDEX_MAX_KLASS_PREDICT_CV_CNN = 41
@@ -189,6 +238,7 @@ INDEX_TOT_CV_LOC_8_CNN = 48
 INDEX_TOT_EMB_SIMILAR_NONE = 49
 INDEX_TOT_TX_NONE_TM_CNN = 50
 INDEX_TARGET_NER = 51
-HORUS_TOT_FEATURES = 52
+
+HORUS_TOT_FEATURES = 84
 
 FEATURES_INDEX = [3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25]

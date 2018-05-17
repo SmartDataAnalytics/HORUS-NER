@@ -1,3 +1,5 @@
+import codecs
+import csv
 import sqlite3
 import numpy
 import json
@@ -617,15 +619,17 @@ class Util(object):
             exit(-1)
 
     def populate_matrix_new_columns(self):
-        temp = []  # receives 0=8
-        temp.extend([0] * 9)  # 9-17
-        temp.extend([definitions.KLASSES[4]])  # 18
-        temp.extend([0] * 7)  # 19-25
-        temp.extend([definitions.KLASSES[4]])  # 26
-        temp.extend([0] * 11)  # 27-37
-        temp.extend([definitions.KLASSES[4]] * 4)  # 38-41
-        temp.extend([0] * 9)  # 42-50
+        temp = []
+        temp.extend([0] * (int(definitions.HORUS_TOT_FEATURES)-8))
         # do NOT append the last column here (y)
+
+        temp[18] = definitions.KLASSES[4]
+        temp[26] = definitions.KLASSES[4]
+        temp[26] = definitions.KLASSES[4]
+        temp[38] = definitions.KLASSES[4]
+        temp[39] = definitions.KLASSES[4]
+        temp[40] = definitions.KLASSES[4]
+        temp[41] = definitions.KLASSES[4]
 
         return temp
 
@@ -648,7 +652,7 @@ class Util(object):
                     compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
                     temp = [0, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
                     temp.extend(self.populate_matrix_new_columns())
-                    temp.extend([definitions.KLASSES[4]])
+                    temp[definitions.INDEX_TARGET_NER] = definitions.KLASSES[4]
                     converted.append(temp)
                 word_index = 0
                 starty = 0
@@ -695,7 +699,7 @@ class Util(object):
 
                     temp = [has_NER, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0]  # 0-8
                     temp.extend(self.populate_matrix_new_columns())
-                    temp.extend([tag_ner_y])
+                    temp[definitions.INDEX_TARGET_NER] = tag_ner_y
                     ## that is a hack to integrate to GERBIL
                     # if ipositionstartterm >= len(sent[1][0]):
                     #    ipositionstartterm-=1
@@ -884,7 +888,7 @@ class Util(object):
                             s += token + ' '
                             tokens.append(token)
                             tags_ner_y.append(ner)
-                            if ner in definitions.NER_RITTER:
+                            if ner in definitions.NER_TAGS:
                                 has3NER = 1
                         else:
                             docstart = True
@@ -1034,9 +1038,9 @@ class Util(object):
                             # adding the new item to the cache dataframe
                             self.config.logger.debug('updating local cache  ...')
                             cols = ['id', 'term', 'id_search_type', 'tot_results_returned']
-                            df_txt = pd.DataFrame([[id_term_search, term, 1, len(result_txts)]], columns=cols)
+                            df_txt = pd.DataFrame([[id_term_search, term.encode('utf-8'), 1, len(result_txts)]], columns=cols)
                             df_txt.set_index("id", inplace=True)
-                            df_img = pd.DataFrame([[id_term_img, term, 2, len(result_imgs)]], columns=cols)
+                            df_img = pd.DataFrame([[id_term_img, term.encode('utf-8'), 2, len(result_imgs)]], columns=cols)
                             df_img.set_index("id", inplace=True)
                             print(df_txt)
                             print(df_img)
@@ -1368,3 +1372,14 @@ class Util(object):
                     if ner_tag in definitions.NER_CONLL:
                         has3NER = 1
         return sentences
+
+class UnicodeDictReader(object):
+    def __init__(self, *args, **kw):
+        self.encoding = kw.pop('encoding', 'mac_roman')
+        self.reader = csv.DictReader(*args, **kw)
+
+    def __iter__(self):
+        decode = codecs.getdecoder(self.encoding)
+        for row in self.reader:
+            t = dict((k, decode(row[k])[0]) for k in row)
+            yield t
