@@ -7,7 +7,6 @@ import sklearn
 
 from src.classifiers.experiment_metadata import MEXExecution, \
     MEXPerformance, MEX, MEXConfiguration
-from src.core.feature_extraction.horus_to_conll import get_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -34,6 +33,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding, LSTM, Dense, Merge
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
+import pandas as pd
 """
 ==========================================================
 Experiments: 
@@ -203,6 +203,171 @@ def encode(x, n):
     return result
 #keras.utils.np_utils.to_categorical or sparse_categorical_crossentropy
 
+def shape(word):
+    word_shape = 0 #'other'
+    if re.match('[0-9]+(\.[0-9]*)?|[0-9]*\.[0-9]+$', word):
+        word_shape = 1 #'number'
+    elif re.match('\W+$', word):
+        word_shape = 2 #'punct'
+    elif re.match('[A-Z][a-z]+$', word):
+        word_shape = 3 #'capitalized'
+    elif re.match('[A-Z]+$', word):
+        word_shape = 4 # 'uppercase'
+    elif re.match('[a-z]+$', word):
+        word_shape = 5 #'lowercase'
+    elif re.match('[A-Z][a-z]+[A-Z][a-z]+[A-Za-z]*$', word):
+        word_shape = 6 #'camelcase'
+    elif re.match('[A-Za-z]+$', word):
+        word_shape = 7 #'mixedcase'
+    elif re.match('__.+__$', word):
+        word_shape = 8 # 'wildcard'
+    elif re.match('[A-Za-z0-9]+\.$', word):
+        word_shape = 9 # 'ending-dot'
+    elif re.match('[A-Za-z0-9]+\.[A-Za-z0-9\.]+\.$', word):
+        word_shape = 10 # 'abbreviation'
+    elif re.match('[A-Za-z0-9]+\-[A-Za-z0-9\-]+.*$', word):
+        word_shape = 11 #'contains-hyphen'
+
+    return word_shape
+
+def get_features(horusfile, le):
+    '''
+    converts horus features file to algorithm's expected shapes,
+    adding further traditional features
+    :param horusfile: the horus features file
+    :param le: the encoder
+    :return: a (standard matrix + a CRF + a LSTM) file formats
+    '''
+    features, sentence_shape = [], []
+    targets, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
+
+    config.logger.info('reading horus features file: ' + horusfile)
+    df = pd.read_csv(horusfile, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+    oldsentid = df.get_values()[0][definitions.INDEX_ID_SENTENCE]
+    for index, feat in df.iterrows():
+        if len(feat)>0:
+            if feat[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
+                if feat[definitions.INDEX_ID_SENTENCE] != oldsentid:
+                    sentence_shape.append(features)
+                    y_sentences_shape.append(targets)
+                    targets, features = [], []
+
+                idsent = feat[definitions.INDEX_ID_SENTENCE]
+                idtoken = feat[definitions.INDEX_ID_WORD]
+
+                # standard features
+
+                pos_bef = ''
+                pos_aft = ''
+
+                if index > 0 and df.get_value(index-1, definitions.INDEX_IS_COMPOUND) == 0:
+                    prev_pos = df.get_value(index-1,definitions.INDEX_POS)
+
+                if index > 1 and df.get_value(index-2, definitions.INDEX_IS_COMPOUND) == 0:
+                    prev_prev_pos = df.get_value(index-2, definitions.INDEX_POS)
+
+                if index + 1 < len(df) and df.get_value(index+1, definitions.INDEX_ID_SENTENCE) == idsent \
+                        and df.get_value(index+1, definitions.INDEX_IS_COMPOUND) == 0:
+                    next_pos = df.get_value(index+1,definitions.INDEX_POS)
+
+                if index + 2 < len(df) and df.get_value(index+2, definitions.INDEX_ID_SENTENCE) == idsent \
+                        and df.get_value(index+2, definitions.INDEX_IS_COMPOUND) == 0:
+                    next_nex_pos = df.get_value(index+2,definitions.INDEX_POS)
+
+                #TODO: continur aqui
+                postag = feat[definitions.INDEX_POS]
+                token = feat[definitions.INDEX_TOKEN]
+                one_char_token = len(token) == 1
+                special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
+                first_capitalized = token[0].isupper()
+                capitalized = token.isupper()
+                title = token.istitle()
+                digit = token.isdigit()
+                stop_words = token in stop
+                small = True if len(horusfile[3]) <= 2 else False
+                lemma = lancaster_stemmer.stem(token)
+                hyphen = '-' in token
+                sh = shape(token)
+
+                #horus CV features
+                cv_basic = feat[11:17]
+                cv_cnn = feat[68:83]
+
+
+                #horus TX features
+                tx_basic  = feat[19:25]
+                tx_cnn = feat[28:31]
+                tx_stats = feat[52:67]
+
+
+
+                nr_images_returned = feat[definitions.INDEX_NR_RESULTS_SE_IMG]
+                nr_websites_returned = feat[definitions.INDEX_NR_RESULTS_SE_TX]
+
+                cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
+                cv_org = float(feat[definitions.INDEX_TOT_CV_ORG])
+                cv_per = float(feat[definitions.INDEX_TOT_CV_PER])
+                cv_dist = float(feat[definitions.INDEX_DIST_CV_I])
+                cv_plc = float(feat[definitions.INDEX_PL_CV_I])
+                tx_loc = float(feat[definitions.INDEX_TOT_TX_LOC])
+                tx_org = float(feat[definitions.INDEX_TOT_TX_ORG])
+                tx_per = float(feat[definitions.INDEX_TOT_TX_PER])
+                tx_err = float(feat[definitions.INDEX_TOT_ERR_TRANS])
+                tx_dist = float(feat[definitions.INDEX_DIST_TX_I])
+
+                if feat[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
+                elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
+                elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
+                else: ner = u'O'
+
+                #standard shape
+                f = [idsent, idtoken, token, token.lower(), lemma,
+                                pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
+                                le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
+                                title, digit, one_char_token, special_char, first_capitalized,
+                                hyphen, capitalized, stop_words, small,
+                                nr_images_returned, nr_websites_returned,
+                                cv_org, cv_loc, cv_per, cv_dist, cv_plc,
+                                tx_org, tx_loc, tx_per, tx_dist, tx_err,
+                                float(feat[definitions.INDEX_TOT_TX_LOC_TM_CNN]),
+                                float(feat[definitions.INDEX_TOT_TX_ORG_TM_CNN]),
+                                float(feat[definitions.INDEX_TOT_TX_PER_TM_CNN]),
+                                float(feat[definitions.INDEX_DIST_TX_I_TM_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_LOC_1_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_ORG_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_PER_CNN]),
+                                float(feat[definitions.INDEX_TOT_CV_LOC_2_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_3_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_3_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_4_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_4_CNN]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_PER] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_PER]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_5_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_5_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_6_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_6_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_7_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_7_CNN]),
+                                0 if feat[definitions.INDEX_TOT_CV_LOC_8_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_8_CNN]),
+                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE]),
+                                0 if feat[definitions.INDEX_TOT_TX_NONE_TM_CNN] == 'O' else float(feat[definitions.INDEX_TOT_TX_NONE_TM_CNN])
+                                ]
+
+                features.append(f)
+
+                if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
+                elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
+                elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
+                else: y = u'O'
+
+                targets.append(y)
+
+                tokens_shape.append(f[9:len(f)])
+                y_tokens_shape.append(definitions.KLASSES2[y])
+
+                oldsentid = feat[1]
+
+    config.logger.info('total of sentences: ' + str(len(sentence_shape)))
+    config.logger.info('total of tokens: ' + str(len(tokens_shape)))
+    return sentence_shape, y_sentences_shape, tokens_shape, y_tokens_shape
+
 def convert_lstm_shape(ds, y, horus_feat = False):
     config.logger.info('shaping to LSTM format...')
     if horus_feat == False:
@@ -240,9 +405,6 @@ def convert_lstm_shape(ds, y, horus_feat = False):
 
 def sent2features(sent, horus_feat = False):
     return [features_to_crf_shape(sent, i, horus_feat) for i in range(len(sent))]
-
-def klasses_to_CRF_shape(klasses):
-    return klasses
 
 def features_to_crf_shape(sent, i, horus_feat):
     "TODO: need to integrate the new features here too!!!!! better to merge the functions!"
