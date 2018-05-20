@@ -35,6 +35,7 @@ class HorusConfig(object):
                     parser.read(source.name)
 
                     print(parser.get('conf', 'code'))
+                    self.log_level = parser.get('conf', 'log_level')
 
                     self.src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
                     self.root_dir = os.path.abspath(os.path.join(self.src_dir, os.pardir)) + '/'
@@ -166,6 +167,15 @@ class HorusConfig(object):
         else:
             if len(self.logger.handlers) == 0:
                 self.logger.setLevel(logging.DEBUG)
+                if self.log_level=='INFO':
+                    self.logger.setLevel(logging.INFO)
+                elif self.log_level=='WARNING':
+                    self.logger.setLevel(logging.WARNING)
+                elif self.log_level=='ERROR':
+                    self.logger.setLevel(logging.ERROR)
+                elif self.log_level=='CRITICAL':
+                    self.logger.setLevel(logging.CRITICAL)
+
                 now = datetime.datetime.now()
                 handler = logging.FileHandler(self.dir_log + 'horus_' + now.strftime("%Y-%m-%d") + '.log')
                 formatter = logging.Formatter(

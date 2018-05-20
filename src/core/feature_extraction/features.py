@@ -869,7 +869,7 @@ class FeatureExtraction(object):
             if len(sent_tokenize_list) > 0:
                 self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
                 self.util.download_and_cache_results(self.horus_matrix)
-                if self.extract_features(features_vision=False) is True:
+                if self.extract_features(features_vision=True, features_text=True) is True:
                     filename = self.util.path_leaf(file) + ".horus"
                     path = self.config.dir_output + out_subfolder + filename
                     self.__export_data(path)
@@ -898,13 +898,13 @@ if __name__ == "__main__":
                 print(out)
                 #print(outjson)
             else:
-                exp_folder = 'EXP_003/' #
+                exp_folder = 'EXP_004/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
                 # extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
                 # extractor.extract_features_from_conll('wnut/2015.conll.freebase', exp_folder, 'wnut16')
-                # extractor.extract_features_from_conll('wnut/2016.conll.freebase', exp_folder, 'wnut15')
+                extractor.extract_features_from_conll('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
                 # extractor.extract_features_from_conll('wnut/emerging.test.annotated', exp_folder, 'wnut17')
-                extractor.extract_features_from_conll('wnut/2016.conll.freebase.test', exp_folder, 'wnut16test')
+                # extractor.extract_features_from_conll('wnut/2016.conll.freebase.test', exp_folder, 'wnut16test')
 
                 '''
                 attention: change POS tag lib in the HORUS.ini to NLTK before run this

@@ -3,6 +3,10 @@ import os
 
 import time
 
+import sklearn
+
+from src.classifiers.experiment_metadata import MEXExecution, \
+    MEXPerformance, MEX, MEXConfiguration
 from src.core.feature_extraction.horus_to_conll import get_features
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
@@ -341,7 +345,7 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     model.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxsent, Xtr.shape[2] - 1)))
     model.add(TimeDistributed(Dense(out_size)))
     model.add(Activation('softmax'))
-    print 'compile...'
+
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     #print(model.summary())
     print('train...')
@@ -378,35 +382,28 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     experiment_folder+='/'
     config.logger.info('datasets: ' + str(datasets))
     datasets=datasets.split()
-
     #sorted_labels = definitions.KLASSES.copy()
     #del sorted_labels[4]
     sorted_labels={'PER': 'PER', 'ORG': 'ORG', 'LOC': 'LOC'}
     r = [42, 39, 10, 5, 50]
+    # hyper-parameters
+    _crf = sklearn_crfsuite.CRF(algorithm='lbfgs', c1=0.088, c2=0.002, max_iterations=100, all_possible_transitions=True)
+    _dt = ensemble.RandomForestClassifier(n_estimators=50)
+    embedding_size = 128
+    hidden_size = 32
+    batch_size = 128
+    epochs = 50
+    verbose = 0
 
-    if runCRF:
-        _crf = sklearn_crfsuite.CRF(
-            algorithm='lbfgs',
-            c1=0.088,
-            c2=0.002,
-            max_iterations=100,
-            all_possible_transitions=True
-        )
-    if runDT: _dt = ensemble.RandomForestClassifier(n_estimators=50)
-    if runLSTM:
-        embedding_size = 128
-        hidden_size = 32
-        batch_size = 128
-        epochs = 50
-        verbose = 0
+    _label='EXP_003'
+    _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
     config.logger.info('get the features for each dataset...')
     raw_datasets = get_features_from_datasets(experiment_folder, datasets)
     config.logger.info('done')
+
     for horus_feat in (False, True):
-        print('----------------------------')
         print("w/HORUS? " + str(horus_feat))
-        print('----------------------------')
         for ds1 in raw_datasets:
             if runDT is True:
                 X1_dt = ds1[1][2]
@@ -416,9 +413,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
             if runLSTM is True:
                 X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
             for ds2 in raw_datasets:
-                print('')
                 print("dataset 1 = " + ds1[0])
                 print("dataset 2 = " + ds2[0])
+
                 if ds1[0] == ds2[0]:
                     if runDT is True:
                         X2_dt = X1_dt
@@ -440,15 +437,32 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
                         X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
                         y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
+
+                # run models
                 if ds1[0] == ds2[0]:
                     print("do cross validation")
+                    # ---------------------------------------------------------- META ----------------------------------------------------------
+                    _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
+                                                    dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
+                    # --------------------------------------------------------------------------------------------------------------------------
                     for d in range(len(r)):
+
                         if runCRF is True:
                             print('--CRF')
                             Xtr, Xte, ytr, yte = train_test_split(X1_crf, ds1[1][1], test_size=ds_test_size, random_state=r[d])
                             m = _crf.fit(Xtr, ytr)
                             ypr = m.predict(Xte)
                             print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+
+                            # ---------------------------------------------------------- META ----------------------------------------------------------
+                            _ex = MEXExecution(id=len(_conf.executions)+1, alg='CRF', phase='test', random_state=r[d])
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
+                            for k in sorted_labels.keys():
+                                _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            _conf.add_execution(_ex)
+                            _meta.add_configuration(_conf)
+                            # --------------------------------------------------------------------------------------------------------------------------
+
                         if runDT is True:
                             print('--DT')
                             X_train = X1_dt
@@ -458,6 +472,18 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(float))
                             ypr = m.predict(np.array(Xte).astype(float))
                             print(skmetrics.classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+
+                            # ---------------------------------------------------------- META ----------------------------------------------------------
+                            _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
+                                                                                         labels=sorted_labels.keys(),
+                                                                                         average=None)
+                            for k in sorted_labels.keys():
+                                _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            _conf.add_execution(_ex)
+                            _meta.add_configuration(_conf)
+                            # --------------------------------------------------------------------------------------------------------------------------
+
                         if runLSTM is True:
                             print('--LSTM')
                             Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
@@ -465,6 +491,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
 
                 else:
+                    # ---------------------------------------------------------- META ----------------------------------------------------------
+                    _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
+                                             dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
+                    # --------------------------------------------------------------------------------------------------------------------------
+
                     if runCRF is True:
                         print('--CRF')
                         m = _crf.fit(X1_crf, ds1[1][1])
@@ -480,6 +511,19 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         m = _dt.fit(X_train, ds1[1][3])
                         ypr = m.predict(X_test)
                         print(skmetrics.classification_report(ds2[1][3] , ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+
+
+                        # ---------------------------------------------------------- META ----------------------------------------------------------
+                        _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
+                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
+                                                                                     labels=sorted_labels.keys(),
+                                                                                     average=None)
+                        for k in sorted_labels.keys():
+                            _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                        _conf.add_execution(_ex)
+                        _meta.add_configuration(_conf)
+                        # --------------------------------------------------------------------------------------------------------------------------
+
                     if runLSTM is True:
                         print('--LSTM')
                         max_of_sentences = max(maxlen_1, maxlen_2)
@@ -491,6 +535,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         print('--STANFORD_NER')
                         print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
+    import pickle
+    with open(_label + '.meta', 'wb') as handle:
+        pickle.dump(_meta, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -500,13 +547,12 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='ritter.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='ritter.horus.short.test', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_003')
-    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
-    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
+    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
+    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
-
 
     parser.print_help()
     args = parser.parse_args()
