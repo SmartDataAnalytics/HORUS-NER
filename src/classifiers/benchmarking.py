@@ -53,7 +53,7 @@ output:
 """
 config = HorusConfig()
 X, Y = [], []
-ds_test_size = 0.25
+ds_test_size = 0.20
 lancaster_stemmer = LancasterStemmer()
 stop = set(stopwords.words('english'))
 le1 = joblib.load(config.dir_encoders + "_encoder_pos.pkl")
@@ -232,44 +232,38 @@ def shape(word):
 
     return word_shape
 
-def get_features(file, path, le):
+def shape_data(file, path, le, f_indexes):
     '''
-    converts horus features file to algorithm's expected shapes,
-    adding further traditional features
-    :param horusfile: the horus features file
+    shape the dataset, adding further traditional features
+    :param file: the horus features file
+    :param path: the path
     :param le: the encoder
     :return: a (standard matrix + a CRF + a LSTM) file formats
     '''
     try:
-        ###  without HORUS ###
-        features, sentence_shape = [], []
-        targets, tokens_shape = [], []
 
-        #### with HORUS ###
-        features_horus, sentence_shape_horus = [], []
-        targets_horus, tokens_shape_horus = [], []
+        ds_sentences, y_sentences_shape = [], []
+        _sent_temp_feat, _sent_temp_y = [], []
+        ds_tokens, y_tokens_shape = [], []
 
-        ### labels ###
-        y_sentences_shape, y_tokens_shape = [], []
         fullpath=path+file
         config.logger.info('reading horus features file: ' + fullpath)
         df = pd.read_csv(fullpath, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+        print(len(df))
         df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
+        print(len(df))
         oldsentid = df.iloc[0][definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
         for index, feat in df.iterrows():
-                #if feat[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
             if feat[definitions.INDEX_ID_SENTENCE] != oldsentid:
-                sentence_shape.append(features)
-                features = []
-                sentence_shape_horus.append(features_horus)
-                features_horus = []
-                y_sentences_shape.append(targets)
-                targets = []
+                ds_sentences.append(_sent_temp_feat)
+                _sent_temp_feat = []
+                y_sentences_shape.append(_sent_temp_y)
+                _sent_temp_y = []
 
             idsent = feat[definitions.INDEX_ID_SENTENCE]
 
-            f=[]
+            _t=[]
             # standard features
             if index > 0 and df.iloc[index-1][definitions.INDEX_ID_SENTENCE] == idsent:
                 prev_pos = df.iloc[index-1][definitions.INDEX_POS]
@@ -283,7 +277,7 @@ def get_features(file, path, le):
                 prev_digit = int(prev_token.isdigit())
                 prev_stop_words = int(prev_token in stop)
                 prev_small = int(len(prev_token) <= 2)
-                prev_lemma = lancaster_stemmer.stem(prev_token)
+                prev_lemma = lancaster_stemmer.stem(prev_token.decode('utf-8', errors='replace'))
                 prev_hyphen = int('-' in prev_token)
                 prev_sh = shape(prev_token)
             else:
@@ -314,7 +308,7 @@ def get_features(file, path, le):
                 prev_prev_digit = int(prev_prev_token.isdigit())
                 prev_prev_stop_words = int(prev_prev_token in stop)
                 prev_prev_small = int(len(prev_prev_token) <= 2)
-                prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token)
+                prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token.decode('utf-8', errors='replace'))
                 prev_prev_hyphen = int('-' in prev_prev_token)
                 prev_prev_sh = shape(prev_prev_token)
             else:
@@ -345,7 +339,7 @@ def get_features(file, path, le):
                 next_digit = int(next_token.isdigit())
                 next_stop_words = int(next_token in stop)
                 next_small = int(len(next_token) <= 2)
-                next_lemma = lancaster_stemmer.stem(next_token)
+                next_lemma = lancaster_stemmer.stem(next_token.decode('utf-8'))
                 next_hyphen = int('-' in next_token)
                 next_sh = shape(next_token)
             else:
@@ -376,7 +370,7 @@ def get_features(file, path, le):
                 next_next_digit = int(next_next_token.isdigit())
                 next_next_stop_words = int(next_next_token in stop)
                 next_next_small = int(len(next_next_token) <= 2)
-                next_next_lemma = lancaster_stemmer.stem(next_next_token)
+                next_next_lemma = lancaster_stemmer.stem(next_next_token.decode('utf-8',errors='replace'))
                 next_next_hyphen = int('-' in next_next_token)
                 next_next_sh = shape(next_next_token)
             else:
@@ -396,7 +390,7 @@ def get_features(file, path, le):
                 next_next_sh = -1
 
             # standard features -2+2 context
-            f.extend([le.transform(prev_pos), le.transform(prev_pos_uni), prev_one_char_token,
+            _t.extend([le.transform(prev_pos), le.transform(prev_pos_uni), prev_one_char_token,
                      prev_special_char, prev_first_capitalized, prev_capitalized, prev_title, prev_digit,
                      prev_stop_words, prev_small, prev_hyphen, prev_sh,
                      le.transform(prev_prev_pos), le.transform(prev_prev_pos_uni),
@@ -410,9 +404,8 @@ def get_features(file, path, le):
                      next_next_one_char_token, next_next_special_char, next_next_first_capitalized,
                      next_next_capitalized, next_next_title, next_next_digit, next_next_stop_words, next_next_small,
                      next_next_hyphen, next_next_sh])
-
             # standard
-            f.extend([le.transform(feat[definitions.INDEX_POS]), le.transform(feat[definitions.INDEX_POS_UNI]),
+            _t.extend([le.transform(feat[definitions.INDEX_POS]), le.transform(feat[definitions.INDEX_POS_UNI]),
                       int(len(feat[definitions.INDEX_TOKEN]) == 1),
                       int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', feat[definitions.INDEX_TOKEN])) > 0),
                       int(str(feat[definitions.INDEX_TOKEN])[0].isupper()), int(str(feat[definitions.INDEX_TOKEN]).isupper()),
@@ -420,31 +413,24 @@ def get_features(file, path, le):
                       int(str(feat[definitions.INDEX_TOKEN]) in stop),
                       int(len(feat[definitions.INDEX_TOKEN]) <= 2),
                       int('-' in str(feat[definitions.INDEX_TOKEN])), shape(str(feat[definitions.INDEX_TOKEN]))])
+            if len(f_indexes) !=0:
+                _t.extend(df.iloc[index][f_indexes])
+
 
             # NER class
-            if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC:
-                y = u'LOC'
-            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG:
-                y = u'ORG'
-            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER:
-                y = u'PER'
-            else:
-                y = u'O'
+            if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
+            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
+            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
+            else: y = u'O'
 
             oldsentid = feat[1]
 
-            features.append(f)
-
-            # horus features
-            f_horus = list(f)
-            f_horus.extend(feat[definitions.FEATURES_HORUS_TX])
-            f_horus.extend(feat[definitions.FEATURES_HORUS_CV])
-
-            features_horus.append(f_horus)
-            targets.append(y)
-            tokens_shape.append(f)
-            tokens_shape_horus.append(f_horus)
+            ds_tokens.append(_t)
             y_tokens_shape.append(definitions.KLASSES2[y])
+
+            _sent_temp_feat.append(_t)
+            _sent_temp_y.append(definitions.KLASSES2[y])
+
 
             '''
             cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
@@ -508,12 +494,9 @@ def get_features(file, path, le):
                     #X_train = df.iloc[:, [j for j, c in enumerate(df.columns) if j not in (HORUS)]]
             '''
 
-
-
-
-        config.logger.info('total of sentences: ' + str(len(sentence_shape)))
-        config.logger.info('total of tokens: ' + str(len(tokens_shape)))
-        return file, (sentence_shape, sentence_shape_horus, y_sentences_shape), (tokens_shape, tokens_shape_horus, y_tokens_shape)
+        config.logger.info('total of sentences: ' + str(len(ds_sentences)))
+        config.logger.info('total of tokens: ' + str(len(ds_tokens)))
+        return file, (ds_sentences, y_sentences_shape), (ds_tokens, y_tokens_shape)
     except:
         raise
 
@@ -620,10 +603,10 @@ def features_to_crf_shape(sent, i, horus_feat):
 
     return features
 
-def get_features_from_datasets(experiment_folder, datasets):
+def get_features_from_datasets(experiment_folder, datasets, f_indexes):
     ret = []
     for ds in datasets:
-        ret.append(get_features(ds, config.dir_output + experiment_folder, le1))
+        ret.append(shape_data(ds, config.dir_output + experiment_folder, le1, f_indexes))
     return ret
 
 def score2(yh, pr):
@@ -711,51 +694,45 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
     config.logger.info('get the features for each dataset...')
     # [label, (sentence, sentence_horus, y), (tokens, tokens_horus, y)]
-    processed_datasets = get_features_from_datasets(experiment_folder, datasets)
+
     config.logger.info('done')
 
-    for horus_feat in (False, True):
+    dict_exp_feat = {1: [], 2: definitions.FEATURES_HORUS_BASIC_CV, 3: definitions.FEATURES_HORUS_BASIC_TX,
+                    4: definitions.FEATURES_HORUS_CNN_CV, 5: definitions.FEATURES_HORUS_CNN_TX,
+                    6: definitions.FEATURES_HORUS_EMB_TX + definitions.FEATURES_HORUS_STATS_TX,
+                    7: definitions.FEATURES_HORUS_TX, 8: definitions.FEATURES_HORUS_CV,
+                    9: definitions.FEATURES_HORUS}
+
+    for f_key, f_indexes in dict_exp_feat.iteritems():
+        processed_datasets = get_features_from_datasets(experiment_folder, datasets, f_indexes)
         for ds1 in processed_datasets:
             ds1_name = ds1[0]
-            Y1_sentence = ds1[1][2]
-            Y1_token = ds1[2][2]
-            if horus_feat is False:
-                X1_sentence = ds1[1][0]
-                X1_token = ds1[2][0]
-                #pca = PCA(n_components=20)
-                #X1_token_PCA = pca.fit(X1_token)
-            else:
-                X1_sentence = pd.DataFrame(ds1[1][1])
-                X1_sentence.replace('O', 0, inplace=True)
-                X1_token = pd.DataFrame(ds1[2][1])
-                X1_token.replace('O', 0, inplace=True)
-
-                #pca = PCA(n_components=50)
-                #X1_token_PCA = pca.fit(X1_token)
-
-
+            X1_sentence = pd.DataFrame(ds1[1][0])
+            X1_sentence.replace('O', 0, inplace=True)
+            Y1_sentence = ds1[1][1]
+            X1_token = pd.DataFrame(ds1[2][0])
+            X1_token.replace('O', 0, inplace=True)
+            Y1_token = ds1[2][1]
+            #pca = PCA(n_components=50)
+            #X1_token_PCA = pca.fit(X1_token)
             if runCRF is True:
-                X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
+                X1_crf = [sent2features(s, f_indexes) for s in ds1[1][0]]
             if runLSTM is True:
-                X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
+                X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], f_indexes)
             for ds2 in processed_datasets:
                 ds2_name = ds2[0]
                 if ds1[0] != ds2[0]:
-                    Y2_sentence = ds2[1][2]
-                    Y2_token = ds2[2][2]
-                    if horus_feat is False:
-                        X2_sentence = ds2[1][0]
-                        X2_token = ds2[2][0]
-                    else:
-                        X2_sentence = pd.DataFrame(ds2[1][1])
-                        X2_sentence.replace('O', 0, inplace=True)
-                        X2_token = pd.DataFrame(ds2[2][1])
-                        X2_token.replace('O', 0, inplace=True)
+                    ds2_name = ds2[0]
+                    X2_sentence = pd.DataFrame(ds2[1][0])
+                    X2_sentence.replace('O', 0, inplace=True)
+                    Y2_sentence = ds2[1][1]
+                    X2_token = pd.DataFrame(ds2[2][0])
+                    X2_token.replace('O', 0, inplace=True)
+                    Y2_token = ds2[2][1]
 
-
-                    if runCRF is True: X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
+                    if runCRF is True: X2_crf = [sent2features(s, f_indexes) for s in ds2[1][0]]
                     if runLSTM is True:
-                        X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
+                        X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
                         X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
                         y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
 
@@ -797,14 +774,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             #_meta.add_configuration(_conf)
                             # --------------------------------------------------------------------------------------------------------------------------
                         if runDT is True:
-                            Xtr, Xte, ytr, yte = train_test_split(X1_token_PCA, Y1_token, test_size=ds_test_size, random_state=r[d])
+                            Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size, random_state=r[d])
                             m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
                             #print(m.feature_importances_)
                             ypr = m.predict(np.array(Xte).astype(float))
                             #print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys())
                             for k in range(len(P)):
-                                print 'DT', 'ds1:'+ds1_name, 'ds2:'+ds2_name, 'cross-validation:True', 'horus:'+str(horus_feat), 'run:'+str(d+1), definitions.PLO_KLASSES.get(k+1), P[k], R[k], F[k], S[k]
+                                print 'DT', 'ds1:'+ds1_name, 'ds2:'+ds2_name, 'cross-validation:True', 'horus:'+str(f_key), 'run:'+str(d+1), definitions.PLO_KLASSES.get(k+1), P[k], R[k], F[k], S[k]
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             #_ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
@@ -842,7 +819,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                                                      labels=definitions.PLO_KLASSES.keys())
                         for k in range(len(P)):
                             print 'DT', 'ds1:' + ds1_name, 'ds2:' + ds2_name, 'cross-validation:False', 'horus:' + str(
-                                horus_feat), 'run:1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], \
+                                f_key), 'run:1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], \
                             S[k]
 
 
@@ -884,7 +861,10 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='ner.txt.horus 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='ner.txt.horus 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+',
+                        default='emerging.test.annotated.horus',
+                        help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
