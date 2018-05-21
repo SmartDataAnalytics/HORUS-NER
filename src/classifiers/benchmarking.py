@@ -256,19 +256,65 @@ def get_features(horusfile, le):
                 idtoken = feat[definitions.INDEX_ID_WORD]
 
                 # standard features
-
-                pos_bef = ''
-                pos_aft = ''
-
                 if index > 0 and df.get_value(index-1, definitions.INDEX_IS_COMPOUND) == 0:
                     prev_pos = df.get_value(index-1,definitions.INDEX_POS)
+                    prev_token = df.get_value(index-1,definitions.INDEX_TOKEN)
+                    prev_one_char_token = len(prev_token) == 1
+                    prev_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_token)) > 0
+                    prev_first_capitalized = prev_token[0].isupper()
+                    prev_capitalized = prev_token.isupper()
+                    prev_title = prev_token.istitle()
+                    prev_digit = prev_token.isdigit()
+                    prev_stop_words = prev_token in stop
+                    prev_small = True if len(horusfile[3]) <= 2 else False
+                    prev_lemma = lancaster_stemmer.stem(prev_token)
+                    prev_hyphen = '-' in prev_token
+                    prev_sh = shape(prev_token)
+                else:
+                    prev_pos = ''
+                    prev_token=''
+                    prev_one_char_token=''
+                    prev_special_char=''
+                    prev_first_capitalized=''
+                    prev_capitalized=''
+                    prev_title=''
+                    prev_digit=''
+                    prev_stop_words=''
+                    prev_small=''
+                    prev_lemma=''
+                    prev_hyphen=''
+                    prev_sh=''
 
                 if index > 1 and df.get_value(index-2, definitions.INDEX_IS_COMPOUND) == 0:
                     prev_prev_pos = df.get_value(index-2, definitions.INDEX_POS)
+                    prev_prev_token = df.get_value(index-2, definitions.INDEX_TOKEN)
+                    prev_prev_one_char_token = len(prev_token) == 1
+                    prev_prev_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_prev_token)) > 0
+                    prev_prev_first_capitalized = prev_prev_token[0].isupper()
+                    prev_prev_capitalized = prev_prev_token.isupper()
+                    prev_prev_title = prev_prev_token.istitle()
+                    prev_prev_digit = prev_prev_token.isdigit()
+                    prev_prev_stop_words = prev_prev_token in stop
+                    prev_prev_small = True if len(horusfile[3]) <= 2 else False
+                    prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token)
+                    prev_prev_hyphen = '-' in prev_prev_token
+                    prev_prev_sh = shape(prev_prev_token)
 
                 if index + 1 < len(df) and df.get_value(index+1, definitions.INDEX_ID_SENTENCE) == idsent \
                         and df.get_value(index+1, definitions.INDEX_IS_COMPOUND) == 0:
-                    next_pos = df.get_value(index+1,definitions.INDEX_POS)
+                    next_pos = df.get_value(index+1, definitions.INDEX_POS)
+                    next_token = df.get_value(index+1, definitions.INDEX_TOKEN)
+                    next_one_char_token = len(next_token) == 1
+                    next_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0
+                    next_first_capitalized = next_token[0].isupper()
+                    next_capitalized = next_token.isupper()
+                    next_title = next_token.istitle()
+                    next_digit = next_token.isdigit()
+                    next_stop_words = next_token in stop
+                    next_small = True if len(horusfile[3]) <= 2 else False
+                    next_lemma = lancaster_stemmer.stem(next_token)
+                    next_hyphen = '-' in next_token
+                    next_sh = shape(next_token)
 
                 if index + 2 < len(df) and df.get_value(index+2, definitions.INDEX_ID_SENTENCE) == idsent \
                         and df.get_value(index+2, definitions.INDEX_IS_COMPOUND) == 0:
@@ -525,7 +571,7 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(' - confusion matrix:')
     print(confusion_matrix(fyh, fpr))
     print(' - precision, recall, f1, support:')
-    print precision_recall_fscore_support(fyh, fpr)
+    print(precision_recall_fscore_support(fyh, fpr))
 
     pr = model.predict_classes([Xte[:, :, 0], Xte[:, :, 1:Xte.shape[2]]], verbose=verbose)
     yh = yte.argmax(2)
@@ -535,7 +581,7 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(' - confusion matrix:')
     print(confusion_matrix(fyh, fpr))
     print(' - precision, recall, f1, support:')
-    print precision_recall_fscore_support(fyh, fpr)
+    print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
 
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
