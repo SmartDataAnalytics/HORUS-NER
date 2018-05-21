@@ -18,7 +18,7 @@ def __get_remaining_column_indexes(line, cols):
     print("total of columns to keep: ", str(len(cols) + 1))
     return to_exclude
 
-def convert(experiment_folder, input_dataset_file, features_ind=definitions.FEATURES_INDEX):
+def convert(experiment_folder, input_dataset_file, features_ind=definitions.HORUS_FEATURES):
     '''
     read a horus format file and converts it to CoNLL standard format
     :param dataset: the horus format data set
@@ -84,7 +84,7 @@ def main():
                         help='a dataset name (exported horus features)', default='ritter.horus')
     parser.add_argument('--f', '--features_ind', action='store_true', required=False,
                         help='a list contaning the indexes for each feature that should be exported',
-                        default=definitions.FEATURES_INDEX)
+                        default=definitions.HORUS_FEATURES)
 
     parser.print_help()
     args = parser.parse_args()

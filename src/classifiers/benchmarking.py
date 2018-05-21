@@ -4,6 +4,8 @@ import os
 import time
 
 import sklearn
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction import DictVectorizer
 
 from src.classifiers.experiment_metadata import MEXExecution, \
     MEXPerformance, MEX, MEXConfiguration
@@ -14,7 +16,7 @@ import matplotlib.pyplot as plt
 import sklearn_crfsuite
 from sklearn import ensemble
 from sklearn import metrics as skmetrics
-from sklearn.cross_validation import train_test_split
+from sklearn.cross_validation import train_test_split, KFold
 from sklearn_crfsuite import metrics
 
 plt.style.use('ggplot')
@@ -230,7 +232,7 @@ def shape(word):
 
     return word_shape
 
-def get_features(horusfile, le):
+def get_features(file, path, le):
     '''
     converts horus features file to algorithm's expected shapes,
     adding further traditional features
@@ -238,239 +240,282 @@ def get_features(horusfile, le):
     :param le: the encoder
     :return: a (standard matrix + a CRF + a LSTM) file formats
     '''
-    features, sentence_shape = [], []
-    targets, tokens_shape, y_sentences_shape, y_tokens_shape = [], [], [], []
+    try:
+        ###  without HORUS ###
+        features, sentence_shape = [], []
+        targets, tokens_shape = [], []
 
-    config.logger.info('reading horus features file: ' + horusfile)
-    df = pd.read_csv(horusfile, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-    oldsentid = df.get_values()[0][definitions.INDEX_ID_SENTENCE]
-    for index, feat in df.iterrows():
-        if len(feat)>0:
-            if feat[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
-                if feat[definitions.INDEX_ID_SENTENCE] != oldsentid:
-                    sentence_shape.append(features)
-                    y_sentences_shape.append(targets)
-                    targets, features = [], []
+        #### with HORUS ###
+        features_horus, sentence_shape_horus = [], []
+        targets_horus, tokens_shape_horus = [], []
 
-                idsent = feat[definitions.INDEX_ID_SENTENCE]
-                idtoken = feat[definitions.INDEX_ID_WORD]
-                
-                f=[]
-                # standard features
-                if index > 0 and df.get_value(index-1, definitions.INDEX_IS_COMPOUND) == 0:
-                    prev_pos = df.get_value(index-1,definitions.INDEX_POS)
-                    prev_pos_uni = df.get_value(index-1, definitions.INDEX_POS_UNI)
-                    prev_token = df.get_value(index-1,definitions.INDEX_TOKEN)
-                    prev_one_char_token = len(prev_token) == 1
-                    prev_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_token)) > 0
-                    prev_first_capitalized = prev_token[0].isupper()
-                    prev_capitalized = prev_token.isupper()
-                    prev_title = prev_token.istitle()
-                    prev_digit = prev_token.isdigit()
-                    prev_stop_words = prev_token in stop
-                    prev_small = True if len(horusfile[3]) <= 2 else False
-                    prev_lemma = lancaster_stemmer.stem(prev_token)
-                    prev_hyphen = '-' in prev_token
-                    prev_sh = shape(prev_token)
-                else:
-                    prev_pos = ''
-                    prev_pos_uni = ''
-                    prev_token=''
-                    prev_one_char_token=''
-                    prev_special_char=''
-                    prev_first_capitalized=''
-                    prev_capitalized=''
-                    prev_title=''
-                    prev_digit=''
-                    prev_stop_words=''
-                    prev_small=''
-                    prev_lemma=''
-                    prev_hyphen=''
-                    prev_sh=''
+        ### labels ###
+        y_sentences_shape, y_tokens_shape = [], []
+        fullpath=path+file
+        config.logger.info('reading horus features file: ' + fullpath)
+        df = pd.read_csv(fullpath, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+        df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
+        oldsentid = df.iloc[0][definitions.INDEX_ID_SENTENCE]
+        df = df.reset_index(drop=True)
+        for index, feat in df.iterrows():
+                #if feat[definitions.INDEX_IS_COMPOUND] == 0: #no compounds
+            if feat[definitions.INDEX_ID_SENTENCE] != oldsentid:
+                sentence_shape.append(features)
+                features = []
+                sentence_shape_horus.append(features_horus)
+                features_horus = []
+                y_sentences_shape.append(targets)
+                targets = []
 
-                if index > 1 and df.get_value(index-2, definitions.INDEX_IS_COMPOUND) == 0:
-                    prev_prev_pos = df.get_value(index-2, definitions.INDEX_POS)
-                    prev_prev_pos_uni = df.get_value(index-2, definitions.INDEX_POS_UNI)
-                    prev_prev_token = df.get_value(index-2, definitions.INDEX_TOKEN)
-                    prev_prev_one_char_token = len(prev_token) == 1
-                    prev_prev_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_prev_token)) > 0
-                    prev_prev_first_capitalized = prev_prev_token[0].isupper()
-                    prev_prev_capitalized = prev_prev_token.isupper()
-                    prev_prev_title = prev_prev_token.istitle()
-                    prev_prev_digit = prev_prev_token.isdigit()
-                    prev_prev_stop_words = prev_prev_token in stop
-                    prev_prev_small = True if len(horusfile[3]) <= 2 else False
-                    prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token)
-                    prev_prev_hyphen = '-' in prev_prev_token
-                    prev_prev_sh = shape(prev_prev_token)
-                else:
-                    prev_prev_pos=''
-                    prev_prev_pos_uni = ''
-                    prev_prev_token=''
-                    prev_prev_one_char_token=''
-                    prev_prev_special_char=''
-                    prev_prev_first_capitalized=''
-                    prev_prev_capitalized=''
-                    prev_prev_title=''
-                    prev_prev_digit=''
-                    prev_prev_stop_words=''
-                    prev_prev_small=''
-                    prev_prev_lemma=''
-                    prev_prev_hyphen=''
-                    prev_prev_sh=''
+            idsent = feat[definitions.INDEX_ID_SENTENCE]
 
-                if index + 1 < len(df) and df.get_value(index+1, definitions.INDEX_ID_SENTENCE) == idsent \
-                        and df.get_value(index+1, definitions.INDEX_IS_COMPOUND) == 0:
-                    next_pos = df.get_value(index+1, definitions.INDEX_POS)
-                    next_pos_uni = df.get_value(index+1, definitions.INDEX_POS_UNI)
-                    next_token = df.get_value(index+1, definitions.INDEX_TOKEN)
-                    next_one_char_token = len(next_token) == 1
-                    next_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0
-                    next_first_capitalized = next_token[0].isupper()
-                    next_capitalized = next_token.isupper()
-                    next_title = next_token.istitle()
-                    next_digit = next_token.isdigit()
-                    next_stop_words = next_token in stop
-                    next_small = True if len(horusfile[3]) <= 2 else False
-                    next_lemma = lancaster_stemmer.stem(next_token)
-                    next_hyphen = '-' in next_token
-                    next_sh = shape(next_token)
-                else:
-                    next_pos = ''
-                    next_pos_uni = ''
-                    next_token = ''
-                    next_one_char_token = ''
-                    next_special_char = ''
-                    next_first_capitalized = ''
-                    next_capitalized = ''
-                    next_title = ''
-                    next_digit = ''
-                    next_stop_words = ''
-                    next_small = ''
-                    next_lemma = ''
-                    next_hyphen = ''
-                    next_sh = ''
-                    
-                if index + 2 < len(df) and df.get_value(index+2, definitions.INDEX_ID_SENTENCE) == idsent \
-                        and df.get_value(index+2, definitions.INDEX_IS_COMPOUND) == 0:
-                    next_next_pos = df.get_value(index+2, definitions.INDEX_POS)
-                    next_next_pos_uni = df.get_value(index+2, definitions.INDEX_POS_UNI)
-                    next_next_token = df.get_value(index+2, definitions.INDEX_TOKEN)
-                    next_next_one_char_token = len(next_next_token) == 1
-                    next_next_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_next_token)) > 0
-                    next_next_first_capitalized = next_next_token[0].isupper()
-                    next_next_capitalized = next_next_token.isupper()
-                    next_next_title = next_next_token.istitle()
-                    next_next_digit = next_next_token.isdigit()
-                    next_next_stop_words = next_next_token in stop
-                    next_next_small = True if len(horusfile[3]) <= 2 else False
-                    next_next_lemma = lancaster_stemmer.stem(next_next_token)
-                    next_next_hyphen = '-' in next_next_token
-                    next_next_sh = shape(next_next_token)
-                else:
-                    next_next_pos = ''
-                    next_next_pos_uni = ''
-                    next_next_token = ''
-                    next_next_one_char_token = ''
-                    next_next_special_char = ''
-                    next_next_first_capitalized = ''
-                    next_next_capitalized = ''
-                    next_next_title = ''
-                    next_next_digit = ''
-                    next_next_stop_words = ''
-                    next_next_small = ''
-                    next_next_lemma = ''
-                    next_next_hyphen = ''
-                    next_next_sh = ''
+            f=[]
+            # standard features
+            if index > 0 and df.iloc[index-1][definitions.INDEX_ID_SENTENCE] == idsent:
+                prev_pos = df.iloc[index-1][definitions.INDEX_POS]
+                prev_pos_uni = df.iloc[index-1][definitions.INDEX_POS_UNI]
+                prev_token = df.iloc[index-1][definitions.INDEX_TOKEN]
+                prev_one_char_token = int(len(prev_token) == 1)
+                prev_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_token)) > 0)
+                prev_first_capitalized = int(prev_token[0].isupper())
+                prev_capitalized = int(prev_token.isupper())
+                prev_title = int(prev_token.istitle())
+                prev_digit = int(prev_token.isdigit())
+                prev_stop_words = int(prev_token in stop)
+                prev_small = int(len(prev_token) <= 2)
+                prev_lemma = lancaster_stemmer.stem(prev_token)
+                prev_hyphen = int('-' in prev_token)
+                prev_sh = shape(prev_token)
+            else:
+                prev_pos = ''
+                prev_pos_uni = ''
+                prev_token = ''
+                prev_one_char_token = -1
+                prev_special_char = -1
+                prev_first_capitalized = -1
+                prev_capitalized = -1
+                prev_title = -1
+                prev_digit = -1
+                prev_stop_words = -1
+                prev_small = -1
+                prev_lemma = -1
+                prev_hyphen = -1
+                prev_sh = -1
 
-                # standard features -2+2 context
-                f.append(prev_pos, prev_pos_uni, prev_token, prev_one_char_token, prev_special_char,
-                         prev_first_capitalized, prev_capitalized, prev_title, prev_digit, prev_stop_words,
-                         prev_small, prev_lemma, prev_hyphen, prev_sh,
-                         prev_prev_pos, prev_prev_pos_uni, prev_prev_token, prev_prev_one_char_token, prev_prev_special_char,
-                         prev_prev_first_capitalized, prev_prev_capitalized, prev_prev_title, prev_prev_digit,
-                         prev_prev_stop_words, prev_prev_small, prev_prev_lemma, prev_prev_hyphen, prev_prev_sh,
-                         next_pos, next_pos_uni , next_token, next_one_char_token, next_special_char,
-                         next_first_capitalized, next_capitalized, next_title, next_digit, next_stop_words, next_small,
-                         next_lemma, next_hyphen, next_sh,
-                         next_next_pos, next_next_pos_uni, next_next_token, next_next_one_char_token,
-                         next_next_special_char, next_next_first_capitalized, next_next_capitalized, next_next_title,
-                         next_next_digit, next_next_stop_words, next_next_small, next_next_lemma, next_next_hyphen,
-                         next_next_sh)
+            if index > 1 and df.iloc[index-2][definitions.INDEX_ID_SENTENCE] == idsent:
+                prev_prev_pos = df.iloc[index-2][definitions.INDEX_POS]
+                prev_prev_pos_uni = df.iloc[index-2][definitions.INDEX_POS_UNI]
+                prev_prev_token = df.iloc[index-2][definitions.INDEX_TOKEN]
+                prev_prev_one_char_token = int(len(prev_prev_token) == 1)
+                prev_prev_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_prev_token)) > 0)
+                prev_prev_first_capitalized = int(prev_prev_token[0].isupper())
+                prev_prev_capitalized = int(prev_prev_token.isupper())
+                prev_prev_title = int(prev_prev_token.istitle())
+                prev_prev_digit = int(prev_prev_token.isdigit())
+                prev_prev_stop_words = int(prev_prev_token in stop)
+                prev_prev_small = int(len(prev_prev_token) <= 2)
+                prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token)
+                prev_prev_hyphen = int('-' in prev_prev_token)
+                prev_prev_sh = shape(prev_prev_token)
+            else:
+                prev_prev_pos= ''
+                prev_prev_pos_uni = ''
+                prev_prev_token= ''
+                prev_prev_one_char_token= -1
+                prev_prev_special_char= -1
+                prev_prev_first_capitalized= -1
+                prev_prev_capitalized= -1
+                prev_prev_title= -1
+                prev_prev_digit= -1
+                prev_prev_stop_words= -1
+                prev_prev_small= -1
+                prev_prev_lemma= -1
+                prev_prev_hyphen= -1
+                prev_prev_sh= -1
 
-                # standard
-                f.extend([feat[definitions.INDEX_POS], feat[definitions.INDEX_POS_UNI], feat[definitions.INDEX_TOKEN],
-                len(feat[definitions.INDEX_TOKEN]) == 1, len(re.findall('(http://\S+|\S*[^\w\s]\S*)', feat[definitions.INDEX_TOKEN])) > 0,
-                str(feat[definitions.INDEX_TOKEN])[0].isupper(), str(feat[definitions.INDEX_TOKEN]).isupper(),
-                str(feat[definitions.INDEX_TOKEN]).istitle(), str(feat[definitions.INDEX_TOKEN]).isdigit(),
-                str(feat[definitions.INDEX_TOKEN]) in stop, lancaster_stemmer.stem(str(feat[definitions.INDEX_TOKEN])),
-                '-' in str(feat[definitions.INDEX_TOKEN]), shape(str(feat[definitions.INDEX_TOKEN]))])
-                
-                
+            if index + 1 < len(df) and df.iloc[index+1][definitions.INDEX_ID_SENTENCE] == idsent:
+                next_pos = df.iloc[index+1][definitions.INDEX_POS]
+                next_pos_uni = df.iloc[index+1][definitions.INDEX_POS_UNI]
+                next_token = df.iloc[index+1][definitions.INDEX_TOKEN]
+                next_one_char_token = int(len(next_token) == 1)
+                next_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0)
+                next_first_capitalized = int(next_token[0].isupper())
+                next_capitalized = int(next_token.isupper())
+                next_title = int(next_token.istitle())
+                next_digit = int(next_token.isdigit())
+                next_stop_words = int(next_token in stop)
+                next_small = int(len(next_token) <= 2)
+                next_lemma = lancaster_stemmer.stem(next_token)
+                next_hyphen = int('-' in next_token)
+                next_sh = shape(next_token)
+            else:
+                next_pos = ''
+                next_pos_uni = ''
+                next_token = ''
+                next_one_char_token = -1
+                next_special_char = -1
+                next_first_capitalized = -1
+                next_capitalized = -1
+                next_title = -1
+                next_digit = -1
+                next_stop_words = -1
+                next_small = -1
+                next_lemma = -1
+                next_hyphen = -1
+                next_sh = -1
 
-                cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
-                cv_org = float(feat[definitions.INDEX_TOT_CV_ORG])
-                cv_per = float(feat[definitions.INDEX_TOT_CV_PER])
-                cv_dist = float(feat[definitions.INDEX_DIST_CV_I])
-                cv_plc = float(feat[definitions.INDEX_PL_CV_I])
-                tx_loc = float(feat[definitions.INDEX_TOT_TX_LOC])
-                tx_org = float(feat[definitions.INDEX_TOT_TX_ORG])
-                tx_per = float(feat[definitions.INDEX_TOT_TX_PER])
-                tx_err = float(feat[definitions.INDEX_TOT_ERR_TRANS])
-                tx_dist = float(feat[definitions.INDEX_DIST_TX_I])
+            if index + 2 < len(df) and df.iloc[index+2][definitions.INDEX_ID_SENTENCE] == idsent:
+                next_next_pos = df.iloc[index+2][definitions.INDEX_POS]
+                next_next_pos_uni = df.iloc[index+2][definitions.INDEX_POS_UNI]
+                next_next_token = df.iloc[index+2][definitions.INDEX_TOKEN]
+                next_next_one_char_token = int(len(next_next_token) == 1)
+                next_next_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_next_token)) > 0)
+                next_next_first_capitalized = int(next_next_token[0].isupper())
+                next_next_capitalized = int(next_next_token.isupper())
+                next_next_title = int(next_next_token.istitle())
+                next_next_digit = int(next_next_token.isdigit())
+                next_next_stop_words = int(next_next_token in stop)
+                next_next_small = int(len(next_next_token) <= 2)
+                next_next_lemma = lancaster_stemmer.stem(next_next_token)
+                next_next_hyphen = int('-' in next_next_token)
+                next_next_sh = shape(next_next_token)
+            else:
+                next_next_pos = ''
+                next_next_pos_uni = ''
+                next_next_token = ''
+                next_next_one_char_token = -1
+                next_next_special_char = -1
+                next_next_first_capitalized = -1
+                next_next_capitalized = -1
+                next_next_title = -1
+                next_next_digit = -1
+                next_next_stop_words = -1
+                next_next_small = -1
+                next_next_lemma = -1
+                next_next_hyphen = -1
+                next_next_sh = -1
 
-                if feat[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
-                elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
-                elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
-                else: ner = u'O'
+            # standard features -2+2 context
+            f.extend([le.transform(prev_pos), le.transform(prev_pos_uni), prev_one_char_token,
+                     prev_special_char, prev_first_capitalized, prev_capitalized, prev_title, prev_digit,
+                     prev_stop_words, prev_small, prev_hyphen, prev_sh,
+                     le.transform(prev_prev_pos), le.transform(prev_prev_pos_uni),
+                     prev_prev_one_char_token, prev_prev_special_char,
+                     prev_prev_first_capitalized, prev_prev_capitalized, prev_prev_title, prev_prev_digit,
+                     prev_prev_stop_words, prev_prev_small, prev_prev_hyphen, prev_prev_sh,
+                     le.transform(next_pos), le.transform(next_pos_uni), next_one_char_token,
+                     next_special_char, next_first_capitalized, next_capitalized, next_title, next_digit,
+                     next_stop_words, next_small, next_hyphen, next_sh,
+                     le.transform(next_next_pos), le.transform(next_next_pos_uni),
+                     next_next_one_char_token, next_next_special_char, next_next_first_capitalized,
+                     next_next_capitalized, next_next_title, next_next_digit, next_next_stop_words, next_next_small,
+                     next_next_hyphen, next_next_sh])
 
-                #standard shape
-                f = [idsent, idtoken, token, token.lower(), lemma,
-                                pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
-                                le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
-                                title, digit, one_char_token, special_char, first_capitalized,
-                                hyphen, capitalized, stop_words, small,
-                                nr_images_returned, nr_websites_returned,
-                                cv_org, cv_loc, cv_per, cv_dist, cv_plc,
-                                tx_org, tx_loc, tx_per, tx_dist, tx_err,
-                                float(feat[definitions.INDEX_TOT_TX_LOC_TM_CNN]),
-                                float(feat[definitions.INDEX_TOT_TX_ORG_TM_CNN]),
-                                float(feat[definitions.INDEX_TOT_TX_PER_TM_CNN]),
-                                float(feat[definitions.INDEX_DIST_TX_I_TM_CNN]),
-                                float(feat[definitions.INDEX_TOT_CV_LOC_1_CNN]),
-                                float(feat[definitions.INDEX_TOT_CV_ORG_CNN]),
-                                float(feat[definitions.INDEX_TOT_CV_PER_CNN]),
-                                float(feat[definitions.INDEX_TOT_CV_LOC_2_CNN]),
-                                0 if feat[definitions.INDEX_TOT_CV_LOC_3_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_3_CNN]),
-                                0 if feat[definitions.INDEX_TOT_CV_LOC_4_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_4_CNN]),
-                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC]),
-                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG]),
-                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_PER] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_PER]),
-                                0 if feat[definitions.INDEX_TOT_CV_LOC_5_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_5_CNN]),
-                                0 if feat[definitions.INDEX_TOT_CV_LOC_6_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_6_CNN]),
-                                0 if feat[definitions.INDEX_TOT_CV_LOC_7_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_7_CNN]),
-                                0 if feat[definitions.INDEX_TOT_CV_LOC_8_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_8_CNN]),
-                                0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE]),
-                                0 if feat[definitions.INDEX_TOT_TX_NONE_TM_CNN] == 'O' else float(feat[definitions.INDEX_TOT_TX_NONE_TM_CNN])
-                                ]
+            # standard
+            f.extend([le.transform(feat[definitions.INDEX_POS]), le.transform(feat[definitions.INDEX_POS_UNI]),
+                      int(len(feat[definitions.INDEX_TOKEN]) == 1),
+                      int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', feat[definitions.INDEX_TOKEN])) > 0),
+                      int(str(feat[definitions.INDEX_TOKEN])[0].isupper()), int(str(feat[definitions.INDEX_TOKEN]).isupper()),
+                      int(str(feat[definitions.INDEX_TOKEN]).istitle()), int(str(feat[definitions.INDEX_TOKEN]).isdigit()),
+                      int(str(feat[definitions.INDEX_TOKEN]) in stop),
+                      int(len(feat[definitions.INDEX_TOKEN]) <= 2),
+                      int('-' in str(feat[definitions.INDEX_TOKEN])), shape(str(feat[definitions.INDEX_TOKEN]))])
 
-                features.append(f)
+            # NER class
+            if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC:
+                y = u'LOC'
+            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG:
+                y = u'ORG'
+            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER:
+                y = u'PER'
+            else:
+                y = u'O'
 
-                if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
-                elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
-                elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
-                else: y = u'O'
+            oldsentid = feat[1]
 
-                targets.append(y)
+            features.append(f)
 
-                tokens_shape.append(f[9:len(f)])
-                y_tokens_shape.append(definitions.KLASSES2[y])
+            # horus features
+            f_horus = list(f)
+            f_horus.extend(feat[definitions.FEATURES_HORUS_TX])
+            f_horus.extend(feat[definitions.FEATURES_HORUS_CV])
 
-                oldsentid = feat[1]
+            features_horus.append(f_horus)
+            targets.append(y)
+            tokens_shape.append(f)
+            tokens_shape_horus.append(f_horus)
+            y_tokens_shape.append(definitions.KLASSES2[y])
 
-    config.logger.info('total of sentences: ' + str(len(sentence_shape)))
-    config.logger.info('total of tokens: ' + str(len(tokens_shape)))
-    return sentence_shape, y_sentences_shape, tokens_shape, y_tokens_shape
+            '''
+            cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
+            cv_org = float(feat[definitions.INDEX_TOT_CV_ORG])
+            cv_per = float(feat[definitions.INDEX_TOT_CV_PER])
+            cv_dist = float(feat[definitions.INDEX_DIST_CV_I])
+            cv_plc = float(feat[definitions.INDEX_PL_CV_I])
+            tx_loc = float(feat[definitions.INDEX_TOT_TX_LOC])
+            tx_org = float(feat[definitions.INDEX_TOT_TX_ORG])
+            tx_per = float(feat[definitions.INDEX_TOT_TX_PER])
+            tx_err = float(feat[definitions.INDEX_TOT_ERR_TRANS])
+            tx_dist = float(feat[definitions.INDEX_DIST_TX_I])
+    
+            #if feat[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
+            #elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
+            #elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
+            #else: ner = u'O'
+    
+            #standard shape
+            f = [idsent, idtoken, token, token.lower(), lemma,
+                            pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
+                            le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
+                            title, digit, one_char_token, special_char, first_capitalized,
+                            hyphen, capitalized, stop_words, small,
+                            nr_images_returned, nr_websites_returned,
+                            cv_org, cv_loc, cv_per, cv_dist, cv_plc,
+                            tx_org, tx_loc, tx_per, tx_dist, tx_err,
+                            float(feat[definitions.INDEX_TOT_TX_LOC_TM_CNN]),
+                            float(feat[definitions.INDEX_TOT_TX_ORG_TM_CNN]),
+                            float(feat[definitions.INDEX_TOT_TX_PER_TM_CNN]),
+                            float(feat[definitions.INDEX_DIST_TX_I_TM_CNN]),
+                            float(feat[definitions.INDEX_TOT_CV_LOC_1_CNN]),
+                            float(feat[definitions.INDEX_TOT_CV_ORG_CNN]),
+                            float(feat[definitions.INDEX_TOT_CV_PER_CNN]),
+                            float(feat[definitions.INDEX_TOT_CV_LOC_2_CNN]),
+                            0 if feat[definitions.INDEX_TOT_CV_LOC_3_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_3_CNN]),
+                            0 if feat[definitions.INDEX_TOT_CV_LOC_4_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_4_CNN]),
+                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC]),
+                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG]),
+                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_PER] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_PER]),
+                            0 if feat[definitions.INDEX_TOT_CV_LOC_5_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_5_CNN]),
+                            0 if feat[definitions.INDEX_TOT_CV_LOC_6_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_6_CNN]),
+                            0 if feat[definitions.INDEX_TOT_CV_LOC_7_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_7_CNN]),
+                            0 if feat[definitions.INDEX_TOT_CV_LOC_8_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_8_CNN]),
+                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE]),
+                            0 if feat[definitions.INDEX_TOT_TX_NONE_TM_CNN] == 'O' else float(feat[definitions.INDEX_TOT_TX_NONE_TM_CNN])
+                            ]
+                            
+                            
+                            X_train_dt.drop(labels=definitions.HORUS_FEATURES, axis=1, inplace=True)
+                    if X_test_dt is not None:
+                        X_test_dt = X2_dt.copy()
+                        X_test_dt.drop(labels=definitions.HORUS_FEATURES, axis=1, inplace=True)
+                    #df_train_dt.replace('O', 0, inplace=True)
+
+
+                    #for x, col in enumerate(df.columns):
+                    #    if (x not in HORUS):
+                    #df = pd.DataFrame(X_train)
+                    #HORUS = definitions.FEATURES_HORUS_CV + definitions.FEATURES_HORUS_TX
+                    #X_train = df.iloc[:, [j for j, c in enumerate(df.columns) if j not in (HORUS)]]
+            '''
+
+
+
+
+        config.logger.info('total of sentences: ' + str(len(sentence_shape)))
+        config.logger.info('total of tokens: ' + str(len(tokens_shape)))
+        return file, (sentence_shape, sentence_shape_horus, y_sentences_shape), (tokens_shape, tokens_shape_horus, y_tokens_shape)
+    except:
+        raise
 
 def convert_lstm_shape(ds, y, horus_feat = False):
     config.logger.info('shaping to LSTM format...')
@@ -578,7 +623,7 @@ def features_to_crf_shape(sent, i, horus_feat):
 def get_features_from_datasets(experiment_folder, datasets):
     ret = []
     for ds in datasets:
-        ret.append([ds, get_features(config.dir_output + experiment_folder + ds, le1)])
+        ret.append(get_features(ds, config.dir_output + experiment_folder, le1))
     return ret
 
 def score2(yh, pr):
@@ -661,58 +706,81 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     epochs = 50
     verbose = 0
 
-    _label='EXP_003'
+    _label='EXP_004'
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
     config.logger.info('get the features for each dataset...')
-    raw_datasets = get_features_from_datasets(experiment_folder, datasets)
+    # [label, (sentence, sentence_horus, y), (tokens, tokens_horus, y)]
+    processed_datasets = get_features_from_datasets(experiment_folder, datasets)
     config.logger.info('done')
 
     for horus_feat in (False, True):
-        print("w/HORUS? " + str(horus_feat))
-        for ds1 in raw_datasets:
-            if runDT is True:
-                X1_dt = ds1[1][2]
+        for ds1 in processed_datasets:
+            ds1_name = ds1[0]
+            Y1_sentence = ds1[1][2]
+            Y1_token = ds1[2][2]
+            if horus_feat is False:
+                X1_sentence = ds1[1][0]
+                X1_token = ds1[2][0]
+                #pca = PCA(n_components=20)
+                #X1_token_PCA = pca.fit(X1_token)
+            else:
+                X1_sentence = pd.DataFrame(ds1[1][1])
+                X1_sentence.replace('O', 0, inplace=True)
+                X1_token = pd.DataFrame(ds1[2][1])
+                X1_token.replace('O', 0, inplace=True)
+
+                #pca = PCA(n_components=50)
+                #X1_token_PCA = pca.fit(X1_token)
+
+
             if runCRF is True:
-                config.logger.info('shaping to CRF format...')
                 X1_crf = [sent2features(s, horus_feat) for s in ds1[1][0]]
             if runLSTM is True:
                 X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], horus_feat)
-            for ds2 in raw_datasets:
-                print("dataset 1 = " + ds1[0])
-                print("dataset 2 = " + ds2[0])
+            for ds2 in processed_datasets:
+                ds2_name = ds2[0]
+                if ds1[0] != ds2[0]:
+                    Y2_sentence = ds2[1][2]
+                    Y2_token = ds2[2][2]
+                    if horus_feat is False:
+                        X2_sentence = ds2[1][0]
+                        X2_token = ds2[2][0]
+                    else:
+                        X2_sentence = pd.DataFrame(ds2[1][1])
+                        X2_sentence.replace('O', 0, inplace=True)
+                        X2_token = pd.DataFrame(ds2[2][1])
+                        X2_token.replace('O', 0, inplace=True)
 
-                if ds1[0] == ds2[0]:
-                    if runDT is True:
-                        X2_dt = X1_dt
-                    if runCRF is True:
-                        X2_crf = X1_crf
+
+                    if runCRF is True: X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
                     if runLSTM is True:
-                        X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0],
-                                                                                                    ds2[1][1],
-                                                                                                    horus_feat)
-                        X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                        y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                else:
-                    if runDT is True:
-                        X2_dt = ds2[1][2]
-                    if runCRF is True:
-                        X2_crf = [sent2features(s, horus_feat) for s in ds2[1][0]]
-                    if runLSTM is True:
-                        print('--LSTM')
                         X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
                         X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
                         y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
 
-                # run models
-                if ds1[0] == ds2[0]:
-                    print("do cross validation")
+                    #else
+                    # if runDT is True:
+                    #    X2_dt = None
+                    #    Y2_dt = None
+                    #if runCRF is True: X2_crf = X1_crf
+                    #if runLSTM is True:
+                    #    X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
+                    #    X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
+                    #    y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
+
+
+                '''
+                ************************************************************************************************************************************** 
+                run the models
+                **************************************************************************************************************************************
+                '''
+                if ds1_name == ds2_name:
                     # ---------------------------------------------------------- META ----------------------------------------------------------
-                    _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
-                                                    dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
+                    #_conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
+                    #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
                     # --------------------------------------------------------------------------------------------------------------------------
                     for d in range(len(r)):
-
                         if runCRF is True:
                             print('--CRF')
                             Xtr, Xte, ytr, yte = train_test_split(X1_crf, ds1[1][1], test_size=ds_test_size, random_state=r[d])
@@ -721,45 +789,42 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
-                            _ex = MEXExecution(id=len(_conf.executions)+1, alg='CRF', phase='test', random_state=r[d])
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
-                            for k in sorted_labels.keys():
-                                _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            _conf.add_execution(_ex)
-                            _meta.add_configuration(_conf)
+                            #_ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
+                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
+                            #for k in sorted_labels.keys():
+                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            #_conf.add_execution(_ex)
+                            #_meta.add_configuration(_conf)
                             # --------------------------------------------------------------------------------------------------------------------------
-
                         if runDT is True:
-                            print('--DT')
-                            X_train = X1_dt
-                            if horus_feat == False:
-                                X_train = [x[0:12] for x in X1_dt]
-                            Xtr, Xte, ytr, yte = train_test_split(X_train, ds1[1][3], test_size=ds_test_size, random_state=r[d])
-                            m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(float))
+                            Xtr, Xte, ytr, yte = train_test_split(X1_token_PCA, Y1_token, test_size=ds_test_size, random_state=r[d])
+                            m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                            #print(m.feature_importances_)
                             ypr = m.predict(np.array(Xte).astype(float))
-                            print(skmetrics.classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                            #print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys())
+                            for k in range(len(P)):
+                                print 'DT', 'ds1:'+ds1_name, 'ds2:'+ds2_name, 'cross-validation:True', 'horus:'+str(horus_feat), 'run:'+str(d+1), definitions.PLO_KLASSES.get(k+1), P[k], R[k], F[k], S[k]
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
-                            _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
-                                                                                         labels=sorted_labels.keys(),
-                                                                                         average=None)
-                            for k in sorted_labels.keys():
-                                _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            _conf.add_execution(_ex)
-                            _meta.add_configuration(_conf)
+                            #_ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
+                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
+                            #                                                             labels=sorted_labels.keys(),
+                            #                                                             average=None)
+                            #for k in sorted_labels.keys():
+                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            #_conf.add_execution(_ex)
+                            #_meta.add_configuration(_conf)
                             # --------------------------------------------------------------------------------------------------------------------------
 
                         if runLSTM is True:
                             print('--LSTM')
                             Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
                             run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, maxlen_1)
-
-
                 else:
                     # ---------------------------------------------------------- META ----------------------------------------------------------
-                    _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
-                                             dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
+                    #_conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
+                    #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
                     # --------------------------------------------------------------------------------------------------------------------------
 
                     if runCRF is True:
@@ -768,26 +833,32 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         ypr = m.predict(X2_crf)
                         print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                     if runDT is True:
-                        print('--DT')
-                        X_train = X1_dt
-                        X_test = X2_dt
-                        if horus_feat == False:
-                            X_train = [x[0:12] for x in X1_dt]
-                            X_test = [x[0:12] for x in X2_dt]
-                        m = _dt.fit(X_train, ds1[1][3])
-                        ypr = m.predict(X_test)
-                        print(skmetrics.classification_report(ds2[1][3] , ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                        print('--Random Forest')
+                        m = _dt.fit(X1_token, Y1_token)
+                        ypr = m.predict(X2_token)
+                        #print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
+                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                     np.array(ypr).astype(int),
+                                                                                     labels=definitions.PLO_KLASSES.keys())
+                        for k in range(len(P)):
+                            print 'DT', 'ds1:' + ds1_name, 'ds2:' + ds2_name, 'cross-validation:False', 'horus:' + str(
+                                horus_feat), 'run:1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], \
+                            S[k]
+
+
+
+
 
 
                         # ---------------------------------------------------------- META ----------------------------------------------------------
-                        _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
-                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
-                                                                                     labels=sorted_labels.keys(),
-                                                                                     average=None)
-                        for k in sorted_labels.keys():
-                            _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                        _conf.add_execution(_ex)
-                        _meta.add_configuration(_conf)
+                        #_ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
+                        #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
+                        #                                                             labels=sorted_labels.keys(),
+                        #                                                             average=None)
+                        #for k in sorted_labels.keys():
+                        #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                        #_conf.add_execution(_ex)
+                        #_meta.add_configuration(_conf)
                         # --------------------------------------------------------------------------------------------------------------------------
 
                     if runLSTM is True:
@@ -801,9 +872,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         print('--STANFORD_NER')
                         print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
-    import pickle
-    with open(_label + '.meta', 'wb') as handle:
-        pickle.dump(_meta, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #import pickle
+    #with open(_label + '.meta', 'wb') as handle:
+    #    pickle.dump(_meta, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -813,8 +884,8 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='ritter.horus.short.test', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
-    parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_003')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='ner.txt.horus 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')

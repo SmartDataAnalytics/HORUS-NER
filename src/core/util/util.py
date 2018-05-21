@@ -814,9 +814,8 @@ class Util(object):
 
             # saving to database (pos_uni_sta not implemented yet)
             sent = [hasNER,
-                    [s, 1 if _same_tok_nltk else 0,
-                     1,
-                     #1 if _same_tok_stanf else 0,
+                    [s,
+                     1 if _same_tok_nltk else 0, 1, #1 if _same_tok_stanf else 0,
                      1 if _same_tok_tweet else 0],
                     [tokens_gold_standard, _tokens_nltk, #_tokens_st,
                      [],
