@@ -254,10 +254,12 @@ def get_features(horusfile, le):
 
                 idsent = feat[definitions.INDEX_ID_SENTENCE]
                 idtoken = feat[definitions.INDEX_ID_WORD]
-
+                
+                f=[]
                 # standard features
                 if index > 0 and df.get_value(index-1, definitions.INDEX_IS_COMPOUND) == 0:
                     prev_pos = df.get_value(index-1,definitions.INDEX_POS)
+                    prev_pos_uni = df.get_value(index-1, definitions.INDEX_POS_UNI)
                     prev_token = df.get_value(index-1,definitions.INDEX_TOKEN)
                     prev_one_char_token = len(prev_token) == 1
                     prev_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_token)) > 0
@@ -272,6 +274,7 @@ def get_features(horusfile, le):
                     prev_sh = shape(prev_token)
                 else:
                     prev_pos = ''
+                    prev_pos_uni = ''
                     prev_token=''
                     prev_one_char_token=''
                     prev_special_char=''
@@ -287,6 +290,7 @@ def get_features(horusfile, le):
 
                 if index > 1 and df.get_value(index-2, definitions.INDEX_IS_COMPOUND) == 0:
                     prev_prev_pos = df.get_value(index-2, definitions.INDEX_POS)
+                    prev_prev_pos_uni = df.get_value(index-2, definitions.INDEX_POS_UNI)
                     prev_prev_token = df.get_value(index-2, definitions.INDEX_TOKEN)
                     prev_prev_one_char_token = len(prev_token) == 1
                     prev_prev_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_prev_token)) > 0
@@ -299,10 +303,26 @@ def get_features(horusfile, le):
                     prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token)
                     prev_prev_hyphen = '-' in prev_prev_token
                     prev_prev_sh = shape(prev_prev_token)
+                else:
+                    prev_prev_pos=''
+                    prev_prev_pos_uni = ''
+                    prev_prev_token=''
+                    prev_prev_one_char_token=''
+                    prev_prev_special_char=''
+                    prev_prev_first_capitalized=''
+                    prev_prev_capitalized=''
+                    prev_prev_title=''
+                    prev_prev_digit=''
+                    prev_prev_stop_words=''
+                    prev_prev_small=''
+                    prev_prev_lemma=''
+                    prev_prev_hyphen=''
+                    prev_prev_sh=''
 
                 if index + 1 < len(df) and df.get_value(index+1, definitions.INDEX_ID_SENTENCE) == idsent \
                         and df.get_value(index+1, definitions.INDEX_IS_COMPOUND) == 0:
                     next_pos = df.get_value(index+1, definitions.INDEX_POS)
+                    next_pos_uni = df.get_value(index+1, definitions.INDEX_POS_UNI)
                     next_token = df.get_value(index+1, definitions.INDEX_TOKEN)
                     next_one_char_token = len(next_token) == 1
                     next_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0
@@ -315,40 +335,78 @@ def get_features(horusfile, le):
                     next_lemma = lancaster_stemmer.stem(next_token)
                     next_hyphen = '-' in next_token
                     next_sh = shape(next_token)
-
+                else:
+                    next_pos = ''
+                    next_pos_uni = ''
+                    next_token = ''
+                    next_one_char_token = ''
+                    next_special_char = ''
+                    next_first_capitalized = ''
+                    next_capitalized = ''
+                    next_title = ''
+                    next_digit = ''
+                    next_stop_words = ''
+                    next_small = ''
+                    next_lemma = ''
+                    next_hyphen = ''
+                    next_sh = ''
+                    
                 if index + 2 < len(df) and df.get_value(index+2, definitions.INDEX_ID_SENTENCE) == idsent \
                         and df.get_value(index+2, definitions.INDEX_IS_COMPOUND) == 0:
-                    next_nex_pos = df.get_value(index+2,definitions.INDEX_POS)
+                    next_next_pos = df.get_value(index+2, definitions.INDEX_POS)
+                    next_next_pos_uni = df.get_value(index+2, definitions.INDEX_POS_UNI)
+                    next_next_token = df.get_value(index+2, definitions.INDEX_TOKEN)
+                    next_next_one_char_token = len(next_next_token) == 1
+                    next_next_special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_next_token)) > 0
+                    next_next_first_capitalized = next_next_token[0].isupper()
+                    next_next_capitalized = next_next_token.isupper()
+                    next_next_title = next_next_token.istitle()
+                    next_next_digit = next_next_token.isdigit()
+                    next_next_stop_words = next_next_token in stop
+                    next_next_small = True if len(horusfile[3]) <= 2 else False
+                    next_next_lemma = lancaster_stemmer.stem(next_next_token)
+                    next_next_hyphen = '-' in next_next_token
+                    next_next_sh = shape(next_next_token)
+                else:
+                    next_next_pos = ''
+                    next_next_pos_uni = ''
+                    next_next_token = ''
+                    next_next_one_char_token = ''
+                    next_next_special_char = ''
+                    next_next_first_capitalized = ''
+                    next_next_capitalized = ''
+                    next_next_title = ''
+                    next_next_digit = ''
+                    next_next_stop_words = ''
+                    next_next_small = ''
+                    next_next_lemma = ''
+                    next_next_hyphen = ''
+                    next_next_sh = ''
 
-                #TODO: continur aqui
-                postag = feat[definitions.INDEX_POS]
-                token = feat[definitions.INDEX_TOKEN]
-                one_char_token = len(token) == 1
-                special_char = len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0
-                first_capitalized = token[0].isupper()
-                capitalized = token.isupper()
-                title = token.istitle()
-                digit = token.isdigit()
-                stop_words = token in stop
-                small = True if len(horusfile[3]) <= 2 else False
-                lemma = lancaster_stemmer.stem(token)
-                hyphen = '-' in token
-                sh = shape(token)
+                # standard features -2+2 context
+                f.append(prev_pos, prev_pos_uni, prev_token, prev_one_char_token, prev_special_char,
+                         prev_first_capitalized, prev_capitalized, prev_title, prev_digit, prev_stop_words,
+                         prev_small, prev_lemma, prev_hyphen, prev_sh,
+                         prev_prev_pos, prev_prev_pos_uni, prev_prev_token, prev_prev_one_char_token, prev_prev_special_char,
+                         prev_prev_first_capitalized, prev_prev_capitalized, prev_prev_title, prev_prev_digit,
+                         prev_prev_stop_words, prev_prev_small, prev_prev_lemma, prev_prev_hyphen, prev_prev_sh,
+                         next_pos, next_pos_uni , next_token, next_one_char_token, next_special_char,
+                         next_first_capitalized, next_capitalized, next_title, next_digit, next_stop_words, next_small,
+                         next_lemma, next_hyphen, next_sh,
+                         next_next_pos, next_next_pos_uni, next_next_token, next_next_one_char_token,
+                         next_next_special_char, next_next_first_capitalized, next_next_capitalized, next_next_title,
+                         next_next_digit, next_next_stop_words, next_next_small, next_next_lemma, next_next_hyphen,
+                         next_next_sh)
 
-                #horus CV features
-                cv_basic = feat[11:17]
-                cv_cnn = feat[68:83]
-
-
-                #horus TX features
-                tx_basic  = feat[19:25]
-                tx_cnn = feat[28:31]
-                tx_stats = feat[52:67]
-
-
-
-                nr_images_returned = feat[definitions.INDEX_NR_RESULTS_SE_IMG]
-                nr_websites_returned = feat[definitions.INDEX_NR_RESULTS_SE_TX]
+                # standard
+                f.extend([feat[definitions.INDEX_POS], feat[definitions.INDEX_POS_UNI], feat[definitions.INDEX_TOKEN],
+                len(feat[definitions.INDEX_TOKEN]) == 1, len(re.findall('(http://\S+|\S*[^\w\s]\S*)', feat[definitions.INDEX_TOKEN])) > 0,
+                str(feat[definitions.INDEX_TOKEN])[0].isupper(), str(feat[definitions.INDEX_TOKEN]).isupper(),
+                str(feat[definitions.INDEX_TOKEN]).istitle(), str(feat[definitions.INDEX_TOKEN]).isdigit(),
+                str(feat[definitions.INDEX_TOKEN]) in stop, lancaster_stemmer.stem(str(feat[definitions.INDEX_TOKEN])),
+                '-' in str(feat[definitions.INDEX_TOKEN]), shape(str(feat[definitions.INDEX_TOKEN]))])
+                
+                
 
                 cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
                 cv_org = float(feat[definitions.INDEX_TOT_CV_ORG])
