@@ -728,8 +728,10 @@ def exclude_columns(df, f_indexes):
 
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
+
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
     experiment_folder+='/'
+    out_file = open(config.dir_output + experiment_folder + 'metadata.txt', 'w+')
     config.logger.info('datasets: ' + str(datasets))
     datasets=datasets.split()
     #sorted_labels = definitions.KLASSES.copy()
@@ -757,6 +759,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
     config.logger.info('done! running experiment configurations')
+
+    line = 'algo:%s; ds1:%s; ds2:%s; cross-validation:%s; config:%s; run:%s; label:%s; p:%.5f; r:%.5f; f1:%.5f; support:%s \n'
 
     for f_key, f_indexes in dict_exp_feat.iteritems():
         for ds1 in shaped_datasets:
@@ -837,7 +841,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             #print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys())
                             for k in range(len(P)):
-                                print 'DT', 'ds1:'+ds1_name, 'ds2:'+ds2_name, 'cross-validation:True', 'horus:'+str(f_key), 'run:'+str(d+1), definitions.PLO_KLASSES.get(k+1), P[k], R[k], F[k], S[k]
+                                out_file.write(line % ('DT', ds1_name, ds2_name, 'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k])))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             #_ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
@@ -851,7 +855,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             # --------------------------------------------------------------------------------------------------------------------------
 
                         if runLSTM is True:
-                            print('--LSTM')
                             Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
                             run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, maxlen_1)
                 else:
@@ -873,15 +876,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                                                      np.array(ypr).astype(int),
                                                                                      labels=definitions.PLO_KLASSES.keys())
                         for k in range(len(P)):
-                            print 'DT', 'ds1:' + ds1_name, 'ds2:' + ds2_name, 'cross-validation:False', 'horus:' + str(
-                                f_key), 'run:1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], \
-                            S[k]
-
-
-
-
-
-
+                            out_file.write(line % ('DT', ds1_name, ds2_name, 'False', str(f_key), '1',
+                                                   definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k])))
                         # ---------------------------------------------------------- META ----------------------------------------------------------
                         #_ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
                         #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
@@ -904,6 +900,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         print('--STANFORD_NER')
                         print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
+    out_file.close()
     #import pickle
     #with open(_label + '.meta', 'wb') as handle:
     #    pickle.dump(_meta, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -916,8 +913,8 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+',
     #                    default='test.horus',
     #                    help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
