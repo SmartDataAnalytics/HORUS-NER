@@ -760,7 +760,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
     config.logger.info('done! running experiment configurations')
 
-    line = 'algo:%s; ds1:%s; ds2:%s; cross-validation:%s; config:%s; run:%s; label:%s; p:%.5f; r:%.5f; f1:%.5f; support:%s \n'
+    header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\n'
+    line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\n'
+
+    out_file.write(header)
 
     for f_key, f_indexes in dict_exp_feat.iteritems():
         for ds1 in shaped_datasets:
@@ -841,7 +844,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             #print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys())
                             for k in range(len(P)):
-                                out_file.write(line % ('DT', ds1_name, ds2_name, 'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k])))
+                                out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             #_ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
@@ -876,8 +879,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                                                      np.array(ypr).astype(int),
                                                                                      labels=definitions.PLO_KLASSES.keys())
                         for k in range(len(P)):
-                            out_file.write(line % ('DT', ds1_name, ds2_name, 'False', str(f_key), '1',
-                                                   definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k])))
+                            out_file.write(line % ('False', str(f_key), '1',
+                                                   definitions.PLO_KLASSES.get(k + 1),
+                                                   P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
                         # ---------------------------------------------------------- META ----------------------------------------------------------
                         #_ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
                         #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
