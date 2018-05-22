@@ -253,15 +253,15 @@ def shape_data(file, path, le):
         #print(len(df))
         df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
         #print(len(df))
-        oldsentid = df.iloc[0][definitions.INDEX_ID_SENTENCE]
+        oldsentid = df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
         COLS = len(df.columns)
         STANDARD_FEAT = 60
         df=pd.concat([df, pd.DataFrame(columns=range(COLS,(COLS+STANDARD_FEAT)))], axis=1)
-
+        config.logger.info(len(df))
         for row in df.itertuples():
             index=row.Index
-            print(index)
+            if index % 500 == 0: config.logger.info(index)
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []
@@ -432,10 +432,14 @@ def shape_data(file, path, le):
 
             #if len(f_indexes) !=0:
             #    _t.extend(df.loc[index][f_indexes])
-            _t = pd.Series(_t, index=range(COLS, COLS+STANDARD_FEAT))
-            a=df.iloc[index]
-            a.update(_t)
-            df.iloc[index]=a
+            df.iloc[[index], COLS:(COLS + STANDARD_FEAT+1)] = _t
+
+            #_t = pd.Series(_t, index=range(COLS, COLS+STANDARD_FEAT))
+            #a=df.iloc[index]
+            #a.update(_t)
+            #df.iloc[index]=a
+
+            #df.iloc[[index], COLS:(COLS+STANDARD_FEAT)+1] = _t
 
             #new=COLS
             #for i in range(len(_t)):
@@ -641,6 +645,7 @@ def features_to_crf_shape(sent, i, horus_feat):
 def shape_datasets(experiment_folder, datasets):
     ret = []
     for ds in datasets:
+        config.logger.info(ds)
         _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
         if os.path.isfile(_file):
             with open(_file, 'rb') as input:
@@ -908,7 +913,7 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='ner.txt.horus 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+',
     #                    default='test.horus',
     #                    help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
