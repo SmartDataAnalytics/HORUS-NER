@@ -36,6 +36,7 @@ from keras.layers import Embedding, LSTM, Dense, Merge
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
 import pandas as pd
+import pickle
 """
 ==========================================================
 Experiments: 
@@ -232,43 +233,55 @@ def shape(word):
 
     return word_shape
 
-def shape_data(file, path, le, f_indexes):
+def shape_data(file, path, le):
     '''
-    shape the dataset, adding further traditional features
+    shape the dataframe, adding further traditional features
     :param file: the horus features file
     :param path: the path
     :param le: the encoder
-    :return: a (standard matrix + a CRF + a LSTM) file formats
+    :return: an updated dataset and a sentence-shaped dataset
     '''
     try:
 
         ds_sentences, y_sentences_shape = [], []
         _sent_temp_feat, _sent_temp_y = [], []
-        ds_tokens, y_tokens_shape = [], []
+        #ds_tokens, y_tokens_shape = [], []
 
         fullpath=path+file
         config.logger.info('reading horus features file: ' + fullpath)
         df = pd.read_csv(fullpath, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-        print(len(df))
+        #print(len(df))
         df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
-        print(len(df))
+        #print(len(df))
         oldsentid = df.iloc[0][definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
-        for index, feat in df.iterrows():
-            if feat[definitions.INDEX_ID_SENTENCE] != oldsentid:
+        COLS = len(df.columns)
+        STANDARD_FEAT = 60
+        df=pd.concat([df, pd.DataFrame(columns=range(COLS,(COLS+STANDARD_FEAT)))], axis=1)
+
+        for row in df.itertuples():
+            index=row.Index
+            print(index)
+            if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []
                 y_sentences_shape.append(_sent_temp_y)
                 _sent_temp_y = []
 
-            idsent = feat[definitions.INDEX_ID_SENTENCE]
+            idsent = df.loc[index].at[definitions.INDEX_ID_SENTENCE]
+            #token=df.loc[index, definitions.INDEX_TOKEN]
+
+            if index > 1: prev_prev_serie = df.loc[index-2]
+            if index > 0: prev_serie = df.loc[index-1]
+            if index + 1 < len(df): next_serie = df.loc[index+1]
+            if index + 2 < len(df): next_next_serie = df.loc[index+2]
 
             _t=[]
             # standard features
-            if index > 0 and df.iloc[index-1][definitions.INDEX_ID_SENTENCE] == idsent:
-                prev_pos = df.iloc[index-1][definitions.INDEX_POS]
-                prev_pos_uni = df.iloc[index-1][definitions.INDEX_POS_UNI]
-                prev_token = df.iloc[index-1][definitions.INDEX_TOKEN]
+            if index > 0 and prev_serie.at[definitions.INDEX_ID_SENTENCE] == idsent:
+                prev_pos = prev_serie.at[definitions.INDEX_POS]
+                prev_pos_uni = prev_serie.at[definitions.INDEX_POS_UNI]
+                prev_token = prev_serie.at[definitions.INDEX_TOKEN]
                 prev_one_char_token = int(len(prev_token) == 1)
                 prev_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_token)) > 0)
                 prev_first_capitalized = int(prev_token[0].isupper())
@@ -277,7 +290,7 @@ def shape_data(file, path, le, f_indexes):
                 prev_digit = int(prev_token.isdigit())
                 prev_stop_words = int(prev_token in stop)
                 prev_small = int(len(prev_token) <= 2)
-                prev_lemma = lancaster_stemmer.stem(prev_token.decode('utf-8', errors='replace'))
+                #prev_lemma = lancaster_stemmer.stem(prev_token.decode('utf-8', errors='replace'))
                 prev_hyphen = int('-' in prev_token)
                 prev_sh = shape(prev_token)
             else:
@@ -292,14 +305,14 @@ def shape_data(file, path, le, f_indexes):
                 prev_digit = -1
                 prev_stop_words = -1
                 prev_small = -1
-                prev_lemma = -1
+                #prev_lemma = -1
                 prev_hyphen = -1
                 prev_sh = -1
 
-            if index > 1 and df.iloc[index-2][definitions.INDEX_ID_SENTENCE] == idsent:
-                prev_prev_pos = df.iloc[index-2][definitions.INDEX_POS]
-                prev_prev_pos_uni = df.iloc[index-2][definitions.INDEX_POS_UNI]
-                prev_prev_token = df.iloc[index-2][definitions.INDEX_TOKEN]
+            if index > 1 and prev_prev_serie.at[definitions.INDEX_ID_SENTENCE] == idsent:
+                prev_prev_pos = prev_prev_serie.at[definitions.INDEX_POS]
+                prev_prev_pos_uni = prev_prev_serie.at[definitions.INDEX_POS_UNI]
+                prev_prev_token = prev_prev_serie.at[definitions.INDEX_TOKEN]
                 prev_prev_one_char_token = int(len(prev_prev_token) == 1)
                 prev_prev_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', prev_prev_token)) > 0)
                 prev_prev_first_capitalized = int(prev_prev_token[0].isupper())
@@ -308,13 +321,13 @@ def shape_data(file, path, le, f_indexes):
                 prev_prev_digit = int(prev_prev_token.isdigit())
                 prev_prev_stop_words = int(prev_prev_token in stop)
                 prev_prev_small = int(len(prev_prev_token) <= 2)
-                prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token.decode('utf-8', errors='replace'))
+                #prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token.decode('utf-8', errors='replace'))
                 prev_prev_hyphen = int('-' in prev_prev_token)
                 prev_prev_sh = shape(prev_prev_token)
             else:
                 prev_prev_pos= ''
                 prev_prev_pos_uni = ''
-                prev_prev_token= ''
+                #prev_prev_token= ''
                 prev_prev_one_char_token= -1
                 prev_prev_special_char= -1
                 prev_prev_first_capitalized= -1
@@ -323,14 +336,14 @@ def shape_data(file, path, le, f_indexes):
                 prev_prev_digit= -1
                 prev_prev_stop_words= -1
                 prev_prev_small= -1
-                prev_prev_lemma= -1
+                #prev_prev_lemma= -1
                 prev_prev_hyphen= -1
                 prev_prev_sh= -1
 
-            if index + 1 < len(df) and df.iloc[index+1][definitions.INDEX_ID_SENTENCE] == idsent:
-                next_pos = df.iloc[index+1][definitions.INDEX_POS]
-                next_pos_uni = df.iloc[index+1][definitions.INDEX_POS_UNI]
-                next_token = df.iloc[index+1][definitions.INDEX_TOKEN]
+            if index + 1 < len(df) and next_serie.at[definitions.INDEX_ID_SENTENCE] == idsent:
+                next_pos = next_serie.at[definitions.INDEX_POS]
+                next_pos_uni = next_serie.at[definitions.INDEX_POS_UNI]
+                next_token = next_serie.at[definitions.INDEX_TOKEN]
                 next_one_char_token = int(len(next_token) == 1)
                 next_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0)
                 next_first_capitalized = int(next_token[0].isupper())
@@ -339,7 +352,7 @@ def shape_data(file, path, le, f_indexes):
                 next_digit = int(next_token.isdigit())
                 next_stop_words = int(next_token in stop)
                 next_small = int(len(next_token) <= 2)
-                next_lemma = lancaster_stemmer.stem(next_token.decode('utf-8'))
+                #next_lemma = lancaster_stemmer.stem(next_token.decode('utf-8'))
                 next_hyphen = int('-' in next_token)
                 next_sh = shape(next_token)
             else:
@@ -358,10 +371,10 @@ def shape_data(file, path, le, f_indexes):
                 next_hyphen = -1
                 next_sh = -1
 
-            if index + 2 < len(df) and df.iloc[index+2][definitions.INDEX_ID_SENTENCE] == idsent:
-                next_next_pos = df.iloc[index+2][definitions.INDEX_POS]
-                next_next_pos_uni = df.iloc[index+2][definitions.INDEX_POS_UNI]
-                next_next_token = df.iloc[index+2][definitions.INDEX_TOKEN]
+            if index + 2 < len(df) and next_next_serie.at[definitions.INDEX_ID_SENTENCE] == idsent:
+                next_next_pos = next_next_serie.at[definitions.INDEX_POS]
+                next_next_pos_uni = next_next_serie.at[definitions.INDEX_POS_UNI]
+                next_next_token = next_next_serie.at[definitions.INDEX_TOKEN]
                 next_next_one_char_token = int(len(next_next_token) == 1)
                 next_next_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_next_token)) > 0)
                 next_next_first_capitalized = int(next_next_token[0].isupper())
@@ -370,7 +383,7 @@ def shape_data(file, path, le, f_indexes):
                 next_next_digit = int(next_next_token.isdigit())
                 next_next_stop_words = int(next_next_token in stop)
                 next_next_small = int(len(next_next_token) <= 2)
-                next_next_lemma = lancaster_stemmer.stem(next_next_token.decode('utf-8',errors='replace'))
+                #next_next_lemma = lancaster_stemmer.stem(next_next_token.decode('utf-8',errors='replace'))
                 next_next_hyphen = int('-' in next_next_token)
                 next_next_sh = shape(next_next_token)
             else:
@@ -405,28 +418,41 @@ def shape_data(file, path, le, f_indexes):
                      next_next_capitalized, next_next_title, next_next_digit, next_next_stop_words, next_next_small,
                      next_next_hyphen, next_next_sh])
             # standard
-            _t.extend([le.transform(feat[definitions.INDEX_POS]), le.transform(feat[definitions.INDEX_POS_UNI]),
-                      int(len(feat[definitions.INDEX_TOKEN]) == 1),
-                      int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', feat[definitions.INDEX_TOKEN])) > 0),
-                      int(str(feat[definitions.INDEX_TOKEN])[0].isupper()), int(str(feat[definitions.INDEX_TOKEN]).isupper()),
-                      int(str(feat[definitions.INDEX_TOKEN]).istitle()), int(str(feat[definitions.INDEX_TOKEN]).isdigit()),
-                      int(str(feat[definitions.INDEX_TOKEN]) in stop),
-                      int(len(feat[definitions.INDEX_TOKEN]) <= 2),
-                      int('-' in str(feat[definitions.INDEX_TOKEN])), shape(str(feat[definitions.INDEX_TOKEN]))])
-            if len(f_indexes) !=0:
-                _t.extend(df.iloc[index][f_indexes])
+            _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]), le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
+                      int(len(df.loc[index].at[definitions.INDEX_TOKEN]) == 1),
+                      int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', df.loc[index].at[definitions.INDEX_TOKEN])) > 0),
+                      int(str(df.loc[index].at[definitions.INDEX_TOKEN])[0].isupper()),
+                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isupper()),
+                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]).istitle()),
+                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isdigit()),
+                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]) in stop),
+                      int(len(df.loc[index].at[definitions.INDEX_TOKEN]) <= 2),
+                      int('-' in str(df.loc[index].at[definitions.INDEX_TOKEN])),
+                      shape(str(df.loc[index].at[definitions.INDEX_TOKEN]))])
 
+            #if len(f_indexes) !=0:
+            #    _t.extend(df.loc[index][f_indexes])
+            _t = pd.Series(_t, index=range(COLS, COLS+STANDARD_FEAT))
+            a=df.iloc[index]
+            a.update(_t)
+            df.iloc[index]=a
+
+            #new=COLS
+            #for i in range(len(_t)):
+            #    df.loc[index, new] = _t[i]
+            #    new += 1
 
             # NER class
-            if feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
-            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
-            elif feat[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
+            if df.loc[index].at[definitions.INDEX_TARGET_NER] == 'O': y=u'O'
+            elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
+            elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
+            elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
             else: y = u'O'
 
-            oldsentid = feat[1]
+            oldsentid = idsent
 
-            ds_tokens.append(_t)
-            y_tokens_shape.append(definitions.KLASSES2[y])
+            #ds_tokens.append(_t)
+            #y_tokens_shape.append(definitions.KLASSES2[y])
 
             _sent_temp_feat.append(_t)
             _sent_temp_y.append(definitions.KLASSES2[y])
@@ -494,9 +520,18 @@ def shape_data(file, path, le, f_indexes):
                     #X_train = df.iloc[:, [j for j, c in enumerate(df.columns) if j not in (HORUS)]]
             '''
 
+        # adding last sentence
+        ds_sentences.append(_sent_temp_feat)
+        _sent_temp_feat = []
+        y_sentences_shape.append(_sent_temp_y)
+        _sent_temp_y = []
+
+        y_tokens_shape = df[definitions.INDEX_TARGET_NER].copy()
+        del df[definitions.INDEX_TARGET_NER]
+
         config.logger.info('total of sentences: ' + str(len(ds_sentences)))
-        config.logger.info('total of tokens: ' + str(len(ds_tokens)))
-        return file, (ds_sentences, y_sentences_shape), (ds_tokens, y_tokens_shape)
+        config.logger.info('total of tokens: ' + str(len(df)))
+        return file, (ds_sentences, y_sentences_shape), (df, y_tokens_shape)
     except:
         raise
 
@@ -603,10 +638,19 @@ def features_to_crf_shape(sent, i, horus_feat):
 
     return features
 
-def get_features_from_datasets(experiment_folder, datasets, f_indexes):
+def shape_datasets(experiment_folder, datasets):
     ret = []
     for ds in datasets:
-        ret.append(shape_data(ds, config.dir_output + experiment_folder, le1, f_indexes))
+        _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
+        if os.path.isfile(_file):
+            with open(_file, 'rb') as input:
+                shaped = pickle.load(input)
+                ret.append(shaped)
+        else:
+            data=shape_data(ds, config.dir_output + experiment_folder, le1)
+            with open(_file, 'wb') as output:
+                pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
+            ret.append(data)
     return ret
 
 def score2(yh, pr):
@@ -692,22 +736,25 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _label='EXP_004'
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
-    config.logger.info('get the features for each dataset...')
-    # [label, (sentence, sentence_horus, y), (tokens, tokens_horus, y)]
-
-    config.logger.info('done')
-
     dict_exp_feat = {1: [], 2: definitions.FEATURES_HORUS_BASIC_CV, 3: definitions.FEATURES_HORUS_BASIC_TX,
                     4: definitions.FEATURES_HORUS_CNN_CV, 5: definitions.FEATURES_HORUS_CNN_TX,
                     6: definitions.FEATURES_HORUS_EMB_TX + definitions.FEATURES_HORUS_STATS_TX,
                     7: definitions.FEATURES_HORUS_TX, 8: definitions.FEATURES_HORUS_CV,
-                    9: definitions.FEATURES_HORUS}
+                    9: definitions.FEATURES_HORUS_BASIC_AND_CNN, 10: definitions.FEATURES_HORUS}
+
+    config.logger.info('shaping the datasets...')
+    shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
+    config.logger.info('done! running experiment configurations')
+    exit(0)
 
     for f_key, f_indexes in dict_exp_feat.iteritems():
-        processed_datasets = get_features_from_datasets(experiment_folder, datasets, f_indexes)
-        for ds1 in processed_datasets:
+        for ds1 in shaped_datasets:
             ds1_name = ds1[0]
             X1_sentence = pd.DataFrame(ds1[1][0])
+
+
+
+
             X1_sentence.replace('O', 0, inplace=True)
             Y1_sentence = ds1[1][1]
             X1_token = pd.DataFrame(ds1[2][0])
@@ -719,7 +766,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                 X1_crf = [sent2features(s, f_indexes) for s in ds1[1][0]]
             if runLSTM is True:
                 X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], f_indexes)
-            for ds2 in processed_datasets:
+            for ds2 in shaped_datasets:
                 ds2_name = ds2[0]
                 if ds1[0] != ds2[0]:
                     ds2_name = ds2[0]
@@ -861,10 +908,10 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='ner.txt.horus 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
-    parser.add_argument('--ds', '--datasets', nargs='+',
-                        default='emerging.test.annotated.horus',
-                        help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='ner.txt.horus 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+',
+    #                    default='test.horus',
+    #                    help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
