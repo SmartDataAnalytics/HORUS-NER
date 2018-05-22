@@ -256,8 +256,8 @@ def shape_data(file, path, le):
         oldsentid = df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
         COLS = len(df.columns)
-        STANDARD_FEAT = 60
-        df=pd.concat([df, pd.DataFrame(columns=range(COLS,(COLS+STANDARD_FEAT)))], axis=1)
+
+        df=pd.concat([df, pd.DataFrame(columns=range(COLS,(COLS+definitions.STANDARD_FEAT)))], axis=1)
         config.logger.info(len(df))
         for row in df.itertuples():
             index=row.Index
@@ -719,6 +719,13 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
 
+def exclude_columns(df, f_indexes):
+    dfret=df.copy()
+    for icol in dfret.columns:
+        if icol not in f_indexes:
+            dfret.drop(icol, axis=1, inplace=True)
+    return dfret
+
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
@@ -741,7 +748,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _label='EXP_004'
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
-    dict_exp_feat = {1: [], 2: definitions.FEATURES_HORUS_BASIC_CV, 3: definitions.FEATURES_HORUS_BASIC_TX,
+    dict_exp_feat = {1: range(85,(85+definitions.STANDARD_FEAT)), 2: definitions.FEATURES_HORUS_BASIC_CV, 3: definitions.FEATURES_HORUS_BASIC_TX,
                     4: definitions.FEATURES_HORUS_CNN_CV, 5: definitions.FEATURES_HORUS_CNN_TX,
                     6: definitions.FEATURES_HORUS_EMB_TX + definitions.FEATURES_HORUS_STATS_TX,
                     7: definitions.FEATURES_HORUS_TX, 8: definitions.FEATURES_HORUS_CV,
@@ -750,21 +757,19 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
     config.logger.info('done! running experiment configurations')
-    exit(0)
 
     for f_key, f_indexes in dict_exp_feat.iteritems():
         for ds1 in shaped_datasets:
             ds1_name = ds1[0]
-            X1_sentence = pd.DataFrame(ds1[1][0])
-
-
-
-
-            X1_sentence.replace('O', 0, inplace=True)
+            X1_sentence = ds1[1][0]
             Y1_sentence = ds1[1][1]
-            X1_token = pd.DataFrame(ds1[2][0])
+            X1_token = exclude_columns(ds1[2][0], f_indexes)
             X1_token.replace('O', 0, inplace=True)
-            Y1_token = ds1[2][1]
+            Y1_token = [definitions.KLASSES2[y] for y in ds1[2][1]]
+
+            #X1_sentence.replace('O', 0, inplace=True)
+
+
             #pca = PCA(n_components=50)
             #X1_token_PCA = pca.fit(X1_token)
             if runCRF is True:
@@ -775,12 +780,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                 ds2_name = ds2[0]
                 if ds1[0] != ds2[0]:
                     ds2_name = ds2[0]
-                    X2_sentence = pd.DataFrame(ds2[1][0])
-                    X2_sentence.replace('O', 0, inplace=True)
+                    X2_sentence = ds2[1][0]
                     Y2_sentence = ds2[1][1]
-                    X2_token = pd.DataFrame(ds2[2][0])
+                    X2_token = exclude_columns(ds2[2][0], f_indexes)
                     X2_token.replace('O', 0, inplace=True)
-                    Y2_token = ds2[2][1]
+                    Y2_token = [definitions.KLASSES2[y] for y in ds2[2][1]]
 
                     if runCRF is True: X2_crf = [sent2features(s, f_indexes) for s in ds2[1][0]]
                     if runLSTM is True:
@@ -862,11 +866,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         ypr = m.predict(X2_crf)
                         print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                     if runDT is True:
-                        print('--Random Forest')
                         m = _dt.fit(X1_token, Y1_token)
                         ypr = m.predict(X2_token)
                         #print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
-                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_token,
                                                                                      np.array(ypr).astype(int),
                                                                                      labels=definitions.PLO_KLASSES.keys())
                         for k in range(len(P)):
@@ -913,7 +916,8 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+',
     #                    default='test.horus',
     #                    help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
