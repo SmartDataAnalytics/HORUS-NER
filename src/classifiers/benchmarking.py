@@ -661,7 +661,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _label='EXP_004'
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
-    dict_exp_feat = {1: range(85,(85+definitions.STANDARD_FEAT)), 2: definitions.FEATURES_HORUS_BASIC_CV, 3: definitions.FEATURES_HORUS_BASIC_TX,
+    dict_exp_feat = {1: range(85,(85+definitions.STANDARD_FEAT)), 2: definitions.FEATURES_HORUS_BASIC_CV,
+                     3: definitions.FEATURES_HORUS_BASIC_TX,
                     4: definitions.FEATURES_HORUS_CNN_CV, 5: definitions.FEATURES_HORUS_CNN_TX,
                     6: definitions.FEATURES_HORUS_EMB_TX + definitions.FEATURES_HORUS_STATS_TX,
                     7: definitions.FEATURES_HORUS_TX, 8: definitions.FEATURES_HORUS_CV,
@@ -697,6 +698,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                     ds2_name = ds2[0]
                     X2_sentence = ds2[1][0]
                     Y2_sentence = [sent2label(s) for s in ds2[1][1]]
+                    _Y2_sentence = np.array([tag for row in Y2_sentence for tag in row])
+
                     X2_token = exclude_columns(ds2[2][0], f_indexes)
                     X2_token.replace('O', 0, inplace=True)
                     Y2_token = [definitions.KLASSES2[y] for y in ds2[2][1]]
@@ -756,8 +759,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             # --------------------------------------------------------------------------------------------------------------------------
 
                         if runCRF is True:
-                            from sklearn.preprocessing import MultiLabelBinarizer
-                            _Y1_sentence = MultiLabelBinarizer().fit_transform(Y1_sentence)
                             Xtr, Xte, ytr, yte = train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
                             m = _crf.fit(Xtr, ytr)
                             ypr = m.predict(Xte)
@@ -813,15 +814,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         # --------------------------------------------------------------------------------------------------------------------------
 
                     if runCRF is True:
-                        print('--CRF')
                         m = _crf.fit(X1_crf, Y1_sentence)
                         ypr = m.predict(X2_crf)
                         #print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(),
                         #                                         target_names=sorted_labels.values(), digits=3))
 
-                        _yte = np.array([tag for row in Y2_sentence for tag in row])
+                        _ypr = np.array([tag for row in ypr for tag in row])
 
-                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLO_KLASSES.keys())
+                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr, labels=definitions.PLO_KLASSES.keys())
                         for k in range(len(P)):
                             out_file.write(line % ('False', str(f_key), '1',
                                                    definitions.PLO_KLASSES.get(k + 1),
