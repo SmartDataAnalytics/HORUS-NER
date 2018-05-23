@@ -37,6 +37,9 @@ from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re
 import pandas as pd
 import pickle
+import multiprocessing
+from functools import partial
+from contextlib import contextmanager
 """
 ==========================================================
 Experiments: 
@@ -200,6 +203,12 @@ def to_check():
     print("\nTop negative:")
     print_state_features(Counter(crf.state_features_).most_common()[-30:])
 
+@contextmanager
+def poolcontext(*args, **kwargs):
+    pool = multiprocessing.Pool(*args, **kwargs)
+    yield pool
+    pool.terminate()
+
 def encode(x, n):
     result = np.zeros(n)
     result[x] = 1
@@ -233,7 +242,67 @@ def shape(word):
 
     return word_shape
 
-def shape_data(file, path, le):
+def convert_lstm_shape(ds, y, horus_feat = False):
+    config.logger.info('shaping to LSTM format...')
+    if horus_feat == False:
+        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
+    else:
+        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21], c[23], c[24], c[25], c[26], c[27], c[28], c[29], c[30], c[31], c[32]] for c in x] for x in ds]
+
+    all_text = [c[0] for x in Xclean for c in x]
+    all_text.extend([c[1] for x in Xclean for c in x])
+
+    words = list(set(all_text))  # distinct tokens
+    word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
+    ind2word = {index: word for index, word in enumerate(words)}
+    #labels = list(set([c for x in y for c in x]))
+    label2ind = definitions.KLASSES2
+    ind2label = definitions.KLASSES
+    print('Vocabulary size:', len(word2ind), len(label2ind))
+    lengths = [len(x) for x in Xclean]
+    maxlen = max(lengths)
+    print('min sentence / max sentence: ', min(lengths), maxlen)
+    if horus_feat == False:
+        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8]] for c in x] for x in Xclean]
+    else:
+        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
+                   c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]] for c in x] for x in Xclean]
+
+    max_label = max(label2ind.values()) + 1
+    y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
+    y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
+
+    max_features = len(word2ind)
+    out_size = len(label2ind) + 1
+
+    return X_enc, y_enc, max_features, out_size, maxlen
+
+def sent2label(sent):
+    return [definitions.KLASSES[y] for y in sent]
+
+def sent2features(sent):
+    return [features_to_crf_shape(sent, i) for i in range(len(sent))]
+
+def features_to_crf_shape(sent, i):
+
+    features = {'bias': 1.0}
+    features.update(dict(('f'+str(key), str(sent.iloc[i].at[key])) for key in np.sort(sent.columns.values)))
+
+    if i > 0:
+        features_pre = dict(('-1:f'+str(key), str(sent.iloc[i-1].at[key])) for key in np.sort(sent.columns.values))
+        features.update(features_pre)
+    else:
+        features['BOS'] = True
+
+    if i < len(sent) - 1:
+        features_pos = dict(('+1:f'+str(key), str(sent.iloc[i+1].at[key])) for key in np.sort(sent.columns.values))
+        features.update(features_pos)
+    else:
+        features['EOS'] = True
+
+    return features
+
+def shape_data((file, path, le)):
     '''
     shape the dataframe, adding further traditional features
     :param file: the horus features file
@@ -432,7 +501,7 @@ def shape_data(file, path, le):
 
             #if len(f_indexes) !=0:
             #    _t.extend(df.loc[index][f_indexes])
-            df.iloc[[index], COLS:(COLS + STANDARD_FEAT+1)] = _t
+            df.iloc[[index], COLS:(COLS + definitions.STANDARD_FEAT+1)] = _t
 
             #_t = pd.Series(_t, index=range(COLS, COLS+STANDARD_FEAT))
             #a=df.iloc[index]
@@ -458,77 +527,12 @@ def shape_data(file, path, le):
             #ds_tokens.append(_t)
             #y_tokens_shape.append(definitions.KLASSES2[y])
 
-            _sent_temp_feat.append(_t)
+            _sent_temp_feat.append(df.loc[index])
             _sent_temp_y.append(definitions.KLASSES2[y])
-
-
-            '''
-            cv_loc = float(feat[definitions.INDEX_TOT_CV_LOC])
-            cv_org = float(feat[definitions.INDEX_TOT_CV_ORG])
-            cv_per = float(feat[definitions.INDEX_TOT_CV_PER])
-            cv_dist = float(feat[definitions.INDEX_DIST_CV_I])
-            cv_plc = float(feat[definitions.INDEX_PL_CV_I])
-            tx_loc = float(feat[definitions.INDEX_TOT_TX_LOC])
-            tx_org = float(feat[definitions.INDEX_TOT_TX_ORG])
-            tx_per = float(feat[definitions.INDEX_TOT_TX_PER])
-            tx_err = float(feat[definitions.INDEX_TOT_ERR_TRANS])
-            tx_dist = float(feat[definitions.INDEX_DIST_TX_I])
-    
-            #if feat[definitions.INDEX_NER] in definitions.NER_TAGS_LOC: ner = u'LOC'
-            #elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_ORG: ner = u'ORG'
-            #elif feat[definitions.INDEX_NER] in definitions.NER_TAGS_PER: ner = u'PER'
-            #else: ner = u'O'
-    
-            #standard shape
-            f = [idsent, idtoken, token, token.lower(), lemma,
-                            pos_bef, postag, pos_aft, definitions.KLASSES2[ner],
-                            le.transform(pos_bef), le.transform(postag), le.transform(pos_aft),
-                            title, digit, one_char_token, special_char, first_capitalized,
-                            hyphen, capitalized, stop_words, small,
-                            nr_images_returned, nr_websites_returned,
-                            cv_org, cv_loc, cv_per, cv_dist, cv_plc,
-                            tx_org, tx_loc, tx_per, tx_dist, tx_err,
-                            float(feat[definitions.INDEX_TOT_TX_LOC_TM_CNN]),
-                            float(feat[definitions.INDEX_TOT_TX_ORG_TM_CNN]),
-                            float(feat[definitions.INDEX_TOT_TX_PER_TM_CNN]),
-                            float(feat[definitions.INDEX_DIST_TX_I_TM_CNN]),
-                            float(feat[definitions.INDEX_TOT_CV_LOC_1_CNN]),
-                            float(feat[definitions.INDEX_TOT_CV_ORG_CNN]),
-                            float(feat[definitions.INDEX_TOT_CV_PER_CNN]),
-                            float(feat[definitions.INDEX_TOT_CV_LOC_2_CNN]),
-                            0 if feat[definitions.INDEX_TOT_CV_LOC_3_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_3_CNN]),
-                            0 if feat[definitions.INDEX_TOT_CV_LOC_4_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_4_CNN]),
-                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_LOC]),
-                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_ORG]),
-                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_PER] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_PER]),
-                            0 if feat[definitions.INDEX_TOT_CV_LOC_5_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_5_CNN]),
-                            0 if feat[definitions.INDEX_TOT_CV_LOC_6_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_6_CNN]),
-                            0 if feat[definitions.INDEX_TOT_CV_LOC_7_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_7_CNN]),
-                            0 if feat[definitions.INDEX_TOT_CV_LOC_8_CNN] == 'O' else float(feat[definitions.INDEX_TOT_CV_LOC_8_CNN]),
-                            0 if feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE] == 'O' else float(feat[definitions.INDEX_TOT_EMB_SIMILAR_NONE]),
-                            0 if feat[definitions.INDEX_TOT_TX_NONE_TM_CNN] == 'O' else float(feat[definitions.INDEX_TOT_TX_NONE_TM_CNN])
-                            ]
-                            
-                            
-                            X_train_dt.drop(labels=definitions.HORUS_FEATURES, axis=1, inplace=True)
-                    if X_test_dt is not None:
-                        X_test_dt = X2_dt.copy()
-                        X_test_dt.drop(labels=definitions.HORUS_FEATURES, axis=1, inplace=True)
-                    #df_train_dt.replace('O', 0, inplace=True)
-
-
-                    #for x, col in enumerate(df.columns):
-                    #    if (x not in HORUS):
-                    #df = pd.DataFrame(X_train)
-                    #HORUS = definitions.FEATURES_HORUS_CV + definitions.FEATURES_HORUS_TX
-                    #X_train = df.iloc[:, [j for j, c in enumerate(df.columns) if j not in (HORUS)]]
-            '''
 
         # adding last sentence
         ds_sentences.append(_sent_temp_feat)
-        _sent_temp_feat = []
         y_sentences_shape.append(_sent_temp_y)
-        _sent_temp_y = []
 
         y_tokens_shape = df[definitions.INDEX_TARGET_NER].copy()
         del df[definitions.INDEX_TARGET_NER]
@@ -539,111 +543,9 @@ def shape_data(file, path, le):
     except:
         raise
 
-def convert_lstm_shape(ds, y, horus_feat = False):
-    config.logger.info('shaping to LSTM format...')
-    if horus_feat == False:
-        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
-    else:
-        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21], c[23], c[24], c[25], c[26], c[27], c[28], c[29], c[30], c[31], c[32]] for c in x] for x in ds]
-
-    all_text = [c[0] for x in Xclean for c in x]
-    all_text.extend([c[1] for x in Xclean for c in x])
-
-    words = list(set(all_text))  # distinct tokens
-    word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
-    ind2word = {index: word for index, word in enumerate(words)}
-    #labels = list(set([c for x in y for c in x]))
-    label2ind = definitions.KLASSES2
-    ind2label = definitions.KLASSES
-    print('Vocabulary size:', len(word2ind), len(label2ind))
-    lengths = [len(x) for x in Xclean]
-    maxlen = max(lengths)
-    print('min sentence / max sentence: ', min(lengths), maxlen)
-    if horus_feat == False:
-        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8]] for c in x] for x in Xclean]
-    else:
-        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
-                   c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]] for c in x] for x in Xclean]
-
-    max_label = max(label2ind.values()) + 1
-    y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
-    y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
-
-    max_features = len(word2ind)
-    out_size = len(label2ind) + 1
-
-    return X_enc, y_enc, max_features, out_size, maxlen
-
-def sent2features(sent, horus_feat = False):
-    return [features_to_crf_shape(sent, i, horus_feat) for i in range(len(sent))]
-
-def features_to_crf_shape(sent, i, horus_feat):
-    "TODO: need to integrate the new features here too!!!!! better to merge the functions!"
-    word = sent[i][2]
-    postag = sent[i][6]
-
-    features = {
-        'bias': 1.0,
-        'word.lower()': sent[i][3],
-        #'word[-3:]': word[-3:],
-        #'word[-2:]': word[-2:],
-        'word.isupper()': sent[i][18],
-        'word.istitle()': sent[i][12],
-        'word.isdigit()': sent[i][13],
-        'postag': postag,
-        #'postag[:2]': postag[:2],
-        'stop_word': sent[i][20],
-        'hyphen': sent[i][17],
-        'size_small': sent[i][21],
-        # 'wordnet_lemmatizer': wordnet_lemmatizer.lemmatize(word),
-        'ind1': sent[i][4],
-        # 'has_number': hasNumbers(word),
-        # 'postag_similar_max': get_similar_words_pos(word)
-        # 'gaz_per': True if word in NAMES else False
-    }
-    if horus_feat is True:
-        features.update({
-            'ind2': sent[i][23],
-            'ind3': sent[i][24],
-            'ind4': sent[i][25],
-            'ind5': sent[i][26],
-            'ind6': sent[i][27],
-            'ind7': sent[i][28],
-            'ind8': sent[i][29],
-            'ind9': sent[i][30],
-            'ind10': sent[i][31],
-            'ind11': sent[i][32],
-        })
-    if i > 0:
-        word1 = sent[i - 1][2]
-        postag1 = sent[i - 1][6]
-        features.update({
-            '-1:word.lower()': sent[i - 1][3],
-            '-1:word.istitle()': sent[i - 1][12],
-            '-1:word.isupper()': sent[i - 1][18],
-            '-1:postag': postag1,
-            #'-1:postag[:2]': postag1[:2],
-        })
-    else:
-        features['BOS'] = True
-
-    if i < len(sent) - 1:
-        word1 = sent[i + 1][2]
-        postag1 = sent[i + 1][6]
-        features.update({
-            '+1:word.lower()': sent[i + 1][3],
-            '+1:word.istitle()': sent[i + 1][12],
-            '+1:word.isupper()': sent[i + 1][12],
-            '+1:postag': postag1,
-            #'+1:postag[:2]': postag1[:2],
-        })
-    else:
-        features['EOS'] = True
-
-    return features
-
 def shape_datasets(experiment_folder, datasets):
     ret = []
+    job_args = []
     for ds in datasets:
         config.logger.info(ds)
         _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
@@ -652,10 +554,20 @@ def shape_datasets(experiment_folder, datasets):
                 shaped = pickle.load(input)
                 ret.append(shaped)
         else:
-            data=shape_data(ds, config.dir_output + experiment_folder, le1)
+            job_args.append((ds, config.dir_output + experiment_folder, le1))
+            #data=shape_data(ds, config.dir_output + experiment_folder, le1)
+
+    if len(job_args) > 0:
+        p = multiprocessing.Pool(8)
+        asyncres = p.map(shape_data, job_args)
+        config.logger.info(len(asyncres))
+        for data in asyncres:
+            _file = config.dir_output + experiment_folder + '_' + data[0] + '_shaped.pkl'
             with open(_file, 'wb') as output:
                 pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
             ret.append(data)
+
+    config.logger.info(len(ret))
     return ret
 
 def score2(yh, pr):
@@ -728,7 +640,6 @@ def exclude_columns(df, f_indexes):
 
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
-
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
     experiment_folder+='/'
     out_file = open(config.dir_output + experiment_folder + 'metadata.txt', 'w+')
@@ -769,31 +680,30 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
         for ds1 in shaped_datasets:
             ds1_name = ds1[0]
             X1_sentence = ds1[1][0]
-            Y1_sentence = ds1[1][1]
+            Y1_sentence = [sent2label(s) for s in ds1[1][1]]
             X1_token = exclude_columns(ds1[2][0], f_indexes)
             X1_token.replace('O', 0, inplace=True)
             Y1_token = [definitions.KLASSES2[y] for y in ds1[2][1]]
-
             #X1_sentence.replace('O', 0, inplace=True)
-
-
             #pca = PCA(n_components=50)
             #X1_token_PCA = pca.fit(X1_token)
             if runCRF is True:
-                X1_crf = [sent2features(s, f_indexes) for s in ds1[1][0]]
+                X1_crf = [sent2features(exclude_columns(pd.DataFrame(s), f_indexes)) for s in X1_sentence]
             if runLSTM is True:
-                X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(ds1[1][0], ds1[1][1], f_indexes)
+                X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(X1_sentence, Y1_sentence, f_indexes)
             for ds2 in shaped_datasets:
                 ds2_name = ds2[0]
                 if ds1[0] != ds2[0]:
                     ds2_name = ds2[0]
                     X2_sentence = ds2[1][0]
-                    Y2_sentence = ds2[1][1]
+                    Y2_sentence = [sent2label(s) for s in ds2[1][1]]
                     X2_token = exclude_columns(ds2[2][0], f_indexes)
                     X2_token.replace('O', 0, inplace=True)
                     Y2_token = [definitions.KLASSES2[y] for y in ds2[2][1]]
 
-                    if runCRF is True: X2_crf = [sent2features(s, f_indexes) for s in ds2[1][0]]
+                    if runCRF is True:
+                        #X2_crf = [sent2features(s, f_indexes) for s in ds2[1][0]]
+                        X2_crf = [sent2features(exclude_columns(pd.DataFrame(s), f_indexes)) for s in X2_sentence]
                     if runLSTM is True:
                         X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
                         X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
@@ -821,36 +731,51 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                     #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
                     # --------------------------------------------------------------------------------------------------------------------------
                     for d in range(len(r)):
-                        if runCRF is True:
-                            print('--CRF')
-                            Xtr, Xte, ytr, yte = train_test_split(X1_crf, ds1[1][1], test_size=ds_test_size, random_state=r[d])
-                            m = _crf.fit(Xtr, ytr)
-                            ypr = m.predict(Xte)
-                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-
-                            # ---------------------------------------------------------- META ----------------------------------------------------------
-                            #_ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
-                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
-                            #for k in sorted_labels.keys():
-                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            #_conf.add_execution(_ex)
-                            #_meta.add_configuration(_conf)
-                            # --------------------------------------------------------------------------------------------------------------------------
                         if runDT is True:
                             Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size, random_state=r[d])
                             m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
                             #print(m.feature_importances_)
                             ypr = m.predict(np.array(Xte).astype(float))
                             #print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys())
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                         np.array(ypr).astype(int),
+                                                                                         labels=definitions.PLO_KLASSES.keys())
                             for k in range(len(P)):
-                                out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
+                                out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1),
+                                                       P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             #_ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
                             #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
                             #                                                             labels=sorted_labels.keys(),
                             #                                                             average=None)
+                            #for k in sorted_labels.keys():
+                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            #_conf.add_execution(_ex)
+                            #_meta.add_configuration(_conf)
+                            # --------------------------------------------------------------------------------------------------------------------------
+
+                        if runCRF is True:
+                            from sklearn.preprocessing import MultiLabelBinarizer
+                            _Y1_sentence = MultiLabelBinarizer().fit_transform(Y1_sentence)
+                            Xtr, Xte, ytr, yte = train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
+                            m = _crf.fit(Xtr, ytr)
+                            ypr = m.predict(Xte)
+
+                            _ypr = np.array([tag for row in ypr for tag in row])
+                            _yte = np.array([tag for row in yte for tag in row])
+
+                            #print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLO_KLASSES.keys())
+                            for k in range(len(P)):
+                                out_file.write(line % (
+                                'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k],
+                                str(S[k]), 'CRF', ds1_name, ds2_name))
+
+                            # ---------------------------------------------------------- META ----------------------------------------------------------
+                            #_ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
+                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
                             #for k in sorted_labels.keys():
                             #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
                             #_conf.add_execution(_ex)
@@ -865,12 +790,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                     #_conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
                     #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
                     # --------------------------------------------------------------------------------------------------------------------------
-
-                    if runCRF is True:
-                        print('--CRF')
-                        m = _crf.fit(X1_crf, ds1[1][1])
-                        ypr = m.predict(X2_crf)
-                        print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                     if runDT is True:
                         m = _dt.fit(X1_token, Y1_token)
                         ypr = m.predict(X2_token)
@@ -892,6 +811,21 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         #_conf.add_execution(_ex)
                         #_meta.add_configuration(_conf)
                         # --------------------------------------------------------------------------------------------------------------------------
+
+                    if runCRF is True:
+                        print('--CRF')
+                        m = _crf.fit(X1_crf, Y1_sentence)
+                        ypr = m.predict(X2_crf)
+                        #print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(),
+                        #                                         target_names=sorted_labels.values(), digits=3))
+
+                        _yte = np.array([tag for row in Y2_sentence for tag in row])
+
+                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLO_KLASSES.keys())
+                        for k in range(len(P)):
+                            out_file.write(line % ('False', str(f_key), '1',
+                                                   definitions.PLO_KLASSES.get(k + 1),
+                                                   P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name))
 
                     if runLSTM is True:
                         print('--LSTM')
@@ -918,13 +852,13 @@ def main():
         epilog='http://horus-ner.org')
 
     parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+',
-    #                    default='test.horus',
+    #                    default='test.horus 2015.conll.freebase.horus.short',
     #                    help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
-    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
-    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
+    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
+    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
