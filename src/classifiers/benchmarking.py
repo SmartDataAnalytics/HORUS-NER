@@ -632,11 +632,30 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print('----------------------------------------------------------------------------------')
 
 def exclude_columns(df, f_indexes):
-    dfret=df.copy()
-    for icol in dfret.columns:
+    #dfret=df.copy()
+    if isinstance(df, pd.DataFrame) == False:
+        df=pd.DataFrame(df)
+    for icol in df.columns:
         if icol not in f_indexes:
-            dfret.drop(icol, axis=1, inplace=True)
-    return dfret
+            df.drop(icol, axis=1, inplace=True)
+    return df
+
+def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
+    try:
+        if os.path.isfile(_file_path) is False:
+            X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
+            Y_sentence = [sent2label(s) for s in ds[1][1]]
+            X_token = exclude_columns(ds[2][0], f_indexes)
+            X_token.replace('O', 0, inplace=True)
+            Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
+
+            with open(_file_path, 'wb') as output:
+                pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token], output, pickle.HIGHEST_PROTOCOL)
+            config.logger.info(_file_name + ' processed ok')
+    except:
+        raise
+
+    return _file_name
 
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
@@ -676,37 +695,63 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\n'
 
     out_file.write(header)
+    config.logger.info('creating the sets for all configurations x datasets')
+    # multithread to shape the datasets for all configurations in parallel
+    job_args = []
 
+
+    _SET_MASK = '_%s_config_%s.pkl'
+    set_file_dump_names=[]
+    for ds in shaped_datasets:
+        for f_key, f_indexes in dict_exp_feat.iteritems():
+            _set_name = _SET_MASK % (ds[0], str(f_key))
+            _file = config.dir_output + experiment_folder + _set_name
+            job_args.append((_file, _set_name, ds, f_key, f_indexes))
+            set_file_dump_names.append(_set_name)
+
+    p = multiprocessing.Pool(8)
+    p.map(get_subset_file_name, job_args)
+    config.logger.info('done! running the benchmark...')
+    # benchmark starts
     for f_key, f_indexes in dict_exp_feat.iteritems():
-        for ds1 in shaped_datasets:
+        for ds1 in datasets:
             ds1_name = ds1[0]
-            X1_sentence = ds1[1][0]
-            Y1_sentence = [sent2label(s) for s in ds1[1][1]]
-            X1_token = exclude_columns(ds1[2][0], f_indexes)
-            X1_token.replace('O', 0, inplace=True)
-            Y1_token = [definitions.KLASSES2[y] for y in ds1[2][1]]
-            #X1_sentence.replace('O', 0, inplace=True)
+            _set_name = _SET_MASK % (ds1, str(f_key))
+            _file = config.dir_output + experiment_folder + _set_name
+            config.logger.info('loading [%s]: %s' % (ds1_name, _file))
+            with open(_file, 'rb') as input:
+                shaped = pickle.load(input)
+                ds1_config_name = shaped[0]
+                ds1_key = shaped[1]
+                X1_sentence = shaped[2]
+                Y1_sentence = shaped[3]
+                X1_token = shaped[4]
+                Y1_token = shaped[5]
             #pca = PCA(n_components=50)
             #X1_token_PCA = pca.fit(X1_token)
             if runCRF is True:
-                X1_crf = [sent2features(exclude_columns(pd.DataFrame(s), f_indexes)) for s in X1_sentence]
+                X1_crf = [sent2features(s) for s in X1_sentence]
             if runLSTM is True:
                 X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(X1_sentence, Y1_sentence, f_indexes)
             for ds2 in shaped_datasets:
                 ds2_name = ds2[0]
                 if ds1[0] != ds2[0]:
-                    ds2_name = ds2[0]
-                    X2_sentence = ds2[1][0]
-                    Y2_sentence = [sent2label(s) for s in ds2[1][1]]
-                    _Y2_sentence = np.array([tag for row in Y2_sentence for tag in row])
-
-                    X2_token = exclude_columns(ds2[2][0], f_indexes)
-                    X2_token.replace('O', 0, inplace=True)
-                    Y2_token = [definitions.KLASSES2[y] for y in ds2[2][1]]
+                    _set_name = _SET_MASK % (ds2_name, str(f_key))
+                    _file = config.dir_output + experiment_folder + _set_name
+                    config.logger.info('loading [%s]: %s' % (ds2_name, _file))
+                    with open(_file, 'rb') as input:
+                        shaped = pickle.load(input)
+                        ds2_config_name = shaped[0]
+                        ds2_key = shaped[1]
+                        X2_sentence = shaped[2]
+                        Y2_sentence = shaped[3]
+                        X2_token = shaped[4]
+                        Y2_token = shaped[5]
+                        #_Y2_sentence = np.array([label for s in Y2_sentence for label in s])
 
                     if runCRF is True:
                         #X2_crf = [sent2features(s, f_indexes) for s in ds2[1][0]]
-                        X2_crf = [sent2features(exclude_columns(pd.DataFrame(s), f_indexes)) for s in X2_sentence]
+                        X2_crf = [sent2features(s) for s in X2_sentence]
                     if runLSTM is True:
                         X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
                         X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
@@ -763,16 +808,16 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             m = _crf.fit(Xtr, ytr)
                             ypr = m.predict(Xte)
 
-                            _ypr = np.array([tag for row in ypr for tag in row])
-                            _yte = np.array([tag for row in yte for tag in row])
+                            #_ypr = np.array([tag for row in ypr for tag in row])
+                            #_yte = np.array([tag for row in yte for tag in row])
 
-                            #print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLO_KLASSES.keys())
-                            for k in range(len(P)):
-                                out_file.write(line % (
-                                'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k],
-                                str(S[k]), 'CRF', ds1_name, ds2_name))
+                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLO_KLASSES.keys())
+                            #for k in range(len(P)):
+                            #    out_file.write(line % (
+                            #    'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k],
+                            #    str(S[k]), 'CRF', ds1_name, ds2_name))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             #_ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
@@ -816,26 +861,24 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                     if runCRF is True:
                         m = _crf.fit(X1_crf, Y1_sentence)
                         ypr = m.predict(X2_crf)
-                        #print(metrics.flat_classification_report(ds2[1][1], ypr, labels=sorted_labels.keys(),
-                        #                                         target_names=sorted_labels.values(), digits=3))
+                        print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(),
+                                                                 target_names=sorted_labels.values(), digits=3))
 
-                        _ypr = np.array([tag for row in ypr for tag in row])
+                        #_ypr = np.array([tag for row in ypr for tag in row])
 
-                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr, labels=definitions.PLO_KLASSES.keys())
-                        for k in range(len(P)):
-                            out_file.write(line % ('False', str(f_key), '1',
-                                                   definitions.PLO_KLASSES.get(k + 1),
-                                                   P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name))
+                        #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr, labels=definitions.PLO_KLASSES.keys())
+                        #for k in range(len(P)):
+                        #    out_file.write(line % ('False', str(f_key), '1',
+                        #                           definitions.PLO_KLASSES.get(k + 1),
+                        #                           P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name))
 
                     if runLSTM is True:
-                        print('--LSTM')
                         max_of_sentences = max(maxlen_1, maxlen_2)
                         X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
                         y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
                         run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
 
                     if runSTANFORD_NER is True:
-                        print('--STANFORD_NER')
                         print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
     out_file.close()
@@ -851,11 +894,9 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
-    #parser.add_argument('--ds', '--datasets', nargs='+',
-    #                    default='test.horus 2015.conll.freebase.horus.short',
-    #                    help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
     parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
