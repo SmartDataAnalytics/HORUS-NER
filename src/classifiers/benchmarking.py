@@ -791,7 +791,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                         _ypr = np.array([tag for row in ypr for tag in row])
                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
-                                                                                     labels=definitions.PLO_KLASSES.keys())
+                                                                                     labels=definitions.PLO_KLASSES.values())
                         for k in range(len(P)):
                             out_file.write(line % ('False', str(f_key), '1',
                                                    definitions.PLO_KLASSES.get(k + 1),
@@ -848,7 +848,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                         labels=definitions.PLO_KLASSES.keys())
+                                                                                         labels=definitions.PLO_KLASSES.values())
                             for k in range(len(P)):
                                 out_file.write(line % (
                                     'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k],
