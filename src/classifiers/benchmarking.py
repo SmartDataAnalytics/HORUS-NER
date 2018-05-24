@@ -243,6 +243,7 @@ def shape(word):
     return word_shape
 
 def convert_lstm_shape(ds, y, horus_feat = False):
+    #TODO: integrate this into the multithead function
     config.logger.info('shaping to LSTM format...')
     if horus_feat == False:
         Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
@@ -642,16 +643,20 @@ def exclude_columns(df, f_indexes):
 
 def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
     try:
-        if os.path.isfile(_file_path) is False:
-            X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
-            Y_sentence = [sent2label(s) for s in ds[1][1]]
-            X_token = exclude_columns(ds[2][0], f_indexes)
-            X_token.replace('O', 0, inplace=True)
-            Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
-
-            with open(_file_path, 'wb') as output:
-                pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token], output, pickle.HIGHEST_PROTOCOL)
-            config.logger.info(_file_name + ' processed ok')
+        X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
+        Y_sentence = [sent2label(s) for s in ds[1][1]]
+        X_token = exclude_columns(ds[2][0], f_indexes)
+        X_token.replace('O', 0, inplace=True)
+        Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
+        X_crf = [sent2features(s) for s in X_sentence]
+        _Y_sentence = np.array([x for s in Y_sentence for x in s])  # trick for scikit_learn on CRF (for the precision_recall_fscore_support method)
+        #X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(X1_sentence, Y1_sentence, f_indexes)
+        #X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
+        #X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
+        #y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
+        with open(_file_path, 'wb') as output:
+            pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, Y_sentence], output, pickle.HIGHEST_PROTOCOL)
+        config.logger.info(_file_name + ' created!')
     except:
         raise
 
@@ -706,16 +711,18 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
         for f_key, f_indexes in dict_exp_feat.iteritems():
             _set_name = _SET_MASK % (ds[0], str(f_key))
             _file = config.dir_output + experiment_folder + _set_name
-            job_args.append((_file, _set_name, ds, f_key, f_indexes))
+            if os.path.isfile(_file) is False:
+                job_args.append((_file, _set_name, ds, f_key, f_indexes))
             set_file_dump_names.append(_set_name)
 
-    p = multiprocessing.Pool(8)
-    p.map(get_subset_file_name, job_args)
+    if len(job_args)>0:
+        p = multiprocessing.Pool(8)
+        p.map(get_subset_file_name, job_args)
     config.logger.info('done! running the benchmark...')
     # benchmark starts
     for f_key, f_indexes in dict_exp_feat.iteritems():
         for ds1 in datasets:
-            ds1_name = ds1[0]
+            ds1_name = ds1
             _set_name = _SET_MASK % (ds1, str(f_key))
             _file = config.dir_output + experiment_folder + _set_name
             config.logger.info('loading [%s]: %s' % (ds1_name, _file))
@@ -727,15 +734,15 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                 Y1_sentence = shaped[3]
                 X1_token = shaped[4]
                 Y1_token = shaped[5]
+                X1_crf = shaped[6]
+                _Y1_sentence = shaped[7]
             #pca = PCA(n_components=50)
             #X1_token_PCA = pca.fit(X1_token)
-            if runCRF is True:
-                X1_crf = [sent2features(s) for s in X1_sentence]
-            if runLSTM is True:
-                X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(X1_sentence, Y1_sentence, f_indexes)
-            for ds2 in shaped_datasets:
-                ds2_name = ds2[0]
-                if ds1[0] != ds2[0]:
+            for ds2 in datasets:
+                ds2_name = ds2
+                config.logger.info(ds1_name)
+                config.logger.info(ds2_name)
+                if ds1_name != ds2_name:
                     _set_name = _SET_MASK % (ds2_name, str(f_key))
                     _file = config.dir_output + experiment_folder + _set_name
                     config.logger.info('loading [%s]: %s' % (ds2_name, _file))
@@ -747,99 +754,17 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         Y2_sentence = shaped[3]
                         X2_token = shaped[4]
                         Y2_token = shaped[5]
-                        #_Y2_sentence = np.array([label for s in Y2_sentence for label in s])
+                        X2_crf = shaped[6]
+                        _Y2_sentence = shaped[7]
 
-                    if runCRF is True:
-                        #X2_crf = [sent2features(s, f_indexes) for s in ds2[1][0]]
-                        X2_crf = [sent2features(s) for s in X2_sentence]
-                    if runLSTM is True:
-                        X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
-                        X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                        y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
-
-                    #else
-                    # if runDT is True:
-                    #    X2_dt = None
-                    #    Y2_dt = None
-                    #if runCRF is True: X2_crf = X1_crf
-                    #if runLSTM is True:
-                    #    X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], horus_feat)
-                    #    X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                    #    y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
-
-
-                '''
-                ************************************************************************************************************************************** 
-                run the models
-                **************************************************************************************************************************************
-                '''
-                if ds1_name == ds2_name:
                     # ---------------------------------------------------------- META ----------------------------------------------------------
-                    #_conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
-                    #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
-                    # --------------------------------------------------------------------------------------------------------------------------
-                    for d in range(len(r)):
-                        if runDT is True:
-                            Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size, random_state=r[d])
-                            m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
-                            #print(m.feature_importances_)
-                            ypr = m.predict(np.array(Xte).astype(float))
-                            #print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
-                                                                                         np.array(ypr).astype(int),
-                                                                                         labels=definitions.PLO_KLASSES.keys())
-                            for k in range(len(P)):
-                                out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1),
-                                                       P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
-
-                            # ---------------------------------------------------------- META ----------------------------------------------------------
-                            #_ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
-                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
-                            #                                                             labels=sorted_labels.keys(),
-                            #                                                             average=None)
-                            #for k in sorted_labels.keys():
-                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            #_conf.add_execution(_ex)
-                            #_meta.add_configuration(_conf)
-                            # --------------------------------------------------------------------------------------------------------------------------
-
-                        if runCRF is True:
-                            Xtr, Xte, ytr, yte = train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
-                            m = _crf.fit(Xtr, ytr)
-                            ypr = m.predict(Xte)
-
-                            #_ypr = np.array([tag for row in ypr for tag in row])
-                            #_yte = np.array([tag for row in yte for tag in row])
-
-                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-
-                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLO_KLASSES.keys())
-                            #for k in range(len(P)):
-                            #    out_file.write(line % (
-                            #    'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k],
-                            #    str(S[k]), 'CRF', ds1_name, ds2_name))
-
-                            # ---------------------------------------------------------- META ----------------------------------------------------------
-                            #_ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
-                            #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
-                            #for k in sorted_labels.keys():
-                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            #_conf.add_execution(_ex)
-                            #_meta.add_configuration(_conf)
-                            # --------------------------------------------------------------------------------------------------------------------------
-
-                        if runLSTM is True:
-                            Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size, random_state=42)  # 352|1440
-                            run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, maxlen_1)
-                else:
-                    # ---------------------------------------------------------- META ----------------------------------------------------------
-                    #_conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
+                    # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
                     #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
                     # --------------------------------------------------------------------------------------------------------------------------
                     if runDT is True:
                         m = _dt.fit(X1_token, Y1_token)
                         ypr = m.predict(X2_token)
-                        #print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
+                        # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_token,
                                                                                      np.array(ypr).astype(int),
                                                                                      labels=definitions.PLO_KLASSES.keys())
@@ -848,14 +773,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                    definitions.PLO_KLASSES.get(k + 1),
                                                    P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
                         # ---------------------------------------------------------- META ----------------------------------------------------------
-                        #_ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
-                        #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
+                        # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
+                        # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
                         #                                                             labels=sorted_labels.keys(),
                         #                                                             average=None)
-                        #for k in sorted_labels.keys():
+                        # for k in sorted_labels.keys():
                         #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                        #_conf.add_execution(_ex)
-                        #_meta.add_configuration(_conf)
+                        # _conf.add_execution(_ex)
+                        # _meta.add_configuration(_conf)
                         # --------------------------------------------------------------------------------------------------------------------------
 
                     if runCRF is True:
@@ -864,22 +789,86 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(),
                                                                  target_names=sorted_labels.values(), digits=3))
 
-                        #_ypr = np.array([tag for row in ypr for tag in row])
+                        _ypr = np.array([tag for row in ypr for tag in row])
+                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
+                                                                                     labels=definitions.PLO_KLASSES.keys())
+                        for k in range(len(P)):
+                            out_file.write(line % ('False', str(f_key), '1',
+                                                   definitions.PLO_KLASSES.get(k + 1),
+                                                   P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name))
 
-                        #P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr, labels=definitions.PLO_KLASSES.keys())
-                        #for k in range(len(P)):
-                        #    out_file.write(line % ('False', str(f_key), '1',
-                        #                           definitions.PLO_KLASSES.get(k + 1),
-                        #                           P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name))
+                    #if runLSTM is True:
+                        #max_of_sentences = max(maxlen_1, maxlen_2)
+                        #X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
+                        #y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
+                        #run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1,
+                        #         embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
 
-                    if runLSTM is True:
-                        max_of_sentences = max(maxlen_1, maxlen_2)
-                        X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
-                        y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
-                        run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1, embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
+                else:
+                    # ---------------------------------------------------------- META ----------------------------------------------------------
+                    # _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
+                    #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
+                    # --------------------------------------------------------------------------------------------------------------------------
+                    for d in range(len(r)):
+                        if runDT is True:
+                            Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size,
+                                                                  random_state=r[d])
+                            m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                            # print(m.feature_importances_)
+                            ypr = m.predict(np.array(Xte).astype(float))
+                            # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                         np.array(ypr).astype(int),
+                                                                                         labels=definitions.PLO_KLASSES.keys())
+                            for k in range(len(P)):
+                                out_file.write(
+                                    line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1),
+                                            P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name))
 
-                    if runSTANFORD_NER is True:
-                        print(metrics.flat_classification_report(ds2[1][3], ds2[1][2][:11], labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                            # ---------------------------------------------------------- META ----------------------------------------------------------
+                            # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
+                            # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
+                            #                                                             labels=sorted_labels.keys(),
+                            #                                                             average=None)
+                            # for k in sorted_labels.keys():
+                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            # _conf.add_execution(_ex)
+                            # _meta.add_configuration(_conf)
+                            # --------------------------------------------------------------------------------------------------------------------------
+
+                        if runCRF is True:
+                            Xtr, Xte, ytr, yte = train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size,
+                                                                  random_state=r[d])
+                            m = _crf.fit(Xtr, ytr)
+                            ypr = m.predict(Xte)
+
+                            _ypr = np.array([tag for row in ypr for tag in row])
+                            _yte = np.array([tag for row in yte for tag in row])
+
+                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                         labels=definitions.PLO_KLASSES.keys())
+                            for k in range(len(P)):
+                                out_file.write(line % (
+                                    'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k],
+                                    F[k],
+                                    str(S[k]), 'CRF', ds1_name, ds2_name))
+
+                            # ---------------------------------------------------------- META ----------------------------------------------------------
+                            # _ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
+                            # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
+                            # for k in sorted_labels.keys():
+                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                            # _conf.add_execution(_ex)
+                            # _meta.add_configuration(_conf)
+                            # --------------------------------------------------------------------------------------------------------------------------
+
+                        #if runLSTM is True:
+                            #Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size,
+                            #                                      random_state=42)  # 352|1440
+                            #run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size,
+                            #         hidden_size, batch_size, epochs, verbose, maxlen_1)
 
     out_file.close()
     #import pickle
