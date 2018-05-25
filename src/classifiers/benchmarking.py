@@ -34,7 +34,7 @@ from keras.layers.wrappers import TimeDistributed
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding, LSTM, Dense, Merge
 from nltk.corpus import stopwords
-from nltk import LancasterStemmer, re
+from nltk import LancasterStemmer, re, WordNetLemmatizer
 import pandas as pd
 import pickle
 import multiprocessing
@@ -242,16 +242,10 @@ def shape(word):
 
     return word_shape
 
-def convert_lstm_shape(ds, y, horus_feat = False):
-    #TODO: integrate this into the multithead function
-    config.logger.info('shaping to LSTM format...')
-    if horus_feat == False:
-        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21]] for c in x] for x in ds]
-    else:
-        Xclean = [[[c[3], c[4], c[10], c[12], c[13], c[17], c[18], c[20], c[21], c[23], c[24], c[25], c[26], c[27], c[28], c[29], c[30], c[31], c[32]] for c in x] for x in ds]
+def convert_lstm_shape(X, y, horus_feat = False):
 
-    all_text = [c[0] for x in Xclean for c in x]
-    all_text.extend([c[1] for x in Xclean for c in x])
+    all_text = [c[0] for x in X for c in x]
+    all_text.extend([c[1] for x in X for c in x])
 
     words = list(set(all_text))  # distinct tokens
     word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
@@ -360,7 +354,7 @@ def shape_data((file, path, le)):
                 prev_digit = int(prev_token.isdigit())
                 prev_stop_words = int(prev_token in stop)
                 prev_small = int(len(prev_token) <= 2)
-                #prev_lemma = lancaster_stemmer.stem(prev_token.decode('utf-8', errors='replace'))
+                prev_lemma = lancaster_stemmer.stem(prev_token.decode('utf-8', errors='replace'))
                 prev_hyphen = int('-' in prev_token)
                 prev_sh = shape(prev_token)
             else:
@@ -488,17 +482,19 @@ def shape_data((file, path, le)):
                      next_next_capitalized, next_next_title, next_next_digit, next_next_stop_words, next_next_small,
                      next_next_hyphen, next_next_sh])
             # standard
-            _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]), le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
-                      int(len(df.loc[index].at[definitions.INDEX_TOKEN]) == 1),
-                      int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', df.loc[index].at[definitions.INDEX_TOKEN])) > 0),
-                      int(str(df.loc[index].at[definitions.INDEX_TOKEN])[0].isupper()),
-                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isupper()),
-                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]).istitle()),
-                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isdigit()),
-                      int(str(df.loc[index].at[definitions.INDEX_TOKEN]) in stop),
-                      int(len(df.loc[index].at[definitions.INDEX_TOKEN]) <= 2),
-                      int('-' in str(df.loc[index].at[definitions.INDEX_TOKEN])),
-                      shape(str(df.loc[index].at[definitions.INDEX_TOKEN]))])
+            _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]),
+                       le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
+                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) == 1),
+                       int(len(
+                           re.findall('(http://\S+|\S*[^\w\s]\S*)', df.loc[index].at[definitions.INDEX_TOKEN])) > 0),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN])[0].isupper()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isupper()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).istitle()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isdigit()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]) in stop),
+                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) <= 2),
+                       int('-' in str(df.loc[index].at[definitions.INDEX_TOKEN])),
+                       shape(str(df.loc[index].at[definitions.INDEX_TOKEN]))])
 
             #if len(f_indexes) !=0:
             #    _t.extend(df.loc[index][f_indexes])
@@ -547,7 +543,6 @@ def shape_data((file, path, le)):
 def shape_datasets(experiment_folder, datasets):
     ret = []
     job_args = []
-    exists_encoder = os.path.exists(config.dir_output + experiment_folder + 'labels_encoder.pkl')
     for ds in datasets:
         config.logger.info(ds)
         _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
@@ -557,12 +552,6 @@ def shape_datasets(experiment_folder, datasets):
                 ret.append(shaped)
         else:
             job_args.append((ds, config.dir_output + experiment_folder, le1))
-
-        if exists_encoder is False:
-            words
-
-    if os.path.exists(config.dir_output + experiment_folder + 'labels_encoder.pkl') is False:
-        le = sklearn.preprocessing.LabelEncoder()
 
     config.logger.info('job args created - raw datasets: ' + str(len(job_args)))
     if len(job_args) > 0:
@@ -656,8 +645,7 @@ def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
         Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
         X_crf = [sent2features(s) for s in X_sentence]
         _Y_sentence = np.array([x for s in Y_sentence for x in s])  # trick for scikit_learn on CRF (for the precision_recall_fscore_support method)
-
-        #X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(X1_sentence, Y1_sentence, f_indexes)
+        X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
         #X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
         #X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
         #y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
@@ -676,12 +664,15 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     out_file = open(config.dir_output + experiment_folder + 'metadata.txt', 'w+')
     config.logger.info('datasets: ' + str(datasets))
     datasets=datasets.split()
+    exit(0)
+
     #sorted_labels = definitions.KLASSES.copy()
     #del sorted_labels[4]
     sorted_labels={'PER': 'PER', 'ORG': 'ORG', 'LOC': 'LOC'}
     r = [42, 39, 10, 5, 50]
     # hyper-parameters
     _crf = sklearn_crfsuite.CRF(algorithm='lbfgs', c1=0.088, c2=0.002, max_iterations=100, all_possible_transitions=True)
+    _crf2 = sklearn_crfsuite.CRF(algorithm='pa', all_possible_transitions=True)
     _dt = ensemble.RandomForestClassifier(n_estimators=50)
     embedding_size = 128
     hidden_size = 32
@@ -692,17 +683,32 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _label='EXP_004'
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
-    dict_exp_feat = {1: definitions.FEATURES_HORUS_STANDARD,
-                     2: definitions.FEATURES_HORUS_BASIC_CV,
-                     3: definitions.FEATURES_HORUS_BASIC_TX,
-                     4: definitions.FEATURES_HORUS_CNN_CV,
-                     5: definitions.FEATURES_HORUS_CNN_TX,
-                     6: definitions.FEATURES_HORUS_EMB_TX,
-                     7: definitions.FEATURES_HORUS_STATS_TX,
-                     8: definitions.FEATURES_HORUS_TX,
-                     9: definitions.FEATURES_HORUS_CV,
-                     10: definitions.FEATURES_HORUS_BASIC_AND_CNN,
-                     11: definitions.FEATURES_HORUS}
+    dict_exp_feat = {1: definitions.FEATURES_STANDARD,
+                     2: definitions.FEATURES_STANDARD_BROWN_64M_c320,
+                     3: definitions.FEATURES_STANDARD_BROWN_64M_c640,
+                     4: definitions.FEATURES_STANDARD_BROWN_500M_c1000,
+                     5: definitions.FEATURES_HORUS_BASIC_CV,
+                     6: definitions.FEATURES_HORUS_BASIC_TX,
+                     7: definitions.FEATURES_HORUS_CNN_CV,
+                     8: definitions.FEATURES_HORUS_CNN_TX,
+                     9: definitions.FEATURES_HORUS_EMB_TX,
+                     10: definitions.FEATURES_HORUS_STATS_TX,
+                     11: definitions.FEATURES_HORUS_TX,
+                     12: definitions.FEATURES_HORUS_TX_EMB,
+                     13: definitions.FEATURES_HORUS_CV,
+                     14: definitions.FEATURES_HORUS_BASIC_AND_CNN,
+                     15: definitions.FEATURES_HORUS,
+                     16: definitions.FEATURES_HORUS_BASIC_CV_BEST_STANDARD,
+                     17: definitions.FEATURES_HORUS_BASIC_TX_BEST_STANDARD,
+                     18: definitions.FEATURES_HORUS_CNN_CV_BEST_STANDARD,
+                     19: definitions.FEATURES_HORUS_CNN_TX_BEST_STANDARD,
+                     20: definitions.FEATURES_HORUS_EMB_TX_BEST_STANDARD,
+                     21: definitions.FEATURES_HORUS_STATS_TX_BEST_STANDARD,
+                     22: definitions.FEATURES_HORUS_TX_BEST_STANDARD,
+                     23: definitions.FEATURES_HORUS_TX_EMB_BEST_STANDARD,
+                     24: definitions.FEATURES_HORUS_CV_BEST_STANDARD,
+                     25: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
+                     26: definitions.FEATURES_HORUS_BEST_STANDARD}
 
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
