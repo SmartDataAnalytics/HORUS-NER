@@ -6,6 +6,7 @@ import time
 import sklearn
 from sklearn.decomposition import PCA
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.preprocessing import OneHotEncoder
 
 from src.classifiers.experiment_metadata import MEXExecution, \
     MEXPerformance, MEX, MEXConfiguration
@@ -15,7 +16,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import matplotlib.pyplot as plt
 import sklearn_crfsuite
 from sklearn import ensemble
-from sklearn import metrics as skmetrics
 from sklearn.cross_validation import train_test_split, KFold
 from sklearn_crfsuite import metrics
 
@@ -40,6 +40,8 @@ import pickle
 import multiprocessing
 from functools import partial
 from contextlib import contextmanager
+from nltk.stem.snowball import SnowballStemmer
+
 """
 ==========================================================
 Experiments: 
@@ -58,150 +60,20 @@ output:
 config = HorusConfig()
 X, Y = [], []
 ds_test_size = 0.20
-lancaster_stemmer = LancasterStemmer()
+stemmer = SnowballStemmer()
 stop = set(stopwords.words('english'))
 le1 = joblib.load(config.dir_encoders + "_encoder_pos.pkl")
 le2 = joblib.load(config.dir_encoders + "_encoder_nltk2.pkl")
 
-def to_check():
-    # feature_extraction
-
-    crf2 = sklearn_crfsuite.CRF(
-        algorithm='lbfgs',
-        c1=0.18687907015736968,
-        c2=0.025503200544851036,
-        max_iterations=100,
-        all_possible_transitions=True
-    )
-    # crf2.fit(X_train_CRF_shape, y_train_CRF_shape)
-
-    # eval
-
-    # y_pred2 = crf2.predict(X_test_CRF_shape)
-
-    # metrics.flat_f1_score(y_test, y_pred, average='weighted', labels=labels)
-
-    # labels = list(crf.classes_)
-    # trick for report visualization
-
-    # labels = list(['LOC', 'ORG', 'PER'])
-    # labels.remove('O')
-    # group B and I results
-    # sorted_labels = sorted(
-    #    labels,
-    #    key=lambda name: (name[1:], name[0])
-    # )
 
 
+if os.path.isfile(definitions.encoder_lemma_name):
+    with open(definitions.encoder_lemma_name, 'rb') as input:
+        le_lemma = pickle.load(input)
 
-    # print(metrics.flat_classification_report(
-    #    y_test, y_pred2, labels=sorted_labels, digits=3
-    # ))
-    exit(0)
-    # r = [42, 39, 10, 5, 50]
-    # fmeasures = []
-    # for d in range(len(r)):
-    #    cv_X_train, cv_X_test, cv_y_train, cv_y_test = train_test_split(X_train_CRF_shape, y_train_CRF_shape,
-    #                                                        test_size = 0.30, random_state = r[d])
-    #    m = crf.fit(cv_X_train, cv_y_train)
-    #    cv_y_pred = m.predict(cv_X_test)
-    #    print(metrics.flat_classification_report(
-    #        cv_y_test, cv_y_pred, labels=sorted_labels, digits=3
-    #    ))
-    # cv_y_test_bin = MultiLabelBinarizer().fit_transform(cv_y_test)
-    # cv_y_pred_bin = MultiLabelBinarizer().fit_transform(cv_y_pred)
-    # fmeasures.append(f1_score(cv_y_test_bin, cv_y_pred_bin, average='weighted'))
-
-    # print sum(fmeasures)/len(r)
-
-    # scores = cross_val_score(crf, _X, _y, cv=5, scoring='f1_macro')
-    # scores2 = cross_val_score(crf2, _X, _y, cv=5, scoring='f1_macro')
-
-    # rs = ShuffleSplit(n_splits=3, test_size=.20, random_state=0)
-    # for train_index, test_index in rs.split(_X):
-    #    print("TRAIN:", train_index, "TEST:", test_index)
-
-    # print scores
-    # print scores2
-
-    # exit(0)
-
-    # define fixed parameters and parameters to search
-    crf = sklearn_crfsuite.CRF(
-        algorithm='lbfgs',
-        max_iterations=300,
-        all_possible_transitions=True
-    )
-    params_space = {
-        'c1': scipy.stats.expon(scale=0.5),
-        'c2': scipy.stats.expon(scale=0.05),
-    }
-
-    # use the same metric for evaluation
-    f1_scorer = make_scorer(metrics.flat_f1_score,
-                            average='weighted', labels=labels)
-
-    # search
-    rs = RandomizedSearchCV(crf, params_space,
-                            cv=3,
-                            verbose=1,
-                            n_jobs=-1,
-                            n_iter=50,
-                            scoring=f1_scorer)
-    rs.fit(X_train_CRF_shape, y_train_CRF_shape)
-
-    # crf = rs.best_estimator_
-    print('best params:', rs.best_params_)
-    print('best CV score:', rs.best_score_)
-    print('model size: {:0.2f}M'.format(rs.best_estimator_.size_ / 1000000))
-
-    _x = [s.parameters['c1'] for s in rs.grid_scores_]
-    _y = [s.parameters['c2'] for s in rs.grid_scores_]
-    _c = [s.mean_validation_score for s in rs.grid_scores_]
-
-    fig = plt.figure()
-    fig.set_size_inches(12, 12)
-    ax = plt.gca()
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel('C1')
-    ax.set_ylabel('C2')
-    ax.set_title("Randomized Hyperparameter Search CV Results (min={:0.3}, max={:0.3})".format(
-        min(_c), max(_c)
-    ))
-
-    ax.scatter(_x, _y, c=_c, s=60, alpha=0.9, edgecolors=[0, 0, 0])
-    fig.savefig('crf_optimization.png')
-
-    print("Dark blue => {:0.4}, dark red => {:0.4}".format(min(_c), max(_c)))
-
-    crf = rs.best_estimator_
-    y_pred = crf.predict(X_test_CRF_shape)
-    print(metrics.flat_classification_report(
-        y_test, y_pred, labels=labels, digits=3
-    ))
-
-    from collections import Counter
-
-    def print_transitions(trans_features):
-        for (label_from, label_to), weight in trans_features:
-            print("%-6s -> %-7s %0.6f" % (label_from, label_to, weight))
-
-    print("Top likely transitions:")
-    print_transitions(Counter(crf.transition_features_).most_common(20))
-
-    print("\nTop unlikely transitions:")
-    print_transitions(Counter(crf.transition_features_).most_common()[-20:])
-
-    def print_state_features(state_features):
-        for (attr, label), weight in state_features:
-            print("%0.6f %-8s %s" % (weight, label, attr))
-
-    print("Top positive:")
-    print_state_features(Counter(crf.state_features_).most_common(30))
-
-    print("\nTop negative:")
-    print_state_features(Counter(crf.state_features_).most_common()[-30:])
+if os.path.isfile(definitions.encoder_stem_name):
+    with open(definitions.encoder_stem_name, 'rb') as input:
+        le_stem = pickle.load(input)
 
 @contextmanager
 def poolcontext(*args, **kwargs):
@@ -310,6 +182,7 @@ def shape_data((file, path, le)):
         ds_sentences, y_sentences_shape = [], []
         _sent_temp_feat, _sent_temp_y = [], []
         #ds_tokens, y_tokens_shape = [], []
+        onehot_encoder = OneHotEncoder(sparse=False)
 
         fullpath=path+file
         config.logger.info('reading horus features file: ' + fullpath)
@@ -354,7 +227,13 @@ def shape_data((file, path, le)):
                 prev_digit = int(prev_token.isdigit())
                 prev_stop_words = int(prev_token in stop)
                 prev_small = int(len(prev_token) <= 2)
-                prev_lemma = lancaster_stemmer.stem(prev_token.decode('utf-8', errors='replace'))
+                try:
+                    prev_lemma = stemmer.stem(prev_token.decode('utf-8', errors='replace').lower())
+                    prev_lemma = le_lemma.transform(prev_lemma)
+                    prev_lemma = prev_lemma.reshape(len(prev_lemma), 1)
+
+                except:
+                    prev_lemma = 0
                 prev_hyphen = int('-' in prev_token)
                 prev_sh = shape(prev_token)
             else:
@@ -385,7 +264,7 @@ def shape_data((file, path, le)):
                 prev_prev_digit = int(prev_prev_token.isdigit())
                 prev_prev_stop_words = int(prev_prev_token in stop)
                 prev_prev_small = int(len(prev_prev_token) <= 2)
-                #prev_prev_lemma = lancaster_stemmer.stem(prev_prev_token.decode('utf-8', errors='replace'))
+                #prev_prev_lemma = stemmer.stem(prev_prev_token.decode('utf-8', errors='replace'))
                 prev_prev_hyphen = int('-' in prev_prev_token)
                 prev_prev_sh = shape(prev_prev_token)
             else:
@@ -416,7 +295,7 @@ def shape_data((file, path, le)):
                 next_digit = int(next_token.isdigit())
                 next_stop_words = int(next_token in stop)
                 next_small = int(len(next_token) <= 2)
-                #next_lemma = lancaster_stemmer.stem(next_token.decode('utf-8'))
+                #next_lemma = stemmer.stem(next_token.decode('utf-8'))
                 next_hyphen = int('-' in next_token)
                 next_sh = shape(next_token)
             else:
@@ -447,7 +326,7 @@ def shape_data((file, path, le)):
                 next_next_digit = int(next_next_token.isdigit())
                 next_next_stop_words = int(next_next_token in stop)
                 next_next_small = int(len(next_next_token) <= 2)
-                #next_next_lemma = lancaster_stemmer.stem(next_next_token.decode('utf-8',errors='replace'))
+                #next_next_lemma = stemmer.stem(next_next_token.decode('utf-8',errors='replace'))
                 next_next_hyphen = int('-' in next_next_token)
                 next_next_sh = shape(next_next_token)
             else:
@@ -466,6 +345,22 @@ def shape_data((file, path, le)):
                 next_next_hyphen = -1
                 next_next_sh = -1
 
+            # standard
+            _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]),
+                       le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
+                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) == 1),
+                       int(len(
+                           re.findall('(http://\S+|\S*[^\w\s]\S*)',
+                                      df.loc[index].at[definitions.INDEX_TOKEN])) > 0),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN])[0].isupper()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isupper()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).istitle()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isdigit()),
+                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]) in stop),
+                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) <= 2),
+                       int('-' in str(df.loc[index].at[definitions.INDEX_TOKEN])),
+                       shape(str(df.loc[index].at[definitions.INDEX_TOKEN]))])
+
             # standard features -2+2 context
             _t.extend([le.transform(prev_pos), le.transform(prev_pos_uni), prev_one_char_token,
                      prev_special_char, prev_first_capitalized, prev_capitalized, prev_title, prev_digit,
@@ -481,20 +376,7 @@ def shape_data((file, path, le)):
                      next_next_one_char_token, next_next_special_char, next_next_first_capitalized,
                      next_next_capitalized, next_next_title, next_next_digit, next_next_stop_words, next_next_small,
                      next_next_hyphen, next_next_sh])
-            # standard
-            _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]),
-                       le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
-                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) == 1),
-                       int(len(
-                           re.findall('(http://\S+|\S*[^\w\s]\S*)', df.loc[index].at[definitions.INDEX_TOKEN])) > 0),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN])[0].isupper()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isupper()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).istitle()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isdigit()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]) in stop),
-                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) <= 2),
-                       int('-' in str(df.loc[index].at[definitions.INDEX_TOKEN])),
-                       shape(str(df.loc[index].at[definitions.INDEX_TOKEN]))])
+
 
             #if len(f_indexes) !=0:
             #    _t.extend(df.loc[index][f_indexes])
@@ -889,7 +771,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             #         hidden_size, batch_size, epochs, verbose, maxlen_1)
 
     out_file.close()
-    #import pickle
     #with open(_label + '.meta', 'wb') as handle:
     #    pickle.dump(_meta, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

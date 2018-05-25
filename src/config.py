@@ -187,7 +187,7 @@ class HorusConfig(object):
                 self.logger.addHandler(consoleHandler)
 
         self.logger.info('==================================================================')
-        self.logger.info('HORUS Framework - Feature Extractor')
+        self.logger.info('HORUS Framework')
         self.logger.info('version: ' + self.version)
         self.logger.info('more info: http://horus-ner.org/')
         self.logger.info('==================================================================')

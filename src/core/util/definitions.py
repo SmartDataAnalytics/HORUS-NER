@@ -57,8 +57,9 @@ NER_TAGS.extend(NER_TAGS_ORG)
 NER_TAGS.extend(NER_TAGS_PER)
 
 
-#TODO: check if we have here ALL the NOUNs!!!
-# merge of ALL noun tags, from all the POS taggers
+encoder_words= 'encoder_ritterwnut151617_word.pkl'
+encoder_lemma_name='encoder_ritterwnut151617_lemma.pkl'
+encoder_stem_name = 'encoder_ritterwnut151617_stem.pkl'
 
 # Penn Treebank
 POS_NOUN_PTB = ['NN', 'NNS', 'NNP', 'NNPS', 'PRP', 'PRP$']
@@ -248,15 +249,15 @@ STANDARD FEATURES
 FEATURES_STANDARD = range(85, (85 + STANDARD_FEAT))
 
 FEATURES_STANDARD_BROWN_64M_c320 = FEATURES_STANDARD
-FEATURES_STANDARD_BROWN_64M_c320.extend(max(FEATURES_STANDARD) + 1)
+FEATURES_STANDARD_BROWN_64M_c320.extend([max(FEATURES_STANDARD) + 1])
 
 FEATURES_STANDARD_BROWN_64M_c640 = FEATURES_STANDARD
-FEATURES_STANDARD_BROWN_64M_c640.extend(max(FEATURES_STANDARD) + 2)
+FEATURES_STANDARD_BROWN_64M_c640.extend([max(FEATURES_STANDARD) + 2])
 
 FEATURES_STANDARD_BROWN_500M_c1000 = FEATURES_STANDARD
-FEATURES_STANDARD_BROWN_500M_c1000.extend(max(FEATURES_STANDARD) + 3)
+FEATURES_STANDARD_BROWN_500M_c1000.extend([max(FEATURES_STANDARD) + 3])
 
-FEATURES_STANDARD_BEST = None #to be evaluated
+FEATURES_STANDARD_BEST = [] #to be evaluated
 '''
 HORUS FEATURES
 '''
