@@ -547,6 +547,7 @@ def shape_data((file, path, le)):
 def shape_datasets(experiment_folder, datasets):
     ret = []
     job_args = []
+    exists_encoder = os.path.exists(config.dir_output + experiment_folder + 'labels_encoder.pkl')
     for ds in datasets:
         config.logger.info(ds)
         _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
@@ -556,8 +557,14 @@ def shape_datasets(experiment_folder, datasets):
                 ret.append(shaped)
         else:
             job_args.append((ds, config.dir_output + experiment_folder, le1))
-            #data=shape_data(ds, config.dir_output + experiment_folder, le1)
 
+        if exists_encoder is False:
+            words
+
+    if os.path.exists(config.dir_output + experiment_folder + 'labels_encoder.pkl') is False:
+        le = sklearn.preprocessing.LabelEncoder()
+
+    config.logger.info('job args created - raw datasets: ' + str(len(job_args)))
     if len(job_args) > 0:
         p = multiprocessing.Pool(8)
         asyncres = p.map(shape_data, job_args)
@@ -567,8 +574,7 @@ def shape_datasets(experiment_folder, datasets):
             with open(_file, 'wb') as output:
                 pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
             ret.append(data)
-
-    config.logger.info(len(ret))
+            config.logger.info('file exported: ' + _file)
     return ret
 
 def score2(yh, pr):
@@ -650,12 +656,13 @@ def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
         Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
         X_crf = [sent2features(s) for s in X_sentence]
         _Y_sentence = np.array([x for s in Y_sentence for x in s])  # trick for scikit_learn on CRF (for the precision_recall_fscore_support method)
+
         #X1_lstm, y1_lstm, max_features_1, out_size_1, maxlen_1 = convert_lstm_shape(X1_sentence, Y1_sentence, f_indexes)
         #X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
         #X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
         #y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
         with open(_file_path, 'wb') as output:
-            pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, Y_sentence], output, pickle.HIGHEST_PROTOCOL)
+            pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, _Y_sentence], output, pickle.HIGHEST_PROTOCOL)
         config.logger.info(_file_name + ' created!')
     except:
         raise
@@ -685,12 +692,17 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _label='EXP_004'
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
-    dict_exp_feat = {1: range(85,(85+definitions.STANDARD_FEAT)), 2: definitions.FEATURES_HORUS_BASIC_CV,
+    dict_exp_feat = {1: definitions.FEATURES_HORUS_STANDARD,
+                     2: definitions.FEATURES_HORUS_BASIC_CV,
                      3: definitions.FEATURES_HORUS_BASIC_TX,
-                    4: definitions.FEATURES_HORUS_CNN_CV, 5: definitions.FEATURES_HORUS_CNN_TX,
-                    6: definitions.FEATURES_HORUS_EMB_TX + definitions.FEATURES_HORUS_STATS_TX,
-                    7: definitions.FEATURES_HORUS_TX, 8: definitions.FEATURES_HORUS_CV,
-                    9: definitions.FEATURES_HORUS_BASIC_AND_CNN, 10: definitions.FEATURES_HORUS}
+                     4: definitions.FEATURES_HORUS_CNN_CV,
+                     5: definitions.FEATURES_HORUS_CNN_TX,
+                     6: definitions.FEATURES_HORUS_EMB_TX,
+                     7: definitions.FEATURES_HORUS_STATS_TX,
+                     8: definitions.FEATURES_HORUS_TX,
+                     9: definitions.FEATURES_HORUS_CV,
+                     10: definitions.FEATURES_HORUS_BASIC_AND_CNN,
+                     11: definitions.FEATURES_HORUS}
 
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
@@ -704,7 +716,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     # multithread to shape the datasets for all configurations in parallel
     job_args = []
 
-
     _SET_MASK = '_%s_config_%s.pkl'
     set_file_dump_names=[]
     for ds in shaped_datasets:
@@ -715,7 +726,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                 job_args.append((_file, _set_name, ds, f_key, f_indexes))
             set_file_dump_names.append(_set_name)
 
+    config.logger.info('job args created - config dumps: ' + str(len(job_args)))
     if len(job_args)>0:
+        config.logger.info('creating dump files...')
         p = multiprocessing.Pool(8)
         p.map(get_subset_file_name, job_args)
     config.logger.info('done! running the benchmark...')
@@ -725,7 +738,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
             ds1_name = ds1
             _set_name = _SET_MASK % (ds1, str(f_key))
             _file = config.dir_output + experiment_folder + _set_name
-            config.logger.info('loading [%s]: %s' % (ds1_name, _file))
+            #config.logger.info('loading [%s]: %s' % (ds1_name, _file))
             with open(_file, 'rb') as input:
                 shaped = pickle.load(input)
                 ds1_config_name = shaped[0]
@@ -740,8 +753,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
             #X1_token_PCA = pca.fit(X1_token)
             for ds2 in datasets:
                 ds2_name = ds2
-                config.logger.info(ds1_name)
-                config.logger.info(ds2_name)
+                config.logger.info('%s -> %s' % (ds1_name, ds2_name))
                 if ds1_name != ds2_name:
                     _set_name = _SET_MASK % (ds2_name, str(f_key))
                     _file = config.dir_output + experiment_folder + _set_name
@@ -845,7 +857,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             _ypr = np.array([tag for row in ypr for tag in row])
                             _yte = np.array([tag for row in yte for tag in row])
 
-                            print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                            #print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
 
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
                                                                                          labels=definitions.PLO_KLASSES.values())
@@ -883,9 +895,9 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
     parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
