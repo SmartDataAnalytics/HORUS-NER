@@ -6,9 +6,14 @@ import pandas as pd
 import sklearn
 from nltk import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
+from sklearn.externals import joblib
+from sklearn.preprocessing import OneHotEncoder
+
 from src.config import HorusConfig
 from src.core.util import definitions
-from src.core.util.definitions import encoder_words, encoder_lemma_name, encoder_stem_name
+from src.core.util.definitions import encoder_int_lemma_name, encoder_int_stem_name, \
+    encoder_onehot_words_name, encoder_int_words_name, encoder_onehot_lemma_name, \
+    encoder_onehot_stem_name
 
 config = HorusConfig()
 
@@ -21,59 +26,64 @@ def word2dict(experiment_folder, datasets):
         words=[]
         lemmas=[]
         stemmers=[]
-        le = sklearn.preprocessing.LabelEncoder()
+
         all_sentences_name='raw_data_brown_clusters.txt'
-        if os.path.exists(config.dir_encoders + encoder_words) is False:
-            f = open(config.dir_encoders + all_sentences_name, 'w+')
-            for ds in datasets.split():
-                config.logger.info('creating encoder for: ' + ds)
-                _file = config.dir_output + experiment_folder + ds
-                df = pd.read_csv(_file, delimiter="\t", skiprows=1, header=None, keep_default_na=False,
-                                 na_values=['_|_'], usecols=[definitions.INDEX_ID_SENTENCE, definitions.INDEX_TOKEN, definitions.INDEX_IS_COMPOUND])
-                prev_sent_id=df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
-                sentence=''
-                for row in df.itertuples():
-                    w=str(row[2])
-                    words.append(w)
-                    try:
-                        lemmas.append(wnl.lemmatize(w.lower()))
-                    except:
-                        continue
-                    try:
-                        stemmers.append(stemmer.stem(w.lower()))
-                    except:
-                        continue
 
-                    if prev_sent_id==row[1]:
-                        if row[3] != 1:
-                            sentence += ' ' + w
-                    else:
-                        f.write(sentence.strip() + '\n')
-                        sentence=w
-                    prev_sent_id=row[1]
-                f.flush()
-            f.close()
+        f = open(config.dir_encoders + all_sentences_name, 'w+')
+        for ds in datasets.split():
+            config.logger.info('creating encoder for: ' + ds)
+            _file = config.dir_output + experiment_folder + ds
+            df = pd.read_csv(_file, delimiter="\t", skiprows=1, header=None, keep_default_na=False,
+                             na_values=['_|_'], usecols=[definitions.INDEX_ID_SENTENCE, definitions.INDEX_TOKEN, definitions.INDEX_IS_COMPOUND])
+            prev_sent_id=df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
+            sentence=''
+            for row in df.itertuples():
+                w=str(row[2])
+                words.append(w.lower())
+                try:
+                    lemmas.append(wnl.lemmatize(w.lower()))
+                except:
+                    continue
+                try:
+                    stemmers.append(stemmer.stem(w.lower()))
+                except:
+                    continue
 
-            config.logger.info('total tokens: ' + str(len(words)))
-            config.logger.info('total lemmas: ' + str(len(lemmas)))
-            config.logger.info('total stemmers: ' + str(len(stemmers)))
-            words=set(words)
-            lemmas=set(lemmas)
-            stemmers=set(stemmers)
-            config.logger.info('words vocabulary size: ' + str(len(words)))
-            config.logger.info('lemmas vocabulary size: ' + str(len(lemmas)))
-            config.logger.info('stemmer vocabulary size: ' + str(len(stemmers)))
-            le.fit(list(words))
-            with open(config.dir_encoders + encoder_words, 'wb') as output:
-                pickle.dump(le, output, pickle.HIGHEST_PROTOCOL)
+                if prev_sent_id==row[1]:
+                    if row[3] != 1:
+                        sentence += ' ' + w
+                else:
+                    f.write(sentence.strip() + '\n')
+                    sentence=w
+                prev_sent_id=row[1]
+            f.flush()
+        f.close()
 
-            le.fit(list(lemmas))
-            with open(config.dir_encoders + encoder_lemma_name, 'wb') as output:
-                pickle.dump(le, output, pickle.HIGHEST_PROTOCOL)
+        config.logger.info('total tokens: ' + str(len(words)))
+        config.logger.info('total lemmas: ' + str(len(lemmas)))
+        config.logger.info('total stemmers: ' + str(len(stemmers)))
+        words.append('')
+        lemmas.append('')
+        stemmers.append('')
+        words=set(words)
+        lemmas=set(lemmas)
+        stemmers=set(stemmers)
+        config.logger.info('words vocabulary size: ' + str(len(words)))
+        config.logger.info('lemmas vocabulary size: ' + str(len(lemmas)))
+        config.logger.info('stemmer vocabulary size: ' + str(len(stemmers)))
 
-            le.fit(list(stemmers))
-            with open(config.dir_encoders + encoder_stem_name, 'wb') as output:
-                pickle.dump(le, output, pickle.HIGHEST_PROTOCOL)
+
+        for a,b,c in ((words, encoder_int_words_name, encoder_onehot_words_name),
+                      (lemmas, encoder_int_lemma_name, encoder_onehot_lemma_name),
+                      (stemmers, encoder_int_stem_name, encoder_onehot_stem_name)):
+            le = sklearn.preprocessing.LabelEncoder()
+            le.fit(list(a))
+            #integer_encoded = le.fit_transform(list(a))
+            #onehot = OneHotEncoder(sparse=False)
+            #integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+            #onehot = onehot.fit_transform(integer_encoded)
+            joblib.dump(le, config.dir_encoders + b, compress=3)
+            #joblib.dump(onehot, config.dir_encoders + b, compress=3)
 
     except:
         raise

@@ -10,6 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 from src.classifiers.experiment_metadata import MEXExecution, \
     MEXPerformance, MEX, MEXConfiguration
+from src.core.util.definitions import encoder_le1_name
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -62,18 +63,11 @@ X, Y = [], []
 ds_test_size = 0.20
 stemmer = SnowballStemmer()
 stop = set(stopwords.words('english'))
-le1 = joblib.load(config.dir_encoders + "_encoder_pos.pkl")
-le2 = joblib.load(config.dir_encoders + "_encoder_nltk2.pkl")
-
-
-
-if os.path.isfile(definitions.encoder_lemma_name):
-    with open(definitions.encoder_lemma_name, 'rb') as input:
-        le_lemma = pickle.load(input)
-
-if os.path.isfile(definitions.encoder_stem_name):
-    with open(definitions.encoder_stem_name, 'rb') as input:
-        le_stem = pickle.load(input)
+enc_le1 = joblib.load(definitions.encoder_le1_name)
+enc_le2 = joblib.load(definitions.encoder_le2_name)
+enc_word = joblib.load(definitions.encoder_int_words_name)
+enc_lemma = joblib.load(definitions.encoder_int_lemma_name)
+enc_stem = joblib.load(definitions.encoder_int_stem_name)
 
 @contextmanager
 def poolcontext(*args, **kwargs):
@@ -169,7 +163,7 @@ def features_to_crf_shape(sent, i):
 
     return features
 
-def shape_data((file, path, le)):
+def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c320)):
     '''
     shape the dataframe, adding further traditional features
     :param file: the horus features file
@@ -181,15 +175,13 @@ def shape_data((file, path, le)):
 
         ds_sentences, y_sentences_shape = [], []
         _sent_temp_feat, _sent_temp_y = [], []
-        #ds_tokens, y_tokens_shape = [], []
-        onehot_encoder = OneHotEncoder(sparse=False)
+        wnl = WordNetLemmatizer()
+        stemmer = SnowballStemmer("english")
 
         fullpath=path+file
         config.logger.info('reading horus features file: ' + fullpath)
         df = pd.read_csv(fullpath, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-        #print(len(df))
         df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
-        #print(len(df))
         oldsentid = df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
         COLS = len(df.columns)
@@ -206,7 +198,34 @@ def shape_data((file, path, le)):
                 _sent_temp_y = []
 
             idsent = df.loc[index].at[definitions.INDEX_ID_SENTENCE]
-            #token=df.loc[index, definitions.INDEX_TOKEN]
+            token = df.loc[index].at[definitions.INDEX_TOKEN]
+            lemma=''
+            stem=''
+            try:
+                lemma = wnl.lemmatize(token.lower())
+            except: pass
+            try:
+                stem = stemmer.stem(token.lower())
+            except: pass
+            brown_1000_path = '{:>016d}'.format(dict_brown_c1000.get(token, '0000000000000000'))
+            brown_640_path = '{:>016d}'.format(dict_brown_c640.get(token, '0000000000000000'))
+            brown_320_path = '{:>016d}'.format(dict_brown_c320.get(token, '0000000000000000'))
+
+            brown_1000=[]
+            k=1
+            for i in range(len(brown_1000_path)-1):
+                brown_1000.append(brown_1000_path[:k])
+                k+=1
+            brown_640 = []
+            k = 1
+            for i in range(len(brown_640_path) - 1):
+                brown_640.append(brown_640_path[:k])
+                k += 1
+            brown_320 = []
+            k = 1
+            for i in range(len(brown_320_path) - 1):
+                brown_320.append(brown_320_path[:k])
+                k += 1
 
             if index > 1: prev_prev_serie = df.loc[index-2]
             if index > 0: prev_serie = df.loc[index-1]
@@ -227,19 +246,18 @@ def shape_data((file, path, le)):
                 prev_digit = int(prev_token.isdigit())
                 prev_stop_words = int(prev_token in stop)
                 prev_small = int(len(prev_token) <= 2)
-                try:
-                    prev_lemma = stemmer.stem(prev_token.decode('utf-8', errors='replace').lower())
-                    prev_lemma = le_lemma.transform(prev_lemma)
-                    prev_lemma = prev_lemma.reshape(len(prev_lemma), 1)
-
-                except:
-                    prev_lemma = 0
                 prev_hyphen = int('-' in prev_token)
                 prev_sh = shape(prev_token)
+                try: prev_lemma = wnl.lemmatize(prev_token.lower())
+                except: prev_lemma = ''
+                try: prev_stem = stemmer.stem(prev_token.lower())
+                except: prev_stem = ''
             else:
                 prev_pos = ''
                 prev_pos_uni = ''
                 prev_token = ''
+                prev_lemma = ''
+                prev_stem = ''
                 prev_one_char_token = -1
                 prev_special_char = -1
                 prev_first_capitalized = -1
@@ -248,7 +266,6 @@ def shape_data((file, path, le)):
                 prev_digit = -1
                 prev_stop_words = -1
                 prev_small = -1
-                #prev_lemma = -1
                 prev_hyphen = -1
                 prev_sh = -1
 
@@ -264,13 +281,18 @@ def shape_data((file, path, le)):
                 prev_prev_digit = int(prev_prev_token.isdigit())
                 prev_prev_stop_words = int(prev_prev_token in stop)
                 prev_prev_small = int(len(prev_prev_token) <= 2)
-                #prev_prev_lemma = stemmer.stem(prev_prev_token.decode('utf-8', errors='replace'))
                 prev_prev_hyphen = int('-' in prev_prev_token)
                 prev_prev_sh = shape(prev_prev_token)
+                try: prev_prev_lemma = wnl.lemmatize(prev_prev_token.lower())
+                except: prev_prev_lemma = ''
+                try: prev_prev_stem = stemmer.stem(prev_prev_token.lower())
+                except: prev_prev_stem = ''
             else:
                 prev_prev_pos= ''
                 prev_prev_pos_uni = ''
-                #prev_prev_token= ''
+                prev_prev_token= ''
+                prev_prev_lemma=''
+                prev_prev_stem=''
                 prev_prev_one_char_token= -1
                 prev_prev_special_char= -1
                 prev_prev_first_capitalized= -1
@@ -279,7 +301,6 @@ def shape_data((file, path, le)):
                 prev_prev_digit= -1
                 prev_prev_stop_words= -1
                 prev_prev_small= -1
-                #prev_prev_lemma= -1
                 prev_prev_hyphen= -1
                 prev_prev_sh= -1
 
@@ -291,17 +312,22 @@ def shape_data((file, path, le)):
                 next_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0)
                 next_first_capitalized = int(next_token[0].isupper())
                 next_capitalized = int(next_token.isupper())
-                next_title = int(next_token.istitle())
+                next_title = int(next_token.istitlghe())
                 next_digit = int(next_token.isdigit())
                 next_stop_words = int(next_token in stop)
                 next_small = int(len(next_token) <= 2)
-                #next_lemma = stemmer.stem(next_token.decode('utf-8'))
                 next_hyphen = int('-' in next_token)
                 next_sh = shape(next_token)
+                try: next_lemma = wnl.lemmatize(next_token.lower())
+                except: next_lemma = ''
+                try: next_stem = stemmer.stem(next_token.lower())
+                except: next_stem = ''
             else:
                 next_pos = ''
                 next_pos_uni = ''
                 next_token = ''
+                next_lemma=''
+                next_stem=''
                 next_one_char_token = -1
                 next_special_char = -1
                 next_first_capitalized = -1
@@ -310,7 +336,6 @@ def shape_data((file, path, le)):
                 next_digit = -1
                 next_stop_words = -1
                 next_small = -1
-                next_lemma = -1
                 next_hyphen = -1
                 next_sh = -1
 
@@ -326,13 +351,18 @@ def shape_data((file, path, le)):
                 next_next_digit = int(next_next_token.isdigit())
                 next_next_stop_words = int(next_next_token in stop)
                 next_next_small = int(len(next_next_token) <= 2)
-                #next_next_lemma = stemmer.stem(next_next_token.decode('utf-8',errors='replace'))
                 next_next_hyphen = int('-' in next_next_token)
                 next_next_sh = shape(next_next_token)
+                try: next_next_lemma = wnl.lemmatize(next_next_token.lower())
+                except: next_next_lemma = ''
+                try: next_next_stem = stemmer.stem(next_next_token.lower())
+                except: next_next_stem = ''
             else:
                 next_next_pos = ''
                 next_next_pos_uni = ''
                 next_next_token = ''
+                next_next_lemma=''
+                next_next_stem=''
                 next_next_one_char_token = -1
                 next_next_special_char = -1
                 next_next_first_capitalized = -1
@@ -341,41 +371,83 @@ def shape_data((file, path, le)):
                 next_next_digit = -1
                 next_next_stop_words = -1
                 next_next_small = -1
-                next_next_lemma = -1
                 next_next_hyphen = -1
                 next_next_sh = -1
 
-            # standard
+
+            # standard features [t-2, t-1, t, t+1, t+2] (12*5=60)
+            _t.extend([le.transform(prev_prev_pos),
+                       le.transform(prev_prev_pos_uni),
+                       prev_prev_one_char_token,
+                       prev_prev_special_char,
+                       prev_prev_first_capitalized,
+                       prev_prev_capitalized,
+                       prev_prev_title,
+                       prev_prev_digit,
+                       prev_prev_stop_words,
+                       prev_prev_small,
+                       prev_prev_hyphen,
+                       prev_prev_sh])
+            _t.extend([le.transform(prev_pos),
+                       le.transform(prev_pos_uni),
+                       prev_one_char_token,
+                       prev_special_char,
+                       prev_first_capitalized,
+                       prev_capitalized,
+                       prev_title,
+                       prev_digit,
+                       prev_stop_words,
+                       prev_small,
+                       prev_hyphen,
+                       prev_sh])
             _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]),
                        le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
-                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) == 1),
-                       int(len(
-                           re.findall('(http://\S+|\S*[^\w\s]\S*)',
-                                      df.loc[index].at[definitions.INDEX_TOKEN])) > 0),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN])[0].isupper()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isupper()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).istitle()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]).isdigit()),
-                       int(str(df.loc[index].at[definitions.INDEX_TOKEN]) in stop),
-                       int(len(df.loc[index].at[definitions.INDEX_TOKEN]) <= 2),
-                       int('-' in str(df.loc[index].at[definitions.INDEX_TOKEN])),
-                       shape(str(df.loc[index].at[definitions.INDEX_TOKEN]))])
+                       int(len(token) == 1),
+                       int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0),
+                       int(token)[0].isupper(),
+                       int(token.isupper()),
+                       int(token.istitle()),
+                       int(token.isdigit()),
+                       int(token in stop),
+                       int(len(token) <= 2),
+                       int('-' in token),
+                       shape(token)])
+            _t.extend([le.transform(next_pos),
+                       le.transform(next_pos_uni),
+                       next_one_char_token,
+                       next_special_char,
+                       next_first_capitalized,
+                       next_capitalized,
+                       next_title,
+                       next_digit,
+                       next_stop_words,
+                       next_small,
+                       next_hyphen,
+                       next_sh])
+            _t.extend([le.transform(next_next_pos),
+                       le.transform(next_next_pos_uni),
+                       next_next_one_char_token,
+                       next_next_special_char,
+                       next_next_first_capitalized,
+                       next_next_capitalized,
+                       next_next_title,
+                       next_next_digit,
+                       next_next_stop_words,
+                       next_next_small,
+                       next_next_hyphen,
+                       next_next_sh])
 
-            # standard features -2+2 context
-            _t.extend([le.transform(prev_pos), le.transform(prev_pos_uni), prev_one_char_token,
-                     prev_special_char, prev_first_capitalized, prev_capitalized, prev_title, prev_digit,
-                     prev_stop_words, prev_small, prev_hyphen, prev_sh,
-                     le.transform(prev_prev_pos), le.transform(prev_prev_pos_uni),
-                     prev_prev_one_char_token, prev_prev_special_char,
-                     prev_prev_first_capitalized, prev_prev_capitalized, prev_prev_title, prev_prev_digit,
-                     prev_prev_stop_words, prev_prev_small, prev_prev_hyphen, prev_prev_sh,
-                     le.transform(next_pos), le.transform(next_pos_uni), next_one_char_token,
-                     next_special_char, next_first_capitalized, next_capitalized, next_title, next_digit,
-                     next_stop_words, next_small, next_hyphen, next_sh,
-                     le.transform(next_next_pos), le.transform(next_next_pos_uni),
-                     next_next_one_char_token, next_next_special_char, next_next_first_capitalized,
-                     next_next_capitalized, next_next_title, next_next_digit, next_next_stop_words, next_next_small,
-                     next_next_hyphen, next_next_sh])
+            # word, lemma, stem for [t-2, t-1, t, t+1, t+2] (3*5=15)
+            _t.extend([enc_word.transform(prev_prev_token.lower()), enc_lemma.transform(prev_prev_lemma), enc_stem.transform(prev_prev_stem)])
+            _t.extend([enc_word.transform(prev_token.lower()), enc_lemma.transform(prev_lemma), enc_stem.transform(prev_stem)])
+            _t.extend([enc_word.transform(token.lower()), enc_lemma.transform(lemma), enc_stem.transform(stem)])
+            _t.extend([enc_word.transform(next_token.lower()), enc_lemma.transform(next_lemma), enc_stem.transform(next_stem)])
+            _t.extend([enc_word.transform(next_next_token.lower()), enc_lemma.transform(next_next_lemma), enc_stem.transform(next_next_stem)])
+
+            # brown clusters [320, 640, 1000] (16*3=48)
+            _t.extend(brown_320)
+            _t.extend(brown_640)
+            _t.extend(brown_1000)
 
 
             #if len(f_indexes) !=0:
@@ -425,6 +497,10 @@ def shape_data((file, path, le)):
 def shape_datasets(experiment_folder, datasets):
     ret = []
     job_args = []
+    le = joblib.load(config.dir_encoders + encoder_le1_name)
+    dict_brown_c1000 = joblib.load(config.dir_datasets + 'gha.500M-c1000-p1.paths_dict.pkl')
+    dict_brown_c640 = joblib.load(config.dir_datasets + 'gha.64M-c640-p1.paths_dict.pkl')
+    dict_brown_c320 =  joblib.load(config.dir_datasets + 'gha.64M-c320-p1.paths_dict.pkl')
     for ds in datasets:
         config.logger.info(ds)
         _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
@@ -433,7 +509,7 @@ def shape_datasets(experiment_folder, datasets):
                 shaped = pickle.load(input)
                 ret.append(shaped)
         else:
-            job_args.append((ds, config.dir_output + experiment_folder, le1))
+            job_args.append((ds, config.dir_output + experiment_folder, le, dict_brown_c1000, dict_brown_c640, dict_brown_c320))
 
     config.logger.info('job args created - raw datasets: ' + str(len(job_args)))
     if len(job_args) > 0:
@@ -566,31 +642,35 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
     dict_exp_feat = {1: definitions.FEATURES_STANDARD,
-                     2: definitions.FEATURES_STANDARD_BROWN_64M_c320,
-                     3: definitions.FEATURES_STANDARD_BROWN_64M_c640,
-                     4: definitions.FEATURES_STANDARD_BROWN_500M_c1000,
-                     5: definitions.FEATURES_HORUS_BASIC_CV,
-                     6: definitions.FEATURES_HORUS_BASIC_TX,
-                     7: definitions.FEATURES_HORUS_CNN_CV,
-                     8: definitions.FEATURES_HORUS_CNN_TX,
-                     9: definitions.FEATURES_HORUS_EMB_TX,
-                     10: definitions.FEATURES_HORUS_STATS_TX,
-                     11: definitions.FEATURES_HORUS_TX,
-                     12: definitions.FEATURES_HORUS_TX_EMB,
-                     13: definitions.FEATURES_HORUS_CV,
-                     14: definitions.FEATURES_HORUS_BASIC_AND_CNN,
-                     15: definitions.FEATURES_HORUS,
-                     16: definitions.FEATURES_HORUS_BASIC_CV_BEST_STANDARD,
-                     17: definitions.FEATURES_HORUS_BASIC_TX_BEST_STANDARD,
-                     18: definitions.FEATURES_HORUS_CNN_CV_BEST_STANDARD,
-                     19: definitions.FEATURES_HORUS_CNN_TX_BEST_STANDARD,
-                     20: definitions.FEATURES_HORUS_EMB_TX_BEST_STANDARD,
-                     21: definitions.FEATURES_HORUS_STATS_TX_BEST_STANDARD,
-                     22: definitions.FEATURES_HORUS_TX_BEST_STANDARD,
-                     23: definitions.FEATURES_HORUS_TX_EMB_BEST_STANDARD,
-                     24: definitions.FEATURES_HORUS_CV_BEST_STANDARD,
-                     25: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
-                     26: definitions.FEATURES_HORUS_BEST_STANDARD}
+                     2: definitions.FEATURES_STANDARD_WORD,
+                     3: definitions.FEATURES_STANDARD_BROWN_64M_c320,
+                     4: definitions.FEATURES_STANDARD_BROWN_64M_c640,
+                     5: definitions.FEATURES_STANDARD_BROWN_500M_c1000}
+
+
+                     #6: definitions.FEATURES_HORUS_BASIC_CV,
+                     #7: definitions.FEATURES_HORUS_BASIC_TX,
+                     #8: definitions.FEATURES_HORUS_CNN_CV,
+                     #9: definitions.FEATURES_HORUS_CNN_TX,
+                     #10: definitions.FEATURES_HORUS_EMB_TX,
+                     #11: definitions.FEATURES_HORUS_STATS_TX,
+                     #12: definitions.FEATURES_HORUS_TX,
+                     #13: definitions.FEATURES_HORUS_TX_EMB,
+                     #14: definitions.FEATURES_HORUS_CV,
+                     #15: definitions.FEATURES_HORUS_BASIC_AND_CNN,
+                     #16: definitions.FEATURES_HORUS,
+                     #17: definitions.FEATURES_HORUS_BASIC_CV_BEST_STANDARD,
+                     #18: definitions.FEATURES_HORUS_BASIC_TX_BEST_STANDARD,
+                     #19: definitions.FEATURES_HORUS_CNN_CV_BEST_STANDARD,
+                     #20: definitions.FEATURES_HORUS_CNN_TX_BEST_STANDARD,
+                     #21: definitions.FEATURES_HORUS_EMB_TX_BEST_STANDARD,
+                     #22: definitions.FEATURES_HORUS_STATS_TX_BEST_STANDARD,
+                     #23: definitions.FEATURES_HORUS_TX_BEST_STANDARD,
+                     #24: definitions.FEATURES_HORUS_TX_EMB_BEST_STANDARD,
+                     #25: definitions.FEATURES_HORUS_CV_BEST_STANDARD,
+                     #26: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
+                     #27: definitions.FEATURES_HORUS_BEST_STANDARD}
+
 
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
