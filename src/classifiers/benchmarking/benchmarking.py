@@ -61,13 +61,13 @@ output:
 config = HorusConfig()
 X, Y = [], []
 ds_test_size = 0.20
-stemmer = SnowballStemmer()
+stemmer = SnowballStemmer('english')
 stop = set(stopwords.words('english'))
-enc_le1 = joblib.load(definitions.encoder_le1_name)
-enc_le2 = joblib.load(definitions.encoder_le2_name)
-enc_word = joblib.load(definitions.encoder_int_words_name)
-enc_lemma = joblib.load(definitions.encoder_int_lemma_name)
-enc_stem = joblib.load(definitions.encoder_int_stem_name)
+enc_le1 = joblib.load(config.dir_encoders + definitions.encoder_le1_name)
+enc_le2 = joblib.load(config.dir_encoders + definitions.encoder_le2_name)
+enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
+enc_lemma = joblib.load(config.dir_encoders + definitions.encoder_int_lemma_name)
+enc_stem = joblib.load(config.dir_encoders + definitions.encoder_int_stem_name)
 
 @contextmanager
 def poolcontext(*args, **kwargs):
@@ -186,7 +186,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
         df = df.reset_index(drop=True)
         COLS = len(df.columns)
 
-        df=pd.concat([df, pd.DataFrame(columns=range(COLS,(COLS+definitions.STANDARD_FEAT)))], axis=1)
+        df=pd.concat([df, pd.DataFrame(columns=range(COLS, (COLS + definitions.STANDARD_FEAT_LEN)))], axis=1)
         config.logger.info(len(df))
         for row in df.itertuples():
             index=row.Index
@@ -207,23 +207,24 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
             try:
                 stem = stemmer.stem(token.lower())
             except: pass
-            brown_1000_path = '{:>016d}'.format(dict_brown_c1000.get(token, '0000000000000000'))
-            brown_640_path = '{:>016d}'.format(dict_brown_c640.get(token, '0000000000000000'))
-            brown_320_path = '{:>016d}'.format(dict_brown_c320.get(token, '0000000000000000'))
+            brown_1000_path = '{:<016}'.format(dict_brown_c1000.get(token, '0000000000000000'))
+            brown_640_path = '{:<016}'.format(dict_brown_c640.get(token, '0000000000000000'))
+            brown_320_path = '{:<016}'.format(dict_brown_c320.get(token, '0000000000000000'))
 
             brown_1000=[]
             k=1
-            for i in range(len(brown_1000_path)-1):
+            tot_slide=5 #range(len(brown_1000_path)-1)
+            for i in range(tot_slide):
                 brown_1000.append(brown_1000_path[:k])
                 k+=1
             brown_640 = []
             k = 1
-            for i in range(len(brown_640_path) - 1):
+            for i in range(tot_slide):
                 brown_640.append(brown_640_path[:k])
                 k += 1
             brown_320 = []
             k = 1
-            for i in range(len(brown_320_path) - 1):
+            for i in range(tot_slide):
                 brown_320.append(brown_320_path[:k])
                 k += 1
 
@@ -312,7 +313,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
                 next_special_char = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', next_token)) > 0)
                 next_first_capitalized = int(next_token[0].isupper())
                 next_capitalized = int(next_token.isupper())
-                next_title = int(next_token.istitlghe())
+                next_title = int(next_token.istitle())
                 next_digit = int(next_token.isdigit())
                 next_stop_words = int(next_token in stop)
                 next_small = int(len(next_token) <= 2)
@@ -404,7 +405,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
                        le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
                        int(len(token) == 1),
                        int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0),
-                       int(token)[0].isupper(),
+                       int(token[0].isupper()),
                        int(token.isupper()),
                        int(token.istitle()),
                        int(token.isdigit()),
@@ -444,7 +445,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
             _t.extend([enc_word.transform(next_token.lower()), enc_lemma.transform(next_lemma), enc_stem.transform(next_stem)])
             _t.extend([enc_word.transform(next_next_token.lower()), enc_lemma.transform(next_next_lemma), enc_stem.transform(next_next_stem)])
 
-            # brown clusters [320, 640, 1000] (16*3=48)
+            # brown clusters [320, 640, 1000] (5*3=15)
             _t.extend(brown_320)
             _t.extend(brown_640)
             _t.extend(brown_1000)
@@ -452,7 +453,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
 
             #if len(f_indexes) !=0:
             #    _t.extend(df.loc[index][f_indexes])
-            df.iloc[[index], COLS:(COLS + definitions.STANDARD_FEAT+1)] = _t
+            df.iloc[[index], COLS:(COLS + definitions.STANDARD_FEAT_LEN)] = _t
 
             #_t = pd.Series(_t, index=range(COLS, COLS+STANDARD_FEAT))
             #a=df.iloc[index]
@@ -622,7 +623,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     out_file = open(config.dir_output + experiment_folder + 'metadata.txt', 'w+')
     config.logger.info('datasets: ' + str(datasets))
     datasets=datasets.split()
-    exit(0)
 
     #sorted_labels = definitions.KLASSES.copy()
     #del sorted_labels[4]
@@ -675,7 +675,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
     config.logger.info('done! running experiment configurations')
-
+    exit(0)
     header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\n'
     line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\n'
 
@@ -862,10 +862,10 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
-    parser.add_argument('--exp', '--experiment_folder', action='store_true', required=False, help='the sub-folder name where the input file is located', default='EXP_004')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
+    parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
