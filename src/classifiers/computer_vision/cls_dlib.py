@@ -18,8 +18,8 @@ class DLib_Classifier():
             img = io.imread(img_path)
             return (len(self.cnn_face_detector(img, 1)))
         except Exception as e:
-            self.config.error(e)
-
+            self.config.logger.error(e)
+            return 0
 
 if __name__ == '__main__':
     pos_img_places = ['18_0_3', '18_0_4', '18_0_5', '18_0_9', '18_0_10', '20_0_1', '20_0_2', '20_0_3', '20_0_4',

@@ -45,7 +45,7 @@ class HorusDemo(object):
         self.extractor = FeatureExtraction(self.config)
 
     def predict(self, horus_matrix):
-        self.config.logger.info(':: running final classifier...')
+        self.config.logger.info('running final classifier...')
         try:
             for index in range(len(horus_matrix)):
                 features = []
@@ -89,7 +89,7 @@ class HorusDemo(object):
         updates the predictions based on inner rules
         :return:
         '''
-        self.logging.log.info(':: updating predictions based on rules')
+        self.logging.log.info('updating predictions based on rules')
         for i in range(len(self.horus_matrix)):
             initial = self.horus_matrix[i][17]
             # get nouns or compounds
@@ -111,7 +111,7 @@ class HorusDemo(object):
         '''
         pre-requisite: the matrix should start with the sentence compounds at the beginning.
         '''
-        self.logging.log.info(':: updating compounds predictions')
+        self.logging.log.info('updating compounds predictions')
         i_y, i_sent, i_first_word, i_c_size = [], [], [], []
         for i in range(len(self.horus_matrix)):
             if self.horus_matrix[i][7] == 1:

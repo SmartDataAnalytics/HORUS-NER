@@ -11,6 +11,7 @@ class SQLiteHelper(object):
         try:
             self.conn = sqlite3.connect(self.DB_PATH)
             self.conn.text_factory = str
+            #self.conn.text_factory = sqlite3.OptimizedUnicode
             return self.conn
         except Exception as error:
             print(error)
@@ -43,6 +44,17 @@ class HorusDB(object):
                 return False
             else:
                 return res
+        except Exception as e:
+            raise e
+
+    def get_list_terms_cached(self, search_engine, search_engine_features = ''):
+        try:
+            values = (search_engine, search_engine_features)
+            ret = self.__exists_record(SQL_ALL_TERM_SEARCH_SEL, values)
+            if ret is not False:
+                return ret
+            else:
+                return None
         except Exception as e:
             raise e
 

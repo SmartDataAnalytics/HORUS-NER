@@ -35,8 +35,8 @@ def query_bing(query, key, top, market='en-us', safe='Moderate', source='Web', v
 def __bing_api5(query, key, top, market, safe):
     # https://msdn.microsoft.com/en-us/library/dn760794(v=bsynd.50).aspx
     try:
-        txts = None
-        imgs = None
+        txts = []
+        imgs = []
         url = 'https://api.cognitive.microsoft.com/bing/v5.0/search'
         # query string parameters
         if top != 0:
@@ -50,17 +50,17 @@ def __bing_api5(query, key, top, market, safe):
         # get JSON response
         try:
             if r.status_code != 200:
-                raise Exception (':: problem when querying Bing! Status code = ' + r.status_code)
+                raise Exception ('problem when querying Bing! Status code = ' + r.status_code)
             txts = r.json().get('webPages', {}).get('value', {})
             imgs = r.json().get('images', {}).get('value', {})
 
         except Exception as e:
-            logging.error(':: error on retrieving search results: ', e)
+            logging.error('error on retrieving search results: ', e)
 
         return query, txts, imgs
     except Exception as e:
-        print (':: an error has occurred: ', e)
-        return query, None
+        print ('an error has occurred: ', e)
+        return query, [], []
 
 def __bing_api2(query, key, top, market, source):
 
@@ -89,7 +89,7 @@ def __bing_api2(query, key, top, market, source):
             return query, results
 
     except Exception as e:
-        print (':: an error has occurred: ', e)
+        print ('an error has occurred: ', e)
         return query, None
 
 
@@ -128,7 +128,7 @@ def bing_api(query, api, source_type="Web", top=10, format='json', market='en-US
             return query, jsonobject
 
     except Exception as e:
-        logging.error(':: an error has occurred: ', e)
+        logging.error('an error has occurred: ', e)
         raise
 '''
 

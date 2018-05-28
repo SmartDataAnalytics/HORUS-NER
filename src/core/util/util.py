@@ -1,9 +1,13 @@
+import codecs
+import csv
 import sqlite3
 import numpy
 import json
 import ntpath
 import nltk
-from src.core.util.definitions_sql import SQL_SENTENCE_SAVE
+
+from src.core.util.definitions import INDEX_ID_TERM_TXT, INDEX_ID_TERM_IMG
+from src.core.util.definitions_sql import SQL_SENTENCE_SAVE, SQL_ALL_TERM_SEARCH_SEL
 from src.core.util import definitions
 from src.core.util.nlp_tools import NLPTools
 from django.core.exceptions import ValidationError
@@ -83,12 +87,12 @@ class Util(object):
                     try:
                         t1final = self.translator.translate(t1, 'en')
                     except Exception as e1:
-                        self.config.logger.error(':: Error, trying another service: ' + str(e1))
+                        self.config.logger.error('Error, trying another service: ' + str(e1))
                         try:
                             translator2 = Translator(from_lang=lt1, to_lang="en")
                             t1final = translator2.translate(t1)
                         except Exception as e2:
-                            self.config.logger.error(':: Error at service 2: ' + str(e2))
+                            self.config.logger.error('Error at service 2: ' + str(e2))
                             return ret_error
                             # updating
 
@@ -104,12 +108,12 @@ class Util(object):
                     try:
                         t2final = self.translator.translate(t2, 'en')
                     except Exception as e1:
-                        self.config.logger.error(':: Error, trying another service: ' + str(e1))
+                        self.config.logger.error('Error, trying another service: ' + str(e1))
                         try:
                             translator2 = Translator(from_lang=lt2, to_lang="en")
                             t2final = translator2.translate(t2)
                         except Exception as e2:
-                            self.config.logger.error(':: Error at service 2: ' + str(e2))
+                            self.config.logger.error('Error at service 2: ' + str(e2))
                             return ret_error
                             # updating
 
@@ -121,7 +125,7 @@ class Util(object):
 
             c.close()
         except Exception as e:
-            self.config.logger.error(':: Error: ' + str(e))
+            self.config.logger.error('Error: ' + str(e))
             return False, ret_error
 
         return t1final, t2final
@@ -152,7 +156,7 @@ class Util(object):
                     raise Exception('parameter value not implemented: ' + str(self.config.object_detection_type))
 
         except Exception as e:
-            self.config.logger.error(':: Error: ' + str(e))
+            self.config.logger.error('Error: ' + str(e))
             predictions = [-1, -1, -1, -1, -1]
 
     def __get_compounds(self, tokens):
@@ -292,7 +296,7 @@ class Util(object):
                     return None
 
         except Exception as e:
-            print(':: error on get ner: %s' % e)
+            print('error on get ner: %s' % e)
             exit(-1)
 
         return index_token
@@ -364,7 +368,7 @@ class Util(object):
                                     exit(-1)
 
         except Exception as error:
-            print(':: error on get ner: %s' % error)
+            print('error on get ner: %s' % error)
 
         return index_ner_y
 
@@ -615,13 +619,18 @@ class Util(object):
             exit(-1)
 
     def populate_matrix_new_columns(self):
-        temp = []  # receives 0=8
-        temp.extend([0] * 9)  # 9-17
-        temp.extend([definitions.KLASSES[4]])  # 18
-        temp.extend([0] * 7)  # 19-25
-        temp.extend([definitions.KLASSES[4]])  # 26
-        temp.extend([0] * 9)  # 27-35
-        temp.extend([definitions.KLASSES[4]] * 15)  # 36-50
+        temp = []
+        temp.extend([0] * (int(definitions.HORUS_TOT_FEATURES)-8))
+        # do NOT append the last column here (y)
+
+        temp[18] = definitions.KLASSES[4]
+        temp[26] = definitions.KLASSES[4]
+        temp[26] = definitions.KLASSES[4]
+        temp[38] = definitions.KLASSES[4]
+        temp[39] = definitions.KLASSES[4]
+        temp[40] = definitions.KLASSES[4]
+        temp[41] = definitions.KLASSES[4]
+
         return temp
 
     def sentence_to_horus_matrix(self, sentences):
@@ -643,7 +652,7 @@ class Util(object):
                     compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
                     temp = [0, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
                     temp.extend(self.populate_matrix_new_columns())
-                    temp.extend([definitions.KLASSES[4]])
+                    temp[definitions.INDEX_TARGET_NER] = definitions.KLASSES[4]
                     converted.append(temp)
                 word_index = 0
                 starty = 0
@@ -655,9 +664,9 @@ class Util(object):
                         starty = ind_ner_real
                         # ind_ner = self.get_ner_mapping_slice(sent[2][0], sent[2][self.config.models_pos_tag_lib], i)
                         # ind_ner = self.get_ner_mapping2(sent[2][0], sent[2][self.config.models_pos_tag_lib], term, i)
-                        is_entity = 1 if sent[3][0][ind_ner_real] in definitions.NER_TAGS else 0
+                        has_NER = 1 if sent[3][0][ind_ner_real] in definitions.NER_TAGS else 0
                     else:
-                        is_entity = -1
+                        has_NER = -1
                     tag_ner = sent[3][self.config.models_pos_tag_lib][i] if len(
                         sent[3][self.config.models_pos_tag_lib]) > 0 else ''
                     tag_pos = sent[4][self.config.models_pos_tag_lib][i] if len(
@@ -688,9 +697,9 @@ class Util(object):
                     else:
                         tag_ner = definitions.KLASSES[4]
 
-                    temp = [is_entity, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0]  # 0-8
+                    temp = [has_NER, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0]  # 0-8
                     temp.extend(self.populate_matrix_new_columns())
-                    temp.extend([tag_ner_y])
+                    temp[definitions.INDEX_TARGET_NER] = tag_ner_y
                     ## that is a hack to integrate to GERBIL
                     # if ipositionstartterm >= len(sent[1][0]):
                     #    ipositionstartterm-=1
@@ -739,7 +748,7 @@ class Util(object):
         try:
             with SQLiteHelper(self.config.database_db) as sqlcon:
                 t = HorusDB(sqlcon)
-                t.conn.text_factory = str
+                #t.conn.text_factory = str
 
                 sSql = """SELECT sentence_has_NER, 
                 sentence, same_tokenization_nltk, same_tokenization_stanford, same_tokenization_tweetNLP,
@@ -761,7 +770,7 @@ class Util(object):
                     sent.append([json.loads(ret[17]), json.loads(ret[18]), json.loads(ret[19]), json.loads(ret[20])])
                     sent.append([json.loads('[]'), json.loads(ret[21]), json.loads(ret[22]), json.loads(ret[23])])
         except Exception as e:
-            self.config.logger.error(':: an error has occurred: ', e)
+            self.config.logger.error('an error has occurred: ', e)
             raise
         return sent
 
@@ -805,9 +814,8 @@ class Util(object):
 
             # saving to database (pos_uni_sta not implemented yet)
             sent = [hasNER,
-                    [s, 1 if _same_tok_nltk else 0,
-                     1,
-                     #1 if _same_tok_stanf else 0,
+                    [s,
+                     1 if _same_tok_nltk else 0, 1, #1 if _same_tok_stanf else 0,
                      1 if _same_tok_tweet else 0],
                     [tokens_gold_standard, _tokens_nltk, #_tokens_st,
                      [],
@@ -842,7 +850,7 @@ class Util(object):
             s = ''
             has3NER = -1
             tot_sentences = 1
-            self.config.logger.info(':: processing sentences...')
+            self.config.logger.info('processing sentences...')
 
             # hack to find problems in CONLL file
             # linenr = 0
@@ -879,7 +887,7 @@ class Util(object):
                             s += token + ' '
                             tokens.append(token)
                             tags_ner_y.append(ner)
-                            if ner in definitions.NER_RITTER:
+                            if ner in definitions.NER_TAGS:
                                 has3NER = 1
                         else:
                             docstart = True
@@ -913,12 +921,12 @@ class Util(object):
                     x4 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[39])
                     x5 += ' ' + str(token[3]) + '/' + str(token[4]) + '/' + str(token[40])
 
-        self.config.logger.info(':: sentence annotated :: ')
-        self.config.logger.info(':: KLASS 1 -->: ' + x1)
-        self.config.logger.info(':: KLASS 2 -->: ' + x2)
-        self.config.logger.info(':: KLASS 3 -->: ' + x3)
-        self.config.logger.info(':: KLASS 4 -->: ' + x4)
-        self.config.logger.info(':: KLASS 5 -->: ' + x5)
+        self.config.logger.info('sentence annotated :: ')
+        self.config.logger.info('KLASS 1 -->: ' + x1)
+        self.config.logger.info('KLASS 2 -->: ' + x2)
+        self.config.logger.info('KLASS 3 -->: ' + x3)
+        self.config.logger.info('KLASS 4 -->: ' + x4)
+        self.config.logger.info('KLASS 5 -->: ' + x5)
 
     def download_image_local(self, image_url, image_type, thumbs_url, thumbs_type, term_id, id_ner_type, seq):
         val = URLValidator()
@@ -946,17 +954,25 @@ class Util(object):
         return auxtype
 
     def download_and_cache_results(self, horus_matrix):
-        try:
+
+        with SQLiteHelper(self.config.database_db) as sqlcon:
             self.config.logger.info('caching results...')
+            t = HorusDB(sqlcon)
             auxc = 1
-            with SQLiteHelper(self.config.database_db) as sqlcon:
-                t = HorusDB(sqlcon)
+            try:
+                # getting list of cached terms
+                values = (self.config.search_engine_api, self.config.search_engine_features_text)
+                df = pd.read_sql_query(sql=SQL_ALL_TERM_SEARCH_SEL, con=t.conn, params=values)
+                df.set_index("id", inplace=True)
                 for index in range(len(horus_matrix)):
-                    term = horus_matrix[index][3]
-                    if (horus_matrix[index][5] in definitions.POS_NOUN_TAGS) or horus_matrix[index][7] == 1:
+                    term = horus_matrix[index][definitions.INDEX_TOKEN]
+                    term = term.lower()
+                    if (horus_matrix[index][definitions.INDEX_POS] in definitions.POS_NOUN_TAGS) or \
+                            horus_matrix[index][definitions.INDEX_IS_COMPOUND] == 1:
                         if auxc%1000==0:
-                            self.config.logger.debug('processing token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
-                        res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
+                            self.config.logger.debug('caching token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
+                        #res = t.term_cached(term, self.config.search_engine_api, self.config.search_engine_features_text)
+                        res=df.loc[df['term'] == term.encode('utf-8')]
                         if res is None or len(res) == 0:
                             '''
                             --------------------------------------------------------------------------
@@ -980,12 +996,12 @@ class Util(object):
                             Caching Documents (Texts)
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.debug('caching (web sites) -> [%s]' % term)
+                            self.config.logger.debug('caching %s web sites -> [%s]' % (len(result_txts), term))
                             id_term_search = t.save_term(term, self.config.search_engine_tot_resources,
                                                          len(result_txts), self.config.search_engine_api,
                                                          1, self.config.search_engine_features_text,
                                                          str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
-                            horus_matrix[index][9] = id_term_search
+                            horus_matrix[index][definitions.INDEX_ID_TERM_TXT] = id_term_search
                             seq = 0
                             for web_result_txt in result_txts:
                                 self.config.logger.info('caching (web site) -> [%s]' % web_result_txt['displayUrl'])
@@ -997,12 +1013,12 @@ class Util(object):
                             Caching Documents (Images)
                             --------------------------------------------------------------------------
                             '''
-                            self.config.logger.info('caching (web images) -> [%s]' % term)
+                            self.config.logger.info('caching %s web images -> [%s]' % (len(result_imgs), term))
                             id_term_img = t.save_term(term, self.config.search_engine_tot_resources,
                                                       len(result_imgs), self.config.search_engine_api,
                                                       2, self.config.search_engine_features_img,
                                                       str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
-                            horus_matrix[index][10] = id_term_img
+                            horus_matrix[index][definitions.INDEX_ID_TERM_IMG] = id_term_img
                             seq = 0
                             for web_result_img in result_imgs:
                                 self.config.logger.debug('downloading image [%s]' % (web_result_img['name']))
@@ -1017,21 +1033,45 @@ class Util(object):
                                                   web_result_img['name'],
                                                   web_result_img['encodingFormat'], web_result_img['height'],
                                                   web_result_img['width'], web_result_img['thumbnailUrl'], str(auxtype))
+                            # t.commit()
+                            # adding the new item to the cache dataframe
+                            self.config.logger.debug('updating local cache  ...')
+                            cols = ['id', 'term', 'id_search_type', 'tot_results_returned']
+                            df_txt = pd.DataFrame([[id_term_search, term.encode('utf-8'), 1, len(result_txts)]], columns=cols)
+                            df_txt.set_index("id", inplace=True)
+                            df_img = pd.DataFrame([[id_term_img, term.encode('utf-8'), 2, len(result_imgs)]], columns=cols)
+                            df_img.set_index("id", inplace=True)
+                            print(df_txt)
+                            print(df_img)
+                            df=pd.concat([df, df_txt, df_img], ignore_index=False, verify_integrity=True)
+                            self.config.logger.debug('OK')
 
-                            t.commit()
+                            #df.conca(df_txt, ignore_index=False, verify_integrity=True)
+                            #df=df.append(df_img, ignore_index=False, verify_integrity=True)
+
                         else:
                             if (len(res) != 2):
-                                raise Exception("that should not happen!")
-                            if ((1 or 2) not in [row[1] for row in res]):
-                                raise Exception("that should not happen auch!")
-                            horus_matrix[index][9] = res[0][0]
-                            horus_matrix[index][10] = res[1][0]
+                                raise Exception("that should not happen! check db integrity")
+                            if ((1) in set(df.loc[(df['term'] == term.encode('utf-8'))]['id_search_type'])):
+                                horus_matrix[index][INDEX_ID_TERM_TXT] = \
+                                    int(df.loc[(df['term'] == term.encode('utf-8')) & (df['id_search_type'] == 1)].index.values)
+                            else:
+                                horus_matrix[index][INDEX_ID_TERM_TXT] = -1
+                            if ((2) in set(df.loc[(df['term'] == term.encode('utf-8'))]['id_search_type'])):
+                                horus_matrix[index][INDEX_ID_TERM_IMG] = \
+                                    int(df.loc[(df['term'] == term.encode('utf-8')) & (df['id_search_type'] == 2)].index.values)
+                            else:
+                                horus_matrix[index][INDEX_ID_TERM_IMG] = -1
 
                     auxc += 1
-            #eturn horus_matrix
+                t.commit()
 
-        except Exception as e:
-            raise e
+            except Exception as e:
+                try:
+                    t.commit()
+                except:
+                    pass
+                raise e
 
     def path_leaf(self, path):
         head, tail = ntpath.split(path)
@@ -1077,14 +1117,14 @@ class Util(object):
             i_word = 0
             for item in t:
                 if type(item) is nltk.Tree:
-                    is_entity = 1 if (sent[0] == 1 and sent[3][0][i_word] != 'O') else -1
+                    has_NER = 1 if (sent[0] == 1 and sent[3][0][i_word] != 'O') else -1
                     i_word += len(item)
                     if len(item) > 1:  # that's a compound
                         compound = ''
                         for tk in item:
                             compound += tk[0] + ' '
 
-                        self.horus_matrix.append([is_entity, i_sent, i_word - len(item),
+                        self.horus_matrix.append([has_NER, i_sent, i_word - len(item),
                                                   compound[:len(compound) - 1], '', '', '', 1, len(item)])
                         compounds += compound[:len(compound) - 1] + '|'
                         compound = ''
@@ -1094,14 +1134,14 @@ class Util(object):
             # update the database with compounds for given sentence
             upd = self.update_database_compound(sent[1][0], compounds)
             #  transforming to components matrix
-            # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
+            # 0 = has_NER?,    1 = index_sent, 2 = index_word, 3 = word/term,
             # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
             # 8 = compound_size
             i_word = 1
             for k in range(len(sent[2])):
-                is_entity = 1 if (sent[0] == 1 and sent[3][k] != 'O') else -1
+                has_NER = 1 if (sent[0] == 1 and sent[3][k] != 'O') else -1
                 self.horus_matrix.append(
-                    [is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                    [has_NER, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
 
             i_sent += 1
@@ -1113,7 +1153,7 @@ class Util(object):
         return ' '.join(x for x in unicodedata.normalize('NFKD', data) if x in string.ascii_letters).lower()
 
     def __cache_sentence_ritter(self, sentence_list):
-        self.config.logger.debug(':: caching Ritter dataset...:')
+        self.config.logger.debug('caching Ritter dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
         sent_with_ner = 0
@@ -1149,27 +1189,27 @@ class Util(object):
             # processing tokens
 
             #  transforming to components matrix
-            # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
+            # 0 = has_NER?,    1 = index_sent, 2 = index_word, 3 = word/term,
             # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
             # 8 = compound_size
 
             i_word = 1
             for k in range(len(sent[2])):  # list of NER tags
-                is_entity = 1 if sent[3] in definitions.NER_RITTER else 0
+                has_NER = 1 if sent[3] in definitions.NER_RITTER else 0
                 self.horus_matrix.append(
-                    [is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                    [has_NER, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
-                if is_entity:
+                if has_NER:
                     token_ok += 1
 
             i_sent += 1
             i_word = 1
 
-        self.config.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+        self.config.logger.debug('done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     def __cache_sentence_conll(self, sentence_list):
-        self.config.logger.debug(':: caching coNLL 2003 dataset...:')
+        self.config.logger.debug('caching coNLL 2003 dataset...:')
         i_sent, i_word = 1, 1
         compound, prev_tag = '', ''
         sent_with_ner = 0
@@ -1218,25 +1258,25 @@ class Util(object):
             # processing tokens
 
             #  transforming to components matrix
-            # 0 = is_entity?,    1 = index_sent, 2 = index_word, 3 = word/term,
+            # 0 = has_NER?,    1 = index_sent, 2 = index_word, 3 = word/term,
             # 4 = pos_universal, 5 = pos,        6 = ner       , 7 = compound? ,
             # 8 = compound_size
 
             i_word = 1
             for k in range(len(sent[2])):  # list of NER tags
-                is_entity = 1 if sent[3] in definitions.NER_CONLL else 0
+                has_NER = 1 if sent[3] in definitions.NER_CONLL else 0
 
                 self.horus_matrix.append(
-                    [is_entity, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
+                    [has_NER, i_sent, i_word, sent[2][k], sent[5][k], sent[4][k], sent[3][k], 0, 0])
                 i_word += 1
-                if is_entity:
+                if has_NER:
                     token_ok += 1
 
             self.__db_save_sentence(sent[1], '-', '-', str(sent[3]))
             i_sent += 1
             i_word = 1
 
-        self.config.logger.debug(':: done! total of sentences = %s, tokens = %s and compounds = %s'
+        self.config.logger.debug('done! total of sentences = %s, tokens = %s and compounds = %s'
                            % (str(sent_with_ner), str(token_ok), str(compound_ok)))
 
     '''
@@ -1279,7 +1319,8 @@ class Util(object):
     def __db_save_sentence(self, sent, corpus):
         try:
             c = self.conn.cursor()
-            self.conn.text_factory = str
+            #self.conn.text_factory = str
+            #self.conn.text_factory = lambda x: unicode(x, "utf-8", "ignore")
             sentence = [corpus, sent[0], sent[1][0], sent[1][1], sent[1][2], sent[1][3],
                         json.dumps(sent[2][0]), json.dumps(sent[2][1]), json.dumps(sent[2][2]), json.dumps(sent[2][3]),
                         json.dumps(sent[3][0]), json.dumps(sent[3][1]), json.dumps(sent[3][2]), json.dumps(sent[3][3]),
@@ -1291,7 +1332,7 @@ class Util(object):
             return id.lastrowid
 
         except Exception as e:
-            self.config.logger.error(':: an error has occurred: ', e)
+            self.config.logger.error('an error has occurred: ', e)
             raise
 
     def __processing_conll_ds(self, dspath):
@@ -1330,3 +1371,14 @@ class Util(object):
                     if ner_tag in definitions.NER_CONLL:
                         has3NER = 1
         return sentences
+
+class UnicodeDictReader(object):
+    def __init__(self, *args, **kw):
+        self.encoding = kw.pop('encoding', 'mac_roman')
+        self.reader = csv.DictReader(*args, **kw)
+
+    def __iter__(self):
+        decode = codecs.getdecoder(self.encoding)
+        for row in self.reader:
+            t = dict((k, decode(row[k])[0]) for k in row)
+            yield t

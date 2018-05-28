@@ -1,10 +1,14 @@
 SQL_TERM_SEARCH_INS = """INSERT into HORUS_TERM_SEARCH(term, id_search_engine, id_search_type,
-                     search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery)
-                     VALUES(?,?,?,?,?,?,?,?)"""
+                     search_engine_features, query_date, query_tot_resource, tot_results_returned, metaquery, ignore)
+                     VALUES(?,?,?,?,?,?,?,?,0)"""
+
+SQL_ALL_TERM_SEARCH_SEL = """SELECT id, lower(term) as term, id_search_type, tot_results_returned 
+                             FROM HORUS_TERM_SEARCH 
+                             WHERE ignore=0 AND id_search_engine = ? AND search_engine_features = ? """
 
 SQL_TERM_SEARCH_SEL = """SELECT id, id_search_type, tot_results_returned 
                              FROM HORUS_TERM_SEARCH 
-                             WHERE upper(term) = upper(?) AND id_search_engine = ? AND search_engine_features = ? 
+                             WHERE ignore=0 AND lower(term) = lower(?) AND id_search_engine = ? AND search_engine_features = ? 
                              ORDER BY term, id_search_type ASC LIMIT 2"""
 
 SQL_HORUS_SEARCH_RESULT_TEXT_INS = """INSERT INTO HORUS_SEARCH_RESULT_TEXT (id_term_search, id_ner_type,
@@ -38,13 +42,13 @@ SQL_OBJECT_DETECTION_UPD = """UPDATE HORUS_SEARCH_RESULT_IMG
 SQL_TEXT_CLASS_SEL   = """SELECT id, result_seq, result_title, result_description, result_title_en, result_description_en, 
                                   processed, 
                              text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
-                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, 0, 0, tot_union_emb_per, tot_union_emb_loc, tot_union_emb_org, tot_union_emb_none   
+                             text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, text_4_klass_cnn, 0, tot_union_emb_per, tot_union_emb_loc, tot_union_emb_org, tot_union_emb_none
                       FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
 
 SQL_TEXT_CLASS_UPD   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, 
                            text_1_klass = %s, text_2_klass = %s, text_3_klass = %s, text_4_klass = %s, text_5_klass = %s, 
                            text_1_klass_cnn = %s, text_2_klass_cnn = %s, text_3_klass_cnn = %s, text_4_klass_cnn = %s, text_5_klass_cnn = %s,
-                           tot_union_emb_per = %s, tot_union_emb_loc = %s, tot_union_emb_org = %s, tot_union_emb_none = %s
+                           tot_union_emb_loc = %s, tot_union_emb_org = %s, tot_union_emb_per = %s, tot_union_emb_none = %s
                            WHERE id = %s"""
 
 

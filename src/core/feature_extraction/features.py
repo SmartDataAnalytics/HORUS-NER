@@ -21,7 +21,7 @@ more info at: https://github.com/dnes85/components-models
 # Version: 1.0
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
-import csv
+import unicodecsv as csv
 import heapq
 import json
 import sys
@@ -29,6 +29,7 @@ import sqlite3
 import nltk
 import numpy as np
 import pandas as pd
+from PIL import Image
 from keras.applications.imagenet_utils import decode_predictions
 from keras.applications.inception_v3 import preprocess_input
 from sklearn import preprocessing
@@ -52,6 +53,7 @@ from src.classifiers.text_classification.bow_tfidf import BowTfidf
 from src.core.util import definitions
 from nltk.corpus import wordnet as wn
 
+
 class FeatureExtraction(object):
     def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1):
         '''
@@ -64,11 +66,11 @@ class FeatureExtraction(object):
         '''
         self.horus_matrix = [] # TODO: convert to pandas dataframe => pd.DataFrame(columns=definitions.HORUS_MATRIX_HEADER)
         self.config = config
-        self.config.logger.info('loading components...')
+        self.config.logger.info('loading components ...')
         self.util = Util(self.config)
         self.tools = NLPTools(self.config)
         self.translator = BingTranslator(self.config)
-        self.config.logger.info('loading extractors...that might take awhile...')
+        self.config.logger.info('loading extractors! might take awhile...')
         self.image_cnn_logo = None
         self.image_sift = None
         self.text_bow = None
@@ -92,6 +94,7 @@ class FeatureExtraction(object):
         self.min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
         self.config.logger.info('setting the seeds ')
         self.__set_str_extended_seeds()
+        self.config.logger.info('hooray!')
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -104,21 +107,23 @@ class FeatureExtraction(object):
     def jsonDefault(object):
         return object.__dict__
 
-    def __export_data(self, path, format):
+    def __export_data(self, path, format='tsv'):
+
         try:
-            self.config.logger.info(':: exporting metadata to: ' + path + "." + format)
+            self.config.logger.info('exporting metadata to: ' + path)
+            data=self.horus_matrix
             if format == 'json':
                 with open(path + '.json', 'wb') as outfile:
-                    json.dump(self.horus_matrix, outfile) #indent=4, sort_keys=True
+                    json.dump(data, outfile) #indent=4, sort_keys=True
             elif format == 'csv':
                 writer = csv.writer(open(path + '.csv', 'wb'), quoting=csv.QUOTE_ALL)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 # writer.writerow([s.encode('utf8') if type(s) is unicode else s for s in self.horus_matrix])
-                writer.writerows(self.horus_matrix)
+                writer.writerows(data)
             elif format == 'tsv':
-                writer = csv.writer(open(path + '.tsv', 'wb'), dialect="excel", delimiter="\t", skipinitialspace=True)
+                writer = csv.writer(open(path, 'wb'), dialect="excel", delimiter='\t', skipinitialspace=True, encoding='utf-8')
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
-                writer.writerows(self.horus_matrix)
+                writer.writerows(data)
             else:
                 raise Exception('format not implemented')
             self.config.logger.info("data exported successfully")
@@ -137,15 +142,18 @@ class FeatureExtraction(object):
         self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
 
         hm = pd.DataFrame(self.horus_matrix)
-        self.config.logger.info(':: basic POS statistics')
-        a = len(hm)  # all
-        a2 = len(hm[(hm[7] == 0)])  # all excluding compounds
-        plo = hm[(hm[7] == 0) & (hm[0] == 1)]  # all PLO entities (not compound)
-        not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]  # all PLO entities (not compound)
+        self.config.logger.info('basic POS statistics')
+        a = len(hm)
+        # all excluding compounds
+        a2 = len(hm[(hm[definitions.INDEX_IS_COMPOUND] == 0)])
+        # all PLO entities (not compound)
+        plo = hm[(hm[definitions.INDEX_IS_COMPOUND] == 0) & (hm[definitions.INDEX_IS_ENTITY] == 1)]
+        # all PLO entities (not compound)
+        not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]
 
-        pos_ok_plo = plo[(plo[5].isin(definitions.POS_NOUN_TAGS))]
-        pos_not_ok_plo = plo[(~plo[5].isin(definitions.POS_NOUN_TAGS))]
-        pos_noun_but_not_entity = not_plo[(not_plo[5].isin(definitions.POS_NOUN_TAGS))]
+        pos_ok_plo = plo[(plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
+        pos_not_ok_plo = plo[(~plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
+        pos_noun_but_not_entity = not_plo[(not_plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
 
         self.config.logger.info('[basic statistics]')
         self.config.logger.info('-> ALL terms: %s ' % a)
@@ -217,23 +225,47 @@ class FeatureExtraction(object):
 
     def __get_number_classes_in_embeedings(self, w):
         '''
-        returns the number of terms existing in the set of returned words similar to w
         :param w: an input word
-        :return: the number of elements from both k and the embeedings function
+        :return:
         '''
         try:
+            out = []
 
-            most_similar = set(self.tools.word2vec_google.most_similar(positive=w, topn=5))
+            try:
+                most_similar_to_w = self.tools.word2vec_google.most_similar(positive=w, topn=5)
+            except KeyError:
+                return np.array([0.0, 0.0, 0.0, 0.0]), None
 
-            t_per = len(most_similar.union(set(definitions.seeds_dict_topics['per'])))
-            t_org = len(most_similar.union(set(definitions.seeds_dict_topics['org'])))
-            t_loc = len(most_similar.union(set(definitions.seeds_dict_topics['loc'])))
-            t_none = len(most_similar.union(set(definitions.seeds_dict_topics['none'])))
+            for w, prob in most_similar_to_w:
+                aL, aO, aP, aN = [], [], [], []
+                for z in definitions.seeds_dict_topics['loc'][0:9]:
+                    try:
+                        aL.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                    except KeyError:
+                        continue
 
-            return t_per, t_org, t_loc, t_none
+                for z in definitions.seeds_dict_topics['org'][0:9]:
+                    try:
+                        aO.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                    except KeyError:
+                        continue
 
-        except KeyError:
-            return 0, 0, 0, 0
+                for z in definitions.seeds_dict_topics['per'][0:9]:
+                    try:
+                        aP.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                    except KeyError:
+                        continue
+
+                for z in definitions.seeds_dict_topics['none'][0:9]:
+                    try:
+                        aN.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                    except KeyError:
+                        continue
+
+                out.append([np.average(np.array(aL)), np.average(np.array(aO)),
+                            np.average(np.array(aP)), np.average(np.array(aN))])
+
+            return np.average(np.array(out), axis=0), most_similar_to_w
         except:
             raise
 
@@ -393,7 +425,7 @@ class FeatureExtraction(object):
             self.config.logger.error(str(e))
             return [0] * 8
 
-    def extract_features(self):
+    def extract_features(self, features_text=True, features_vision=True):
         """
         receives a horus_matrix and iterate over the tokens, detecting objects for each image/document
         in a set of images/documents related to a given token
@@ -401,9 +433,16 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         try:
-            self.config.logger.info('detecting %s objects...' % len(self.horus_matrix))
-            auxi = 0
+
+            assert (features_text is False or features_text is True and (self.text_tm is not None or self.text_bow is not None))
+
+            assert (features_vision is False or features_vision is True and ((self.image_cnn_placesCNN is not None and self.dlib_cnn is not None
+                                                and self.image_cnn_incep_model is not None and self.image_cnn_logo is not None) or
+                                                (self.image_sift is not None)))
+
             toti = len(self.horus_matrix)
+            self.config.logger.info('extracting features for %s terms/tokens' % str(toti))
+            auxi = 0
             for index in range(len(self.horus_matrix)):
                 auxi += 1
                 if (self.horus_matrix[index][definitions.INDEX_POS] in definitions.POS_NOUN_TAGS) or self.horus_matrix[index][definitions.INDEX_IS_COMPOUND] == 1:
@@ -422,30 +461,31 @@ class FeatureExtraction(object):
                     tot_geral_faces_cnn = 0
                     tot_geral_logos_cnn = 0
                     out_geral_cnn_features_loc = []
-                    #tot_geral_locations_cnn = 0
-                    #tot_geral_pos_locations_cnn = 0
-                    #tot_geral_neg_locations_cnn = 0
-                    #location_cnn_feats = []
+
 
                     with self.conn:
-                        # -----------------------------------------------------------------
-                        # image classification
-                        # -----------------------------------------------------------------
-                        if 1==1:
-                            cursor = self.conn.cursor()
+                        cursor = self.conn.cursor()
+                        if features_vision is True:
                             cursor.execute(SQL_OBJECT_DETECTION_SEL % (id_term_img, id_ner_type))
                             rows = cursor.fetchall()
                             nr_results_img = len(rows)
                             if nr_results_img == 0:
-                                self.config.logger.debug("term has not returned images!")
+                                self.config.logger.debug("token/term has not returned images!")
                             limit_img = min(nr_results_img, int(self.config.search_engine_tot_resources))
 
                             # 0 = file path | 1 = id | 2 = processed | 3=nr_faces | 4=nr_logos | 5 to 14=nr_places_1-to-10
                             # 14 = nr_faces_cnn, 15 = nr_logos_cnn, 16-25=nr_places_1-to-10_cnn
+                            tot_processed_img = 0
                             for i in range(limit_img):
                                 _id = rows[i][1]
-
                                 img_full_path = self.config.cache_img_folder + rows[i][0]
+                                try:
+                                    Image.open(img_full_path)
+                                    tot_processed_img+=1
+                                except IOError:
+                                    self.config.logger.error('image error: ' + img_full_path)
+                                    continue
+
                                 if rows[i][2] == 1: # processed
                                     tot_geral_faces += rows[i][3] if rows[i][3] != None else 0
                                     tot_geral_logos += rows[i][4] if rows[i][4] != None else 0
@@ -538,7 +578,7 @@ class FeatureExtraction(object):
                             #dist_cv_indicator_cnn = max(maxs_cv_cnn) - min(maxs_cv_cnn)
                             #place_cv_indicator_cnn = tot_geral_pos_locations_cnn + tot_geral_neg_locations_cnn
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_IMG] = limit_img
+                            self.horus_matrix[index][definitions.INDEX_TOT_IMG] = tot_processed_img
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_LOC] = tot_geral_locations  # 1
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_ORG] = tot_geral_logos  # 2
                             self.horus_matrix[index][definitions.INDEX_TOT_CV_PER] = tot_geral_faces  # 3
@@ -561,6 +601,7 @@ class FeatureExtraction(object):
                             #self.horus_matrix[index][definitions.INDEX_DIST_CV_I_CNN] = dist_cv_indicator_cnn  # 5
                             #self.horus_matrix[index][definitions.INDEX_PL_CV_I_CNN] = place_cv_indicator_cnn  # 6
 
+                            '''
                             self.config.logger.debug('CV statistics:[BOW: LOC=%s, ORG=%s, PER=%s, DIST=%s, PLC=%s | '
                                               'CNN: LOC1=%s,LOC2=%s,LOC3=%s,LOC4=%s,LOC5=%s,LOC6=%s,LOC7=%s,LOC8=%s, '
                                                      'ORG=%s, PER=%s]' %
@@ -576,8 +617,9 @@ class FeatureExtraction(object):
                                                str(x[7]).zfill(4),
                                                str(tot_geral_logos_cnn).zfill(2),
                                                str(tot_geral_faces_cnn).zfill(2)))
+                            '''
 
-                            if limit_img != 0:
+                            if tot_processed_img != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[outs.index(max(outs)) + 1]
                                 #self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[outs_cnn.index(max(outs_cnn)) + 1]
                                 #TODO: this does not make sense now, since CNN classifiers are a bit more complex...thinkg about that later...it does not impact the algorithm
@@ -586,33 +628,46 @@ class FeatureExtraction(object):
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[4]
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[4]
 
-                        # -----------------------------------------------------------------
-                        # text classification
-                        # -----------------------------------------------------------------
-                        if 1==1:
-
-                            tot_union_emb_loc = 0
-                            tot_union_emb_org = 0
-                            tot_union_emb_per = 0
-                            tot_union_emb_none = 0
-                            y_bow, y_tm = [], []
+                        if features_text is True:
+                            y_bow = [[0] * 5] * int(self.config.search_engine_tot_resources)
+                            y_tm = [[0] * 5] * int(self.config.search_engine_tot_resources)
                             cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
                             rows = cursor.fetchall()
 
                             nr_results_txt = len(rows)
                             if nr_results_txt == 0:
-                                self.config.logger.debug("term has not returned web sites!")
+                                self.config.logger.debug("token/term has not returned web sites!")
+
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
                             tot_error_translation = 0
-                            tot_union_emb_per, tot_union_emb_org, tot_union_emb_loc, tot_union_emb_none = \
-                                self.__get_number_classes_in_embeedings(term)
+                            embs, top5_sim = self.__get_number_classes_in_embeedings(term)
+
+                            klass_top = []
+                            tm_cnn_w = []
+                            tm_cnn_w_exp=[]
+                            if self.text_tm is not None:
+                                # TM+CNN - term
+                                tm_cnn_w = self.text_tm.detect_text_klass(term)
+                                tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
+
+                            if self.text_tm is not None and top5_sim is not None:
+                                for top in top5_sim:
+                                    klass_top.append(self.text_tm.detect_text_klass(top[0]))
+                            else:
+                                klass_top = [[np.math.pow(10, -5)] * 5] * 5
+
+                            klass_top.append(tm_cnn_w_exp)
+
+                            if limit_txt > 0:
+                                y_bow =[]
+                                y_tm=[]
                             for itxt in range(limit_txt):
                                 try:
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
                                         merged_en, error_translation = self.__detect_and_translate(rows[itxt][2], rows[itxt][3], rows[itxt][0], rows[itxt][4], rows[itxt][5])
                                         tot_error_translation += error_translation
-                                        ret_bow = [0] * 5
-                                        ret_tm = [0] * 5
+                                        ret_bow = [0.0] * 5
+                                        ret_tm = [0.0] * 5
                                         if merged_en != '':
                                             if self.text_bow is not None:
                                                 ret_bow = self.text_bow.detect_text_klass(merged_en)
@@ -621,24 +676,23 @@ class FeatureExtraction(object):
 
                                         y_bow.append(ret_bow)
 
-                                        ret_tm = self.min_max_scaler.fit_transform(np.array(ret_tm).reshape(1,-1))[0]
+                                        #ret_tm = self.min_max_scaler.fit_transform(np.array(ret_tm).reshape(1,-1))[0]
 
                                         y_tm.append(ret_tm)
 
                                         cursor.execute(SQL_TEXT_CLASS_UPD % (ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
                                                                        ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
-                                                                             tot_union_emb_per,
-                                                                             tot_union_emb_loc,
-                                                                             tot_union_emb_org,
-                                                                             tot_union_emb_none,
-                                                                       rows[itxt][0]))
+                                                                       embs[0], embs[1], embs[2], embs[3], rows[itxt][0]))
                                     else:
                                         y_bow.append(rows[itxt][7:11])
                                         y_tm.append(rows[itxt][12:16])
-                                        tot_union_emb_per = rows[itxt][17]
-                                        tot_union_emb_loc = rows[itxt][18]
-                                        tot_union_emb_org = rows[itxt][19]
-                                        tot_union_emb_none = rows[itxt][20]
+                                        embs=[]
+                                        embs.append(rows[itxt][17])
+                                        embs.append(rows[itxt][18])
+                                        embs.append(rows[itxt][19])
+                                        embs.append(rows[itxt][20])
+
+
 
                                 except Exception as e:
                                     self.config.logger.error(str(e.message))
@@ -648,12 +702,21 @@ class FeatureExtraction(object):
 
                             yyb = np.array(y_bow)
                             yytm = np.array(y_tm)
-
+                            klass_top = np.array(klass_top)
                             gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
-                            gpbtm = [np.sum(yytm[0][0], axis=0), np.sum(yytm[0][1], axis=0), np.sum(yytm[0][2], axis=0), np.sum(yytm[0][3], axis=0)]
+
+                            topic_klass_top_sums = [np.sum(klass_top[:, 0]), np.sum(klass_top[:, 1]), np.sum(klass_top[:, 2]), np.sum(klass_top[:, 3])]
+                            topic_klass_top_avg = [np.average(klass_top[:, 0]), np.average(klass_top[:, 1]), np.average(klass_top[:, 2]), np.average(klass_top[:, 3])]
+                            topic_klass_top_max = [np.max(klass_top[:, 0]), np.max(klass_top[:, 1]), np.max(klass_top[:, 2]), np.max(klass_top[:, 3])]
+                            topic_klass_top_min = [np.min(klass_top[:, 0]), np.min(klass_top[:, 1]), np.min(klass_top[:, 2]), np.min(klass_top[:, 3])]
+
+
+                            topic_sums = [np.sum(yytm[:,0]), np.sum(yytm[:,1]), np.sum(yytm[:,2]), np.sum(yytm[:,3])]
+                            topic_avg = [np.average(yytm[:,0]), np.average(yytm[:,1]), np.average(yytm[:,2]), np.average(yytm[:,3])]
+                            topic_max = [np.max(yytm[:,0]), np.max(yytm[:,1]), np.max(yytm[:,2]), np.max(yytm[:,3])]
+                            topic_min = [np.min(yytm[:,0]), np.min(yytm[:,1]), np.min(yytm[:,2]), np.min(yytm[:,3])]
 
                             horus_tx_ner = gpb.index(max(gpb)) + 1
-                            horus_tx_cnn_ner = gpbtm.index(max(gpbtm)) + 1
 
                             self.horus_matrix[index][definitions.INDEX_TOT_RESULTS_TX] = limit_txt
                             self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC] = gpb[0]
@@ -661,13 +724,13 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_TOT_TX_PER] = gpb[2]
                             self.horus_matrix[index][definitions.INDEX_TOT_ERR_TRANS] = tot_error_translation
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[0]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[1]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[2]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_NONE_TM_CNN] = 0 if len(yytm) == 0 else gpbtm[3]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_NONE_TM_CNN] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[3]
 
                             maxs_tx = heapq.nlargest(2, gpb)
-                            maxs_tm = 0 if len(y_tm) == 0 else heapq.nlargest(2, gpbtm)
+                            maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
                             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
                             dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
 
@@ -675,45 +738,90 @@ class FeatureExtraction(object):
                             self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_TX] = nr_results_txt
                             self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN] = dist_tx_indicator_tm
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC] = tot_union_emb_loc
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG] = tot_union_emb_org
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER] = tot_union_emb_per
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE] = tot_union_emb_none
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC] = embs[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG] = embs[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER] = embs[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE] = embs[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_LOC] = topic_klass_top_sums[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_ORG] = topic_klass_top_sums[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_PER] = topic_klass_top_sums[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_NONE] = topic_klass_top_sums[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_LOC] = topic_klass_top_avg[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_ORG] = topic_klass_top_avg[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_PER] = topic_klass_top_avg[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_NONE] = topic_klass_top_avg[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_LOC] = topic_klass_top_max[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_ORG] = topic_klass_top_max[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_PER] = topic_klass_top_max[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_NONE] = topic_klass_top_max[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_LOC] = topic_klass_top_min[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_ORG] = topic_klass_top_min[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_PER] = topic_klass_top_min[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_NONE] = topic_klass_top_min[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_LOC] = topic_sums[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_ORG] = topic_sums[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_PER] = topic_sums[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_NONE] = topic_sums[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_LOC] = topic_avg[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_ORG] = topic_avg[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_PER] = topic_avg[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_NONE] = topic_avg[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_LOC] = topic_max[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_ORG] = topic_max[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_PER] = topic_max[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_NONE] = topic_max[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_LOC] = topic_min[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_ORG] = topic_min[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_PER] = topic_min[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_NONE] = topic_min[3]
+
 
                             if limit_txt != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[horus_tx_ner]
                             else:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[4]
 
-                            if limit_txt != 0:
-                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[horus_tx_cnn_ner]
-                            else:
-                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[4]
 
-                        self.config.logger.debug('TX statistics:'
-                                           '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s, '
-                                                 'TOT_EMB_LOC=%s, TOT_EMB_ORG=%s, TOT_EMB_PER=%s, TOT_EMB_NONE=%s]' %
-                                           (str(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_DIST_TX_I]).zfill(2),
-                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN]).zfill(2),
-                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN]).zfill(2),
-                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN]).zfill(2),
-                                            "{:.2f}".format(self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER]).zfill(2),
-                                            str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE]).zfill(2))
-                                            )
-                        self.config.logger.debug('-------------------------------------------------------------')
+                            '''
+                            self.config.logger.debug('TX statistics:'
+                                               '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s, '
+                                                     'TOT_EMB_LOC=%s, TOT_EMB_ORG=%s, TOT_EMB_PER=%s, TOT_EMB_NONE=%s]' %
+                                               (str(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_DIST_TX_I]).zfill(2),
+                                                "{:.4f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN]).zfill(2),
+                                                "{:.4f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN]).zfill(2),
+                                                "{:.4f}".format(self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN]).zfill(2),
+                                                "{:.4f}".format(self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER]).zfill(2),
+                                                str(self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE]).zfill(2))
+                                                )
+                            self.config.logger.debug('-------------------------------------------------------------')
+                            '''
+
+            return True
 
         except Exception as e:
             self.config.logger.error(repr(e))
             self.conn.rollback()
-            self.horus_matrix[index] = [0] * int(definitions.HORUS_TOT_FEATURES)
-
-        return self.horus_matrix
+            self.config.logger.info('saving partially processed file...')
+            try:
+                #self.horus_matrix[index] = [0] * int(definitions.HORUS_TOT_FEATURES)
+                self.__export_data(self.config.dir_output + 'outfeatures.horus', 'json')
+            except Exception as e2:
+                self.config.logger.error('error: not possible to save the file! ' + str(e2))
+            return False
 
     def extract_features_from_text(self, text):
         """
@@ -725,7 +833,7 @@ class FeatureExtraction(object):
             if text is None:
                 raise Exception("Provide an input text")
             self.config.logger.info('text: ' + text)
-            self.config.logger.info(':: tokenizing sentences ...')
+            self.config.logger.info('tokenizing sentences ...')
             sent_tokenize_list = nltk.sent_tokenize(text, language='english')
             self.config.logger.info('processing ' + str(len(sent_tokenize_list)) + ' sentence(s).')
             sentences = []
@@ -734,13 +842,13 @@ class FeatureExtraction(object):
 
             self.horus_matrix = self.util.sentence_to_horus_matrix(sentences)
             self.util.download_and_cache_results(self.horus_matrix)
-            self.extract_features()
-            self.__export_data(self.config.dir_output + 'outfeatures.horus', 'json')
+            if self.extract_features() is True:
+                self.__export_data(self.config.dir_output + 'features_horus', 'json')
 
             return self.horus_matrix
 
         except Exception as error:
-            self.config.logger.error('extract_features1() error: ' + repr(error))
+            self.config.logger.error('extract_features_from_text() error: ' + repr(error))
 
     def extract_features_from_conll(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
         """
@@ -755,24 +863,20 @@ class FeatureExtraction(object):
         try:
             if file is None:
                 raise Exception("Provide an input file format to be annotated")
-            self.config.logger.info(':: processing CoNLL format -> %s' % label)
+            self.config.logger.info('processing CoNLL format -> %s' % label)
             file = self.config.dir_datasets + file
             sent_tokenize_list = self.util.process_ds_conll_format(file, label, token_index, ner_index, '')
-            self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
-            if len(self.horus_matrix) > 0:
+            if len(sent_tokenize_list) > 0:
+                self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
                 self.util.download_and_cache_results(self.horus_matrix)
-                self.extract_features()
-                filename = self.util.path_leaf(file) + ".horus"
-
-                path = self.config.dir_output + out_subfolder + filename
-                self.__export_data(path, 'tsv')
+                if self.extract_features(features_vision=True, features_text=True) is True:
+                    filename = self.util.path_leaf(file) + ".horus"
+                    path = self.config.dir_output + out_subfolder + filename
+                    self.__export_data(path)
             else:
-                self.config.logger.warn(':: well, nothing to do today...')
-
-            return self.horus_matrix
-
+                self.config.logger.warn('well, nothing to do today...')
         except Exception as error:
-            self.config.logger.error('extract_features2() error: ' + repr(error))
+            self.config.logger.error('extract_features_from_conll() error: ' + repr(error))
 
 
 
@@ -783,24 +887,28 @@ if __name__ == "__main__":
         else:
             config = HorusConfig()
             # args[0], args[1], args[2], args[3]
-            tot_args = 1 #len(sys.argv)
+            tot_args = 2 #len(sys.argv)
 
-            if tot_args == 2:
+            if tot_args == 1:
                 data = 'paris hilton was once the toast of the town'  # args[0]
+                data = 'comme ça'
                 extractor = FeatureExtraction(config)
                 out = extractor.extract_features_from_text(data)
                 #outjson = json.dumps(out)
                 print(out)
                 #print(outjson)
             else:
-                exp_folder = 'EXP_002/' #
+                exp_folder = 'EXP_004/' #
                 extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                out = extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
-                # extractor.extract_features('Ritter/ner_one_sentence.txt', exp_folder, 'ritter_sample')
-                # extractor.extract_features('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
-                # extractor.extract_features('wnut/2015.conll.freebase', exp_folder, 'wnut16')
-                ## attention: change POS tag lib in the HORUS.ini to NLTK before run this
-                # extractor.extract_features('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
-                #extractor.extract_features_conll(data, exp_folder, 'conll03b', 0, 3)
+                # extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
+                # extractor.extract_features_from_conll('wnut/2015.conll.freebase', exp_folder, 'wnut16')
+                extractor.extract_features_from_conll('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
+                # extractor.extract_features_from_conll('wnut/emerging.test.annotated', exp_folder, 'wnut17')
+                # extractor.extract_features_from_conll('wnut/2016.conll.freebase.test', exp_folder, 'wnut16test')
+
+                '''
+                attention: change POS tag lib in the HORUS.ini to NLTK before run this
+                extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
+                '''
     except Exception as e:
         print(e)

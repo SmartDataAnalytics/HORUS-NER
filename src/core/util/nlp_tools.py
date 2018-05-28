@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import gensim
 import nltk
 #from nltk.tag.stanford import CoreNLPNERTagger, CoreNLPPOSTagger
+import unicodedata
+
 from src.core.util import definitions, CMUTweetTagger
 from src.config import HorusConfig
 
@@ -15,10 +19,13 @@ class NLPTools(object):
     __metaclass__ = Singleton
 
     def tokenize_and_pos_nltk(self, text):
-        #TODO: esta trocando '' por ``
-        tokens = text
+        if isinstance(text, str):
+            text=text.decode('utf8')
+        # TODO: NLTK (ne_chunk) can't deal with unicode -> https://www.nltk.org/api/nltk.chunk.html (pre does not include Unicode support, so this module will not work with unicode strings)
+        text=unicodedata.normalize('NFKC', text).encode('ascii', 'replace')
         if type(text) is not list:
-            tokens = nltk.word_tokenize(text.decode('utf-8'))
+            text=text.decode('utf8')
+            tokens = nltk.word_tokenize(text)
 
         #sd = [s.decode('utf8') for s in tokens]
         tagged = nltk.pos_tag(tokens)
@@ -93,7 +100,7 @@ class NLPTools(object):
 
     def __init__(self, config):
         self.config = config
-        self.config.logger.info('loading NLP components, word2vec will take some time...')
+        self.config.logger.info('loading NLP components, embeedings might take some time ...')
         #self.stanford_ner = CoreNLPNERTagger(self.config.model_stanford_filename_ner, self.config.model_stanford_path_jar_ner)
         #self.stanford_pos = CoreNLPPOSTagger(self.config.model_stanford_filename_pos, self.config.model_stanford_path_jar_pos)
         #self.stanford_pos.java_options='-mx8g'

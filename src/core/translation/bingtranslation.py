@@ -35,7 +35,7 @@ class BingTranslator(object):
             print(h)
             translationData = requests.get(self.detectUrl, params=params ,headers=h)
             if translationData.status_code != 200:
-                raise Exception(':: error: bing lang detection status code: ' + str(translationData.status_code) + ' - ' + str(translationData.text))
+                raise Exception('error: bing lang detection status code: ' + str(translationData.status_code) + ' - ' + str(translationData.text))
             translation = ElementTree.fromstring(translationData.text.encode('utf-8'))
             return translation.text
         except Exception as e:
@@ -54,7 +54,7 @@ class BingTranslator(object):
             print(h)
             translationData = requests.get(self.translateUrl, params=params, headers=h) #urllib.urlencode()
             if translationData.status_code != 200:
-                raise Exception(':: error: bing translation status code: ' + str(translationData.status_code) + ' - ' +
+                raise Exception('error: bing translation status code: ' + str(translationData.status_code) + ' - ' +
                                 str(translationData.text))
             translation = ElementTree.fromstring(translationData.text.encode('utf-8'))
             return translation.text
