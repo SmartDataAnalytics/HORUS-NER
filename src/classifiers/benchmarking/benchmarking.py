@@ -190,7 +190,10 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
         config.logger.info(len(df))
         for row in df.itertuples():
             index=row.Index
-            if index % 500 == 0: config.logger.info(index)
+            if index==8:
+                a=1
+            #if index % 500 == 0: config.logger.info(index)
+            print(file + ' - ' + str(index))
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []
@@ -199,6 +202,8 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
 
             idsent = df.loc[index].at[definitions.INDEX_ID_SENTENCE]
             token = df.loc[index].at[definitions.INDEX_TOKEN]
+            token=token.decode('utf8', 'ignore')
+
             lemma=''
             stem=''
             try:
@@ -250,9 +255,9 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
                 prev_hyphen = int('-' in prev_token)
                 prev_sh = shape(prev_token)
                 try: prev_lemma = wnl.lemmatize(prev_token.lower())
-                except: prev_lemma = ''
+                except: prev_lemma = ''.decode('utf8')
                 try: prev_stem = stemmer.stem(prev_token.lower())
-                except: prev_stem = ''
+                except: prev_stem = ''.decode('utf8')
             else:
                 prev_pos = ''
                 prev_pos_uni = ''
@@ -375,7 +380,6 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
                 next_next_hyphen = -1
                 next_next_sh = -1
 
-
             # standard features [t-2, t-1, t, t+1, t+2] (12*5=60)
             _t.extend([le.transform(prev_prev_pos),
                        le.transform(prev_prev_pos_uni),
@@ -438,12 +442,12 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
                        next_next_hyphen,
                        next_next_sh])
 
+            _t.extend(_append_word_lemma_stem(prev_prev_token.lower(), prev_prev_lemma, prev_prev_stem))
+            _t.extend(_append_word_lemma_stem(prev_token.lower(), prev_lemma, prev_stem))
+            _t.extend(_append_word_lemma_stem(token.lower(), lemma, stem))
+            _t.extend(_append_word_lemma_stem(next_token.lower(), next_lemma, next_stem))
+            _t.extend(_append_word_lemma_stem(next_next_token.lower(), next_next_lemma, next_next_stem))
             # word, lemma, stem for [t-2, t-1, t, t+1, t+2] (3*5=15)
-            _t.extend([enc_word.transform(prev_prev_token.lower()), enc_lemma.transform(prev_prev_lemma), enc_stem.transform(prev_prev_stem)])
-            _t.extend([enc_word.transform(prev_token.lower()), enc_lemma.transform(prev_lemma), enc_stem.transform(prev_stem)])
-            _t.extend([enc_word.transform(token.lower()), enc_lemma.transform(lemma), enc_stem.transform(stem)])
-            _t.extend([enc_word.transform(next_token.lower()), enc_lemma.transform(next_lemma), enc_stem.transform(next_stem)])
-            _t.extend([enc_word.transform(next_next_token.lower()), enc_lemma.transform(next_next_lemma), enc_stem.transform(next_next_stem)])
 
             # brown clusters [320, 640, 1000] (5*3=15)
             _t.extend(brown_320)
@@ -492,8 +496,24 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
         config.logger.info('total of sentences: ' + str(len(ds_sentences)))
         config.logger.info('total of tokens: ' + str(len(df)))
         return file, (ds_sentences, y_sentences_shape), (df, y_tokens_shape)
-    except:
+    except Exception as e:
+        print(e)
         raise
+
+
+def _append_word_lemma_stem(w, l, s):
+    t=[]
+    try: t.append(enc_word.transform(str(w)))
+    except: t.append(0)
+
+    try: t.append(enc_lemma.transform(l.decode('utf-8')))
+    except: t.append(0)
+
+    try: t.append(enc_stem.transform(s.decode('utf-8')))
+    except: t.append(0)
+
+    return t
+
 
 def shape_datasets(experiment_folder, datasets):
     ret = []
@@ -645,7 +665,17 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                      2: definitions.FEATURES_STANDARD_WORD,
                      3: definitions.FEATURES_STANDARD_BROWN_64M_c320,
                      4: definitions.FEATURES_STANDARD_BROWN_64M_c640,
-                     5: definitions.FEATURES_STANDARD_BROWN_500M_c1000}
+                     5: definitions.FEATURES_STANDARD_BROWN_500M_c1000,
+                     6: definitions.FEATURES_STANDARD +
+                        definitions.FEATURES_STANDARD_WORD +
+                        definitions.FEATURES_STANDARD_BROWN_64M_c320,
+                     7: definitions.FEATURES_STANDARD +
+                        definitions.FEATURES_STANDARD_WORD +
+                        definitions.FEATURES_STANDARD_BROWN_64M_c640,
+                     8: definitions.FEATURES_STANDARD +
+                        definitions.FEATURES_STANDARD_WORD +
+                        definitions.FEATURES_STANDARD_BROWN_64M_c1000
+                     }
 
 
                      #6: definitions.FEATURES_HORUS_BASIC_CV,
@@ -862,9 +892,10 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+# 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horuss ner.txt.horus
+    parser.add_argument('--ds', '--datasets', nargs='+', default='emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')

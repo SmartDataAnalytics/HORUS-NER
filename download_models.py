@@ -19,3 +19,7 @@ try:
     nltk.data.find('words.zip')
 except LookupError:
     nltk.download('words')
+try:
+    nltk.data.find('stopwords.zip')
+except LookupError:
+    nltk.download('stopwords')

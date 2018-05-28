@@ -1,6 +1,8 @@
 import pickle
 
 import os
+import tarfile
+import urllib2
 
 import pandas as pd
 import sklearn
@@ -16,6 +18,7 @@ from src.core.util.definitions import encoder_int_lemma_name, encoder_int_stem_n
     encoder_onehot_stem_name
 
 config = HorusConfig()
+
 
 def word2dict(experiment_folder, datasets):
     try:
@@ -38,14 +41,16 @@ def word2dict(experiment_folder, datasets):
             prev_sent_id=df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
             sentence=''
             for row in df.itertuples():
-                w=str(row[2])
+                w=row[2]
                 words.append(w.lower())
                 try:
-                    lemmas.append(wnl.lemmatize(w.lower()))
+                    lemma=wnl.lemmatize(w.lower().decode('utf-8'))
+                    lemmas.append(lemma)
                 except:
                     continue
                 try:
-                    stemmers.append(stemmer.stem(w.lower()))
+                    steam=stemmer.stem(w.lower().decode('utf-8'))
+                    stemmers.append(steam)
                 except:
                     continue
 
@@ -88,6 +93,7 @@ def word2dict(experiment_folder, datasets):
     except:
         raise
 
+
 def conll2sentence():
     config.logger.info('creating sentences file for brown clusters')
     f_out = open(config.dir_datasets + 'all_sentences.txt', 'w+')
@@ -109,11 +115,20 @@ def conll2sentence():
 
     f_out.close()
 
+
 def browncluster2dict(filepath, filename):
     try:
+        if not os.path.exists(filepath):
+            config.logger.info('downloading the data')
+            os.makedirs(filepath)
+            request = urllib2.urlopen('https://s3-eu-west-1.amazonaws.com/downloads.gate.ac.uk/resources/derczynski-chester-boegh-brownpaths.tar.bz2')
+            tar = tarfile.open('derczynski-chester-boegh-brownpaths.tar.bz2', "r:gz")
+            tar.extractall()
+            tar.close()
+
         config.logger.info('creating dictionary: ' + filename)
         brown = dict()
-        with open(filepath + filename) as f:
+        with open(filepath + 'paths/' + filename) as f:
             content = f.readlines()
             for x in content:
                 n=x.split('\t')
@@ -123,9 +138,6 @@ def browncluster2dict(filepath, filename):
         config.logger.info('file generated')
     except:
         raise
-
-#browncluster2dict('output_brownclusters.txt')
-
 
 word2dict('EXP_004', '2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus')
 exit(0)
