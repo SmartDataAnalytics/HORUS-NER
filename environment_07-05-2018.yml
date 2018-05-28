@@ -6,8 +6,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - appnope=0.1.0=py27_0
-  - backports=1.0=py27_0
+  - backports
   - coverage=4.3.4=py27_0
   - cycler=0.10.0=py27_0
   - enum34=1.1.6=py27_0
@@ -36,41 +35,41 @@ dependencies:
   - setuptools=27.2.0=py27_0
   - sip=4.18=py27_0
   - six=1.10.0=py27_0
-  - sqlite=3.13.0=0
+  - sqlite
   - wcwidth=0.1.7=py27_0
   - wheel=0.29.0=py27_0
   - x264=20131217=2
   - yaml=0.1.6=0
   - zlib=1.2.8=3
-  - backports.shutil_get_terminal_size=1.0.0=py27hc9115de_2
+  - backports.shutil_get_terminal_size
   - boto=2.46.1=py27_0
   - bz2file=0.98=py27_0
-  - bzip2=1.0.6=hd86a083_4
+  - bzip2
   - ca-certificates=2018.03.07=0
   - certifi=2018.4.16=py27_0
-  - cffi=1.11.4=py27h342bebf_0
+  - cffi
   - decorator=4.0.10=py27_1
   - freetype=2.5.5=1
   - get_terminal_size=1.0.0=py27_0
-  - h5py=2.6.0=np110py27_1
-  - hdf5=1.8.16=0
+  - h5py
+  - hdf5
   - icu=54.1=0
-  - libcxx=4.0.1=h579ed51_0
-  - libcxxabi=4.0.1=hebd6815_0
-  - libffi=3.2.1=h475c297_4
-  - libgcc=4.8.5=hdbeacc1_10
-  - libgfortran=3.0.1=h93005f0_2
-  - libpng=1.6.27=0
+  - libcxx
+  - libcxxabi
+  - libffi
+  - libgcc
+  - libgfortran
+  - libpng
   - libtiff=4.0.6=3
   - markdown=2.6.8=py27_0
   - matplotlib=1.5.1=np110py27_0
   - mkl=11.3.3=0
   - numpy=1.10.4=py27_2
-  - openssl=1.0.2o=h26aff7b_0
+  - openssl
   - pillow=4.0.0=py27_0
   - pip=9.0.1=py27_1
-  - prompt_toolkit=1.0.15=py27h4a7b9c2_0
-  - pycparser=2.18=py27h0d28d88_1
+  - prompt_toolkit
+  - pycparser
   - pyparsing=2.1.4=py27_0
   - pyqt=4.11.4=py27_4
   - qt=4.8.7=4
@@ -82,13 +81,12 @@ dependencies:
   - unidecode=0.04.21=py27_0
   - xz=5.2.2=1
   - boost=1.59.0=py27_0
-  - tbb=4.3_20141023=0
-  - ffmpeg=2.2.4=0
+  - tbb
+  - ffmpeg
   - opencv=3.1.0=np110py27_0
-  - pytorch=0.2.0=py27_4cu75
+  - pytorch
   - pip:
     - attrs==17.2.0
-    - backports.weakref==1.0.post1
     - bleach==1.5.0
     - boto3==1.5.14
     - botocore==1.8.28
@@ -102,11 +100,9 @@ dependencies:
     - defusedxml==0.5.0
     - dill==0.2.7.1
     - django==1.10.5
-    - dlib==19.10.0
     - docopt==0.6.2
     - docutils==0.14
     - eli5==0.6.2
-    - en-core-web-sm==1.2.0
     - flask==0.12.2
     - frogress==0.9.1
     - ftfy==4.4.3
@@ -139,7 +135,7 @@ dependencies:
     - python-crfsuite==0.9.1
     - python-igraph==0.7.1.post6
     - pywavelets==0.5.2
-    - regex==2017.4.5
+    - regex
     - requests-toolbelt==0.8.0
     - s3transfer==0.1.12
     - scikit-image==0.13.1
@@ -148,7 +144,7 @@ dependencies:
     - singledispatch==3.4.0.3
     - sklearn-crfsuite==0.3.5
     - smart-open==1.5.6
-    - spacy==1.10.0
+    - spacy
     - stemming==1.0.1
     - tabulate==0.7.7
     - tensorflow==1.4.1
@@ -172,4 +168,3 @@ dependencies:
     - wrapt==1.10.11
     - yarg==0.1.9
 prefix: /Users/diegoesteves/anaconda3/envs/horus_27_cv310
-
