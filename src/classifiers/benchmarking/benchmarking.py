@@ -192,8 +192,8 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
             index=row.Index
             if index==8:
                 a=1
-            #if index % 500 == 0: config.logger.info(index)
-            print(file + ' - ' + str(index))
+            if index % 500 == 0: config.logger.info(index)
+            #print(file + ' - ' + str(index))
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []
@@ -617,6 +617,7 @@ def exclude_columns(df, f_indexes):
 
 def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
     try:
+        config.logger.info(_file_name + ' dump creation starts!')
         X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
         Y_sentence = [sent2label(s) for s in ds[1][1]]
         X_token = exclude_columns(ds[2][0], f_indexes)
@@ -624,12 +625,13 @@ def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
         Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
         X_crf = [sent2features(s) for s in X_sentence]
         _Y_sentence = np.array([x for s in Y_sentence for x in s])  # trick for scikit_learn on CRF (for the precision_recall_fscore_support method)
-        X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
+        #X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
         #X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
         #X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
         #y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
         with open(_file_path, 'wb') as output:
-            pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, _Y_sentence], output, pickle.HIGHEST_PROTOCOL)
+            pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token,
+                         X_crf, _Y_sentence], output, pickle.HIGHEST_PROTOCOL)
         config.logger.info(_file_name + ' created!')
     except:
         raise
@@ -640,7 +642,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
     experiment_folder+='/'
-    out_file = open(config.dir_output + experiment_folder + 'metadata.txt', 'w+')
     config.logger.info('datasets: ' + str(datasets))
     datasets=datasets.split()
 
@@ -658,8 +659,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     epochs = 50
     verbose = 0
 
-    _label='EXP_004'
-    _meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
+    #_meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
 
     dict_exp_feat = {1: definitions.FEATURES_STANDARD,
                      2: definitions.FEATURES_STANDARD_WORD,
@@ -674,42 +674,36 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         definitions.FEATURES_STANDARD_BROWN_64M_c640,
                      8: definitions.FEATURES_STANDARD +
                         definitions.FEATURES_STANDARD_WORD +
-                        definitions.FEATURES_STANDARD_BROWN_64M_c1000
-                     }
-
-
-                     #6: definitions.FEATURES_HORUS_BASIC_CV,
-                     #7: definitions.FEATURES_HORUS_BASIC_TX,
-                     #8: definitions.FEATURES_HORUS_CNN_CV,
-                     #9: definitions.FEATURES_HORUS_CNN_TX,
-                     #10: definitions.FEATURES_HORUS_EMB_TX,
-                     #11: definitions.FEATURES_HORUS_STATS_TX,
-                     #12: definitions.FEATURES_HORUS_TX,
-                     #13: definitions.FEATURES_HORUS_TX_EMB,
-                     #14: definitions.FEATURES_HORUS_CV,
-                     #15: definitions.FEATURES_HORUS_BASIC_AND_CNN,
-                     #16: definitions.FEATURES_HORUS,
-                     #17: definitions.FEATURES_HORUS_BASIC_CV_BEST_STANDARD,
-                     #18: definitions.FEATURES_HORUS_BASIC_TX_BEST_STANDARD,
-                     #19: definitions.FEATURES_HORUS_CNN_CV_BEST_STANDARD,
-                     #20: definitions.FEATURES_HORUS_CNN_TX_BEST_STANDARD,
-                     #21: definitions.FEATURES_HORUS_EMB_TX_BEST_STANDARD,
-                     #22: definitions.FEATURES_HORUS_STATS_TX_BEST_STANDARD,
-                     #23: definitions.FEATURES_HORUS_TX_BEST_STANDARD,
-                     #24: definitions.FEATURES_HORUS_TX_EMB_BEST_STANDARD,
-                     #25: definitions.FEATURES_HORUS_CV_BEST_STANDARD,
-                     #26: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
-                     #27: definitions.FEATURES_HORUS_BEST_STANDARD}
-
+                        definitions.FEATURES_STANDARD_BROWN_500M_c1000,
+                     9: definitions.FEATURES_HORUS_BASIC_CV,
+                     10: definitions.FEATURES_HORUS_BASIC_TX,
+                     11: definitions.FEATURES_HORUS_CNN_CV,
+                     12: definitions.FEATURES_HORUS_CNN_TX,
+                     13: definitions.FEATURES_HORUS_EMB_TX,
+                     14: definitions.FEATURES_HORUS_STATS_TX,
+                     15: definitions.FEATURES_HORUS_TX,
+                     16: definitions.FEATURES_HORUS_TX_EMB,
+                     17: definitions.FEATURES_HORUS_CV,
+                     18: definitions.FEATURES_HORUS_BASIC_AND_CNN,
+                     19: definitions.FEATURES_HORUS,
+                     20: definitions.FEATURES_HORUS_BASIC_CV_BEST_STANDARD,
+                     21: definitions.FEATURES_HORUS_BASIC_TX_BEST_STANDARD,
+                     22: definitions.FEATURES_HORUS_CNN_CV_BEST_STANDARD,
+                     23: definitions.FEATURES_HORUS_CNN_TX_BEST_STANDARD,
+                     24: definitions.FEATURES_HORUS_EMB_TX_BEST_STANDARD,
+                     25: definitions.FEATURES_HORUS_STATS_TX_BEST_STANDARD,
+                     26: definitions.FEATURES_HORUS_TX_BEST_STANDARD,
+                     27: definitions.FEATURES_HORUS_TX_EMB_BEST_STANDARD,
+                     28: definitions.FEATURES_HORUS_CV_BEST_STANDARD,
+                     29: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
+                     30: definitions.FEATURES_HORUS_BEST_STANDARD}
 
     config.logger.info('shaping the datasets...')
     shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
     config.logger.info('done! running experiment configurations')
-    exit(0)
     header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\n'
     line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\n'
 
-    out_file.write(header)
     config.logger.info('creating the sets for all configurations x datasets')
     # multithread to shape the datasets for all configurations in parallel
     job_args = []
@@ -730,13 +724,29 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
         p = multiprocessing.Pool(8)
         p.map(get_subset_file_name, job_args)
     config.logger.info('done! running the benchmark...')
+
     # benchmark starts
+    name='metadata_'
+    if runCRF:
+        name+='crf_'
+    if runDT:
+        name+='dt_'
+    if runLSTM:
+        name+='lstm_'
+    assert name != 'metadata_'
+    name += str(dict_exp_feat.keys()).replace('[','').replace(']','').replace(',','').replace(' ','')
+    name +='.txt'
+    out_file = open(config.dir_output + experiment_folder + name, 'w+')
+    out_file.write(header)
     for f_key, f_indexes in dict_exp_feat.iteritems():
+        if f_key <= 8:
+            config.logger.info('configuration 6 and 7 are the better scenarios - start from 9')
+            continue
         for ds1 in datasets:
             ds1_name = ds1
             _set_name = _SET_MASK % (ds1, str(f_key))
             _file = config.dir_output + experiment_folder + _set_name
-            #config.logger.info('loading [%s]: %s' % (ds1_name, _file))
+            config.logger.info('loading [%s]: %s' % (ds1_name, _file))
             with open(_file, 'rb') as input:
                 shaped = pickle.load(input)
                 ds1_config_name = shaped[0]
@@ -796,8 +806,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                     if runCRF is True:
                         m = _crf.fit(X1_crf, Y1_sentence)
                         ypr = m.predict(X2_crf)
-                        print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(),
-                                                                 target_names=sorted_labels.values(), digits=3))
+                        #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(),
+                        #                                         target_names=sorted_labels.values(), digits=3))
 
                         _ypr = np.array([tag for row in ypr for tag in row])
                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
@@ -892,13 +902,12 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-# 2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horuss ner.txt.horus
-    parser.add_argument('--ds', '--datasets', nargs='+', default='emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus ner.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
-    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
-    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
+    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
+    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
