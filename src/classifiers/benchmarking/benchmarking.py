@@ -37,7 +37,7 @@ from keras.layers import Embedding, LSTM, Dense, Merge
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 import pandas as pd
-import pickle
+import cPickle as pickle
 import multiprocessing
 from functools import partial
 from contextlib import contextmanager
@@ -638,6 +638,12 @@ def get_subset_file_name((_file_path, _file_name, ds, f_key, f_indexes)):
 
     return _file_name
 
+def load_dumps_in_memory((_file, ds, _set_name)):
+    config.logger.info('loading dump file [%s]: %s' % (ds, _file))
+    with open(_file, 'rb') as input:
+        dump = pickle.load(input)
+    return (_set_name, dump)
+
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
@@ -698,33 +704,34 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                      29: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
                      30: definitions.FEATURES_HORUS_BEST_STANDARD}
 
-    config.logger.info('shaping the datasets...')
-    shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
-    config.logger.info('done! running experiment configurations')
     header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
     line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
-
-    config.logger.info('creating the sets for all configurations x datasets')
-    # multithread to shape the datasets for all configurations in parallel
-    job_args = []
-
     _SET_MASK = '_%s_config_%s.pkl'
-    set_file_dump_names=[]
-    for ds in shaped_datasets:
-        for f_key, f_indexes in dict_exp_feat.iteritems():
-            _set_name = _SET_MASK % (ds[0], str(f_key))
-            _file = config.dir_output + experiment_folder + _set_name
-            if os.path.isfile(_file) is False:
-                job_args.append((_file, _set_name, ds, f_key, f_indexes))
-            set_file_dump_names.append(_set_name)
+    REPROCESS = False
 
-    config.logger.info('job args created - config dumps: ' + str(len(job_args)))
-    if len(job_args)>0:
-        config.logger.info('creating dump files...')
-        p = multiprocessing.Pool(8)
-        p.map(get_subset_file_name, job_args)
-    config.logger.info('done! running the benchmark...')
+    if REPROCESS is True:
+        config.logger.info('shaping the datasets...')
+        shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
+        config.logger.info('done! running experiment configurations')
+        config.logger.info('creating the sets for all configurations x datasets')
+        # multithread to shape the datasets for all configurations in parallel
+        job_args = []
+        set_file_dump_names=[]
+        for ds in shaped_datasets:
+            for f_key, f_indexes in dict_exp_feat.iteritems():
+                _set_name = _SET_MASK % (ds[0], str(f_key))
+                _file = config.dir_output + experiment_folder + _set_name
+                if os.path.isfile(_file) is False:
+                    job_args.append((_file, _set_name, ds, f_key, f_indexes))
+                set_file_dump_names.append(_set_name)
 
+        config.logger.info('job args created - config dumps: ' + str(len(job_args)))
+        if len(job_args)>0:
+            config.logger.info('creating dump files...')
+            p = multiprocessing.Pool(8)
+            p.map(get_subset_file_name, job_args)
+
+    config.logger.info('running benchmark...')
     # benchmark starts
     name='metadata_'
     if runCRF:
@@ -739,24 +746,40 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     out_file = open(config.dir_output + experiment_folder + name, 'w+')
     out_file.write(header)
     for f_key, f_indexes in dict_exp_feat.iteritems():
-        if f_key <= 8:
-            config.logger.info('configuration 6 and 7 are the better scenarios - start from 9')
-            continue
+        #if f_key <= 8:
+        #    config.logger.info('configuration 6 and 7 are the better scenarios - start from 9')
+        #    continue
+        config.logger.info('loading dumps for configuration: ' + str(f_key))
+        job_dumps = []
+        for ds in datasets:
+            _set_name = _SET_MASK % (ds, str(f_key))
+            _file = config.dir_output + experiment_folder + _set_name
+            job_dumps.append((_file, ds, _set_name))
+        if len(job_dumps) > 0:
+            config.logger.info('creating dump files...')
+            p = multiprocessing.Pool(8)
+            asyncres = p.map(load_dumps_in_memory, job_dumps)
+            config.logger.info(len(asyncres))
+            dump_configs = {}
+            for ret in asyncres:
+                dump_configs[ret[0]] = ret[1]
+
         for ds1 in datasets:
             ds1_name = ds1
             _set_name = _SET_MASK % (ds1, str(f_key))
-            _file = config.dir_output + experiment_folder + _set_name
-            config.logger.info('ds1: loading [%s]: %s' % (ds1_name, _file))
-            with open(_file, 'rb') as input:
-                shaped = pickle.load(input)
-                ds1_config_name = shaped[0]
-                ds1_key = shaped[1]
-                X1_sentence = shaped[2]
-                Y1_sentence = shaped[3]
-                X1_token = shaped[4]
-                Y1_token = shaped[5]
-                X1_crf = shaped[6]
-                _Y1_sentence = shaped[7]
+            #_file = config.dir_output + experiment_folder + _set_name
+            shaped = dump_configs[_set_name]
+            #config.logger.info('ds1: loading [%s]: %s' % (ds1_name, _file))
+            #with open(_file, 'rb') as input:
+                #shaped = pickle.load(input)
+            ds1_config_name = shaped[0]
+            ds1_key = shaped[1]
+            X1_sentence = shaped[2]
+            Y1_sentence = shaped[3]
+            X1_token = shaped[4]
+            Y1_token = shaped[5]
+            X1_crf = shaped[6]
+            _Y1_sentence = shaped[7]
             #pca = PCA(n_components=50)
             #X1_token_PCA = pca.fit(X1_token)
             for ds2 in datasets:
@@ -764,18 +787,19 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                 config.logger.info('%s -> %s' % (ds1_name, ds2_name))
                 if ds1_name != ds2_name:
                     _set_name = _SET_MASK % (ds2_name, str(f_key))
-                    _file = config.dir_output + experiment_folder + _set_name
-                    config.logger.info('ds2: loading [%s]: %s' % (ds2_name, _file))
-                    with open(_file, 'rb') as input:
-                        shaped = pickle.load(input)
-                        ds2_config_name = shaped[0]
-                        ds2_key = shaped[1]
-                        X2_sentence = shaped[2]
-                        Y2_sentence = shaped[3]
-                        X2_token = shaped[4]
-                        Y2_token = shaped[5]
-                        X2_crf = shaped[6]
-                        _Y2_sentence = shaped[7]
+                    #_file = config.dir_output + experiment_folder + _set_name
+                    #config.logger.info('ds2: loading [%s]: %s' % (ds2_name, _file))
+                    #with open(_file, 'rb') as input:
+                    #    shaped = pickle.load(input)
+                    shaped = dump_configs[_set_name]
+                    ds2_config_name = shaped[0]
+                    ds2_key = shaped[1]
+                    X2_sentence = shaped[2]
+                    Y2_sentence = shaped[3]
+                    X2_token = shaped[4]
+                    Y2_token = shaped[5]
+                    X2_crf = shaped[6]
+                    _Y2_sentence = shaped[7]
 
                     # ---------------------------------------------------------- META ----------------------------------------------------------
                     # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
@@ -785,12 +809,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         m = _dt.fit(X1_token, Y1_token)
                         ypr = m.predict(X2_token)
                         # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
-                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_token,
-                                                                                     np.array(ypr).astype(int),
-                                                                                     labels=definitions.PLO_KLASSES.keys())
+                        P, R, F, S = \
+                            sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                            labels=definitions.PLO_KLASSES.keys())
                         for k in range(len(P)):
-                            out_file.write(line % ('False', str(f_key), '1',
-                                                   definitions.PLO_KLASSES.get(k + 1),
+                            out_file.write(line % ('False', str(f_key), '1', definitions.PLO_KLASSES.get(k + 1),
                                                    P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NER'))
 
                         # entity detection only
@@ -798,8 +821,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in Y2_token]
                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                         for k in range(len(P)):
-                            out_file.write(line % ('False', str(f_key), '1',
-                                                   definitions.PLO_KLASSES.get(k + 1),
+                            out_file.write(line % ('False', str(f_key), '1', k,
                                                    P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NED'))
 
                         # ---------------------------------------------------------- META ----------------------------------------------------------
@@ -826,13 +848,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             'CRF', ds1_name, ds2_name, 'NER'))
 
                         # entity detection only
-                        ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _ypr]
-                        y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _Y2_sentence]
+                        ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
+                        y2_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _Y2_sentence]
                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                         for k in range(len(P)):
                             out_file.write(line % (
-                            'False', str(f_key), '1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k]),
-                            'CRF', ds1_name, ds2_name, 'NED'))
+                                'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
 
 
                         m = _crf2.fit(X1_crf, Y1_sentence)
@@ -846,13 +867,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                             'CRF_PA', ds1_name, ds2_name, 'NER'))
 
                         # entity detection only
-                        ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _ypr]
+                        ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                         for k in range(len(P)):
                             out_file.write(line % (
-                                'False', str(f_key), '1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k],
-                                str(S[k]),
-                                'CRF_PA', ds1_name, ds2_name, 'NED'))
+                                'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
 
 
 
@@ -862,7 +881,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         #y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
                         #run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1,
                         #         embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
-
                 else:
                     # ---------------------------------------------------------- META ----------------------------------------------------------
                     # _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
@@ -880,9 +898,16 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                                                          np.array(ypr).astype(int),
                                                                                          labels=definitions.PLO_KLASSES.keys())
                             for k in range(len(P)):
-                                out_file.write(
-                                    line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1),
+                                out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1),
                                             P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NER'))
+
+                            # entity detection only
+                            ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in ypr]
+                            y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in yte]
+                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                            for k in range(len(P)):
+                                out_file.write(line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
+                                                       'DT', ds1_name, ds2_name, 'NED'))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
@@ -913,14 +938,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     str(S[k]), 'CRF', ds1_name, ds2_name, 'NER'))
 
                             # entity detection only
-                            ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _ypr]
-                            y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _yte]
+                            ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
+                            y2_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _yte]
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                             for k in range(len(P)):
                                 out_file.write(line % (
-                                    'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k],
-                                    F[k],
-                                    str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
+                                    'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
 
                             m = _crf2.fit(Xtr, ytr)
                             ypr = m.predict(Xte)
@@ -935,14 +958,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NER'))
 
                             # entity detection only
-                            ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _ypr]
-                            y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in _yte]
+                            ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
+                            y2_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _yte]
                             P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                             for k in range(len(P)):
                                 out_file.write(line % (
-                                    'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k],
-                                    F[k],
-                                    str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
+                                    'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             # _ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
