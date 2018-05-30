@@ -91,20 +91,48 @@ def word2dict(experiment_folder, datasets):
 def conll2sentence():
     config.logger.info('creating sentences file for brown clusters')
     f_out = open(config.dir_datasets + 'all_sentences.txt', 'w+')
-    for file in ['Ritter/ner.txt',
-                 'wnut/2015.conll.freebase',
-                 'wnut/2016.conll.freebase',
-                 'wnut/emerging.test.annotated']:
+    datasets = {'Ritter/ner.txt': 0,
+               'wnut/2015.conll.freebase': 0,
+               'wnut/2016.conll.freebase':0,
+               'wnut/emerging.test.annotated':0
+               }
+    for file, index in datasets.iteritems():
         filepath= config.dir_datasets + file
         sentence=''
+        tot_loc=0
+        tot_per=0
+        tot_org=0
+        tot_others=0
+        tot_k=0
+        tot_sentences=0
+        tot_geral=0
         with open(filepath) as f:
             content = f.readlines()
+            k=[]
             for x in content:
                 if x!='\n':
-                    sentence+=x.split('\t')[0] + ' '
+                    w=x.split('\t')[0]
+                    label=x.split('\t')[1].replace('\n','')
+                    k.append(label.replace('B-', '').replace('I-', ''))
+                    if label in definitions.NER_TAGS_LOC:
+                        tot_loc+=1
+                    elif label in definitions.NER_TAGS_ORG:
+                        tot_org+=1
+                    elif label in definitions.NER_TAGS_PER:
+                        tot_per+=1
+                    elif label != 'O':
+                        tot_k +=1
+                    else:
+                        tot_others+=1
+                    tot_geral+=1
+                    sentence+=w + ' '
                 else:
+                    tot_sentences+=1
                     f_out.write(sentence.strip() + '\n')
                     sentence=''
+            tot_sentences += 1
+            f_out.write(sentence.strip() + '\n')
+            print('%s (%d) & %d & %d & %d & %d & %d & %d & %d \\\\' % (file, len(set(k)), tot_sentences, tot_geral, tot_org, tot_loc, tot_per, tot_k, tot_others))
         f_out.flush()
 
     f_out.close()
@@ -124,11 +152,16 @@ def browncluster2dict(filepath, filename):
     except:
         raise
 
+
+
+
 #browncluster2dict('output_brownclusters.txt')
 
-
+conll2sentence()
+exit(0)
 word2dict('EXP_004', '2016.conll.freebase.ascii.txt.horus emerging.test.annotated.horus ner.txt.horus 2015.conll.freebase.horus')
 exit(0)
 browncluster2dict(config.dir_datasets + 'brown_clusters/', 'gha.500M-c1000-p1.paths')
 browncluster2dict(config.dir_datasets + 'brown_clusters/', 'gha.64M-c640-p1.paths')
 browncluster2dict(config.dir_datasets + 'brown_clusters/', 'gha.64M-c320-p1.paths')
+
