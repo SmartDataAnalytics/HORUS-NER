@@ -1,6 +1,8 @@
 import pickle
 
 import os
+import tarfile
+import urllib2
 
 import pandas as pd
 import sklearn
@@ -139,6 +141,13 @@ def conll2sentence():
 
 def browncluster2dict(filepath, filename):
     try:
+        if not os.path.exists(filepath):
+            config.logger.info('downloading the data')
+            os.makedirs(filepath)
+            request = urllib2.urlopen('https://s3-eu-west-1.amazonaws.com/downloads.gate.ac.uk/resources/derczynski-chester-boegh-brownpaths.tar.bz2')
+            tar = tarfile.open('derczynski-chester-boegh-brownpaths.tar.bz2', "r:gz")
+            tar.extractall()
+            tar.close()
         config.logger.info('creating dictionary: ' + filename)
         brown = dict()
         with open(filepath + filename) as f:
