@@ -2,18 +2,21 @@ import pandas as pd
 
 import sys
 
-df=pd.read_table('metadata.txt',sep="\t")
+df=pd.read_table('metadata.txt',sep="\t") #variable
 
-df = df[df['algo'] == 'CRF']
+df = df[df['algo'] == 'CRF'] #variable
 
-df = df[df['task'] == 'NER']
+df = df[df['task'] == 'NER'] #variable
+ 
+df = df[df['cross-validation'] == True] #variable
 
-df = df[df['cross-validation'] == True]
+labels = ['PER','LOC','ORG'] #variable
+
+
 
 dictionary = {'2015.conll.freebase.horus':'WNUT-15','2016.conll.freebase.ascii.txt.horus':'WNUT-16','emerging.test.annotated.horus':'WNUT-17','ner.txt.horus':'Ritter'}
 
 datasets = list(set(df['dataset1']))
-labels = list(set(df['label']))
 configs = list(set(df['config']))
 
 file = open("process_crf.txt","w") 
