@@ -24,7 +24,7 @@ from keras.layers.wrappers import TimeDistributed, Bidirectional
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding, LSTM, Dense, Merge
 
-import cPickle as pickle
+import pickle
 
 
 embedding_size = 128
@@ -140,7 +140,7 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
 
-file = '/home/esteves/github/horus-ner/data/output/EXP_005/_ner.txt.horus_config_29.pkl'
+file = '/Users/diegoesteves/Github/named-entity-recognition/horus-ner/data/output/EXP_005/_ner.txt.horus_config_5.pkl'
 dump_configs = load_dumps_in_memory(file)
 
 ds1_config_name = dump_configs[0]

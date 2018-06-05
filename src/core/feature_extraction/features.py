@@ -21,6 +21,7 @@ more info at: https://github.com/dnes85/components-models
 # Version: 1.0
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
+import gensim
 import unicodecsv as csv
 import heapq
 import json
@@ -52,6 +53,7 @@ from src.core.util.definitions_sql import *
 from src.classifiers.text_classification.bow_tfidf import BowTfidf
 from src.core.util import definitions
 from nltk.corpus import wordnet as wn
+import os
 
 
 class FeatureExtraction(object):
@@ -76,6 +78,8 @@ class FeatureExtraction(object):
         self.text_bow = None
         self.text_tm = None
         self.dlib_cnn = None
+        self.config.logger.info('loading word2vec embeedings...')
+        self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)
         if load_cnn==1:
             self.image_cnn_placesCNN = Places365CV(self.config)
             #self.image_cnn_incep_model = InceptionCV(self.config, version='V3')
@@ -84,7 +88,7 @@ class FeatureExtraction(object):
             self.dlib_cnn = DLib_Classifier(self.config)
         if load_sift==1: self.image_sift = SIFT(self.config)
         if load_tfidf==1: self.text_bow = BowTfidf(self.config)
-        if load_topic_modeling==1: self.text_tm = TopicModelingShortCNN(self.config, w2v=self.tools.word2vec_google)
+        if load_topic_modeling==1: self.text_tm = TopicModelingShortCNN(self.config, w2v=self.word2vec_google)
         self.config.logger.info('database connecting ...')
         self.conn = sqlite3.connect(self.config.database_db)
         self.extended_seeds_PER = []
@@ -232,7 +236,7 @@ class FeatureExtraction(object):
             out = []
 
             try:
-                most_similar_to_w = self.tools.word2vec_google.most_similar(positive=w, topn=5)
+                most_similar_to_w = self.word2vec_google.most_similar(positive=w, topn=5)
             except KeyError:
                 return np.array([0.0, 0.0, 0.0, 0.0]), None
 
@@ -240,25 +244,25 @@ class FeatureExtraction(object):
                 aL, aO, aP, aN = [], [], [], []
                 for z in definitions.seeds_dict_topics['loc'][0:9]:
                     try:
-                        aL.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                        aL.append(self.word2vec_google.similarity(w, z) * prob)
                     except KeyError:
                         continue
 
                 for z in definitions.seeds_dict_topics['org'][0:9]:
                     try:
-                        aO.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                        aO.append(self.word2vec_google.similarity(w, z) * prob)
                     except KeyError:
                         continue
 
                 for z in definitions.seeds_dict_topics['per'][0:9]:
                     try:
-                        aP.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                        aP.append(self.word2vec_google.similarity(w, z) * prob)
                     except KeyError:
                         continue
 
                 for z in definitions.seeds_dict_topics['none'][0:9]:
                     try:
-                        aN.append(self.tools.word2vec_google.similarity(w, z) * prob)
+                        aN.append(self.word2vec_google.similarity(w, z) * prob)
                     except KeyError:
                         continue
 
@@ -389,22 +393,22 @@ class FeatureExtraction(object):
 
                     for s in self.extended_seeds_LOC:
                         try:
-                            sim_loc.append(self.tools.word2vec_google.similarity(s, t))
+                            sim_loc.append(self.word2vec_google.similarity(s, t))
                         except:pass
 
                     for s in self.extended_seeds_ORG:
                         try:
-                            sim_org.append(self.tools.word2vec_google.similarity(s, t))
+                            sim_org.append(self.word2vec_google.similarity(s, t))
                         except:pass
 
                     for s in self.extended_seeds_PER:
                         try:
-                            sim_per.append(self.tools.word2vec_google.similarity(s, t))
+                            sim_per.append(self.word2vec_google.similarity(s, t))
                         except:pass
 
                     for s in self.extended_seeds_NONE:
                         try:
-                            sim_none.append(self.tools.word2vec_google.similarity(s, t))
+                            sim_none.append(self.word2vec_google.similarity(s, t))
                         except:pass
 
 
@@ -425,7 +429,7 @@ class FeatureExtraction(object):
             self.config.logger.error(str(e))
             return [0] * 8
 
-    def extract_features(self, features_text=True, features_vision=True):
+    def __extract_features(self, horus_matrix, features_text=True, features_vision=True):
         """
         receives a horus_matrix and iterate over the tokens, detecting objects for each image/document
         in a set of images/documents related to a given token
@@ -433,6 +437,8 @@ class FeatureExtraction(object):
         :return: an updated horus matrix
         """
         try:
+
+            self.horus_matrix = horus_matrix
 
             assert (features_text is False or features_text is True and (self.text_tm is not None or self.text_bow is not None))
 
@@ -842,7 +848,7 @@ class FeatureExtraction(object):
 
             self.horus_matrix = self.util.sentence_to_horus_matrix(sentences)
             self.util.download_and_cache_results(self.horus_matrix)
-            if self.extract_features() is True:
+            if self.__extract_features() is True:
                 self.__export_data(self.config.dir_output + 'features_horus', 'json')
 
             return self.horus_matrix
@@ -850,29 +856,35 @@ class FeatureExtraction(object):
         except Exception as error:
             self.config.logger.error('extract_features_from_text() error: ' + repr(error))
 
-    def extract_features_from_conll(self, file, out_subfolder, label=None, token_index=0, ner_index=1):
+    def extract_features_from_conll(self, horus_matrix_02_file, out_subfolder, ds_label, sep='\t'):
         """
         generates the feature_extraction data for HORUS
         do not use the config file to choose the models, exports all features (self.detect_objects())
-        :param file: a dataset (CoNLL format)
+        :param file: a dataset src/core/feature_extraction/features.py(CoNLL format)
         :param label: a dataset label
         :param token_index: column index of the token (word)
         :param ner_index: column index if the target class (NER)
         :return: the feature file
         """
         try:
-            if file is None:
+            if horus_matrix_02_file is None:
                 raise Exception("Provide an input file format to be annotated")
-            self.config.logger.info('processing CoNLL format -> %s' % label)
-            file = self.config.dir_datasets + file
-            sent_tokenize_list = self.util.process_ds_conll_format(file, label, token_index, ner_index, '')
-            if len(sent_tokenize_list) > 0:
-                self.__get_horus_matrix_and_basic_statistics(sent_tokenize_list)
-                self.util.download_and_cache_results(self.horus_matrix)
-                if self.extract_features(features_vision=True, features_text=True) is True:
-                    filename = self.util.path_leaf(file) + ".horus"
-                    path = self.config.dir_output + out_subfolder + filename
-                    self.__export_data(path)
+            if not os.path.isfile(horus_matrix_02_file):
+                config.logger.info('file %s not found!' % (horus_matrix_02_file))
+
+            self.config.logger.info('extracting features from -> %s' % ds_label)
+            horus_matrix = None
+
+            with open(horus_matrix_02_file) as f:
+                reader = csv.reader(f)
+                next(reader)
+                horus_matrix = [r for r in reader]
+
+            if self.__extract_features(horus_matrix, features_vision=True, features_text=True) is True:
+                #filename = ds_label + "." + self.util.path_leaf(file) + ".horus_matrix_03"
+                filename = ds_label + ".horus_matrix_03"
+                path = self.config.dir_output + out_subfolder + filename
+                self.__export_data(path)
             else:
                 self.config.logger.warn('well, nothing to do today...')
         except Exception as error:
@@ -881,34 +893,35 @@ class FeatureExtraction(object):
 
 
 if __name__ == "__main__":
+
     try:
-        if len(sys.argv) not in (1,2,3,4):
-            print("please inform: 1: data set and 2: column indexes ([1, .., n])")
-        else:
-            config = HorusConfig()
-            # args[0], args[1], args[2], args[3]
-            tot_args = 2 #len(sys.argv)
+        config = HorusConfig()
 
-            if tot_args == 1:
-                data = 'paris hilton was once the toast of the town'  # args[0]
-                data = 'comme ça'
-                extractor = FeatureExtraction(config)
-                out = extractor.extract_features_from_text(data)
-                #outjson = json.dumps(out)
-                print(out)
-                #print(outjson)
-            else:
-                exp_folder = 'EXP_004/' #
-                extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
-                # extractor.extract_features_from_conll('Ritter/ner.txt', exp_folder, label='ritter')
-                # extractor.extract_features_from_conll('wnut/2015.conll.freebase', exp_folder, 'wnut16')
-                extractor.extract_features_from_conll('wnut/2016.conll.freebase.ascii.txt', exp_folder, 'wnut15')
-                # extractor.extract_features_from_conll('wnut/emerging.test.annotated', exp_folder, 'wnut17')
-                # extractor.extract_features_from_conll('wnut/2016.conll.freebase.test', exp_folder, 'wnut16test')
+        exp_folder = 'EXP_004/' #
 
-                '''
-                attention: change POS tag lib in the HORUS.ini to NLTK before run this
-                extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
-                '''
+        extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
+
+        # Ritter
+        extractor.extract_features_from_conll(config.dir_datasets + 'Ritter/ner.horus_matrix_02', exp_folder,'ritter.train')
+
+        # WNUT-15
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2015/data/train.horus_matrix_02', exp_folder, 'wnut15.train')
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2015/data/dev.horus_matrix_02', exp_folder, 'wnut15.dev')
+
+        # WNUT-16
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2016/data/train.horus_matrix_02', exp_folder, 'wnut16.train')
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2016/data/dev.horus_matrix_02', exp_folder, 'wnut16.dev')
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2016/data/test.horus_matrix_02', exp_folder, 'wnut16.test')
+
+        # WNUT-17
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2017/wnut17train.conll.horus_matrix_02', exp_folder, 'wnut17.train')
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2017/emerging.dev.conll.horus_matrix_02', exp_folder, 'wnut17.dev')
+        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2017/emerging.test.annotated.horus_matrix_02', exp_folder, 'wnut17.test')
+
+        '''
+        attention: change POS tag lib in the HORUS.ini to NLTK before run this
+        extractor.extract_features_from_conll('coNLL2003/nodocstart_coNLL2003.eng.testA', exp_folder, 'conll03', 0, 3)
+        '''
+
     except Exception as e:
-        print(e)
+        config.logger.error(repr(e))
