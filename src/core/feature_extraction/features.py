@@ -134,42 +134,6 @@ class FeatureExtraction(object):
         except Exception as e:
             raise(e)
 
-    def __get_horus_matrix_and_basic_statistics(self, sent_tokenize_list):
-
-        df = pd.DataFrame(sent_tokenize_list)
-
-        self.config.logger.info('%s sentence(s) cached' % str(len(sent_tokenize_list)))
-        tot_sentences_with_entity = len(df.loc[df[0] == 1])
-        tot_others = len(df.loc[df[0] == -1])
-        self.config.logger.info('%s sentence(s) with entity' % tot_sentences_with_entity)
-        self.config.logger.info('%s sentence(s) without entity' % tot_others)
-        self.horus_matrix = self.util.sentence_to_horus_matrix(sent_tokenize_list)
-
-        hm = pd.DataFrame(self.horus_matrix)
-        self.config.logger.info('basic POS statistics')
-        a = len(hm)
-        # all excluding compounds
-        a2 = len(hm[(hm[definitions.INDEX_IS_COMPOUND] == 0)])
-        # all PLO entities (not compound)
-        plo = hm[(hm[definitions.INDEX_IS_COMPOUND] == 0) & (hm[definitions.INDEX_IS_ENTITY] == 1)]
-        # all PLO entities (not compound)
-        not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]
-
-        pos_ok_plo = plo[(plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
-        pos_not_ok_plo = plo[(~plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
-        pos_noun_but_not_entity = not_plo[(not_plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
-
-        self.config.logger.info('[basic statistics]')
-        self.config.logger.info('-> ALL terms: %s ' % a)
-        self.config.logger.info('-> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
-        self.config.logger.info('-> ALL NNs (no compounds nor entities): %s ' % len(pos_noun_but_not_entity))
-        self.config.logger.info('[test dataset statistics]')
-        self.config.logger.info('-> PLO entities (no compounds): %s (%.2f)' % (len(plo), len(plo) / float(a2)))
-        self.config.logger.info('-> PLO entities correctly classified as NN (POS says is NOUN): %s (%.2f)' %
-                          (len(pos_ok_plo), len(pos_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
-        self.config.logger.info('-> PLO entities misclassified (POS says is NOT NOUN): %s (%.2f)' %
-                          (len(pos_not_ok_plo), len(pos_not_ok_plo) / float(len(plo)) if len(plo) != 0 else 0))
-
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
         try:
             #if isinstance(t1, str):

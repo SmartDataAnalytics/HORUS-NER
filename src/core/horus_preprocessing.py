@@ -327,11 +327,14 @@ def __get_horus_matrix_structure(sent_tokenize_list):
     plo = hm[(hm[definitions.INDEX_IS_COMPOUND] == 0) & (hm[definitions.INDEX_IS_ENTITY] == 1)]
     # all PLO entities (not compound)
     not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]
-
+    from collections import Counter
+    config.logger.info('[POS tags counter for ALL tokens]')
+    config.logger.info(Counter(hm[hm[definitions.INDEX_POS]]))
+    config.logger.info('[POS tags counter for PLO tokens]')
+    config.logger.info(Counter(plo[definitions.INDEX_POS]))
     pos_ok_plo = plo[(plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
     pos_not_ok_plo = plo[(~plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
     pos_noun_but_not_entity = not_plo[(not_plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
-
     config.logger.info('[basic statistics]')
     config.logger.info('-> ALL terms: %s ' % a)
     config.logger.info('-> ALL tokens (no compounds): %s (%.2f)' % (a2, (a2 / float(a))))
