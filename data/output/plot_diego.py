@@ -2,7 +2,9 @@ import pandas as pd
 
 import sys
 
-df=pd.read_table('metadata.txt',sep="\t") #variable
+metadata = '/home/esteves/github/horus-ner/data/output/EXP_006/metadata_dt_1_to_30.txt'
+
+df=pd.read_table(metadata,sep="\t") #variable
 
 df = df[df['algo'] == 'CRF'] #variable
 
