@@ -42,6 +42,7 @@ def process_ds_conll_format(dspath, token_index=0, ner_index=1, separator='\t'):
     :return: sentence contains any entity?, sentence, words, NER tags
     '''
     try:
+        import codecs
         sentences = []
         tokens = []
         tags_ner_y = []
@@ -54,12 +55,20 @@ def process_ds_conll_format(dspath, token_index=0, ner_index=1, separator='\t'):
             for line in f:
                 if line.strip() != '':
                     if separator == '': separator = None
-                    token = line.split(separator)[token_index]
-                    ner = line.split(separator)[ner_index].replace('\r', '').replace('\n', '')
+                    splited = line.split(separator)
+                    if len(splited) < 2: #solving a specific bug
+                        token='.'
+                        ner='O'
+                        config.logger.error('attention!!!! this can not happen more than once or twice...')
+                    else:
+                        token = splited[token_index]
+                        ner = splited[ner_index].replace('\r', '').replace('\n', '')
                 if line.strip() == '':
                     if docstart is False:
                         if len(tokens) != 0:
                             config.logger.debug('processing sentence %s' % str(tot_sentences))
+                            if tot_sentences==1008:
+                                a=1
                             sentences.append(process_sentence(has3NER, s, tokens, tags_ner_y))
                             tokens = []
                             tags_ner_y = []
@@ -163,45 +172,50 @@ def __get_compounds(tokens):
 
 def process_sentence(hasNER, s, tokens_gold_standard=[], ner_gold_standard=[]):
 
-    _tokens_twe, _pos_twe, _pos_uni_twe = tokenize_and_pos(s)
-    _pos_twe = numpy.array(_pos_twe)
-    _pos_uni_twe = numpy.array(_pos_uni_twe)
-    _same_tok_tweet = (len(_tokens_twe) == len(tokens_gold_standard))
-    comp_twe = __get_compounds(_pos_twe)
+    try:
+        _tokens_twe, _pos_twe, _pos_uni_twe = tokenize_and_pos(s)
+        _pos_twe = numpy.array(_pos_twe)
+        _pos_uni_twe = numpy.array(_pos_uni_twe)
+        _same_tok_tweet = (len(_tokens_twe) == len(tokens_gold_standard))
+        comp_twe = __get_compounds(_pos_twe)
 
-    # saving to database (pos_uni_sta not implemented yet)
-    sent = [hasNER,
-            [s,
-             0, # 1 if _same_tok_nltk else 0
-             0, # 1 if _same_tok_stanf else 0,
-             1 if _same_tok_tweet else 0
-             ],
-            [tokens_gold_standard,
-             [], #_tokens_nltk,
-             [], # _tokens_st,
-             _tokens_twe
-             ],
-            [ner_gold_standard,
-             [], #nernltktags,
-             [], # nerstantags[:, 1].tolist(),
-             []
-             ],
-            [[],
-             [], # _pos_nltk[:, 1].tolist(),
-             [], #  _pos_st[:, 1].tolist(),
-             _pos_twe[:, 1].tolist()
-             ],
-            [[],
-             [], #_pos_uni_nltk[:, 1].tolist(),
-             [],
-             _pos_uni_twe[:, 1].tolist()],
-            [[],
-             [], #comp_nltk,
-             [], # comp_st,
-             comp_twe]
-            ]
+        # saving to database (pos_uni_sta not implemented yet)
+        sent = [hasNER,
+                [s,
+                 0, # 1 if _same_tok_nltk else 0
+                 0, # 1 if _same_tok_stanf else 0,
+                 1 if _same_tok_tweet else 0
+                 ],
+                [tokens_gold_standard,
+                 [], #_tokens_nltk,
+                 [], # _tokens_st,
+                 _tokens_twe
+                 ],
+                [ner_gold_standard,
+                 [], #nernltktags,
+                 [], # nerstantags[:, 1].tolist(),
+                 []
+                 ],
+                [[],
+                 [], # _pos_nltk[:, 1].tolist(),
+                 [], #  _pos_st[:, 1].tolist(),
+                 _pos_twe[:, 1].tolist() if len(_pos_twe)>0 else []
+                 ],
+                [[],
+                 [], #_pos_uni_nltk[:, 1].tolist(),
+                 [],
+                 _pos_uni_twe[:, 1].tolist() if len(_pos_uni_twe)>0 else []],
+                [[],
+                 [], #comp_nltk,
+                 [], # comp_st,
+                 comp_twe]
+                ]
+        return sent
+    except Exception as e:
+        config.logger.error(repr(e))
+        raise
 
-    return sent
+
 
 def populate_matrix_new_columns():
     temp = []
@@ -329,7 +343,7 @@ def __get_horus_matrix_structure(sent_tokenize_list):
     not_plo = hm[(hm[7] == 0) & (hm[0] == 0)]
     from collections import Counter
     config.logger.info('[POS tags counter for ALL tokens]')
-    config.logger.info(Counter(hm[hm[definitions.INDEX_POS]]))
+    config.logger.info(Counter(hm[definitions.INDEX_POS]))
     config.logger.info('[POS tags counter for PLO tokens]')
     config.logger.info(Counter(plo[definitions.INDEX_POS]))
     pos_ok_plo = plo[(plo[definitions.INDEX_POS].isin(definitions.POS_NOUN_TAGS))]
@@ -403,7 +417,7 @@ def __download_image_local(image_url, image_type, thumbs_url, thumbs_type, term_
                 handler.write(img_data)
                 auxtype = thumbs_type
         except Exception as error:
-            print('-> error: ' + repr(error))
+            config.logger.error(repr(error))
     except ValidationError:
         config.logger.error('No thumbs img here...')
         try:
@@ -413,7 +427,7 @@ def __download_image_local(image_url, image_type, thumbs_url, thumbs_type, term_
                 auxtype = image_type
                 handler.write(img_data)
         except Exception as error:
-            print('-> error: ' + repr(error))
+            config.logger.error(repr(error))
     return auxtype
 
 def __download_and_cache_results(horus_matrix):
@@ -434,7 +448,7 @@ def __download_and_cache_results(horus_matrix):
                     if auxc % 1000 == 0:
                         config.logger.debug(
                             'caching token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
-                    res = df.loc[df['term'] == term.encode('utf-8')]
+                    res = df.loc[df['term'] == term]
                     if res is None or len(res) == 0:
                         '''
                         --------------------------------------------------------------------------
@@ -499,13 +513,11 @@ def __download_and_cache_results(horus_matrix):
                         # adding the new item to the cache dataframe
                         config.logger.debug('updating local cache  ...')
                         cols = ['id', 'term', 'id_search_type', 'tot_results_returned']
-                        df_txt = pd.DataFrame([[id_term_search, term.encode('utf-8'), 1, len(result_txts)]],
+                        df_txt = pd.DataFrame([[id_term_search, term, 1, len(result_txts)]],
                                               columns=cols)
                         df_txt.set_index("id", inplace=True)
-                        df_img = pd.DataFrame([[id_term_img, term.encode('utf-8'), 2, len(result_imgs)]], columns=cols)
+                        df_img = pd.DataFrame([[id_term_img, term, 2, len(result_imgs)]], columns=cols)
                         df_img.set_index("id", inplace=True)
-                        print(df_txt)
-                        print(df_img)
                         df = pd.concat([df, df_txt, df_img], ignore_index=False, verify_integrity=True)
                         config.logger.debug('OK')
 
@@ -515,16 +527,14 @@ def __download_and_cache_results(horus_matrix):
                     else:
                         if (len(res) != 2):
                             raise Exception("that should not happen! check db integrity")
-                        if ((1) in set(df.loc[(df['term'] == term.encode('utf-8'))]['id_search_type'])):
+                        if ((1) in set(df.loc[(df['term'] == term)]['id_search_type'])):
                             horus_matrix[index][INDEX_ID_TERM_TXT] = \
-                                int(df.loc[(df['term'] == term.encode('utf-8')) & (
-                                            df['id_search_type'] == 1)].index.values)
+                                int(df.loc[(df['term'] == term) & (df['id_search_type'] == 1)].index.values)
                         else:
                             horus_matrix[index][INDEX_ID_TERM_TXT] = -1
-                        if ((2) in set(df.loc[(df['term'] == term.encode('utf-8'))]['id_search_type'])):
+                        if ((2) in set(df.loc[(df['term'] == term)]['id_search_type'])):
                             horus_matrix[index][INDEX_ID_TERM_IMG] = \
-                                int(df.loc[(df['term'] == term.encode('utf-8')) & (
-                                            df['id_search_type'] == 2)].index.values)
+                                int(df.loc[(df['term'] == term) & (df['id_search_type'] == 2)].index.values)
                         else:
                             horus_matrix[index][INDEX_ID_TERM_IMG] = -1
 
@@ -540,9 +550,11 @@ def __download_and_cache_results(horus_matrix):
             raise e
 
 if __name__ == "__main__":
-    files = ['wnut/2015/data/train', 'wnut/2015/data/dev',
+    files = ['broad/5d7c65d/h.conll', 'wnut/2015/data/train', 'wnut/2015/data/dev',
              'wnut/2016/data/train', 'wnut/2016/data/dev', 'wnut/2016/data/test',
-             'wnut/2017/wnut17train.conll', 'wnut/2017/emerging.dev.conll', 'wnut/2017/emerging.test.annotated']
+             'wnut/2017/wnut17train.conll', 'wnut/2017/emerging.dev.conll', 'wnut/2017/emerging.test.annotated',
+             'broad/5d7c65d/a.conll', 'broad/5d7c65d/b.conll', 'broad/5d7c65d/e.conll', 'broad/5d7c65d/f.conll',
+             'broad/5d7c65d/g.conll']
 
     for file in files:
         try:

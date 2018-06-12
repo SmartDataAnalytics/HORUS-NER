@@ -10,9 +10,14 @@ else:
 
 RUN_TAGGER_CMD = config.models_tweetnlp_java_param + " -jar " + config.models_tweetnlp_jar + " --model " + config.models_tweetnlp_model
 
-WNUT_PER = ['B-person', 'I-person', 'person']
-WNUT_LOC = ['B-location', 'I-location', 'location']
-WNUT_ORG = ['B-corporation', 'I-corporation', 'corporation']
+
+NER_BROAD_PER = ['B-PER', 'I-PER']
+NER_BROAD_LOC = ['B-LOC', 'I-LOC']
+NER_BROAD_ORG = ['B-ORG', 'I-ORG']
+
+NER_WNUT_PER = ['B-person', 'I-person', 'person']
+NER_WNUT_LOC = ['B-location', 'I-location', 'location']
+NER_WNUT_ORG = ['B-corporation', 'I-corporation', 'corporation']
 
 NER_RITTER_PER = ['B-person', 'I-person']
 NER_RITTER_ORG = ['B-company', 'I-company']
@@ -35,21 +40,24 @@ NER_TAGS_PER.extend(NER_RITTER_PER)
 NER_TAGS_PER.extend(NER_STANFORD_PER)
 NER_TAGS_PER.extend(NER_NLTK_PER)
 NER_TAGS_PER.extend(NER_CONLL_PER)
-NER_TAGS_PER.extend(WNUT_PER)
+NER_TAGS_PER.extend(NER_WNUT_PER)
+NER_TAGS_PER.extend(NER_BROAD_PER)
 
 NER_TAGS_ORG = ['ORG']
 NER_TAGS_ORG.extend(NER_RITTER_ORG)
 NER_TAGS_ORG.extend(NER_STANFORD_ORG)
 NER_TAGS_ORG.extend(NER_NLTK_ORG)
 NER_TAGS_ORG.extend(NER_CONLL_ORG)
-NER_TAGS_ORG.extend(WNUT_ORG)
+NER_TAGS_ORG.extend(NER_WNUT_ORG)
+NER_TAGS_ORG.extend(NER_BROAD_ORG)
 
 NER_TAGS_LOC = ['LOC']
 NER_TAGS_LOC.extend(NER_RITTER_LOC)
 NER_TAGS_LOC.extend(NER_STANFORD_LOC)
 NER_TAGS_LOC.extend(NER_NLTK_LOC)
 NER_TAGS_LOC.extend(NER_CONLL_LOC)
-NER_TAGS_LOC.extend(WNUT_LOC)
+NER_TAGS_LOC.extend(NER_WNUT_LOC)
+NER_TAGS_LOC.extend(NER_BROAD_LOC)
 
 NER_TAGS = []
 NER_TAGS.extend(NER_TAGS_LOC)
