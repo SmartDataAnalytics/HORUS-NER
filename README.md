@@ -21,6 +21,9 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 
 #### Easy Setup (Python 2.7 based)
 
+1. Run the bash script
+- bash scripts/setup_horus.sh
+
 1. Setup the python environment
 - setup [Anaconda](https://anaconda.org/)
 - conda env create -f horus.v015.yml (tested for OSX) (*)
