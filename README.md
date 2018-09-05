@@ -1,16 +1,21 @@
-### HORUS Framework: Boosting NLP Tasks
+#### HORUS Framework: Boosting NER
 
 [![HitCount](http://hits.dwyl.io/SmartDataAnalytics/horus-ner.svg)](http://hits.dwyl.io/SmartDataAnalytics/horus-ner)
-[![NSP Status](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466/badge)](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/SmartDataAnalytics/horus-ner/issues)
-[![Build Status](https://travis-ci.org/SmartDataAnalytics/horus-ner.svg?branch=master)](https://travis-ci.org/SmartDataAnalytics/horus-ner)
-[![bitHound Overall Score](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/score.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)
-[![bitHound Code](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/code.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)
-[![Coverage Status](https://coveralls.io/repos/SmartDataAnalytics/horus-ner/badge.svg?branch=master&service=github)](https://coveralls.io/github/SmartDataAnalytics/horus-ner?branch=master)
+
+<!--[![NSP Status](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466/badge)](https://nodesecurity.io/orgs/sda/projects/4fe69258-6d3c-40d0-9ed6-fc4b3b183466)-->
+<!--[![Build Status](https://travis-ci.org/SmartDataAnalytics/horus-ner.svg?branch=master)](https://travis-ci.org/SmartDataAnalytics/horus-ner)-->
+<!--[![bitHound Overall Score](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/score.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner) -->
+<!--[![bitHound Code](https://www.bithound.io/github/SmartDataAnalytics/horus-ner/badges/code.svg)](https://www.bithound.io/github/SmartDataAnalytics/horus-ner)-->
+<!--[![Coverage Status](https://coveralls.io/repos/SmartDataAnalytics/horus-ner/badge.svg?branch=master&service=github)](https://coveralls.io/github/SmartDataAnalytics/horus-ner?branch=master)-->
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/SmartDataAnalytics/horus-ner/graphs/commit-activity)
 [![GitHub license](https://img.shields.io/github/license/SmartDataAnalytics/horus-ner.svg)](https://github.com/SmartDataAnalytics/horus-ner/blob/master/LICENSE)
 
-HORUS is meta and multi-level framework designed to provide a set of features at word-level to boost natural language frameworks. It's architecure is based on image processing and text classification clustering algorithms and shows to be helpful especially to noisy data, such as microblogs. 
+HORUS is a Named Entity Recognition (NER) Framework specifically
+designed for short-text, e.g.: social media, websites, blogs and etc..
+
+It provides a set of computer vision and text mining features 
+at word-level to boost the task on noisy data.
 
 We are currently investigating Named Entity Recognition (NER) as use case. This version supports the identification of classical named-entity types (LOC, PER, ORG). 
 
@@ -39,16 +44,24 @@ python main.py --file="sentences.txt" --ds_format=0
 python main.py --file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
 ```
 
-#### Features
+#### Experiments
+
 ```python
-1. to process an input file (e.g., conll) and generate the horus feature file format
-    - examples/process_input_file.py
+# X = conll file
+# 1. caching webpages and images (cache.py)
+X2 = cache_se_results_conll(X)
 
-2. to convert a horus input file format to conll
-    - horus/core/data_conversion.py
+# 2. extracting horus features (features.py)
+X3 = extract_features_from_conll(X2, output_folder, label)
 
-3. to run some benchmarks
-    - experiments/benchmarking.py
+# 3. adding lexical features and benchmarking
+y = benchmark(X3)
+
+```
+
+##### 
+```python
+
 ```
 
 #### Web Service
