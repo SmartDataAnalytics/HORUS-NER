@@ -1,0 +1,5 @@
+name: horus_benchmarking
+channels: !!python/tuple
+- !!python/unicode 'defaults'
+prefix: /home/esteves/anaconda2/envs/horus_benchmarking
+
