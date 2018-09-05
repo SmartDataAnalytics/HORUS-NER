@@ -219,10 +219,10 @@ for index, linha in df.iterrows():
             tx_dist = float(linha[24])
 
             teste.append(linha[6])
-            if linha[6] in definitions.NER_TAGS_LOC: ner = definitions.KLASSES2["LOC"]
-            elif linha[6] in definitions.NER_TAGS_ORG: ner = definitions.KLASSES2["ORG"]
-            elif linha[6] in definitions.NER_TAGS_PER: ner = definitions.KLASSES2["PER"]
-            else: ner = definitions.KLASSES2["O"]
+            if linha[6] in definitions.NER_TAGS_LOC: ner = definitions.PLONone_label2index["LOC"]
+            elif linha[6] in definitions.NER_TAGS_ORG: ner = definitions.PLONone_label2index["ORG"]
+            elif linha[6] in definitions.NER_TAGS_PER: ner = definitions.PLONone_label2index["PER"]
+            else: ner = definitions.PLONone_label2index["O"]
 
             features.append((idsent, idtoken, pos_bef, pos, pos_aft, title, digit,
                              one_char_token, special_char, first_capitalized, hyphen,

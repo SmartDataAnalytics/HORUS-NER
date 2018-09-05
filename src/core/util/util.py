@@ -623,13 +623,13 @@ class Util(object):
         temp.extend([0] * (int(definitions.HORUS_TOT_FEATURES)-8))
         # do NOT append the last column here (y)
 
-        temp[18] = definitions.KLASSES[4]
-        temp[26] = definitions.KLASSES[4]
-        temp[26] = definitions.KLASSES[4]
-        temp[38] = definitions.KLASSES[4]
-        temp[39] = definitions.KLASSES[4]
-        temp[40] = definitions.KLASSES[4]
-        temp[41] = definitions.KLASSES[4]
+        temp[18] = definitions.PLONone_index2label[4]
+        temp[26] = definitions.PLONone_index2label[4]
+        temp[26] = definitions.PLONone_index2label[4]
+        temp[38] = definitions.PLONone_index2label[4]
+        temp[39] = definitions.PLONone_index2label[4]
+        temp[40] = definitions.PLONone_index2label[4]
+        temp[41] = definitions.PLONone_index2label[4]
 
         return temp
 
@@ -650,9 +650,9 @@ class Util(object):
                     word_index_ref = sent[6][self.config.models_pos_tag_lib][c][0]
                     compound = sent[6][self.config.models_pos_tag_lib][c][1]
                     compound_size = sent[6][self.config.models_pos_tag_lib][c][2]
-                    temp = [0, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
+                    temp = [0, sent_index, word_index_ref, compound, '', '', definitions.PLONone_index2label[4], 1, compound_size]
                     temp.extend(self.populate_matrix_new_columns())
-                    temp[definitions.INDEX_TARGET_NER] = definitions.KLASSES[4]
+                    temp[definitions.INDEX_TARGET_NER] = definitions.PLONone_index2label[4]
                     converted.append(temp)
                 word_index = 0
                 starty = 0
@@ -678,24 +678,24 @@ class Util(object):
                     if len(sent[3][0]) > 0:
                         tag_ner_y = sent[3][0][ind_ner_real]
                         if tag_ner_y in definitions.NER_TAGS_LOC:
-                            tag_ner_y = definitions.KLASSES[1]
+                            tag_ner_y = definitions.PLONone_index2label[1]
                         elif tag_ner_y in definitions.NER_TAGS_ORG:
-                            tag_ner_y = definitions.KLASSES[2]
+                            tag_ner_y = definitions.PLONone_index2label[2]
                         elif tag_ner_y in definitions.NER_TAGS_PER:
-                            tag_ner_y = definitions.KLASSES[3]
+                            tag_ner_y = definitions.PLONone_index2label[3]
                         else:
-                            tag_ner_y = definitions.KLASSES[4]
+                            tag_ner_y = definitions.PLONone_index2label[4]
                     else:
-                        tag_ner_y = definitions.KLASSES[4]
+                        tag_ner_y = definitions.PLONone_index2label[4]
 
                     if tag_ner in definitions.NER_TAGS_LOC:
-                        tag_ner = definitions.KLASSES[1]
+                        tag_ner = definitions.PLONone_index2label[1]
                     elif tag_ner in definitions.NER_TAGS_ORG:
-                        tag_ner = definitions.KLASSES[2]
+                        tag_ner = definitions.PLONone_index2label[2]
                     elif tag_ner in definitions.NER_TAGS_PER:
-                        tag_ner = definitions.KLASSES[3]
+                        tag_ner = definitions.PLONone_index2label[3]
                     else:
-                        tag_ner = definitions.KLASSES[4]
+                        tag_ner = definitions.PLONone_index2label[4]
 
                     temp = [has_NER, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0]  # 0-8
                     temp.extend(self.populate_matrix_new_columns())

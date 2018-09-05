@@ -264,14 +264,14 @@ def extract_features(index, self):
                                           str(tot_geral_faces_cnn).zfill(2)))
 
                 if tot_processed_img != 0:
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.PLONone_index2label[
                         outs.index(max(outs)) + 1]
                     # self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[outs_cnn.index(max(outs_cnn)) + 1]
                     # TODO: this does not make sense now, since CNN classifiers are a bit more complex...thinkg about that later...it does not impact the algorithm
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[4]
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.PLONone_index2label[4]
                 else:
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.KLASSES[4]
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.KLASSES[4]
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV] = definitions.PLONone_index2label[4]
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_CV_CNN] = definitions.PLONone_index2label[4]
 
             # -----------------------------------------------------------------
             # text classification
@@ -376,15 +376,15 @@ def extract_features(index, self):
                 self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE] = tot_union_emb_none
 
                 if limit_txt != 0:
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[horus_tx_ner]
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.PLONone_index2label[horus_tx_ner]
                 else:
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.KLASSES[4]
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = definitions.PLONone_index2label[4]
 
                 if limit_txt != 0:
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.PLONone_index2label[
                         horus_tx_cnn_ner]
                 else:
-                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.KLASSES[4]
+                    self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX_CNN] = definitions.PLONone_index2label[4]
 
             self.config.logger.debug('TX statistics:'
                                      '[BoW: LOC=%s, ORG=%s, PER=%s, DIST=%s | ' 'TM: LOC=%s, ORG=%s, PER=%s, DIST=%s, '

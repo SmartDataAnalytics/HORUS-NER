@@ -1,5 +1,9 @@
-from random import random
+from numpy.random import seed
+seed(1)
+from tensorflow import set_random_seed
+set_random_seed(2)
 
+from random import random
 from keras.callbacks import Callback
 from keras.engine import InputLayer, Input
 from keras.preprocessing.sequence import pad_sequences
@@ -15,6 +19,7 @@ from keras.layers import Bidirectional
 import cPickle as pickle
 import numpy as np
 from sklearn.cross_validation import train_test_split
+from sklearn.externals import joblib
 from sklearn.metrics import make_scorer, accuracy_score, confusion_matrix, precision_recall_fscore_support
 
 from src.config import HorusConfig
@@ -28,6 +33,9 @@ import tensorflow as tf
 
 from keras.callbacks import Callback
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+
+config = HorusConfig()
+
 
 class Metrics(Callback):
     def on_train_begin(self, logs={}):
@@ -109,6 +117,50 @@ def score2(yh, pr):
     print set(fpr)
     return fyh, fpr
 
+def get_horus_embeedings_layer(MAX_SEQUENCE_LENGTH):
+    config.logger.info('get HORUS embeddings')
+    enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
+    file = '/home/esteves/github/horus-ner/data/output/EXP_005/_ner.txt.horus_config_29.pkl'
+    dump_configs = load_dumps_in_memory(file)
+    X1_sentence = dump_configs[2]
+    word_index = list(enc_word.classes_)
+    print(len(word_index))
+    EMB=definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD
+    EMBEDDING_DIM = len(EMB)
+    embeddings_index = {} #np.zeros((60000, EMBEDDING_DIM))
+    embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+    for X in X1_sentence:
+        for index, row in X.iterrows():
+            word_id=row[151]
+            word=enc_word.inverse_transform(word_id)
+            f = []
+            for s in row.loc[EMB].tolist():
+                if type(s) is str:
+                    f.extend([float(s.replace('O', '0'))])
+                else:
+                    f.extend([s])
+            embedding_matrix[word_id]=f
+            #embeddings_index[word] = f  # brown_clusters = 4
+
+
+    #embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+    #for word, i in word_index.items():
+    #    embedding_vector = embeddings_index.get(word)
+    #    if embedding_vector is not None:
+    #        # words not found in embedding index will be all-zeros.
+    #        embedding_matrix[i] = embedding_vector
+    #    else:
+    #        print('word not found: ' + word)
+
+    embedding_layer = Embedding(len(word_index) + 1,
+                                EMBEDDING_DIM,
+                                weights=[embedding_matrix],
+                                input_length=MAX_SEQUENCE_LENGTH,
+                                mask_zero = True,
+                                trainable = True)
+
+    config.logger.info('embedding created')
+    return embedding_layer
 
 raw = open('/home/esteves/github/horus-ner/data/datasets/Ritter/ner.txt', 'r').readlines()
 
@@ -156,13 +208,55 @@ print 'Vocabulary size:', len(word2ind), len(label2ind)
 
 label2ind = definitions.PLONone_label2index
 ind2label = definitions.PLONone_index2label
-maxlen = max([len(x) for x in X])
-print 'Maximum sequence length:', maxlen
 
-X_enc = [[word2ind[c] for c in x] for x in X]
+maxlen = max([len(x) for x in X])
+max_features = len(word2ind)
+embedding_size = 128
+hidden_size = 32
+batch_size = 32
+epochs=50
+verbose=2
+out_size = len(label2ind) + 1
+print 'Maximum sequence length:', maxlen
 max_label = max(label2ind.values()) + 1
-y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
-y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
+HORUS = True
+
+
+if HORUS is False:
+    X_enc = [[word2ind[c] for c in x] for x in X]
+    y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
+    y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
+
+else:
+    enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
+    word_index = list(enc_word.classes_)
+    print 'Vocabulary size:', len(word_index), len(label2ind)
+
+    file = '/home/esteves/github/horus-ner/data/output/EXP_005/_ner.txt.horus_config_2.pkl'
+    dump_configs = load_dumps_in_memory(file)
+    X1_sentence = dump_configs[2]
+    Y1_sentence = dump_configs[3]
+
+    maxlen = max([len(x) for x in X1_sentence])
+
+    X_enc2 =[df[151] for df in X1_sentence]
+    y_enc2 = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in Y1_sentence]
+    y_enc2 = [[encode(c, max_label) for c in ey] for ey in y_enc2]
+
+    word_ids_file=[]
+    [word_ids_file.extend(ws) for ws in X_enc2]
+    word_ids_file=set(word_ids_file)
+    print 'Vocabulary size:', len(word_ids_file), len(label2ind)
+
+    max_features2 = len(word_index)
+
+    #X_enc = X_enc2 # tem um problema com is ids dos tokens, comente esse e descomente abaixo
+    X_enc = [[word2ind[c] for c in x] for x in X]
+    y_enc = y_enc2
+
+'''
+from this part, same process ---------------------------------------------------
+'''
 
 X_enc = pad_sequences(X_enc, maxlen=maxlen)
 y_enc = pad_sequences(y_enc, maxlen=maxlen)
@@ -170,42 +264,37 @@ y_enc = pad_sequences(y_enc, maxlen=maxlen)
 X_train, X_test, y_train, y_test = train_test_split(X_enc, y_enc, test_size=0.2, random_state=42)
 print 'Training and testing tensor shapes:', X_train.shape, X_test.shape, y_train.shape, y_test.shape
 
-max_features = len(word2ind)
-embedding_size = 128
-hidden_size = 32
-out_size = len(label2ind) + 1
+if HORUS:
+    emb = get_horus_embeedings_layer(maxlen)
+else:
+    emb = Embedding(max_features, embedding_size, input_length=maxlen, mask_zero=True)
 
+config.logger.info('setting up NN')
 model = Sequential()
-model.add(Embedding(max_features, embedding_size, input_length=maxlen, mask_zero=True))
-#model.add(LSTM(hidden_size, return_sequences=True))
+model.add(emb)
 model.add(Bidirectional(LSTM(hidden_size, return_sequences=True), merge_mode='concat'))
 model.add(TimeDistributed(Dense(out_size)))
 model.add(Activation('softmax'))
-
 model.compile(loss='categorical_crossentropy', optimizer='adam')
-
-batch_size = 32
-epochs=50
+print(model.summary())
 model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=epochs, validation_data=(X_test, y_test))
 score = model.evaluate(X_test, y_test, batch_size=batch_size)
 print('Raw test score:', score)
 pr = model.predict_classes(X_train)
 yh = y_train.argmax(2)
 fyh, fpr = score2(yh, pr)
-print 'Training accuracy:', accuracy_score(fyh, fpr)
+#print 'Training accuracy:', accuracy_score(fyh, fpr)
 #print 'Training confusion matrix:'
 #print confusion_matrix(fyh, fpr)
-print(precision_recall_fscore_support(fyh, fpr))
-
+#print(precision_recall_fscore_support(fyh, fpr))
 pr = model.predict_classes(X_test)
 yh = y_test.argmax(2)
 fyh, fpr = score2(yh, pr)
-print 'Testing accuracy:', accuracy_score(fyh, fpr)
+#print 'Testing accuracy:', accuracy_score(fyh, fpr)
 #print 'Testing confusion matrix:'
 #print confusion_matrix(fyh, fpr)
-config = HorusConfig()
 P, R, F, S = precision_recall_fscore_support(fyh, fpr)
-name='test_RNN.txt'
+name='test_NN.txt'
 f_key=1
 ds1_name='ritter'
 ds2_name=ds1_name
@@ -219,6 +308,48 @@ for k in range(0,3):
                            P[k], R[k], F[k], str(S[k]), 'LSTM', ds1_name, ds2_name, 'NER'))
 
 
+
+config.logger.info('DONE with embeedings!')
+'''
+CONCATENANDO AS LAYERS
+'''
+model1 = Sequential()
+model1.add(Embedding(input_dim=max_features, output_dim=embedding_size, input_length=maxlen, mask_zero=True))
+model2 = Sequential()
+model2.add(InputLayer(input_shape=(maxlen, X_train.shape[2] - 1)))
+model = Sequential()
+model.add(Merge([model1, model2], mode='concat'))
+model.add(Dense(1))
+model.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxlen, X_train.shape[2] - 1)))
+model.add(TimeDistributed(Dense(out_size)))
+model.add(Activation('softmax'))
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+print(model.summary())
+model.fit([X_train[:, :, 0], X_train[:, :, 1:X_train.shape[2]]], y_train, epochs=epochs, verbose=verbose,
+          batch_size=batch_size,
+          validation_data=([X_test[:, :, 0], X_test[:, :, 1:X_train.shape[2]]], y_test))
+score = model.evaluate([X_test[:, :, 0], X_test[:, :, 1:X_train.shape[2]]], y_test,
+                       batch_size=batch_size, verbose=verbose)
+print('Raw test score:', score)
+pr = model.predict_classes(X_train)
+yh = y_train.argmax(2)
+fyh, fpr = score2(yh, pr)
+pr = model.predict_classes(X_test)
+yh = y_test.argmax(2)
+fyh, fpr = score2(yh, pr)
+P, R, F, S = precision_recall_fscore_support(fyh, fpr)
+name='test_NN_2layers_concat.txt'
+f_key=1
+ds1_name='ritter'
+ds2_name=ds1_name
+experiment_folder='EXP_007/'
+header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
+line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
+out_file = open(config.dir_output + experiment_folder + name, 'w+')
+out_file.write(header)
+for k in range(0,3):
+    out_file.write(line % ('False', str(f_key), '1', definitions.PLO_index2label.get(k+1),
+                           P[k], R[k], F[k], str(S[k]), 'LSTM', ds1_name, ds2_name, 'NER'))
 
 
 

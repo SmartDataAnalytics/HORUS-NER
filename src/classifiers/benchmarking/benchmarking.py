@@ -11,7 +11,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 from src.classifiers.experiment_metadata import MEXExecution, \
     MEXPerformance, MEX, MEXConfiguration
-from src.core.util.definitions import encoder_le1_name
+from src.core.util.definitions import encoder_le1_name, dict_exp_feat
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -39,6 +39,7 @@ from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 import pandas as pd
 import cPickle as pickle
+#import pickle
 import multiprocessing
 from functools import partial
 from contextlib import contextmanager
@@ -118,8 +119,8 @@ def convert_lstm_shape(X, y, horus_feat = False):
     word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
     ind2word = {index: word for index, word in enumerate(words)}
     #labels = list(set([c for x in y for c in x]))
-    label2ind = definitions.KLASSES2
-    ind2label = definitions.KLASSES
+    label2ind = definitions.PLONone_label2index
+    ind2label = definitions.PLONone_index2label
     print('Vocabulary size:', len(word2ind), len(label2ind))
     lengths = [len(x) for x in Xclean]
     maxlen = max(lengths)
@@ -140,7 +141,7 @@ def convert_lstm_shape(X, y, horus_feat = False):
     return X_enc, y_enc, max_features, out_size, maxlen
 
 def sent2label(sent):
-    return [definitions.KLASSES[y] for y in sent]
+    return [definitions.PLONone_index2label[y] for y in sent]
 
 def sent2features(sent):
     return [features_to_crf_shape(sent, i) for i in range(len(sent))]
@@ -485,7 +486,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
             #y_tokens_shape.append(definitions.KLASSES2[y])
 
             _sent_temp_feat.append(df.loc[index])
-            _sent_temp_y.append(definitions.KLASSES2[y])
+            _sent_temp_y.append(definitions.PLONone_label2index[y])
 
         # adding last sentence
         ds_sentences.append(_sent_temp_feat)
@@ -498,7 +499,7 @@ def shape_data((file, path, le, dict_brown_c1000, dict_brown_c640, dict_brown_c3
         config.logger.info('total of tokens: ' + str(len(df)))
         return file, (ds_sentences, y_sentences_shape), (df, y_tokens_shape)
     except Exception as e:
-        config.logger.error(str(e))
+        config.logger.error(repr(e))
         raise e
 
 
@@ -607,13 +608,13 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print('----------------------------------------------------------------------------------')
 
 def exclude_columns(df, f_indexes):
-    #dfret=df.copy()
     if isinstance(df, pd.DataFrame) == False:
         df=pd.DataFrame(df)
-    for icol in df.columns:
+    dfret = df.copy()
+    for icol in dfret.columns:
         if icol not in f_indexes:
-            df.drop(icol, axis=1, inplace=True)
-    return df
+            dfret.drop(icol, axis=1, inplace=True)
+    return dfret
 
 def save_configuration_dump_file((_file_path, _file_name, ds, f_key, f_indexes)):
     try:
@@ -622,19 +623,20 @@ def save_configuration_dump_file((_file_path, _file_name, ds, f_key, f_indexes))
         Y_sentence = [sent2label(s) for s in ds[1][1]]
         X_token = exclude_columns(ds[2][0], f_indexes)
         X_token.replace('O', 0, inplace=True)
-        Y_token = [definitions.KLASSES2[y] for y in ds[2][1]]
+        Y_token = [definitions.PLONone_label2index[y] for y in ds[2][1]]
         X_crf = [sent2features(s) for s in X_sentence]
         _Y_sentence = np.array([x for s in Y_sentence for x in s])  # trick for scikit_learn on CRF (for the precision_recall_fscore_support method)
-        #X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
-        #X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
-        #X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-        #y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
+
+        ##X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
+        ##X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
+        ##X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
+        ##y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
         with open(_file_path, 'wb') as output:
             pickle.dump([_file_name, f_key, X_sentence, Y_sentence, X_token, Y_token,
                          X_crf, _Y_sentence], output, pickle.HIGHEST_PROTOCOL)
         config.logger.info(_file_name + ' created!')
     except Exception as e:
-        config.logger.error(str(e))
+        config.logger.error(repr(e))
         raise e
 
     return _file_name
@@ -666,48 +668,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     batch_size = 128
     epochs = 50
     verbose = 0
-
     #_meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
-
-    dict_exp_feat = {1: definitions.FEATURES_STANDARD,
-                     2: definitions.FEATURES_STANDARD_WORD,
-                     3: definitions.FEATURES_STANDARD_BROWN_64M_c320,
-                     4: definitions.FEATURES_STANDARD_BROWN_64M_c640,
-                     5: definitions.FEATURES_STANDARD_BROWN_500M_c1000,
-                     6: definitions.FEATURES_STANDARD +
-                        definitions.FEATURES_STANDARD_WORD +
-                        definitions.FEATURES_STANDARD_BROWN_64M_c320,
-                     7: definitions.FEATURES_STANDARD +
-                        definitions.FEATURES_STANDARD_WORD +
-                        definitions.FEATURES_STANDARD_BROWN_64M_c640,
-                     8: definitions.FEATURES_STANDARD +
-                        definitions.FEATURES_STANDARD_WORD +
-                        definitions.FEATURES_STANDARD_BROWN_500M_c1000,
-                     9: definitions.FEATURES_HORUS_BASIC_CV,
-                     10: definitions.FEATURES_HORUS_BASIC_TX,
-                     11: definitions.FEATURES_HORUS_CNN_CV,
-                     12: definitions.FEATURES_HORUS_CNN_TX,
-                     13: definitions.FEATURES_HORUS_EMB_TX,
-                     14: definitions.FEATURES_HORUS_STATS_TX,
-                     15: definitions.FEATURES_HORUS_TX,
-                     16: definitions.FEATURES_HORUS_TX_EMB,
-                     17: definitions.FEATURES_HORUS_CV,
-                     18: definitions.FEATURES_HORUS_BASIC_AND_CNN,
-                     19: definitions.FEATURES_HORUS,
-                     20: definitions.FEATURES_HORUS_BASIC_CV_BEST_STANDARD,
-                     21: definitions.FEATURES_HORUS_BASIC_TX_BEST_STANDARD,
-                     22: definitions.FEATURES_HORUS_CNN_CV_BEST_STANDARD,
-                     23: definitions.FEATURES_HORUS_CNN_TX_BEST_STANDARD,
-                     24: definitions.FEATURES_HORUS_EMB_TX_BEST_STANDARD,
-                     25: definitions.FEATURES_HORUS_STATS_TX_BEST_STANDARD,
-                     26: definitions.FEATURES_HORUS_TX_BEST_STANDARD,
-                     27: definitions.FEATURES_HORUS_TX_EMB_BEST_STANDARD,
-                     28: definitions.FEATURES_HORUS_CV_BEST_STANDARD,
-                     29: definitions.FEATURES_HORUS_BASIC_AND_CNN_BEST_STANDARD,
-                     30: definitions.FEATURES_HORUS_BEST_STANDARD}
-    KEY_STARTS = 23
+    KEY_STARTS = 30
     KEY_ENDS = max(dict_exp_feat.keys())
-    KEY_ENDS = 23
+    #KEY_ENDS = 30
     header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
     line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
     _SET_MASK = '_%s_config_%s.pkl'
@@ -717,8 +681,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     if REPROCESS is True:
         config.logger.info('shaping the datasets...')
         shaped_datasets = shape_datasets(experiment_folder, datasets) # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
-        config.logger.info('done! running experiment configurations')
-        config.logger.info('creating the sets for all configurations x datasets')
+        config.logger.info('creating the dump files: configurations x datasets')
         # multithread to shape the datasets for all configurations in parallel
         job_args = []
         set_file_dump_names=[]
@@ -752,168 +715,88 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
         name +='.txt'
         out_file = open(config.dir_output + experiment_folder + name, 'w+')
         out_file.write(header)
-        for f_key in range(KEY_STARTS, max(dict_exp_feat.keys())+1):
+        for f_key in range(KEY_STARTS, KEY_ENDS+1):
             config.logger.info('loading dumps for configuration: ' + str(f_key))
-            dump_configs = {}
-            job_dumps = []
-            gc.collect()
-            for ds in datasets:
-                _set_name = _SET_MASK % (ds, str(f_key))
-                _file = config.dir_output + experiment_folder + _set_name
-                job_dumps.append((_file, ds, _set_name))
-            if len(job_dumps) > 0:
-                p = multiprocessing.Pool(multiprocessing.cpu_count())
-                asyncres = p.map(load_dumps_in_memory, job_dumps)
-                for ret in asyncres:
-                    dump_configs[ret[0]] = ret[1]
-                asyncres = None
+            try:
+                dump_configs = {}
+                job_dumps = []
                 gc.collect()
+                for ds in datasets:
+                    _set_name = _SET_MASK % (ds, str(f_key))
+                    _file = config.dir_output + experiment_folder + _set_name
+                    job_dumps.append((_file, ds, _set_name))
+                if len(job_dumps) > 0:
+                    p = multiprocessing.Pool(multiprocessing.cpu_count())
+                    asyncres = p.map(load_dumps_in_memory, job_dumps)
+                    for ret in asyncres:
+                        dump_configs[ret[0]] = ret[1]
+                    asyncres = None
+                    gc.collect()
 
-            for ds1 in datasets:
-                ds1_name = ds1
-                _set_name = _SET_MASK % (ds1, str(f_key))
-                #_file = config.dir_output + experiment_folder + _set_name
-                #config.logger.info('ds1: loading [%s]: %s' % (ds1_name, _file))
-                #with open(_file, 'rb') as input:
-                    #shaped = pickle.load(input)
-                ds1_config_name = dump_configs[_set_name][0]
-                ds1_key = dump_configs[_set_name][1]
-                X1_sentence = dump_configs[_set_name][2]
-                Y1_sentence = dump_configs[_set_name][3]
-                X1_token = dump_configs[_set_name][4]
-                Y1_token = dump_configs[_set_name][5]
-                X1_crf = dump_configs[_set_name][6]
-                _Y1_sentence = dump_configs[_set_name][7]
-                #pca = PCA(n_components=50)
-                #X1_token_PCA = pca.fit(X1_token)
-                for ds2 in datasets:
-                    ds2_name = ds2
-                    config.logger.info('%s -> %s' % (ds1_name, ds2_name))
-                    if ds1_name != ds2_name:
-                        _set_name = _SET_MASK % (ds2_name, str(f_key))
-                        #_file = config.dir_output + experiment_folder + _set_name
-                        #config.logger.info('ds2: loading [%s]: %s' % (ds2_name, _file))
-                        #with open(_file, 'rb') as input:
-                        #    shaped = pickle.load(input)
-                        ds2_config_name = dump_configs[_set_name][0]
-                        ds2_key = dump_configs[_set_name][1]
-                        X2_sentence = dump_configs[_set_name][2]
-                        Y2_sentence = dump_configs[_set_name][3]
-                        X2_token = dump_configs[_set_name][4]
-                        Y2_token = dump_configs[_set_name][5]
-                        X2_crf = dump_configs[_set_name][6]
-                        _Y2_sentence = dump_configs[_set_name][7]
+                for ds1 in datasets:
+                    ds1_name = ds1
+                    _set_name = _SET_MASK % (ds1, str(f_key))
+                    #_file = config.dir_output + experiment_folder + _set_name
+                    #config.logger.info('ds1: loading [%s]: %s' % (ds1_name, _file))
+                    #with open(_file, 'rb') as input:
+                        #shaped = pickle.load(input)
+                    ds1_config_name = dump_configs[_set_name][0]
+                    ds1_key = dump_configs[_set_name][1]
+                    X1_sentence = dump_configs[_set_name][2]
+                    Y1_sentence = dump_configs[_set_name][3]
+                    X1_token = dump_configs[_set_name][4]
+                    Y1_token = dump_configs[_set_name][5]
+                    X1_crf = dump_configs[_set_name][6]
+                    _Y1_sentence = dump_configs[_set_name][7]
+                    #pca = PCA(n_components=50)
+                    #X1_token_PCA = pca.fit(X1_token)
+                    for ds2 in datasets:
+                        ds2_name = ds2
+                        config.logger.info('%s -> %s' % (ds1_name, ds2_name))
+                        if ds1_name != ds2_name:
+                            _set_name = _SET_MASK % (ds2_name, str(f_key))
+                            #_file = config.dir_output + experiment_folder + _set_name
+                            #config.logger.info('ds2: loading [%s]: %s' % (ds2_name, _file))
+                            #with open(_file, 'rb') as input:
+                            #    shaped = pickle.load(input)
+                            ds2_config_name = dump_configs[_set_name][0]
+                            ds2_key = dump_configs[_set_name][1]
+                            X2_sentence = dump_configs[_set_name][2]
+                            Y2_sentence = dump_configs[_set_name][3]
+                            X2_token = dump_configs[_set_name][4]
+                            Y2_token = dump_configs[_set_name][5]
+                            X2_crf = dump_configs[_set_name][6]
+                            _Y2_sentence = dump_configs[_set_name][7]
 
-                        # ---------------------------------------------------------- META ----------------------------------------------------------
-                        # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
-                        #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
-                        # --------------------------------------------------------------------------------------------------------------------------
-                        if runDT is True:
-                            m = _dt.fit(X1_token, Y1_token)
-                            ypr = m.predict(X2_token)
-                            # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
-                            P, R, F, S = \
-                                sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                labels=definitions.PLO_KLASSES.keys())
-                            for k in range(len(P)):
-                                out_file.write(line % ('False', str(f_key), '1', definitions.PLO_KLASSES.get(k + 1),
-                                                       P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NER'))
-
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in ypr]
-                            y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in Y2_token]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(line % ('False', str(f_key), '1', k,
-                                                       P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NED'))
+                            if (X2_token.empty or X2_token.empty) is True:
+                                raise Exception('X_token error!')
 
                             # ---------------------------------------------------------- META ----------------------------------------------------------
-                            # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
-                            # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
-                            #                                                             labels=sorted_labels.keys(),
-                            #                                                             average=None)
-                            # for k in sorted_labels.keys():
-                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            # _conf.add_execution(_ex)
-                            # _meta.add_configuration(_conf)
+                            # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
+                            #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
                             # --------------------------------------------------------------------------------------------------------------------------
-
-                        if runCRF is True:
-                            m = _crf.fit(X1_crf, Y1_sentence)
-                            ypr = m.predict(X2_crf)
-                            #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                            _ypr = np.array([tag for row in ypr for tag in row])
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
-                                                                                         labels=definitions.PLO_KLASSES.values())
-                            for k in range(len(P)):
-                                out_file.write(line % (
-                                'False', str(f_key), '1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k]),
-                                'CRF', ds1_name, ds2_name, 'NER'))
-
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
-                            y2_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _Y2_sentence]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(line % (
-                                    'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
-
-
-                            m = _crf2.fit(X1_crf, Y1_sentence)
-                            ypr = m.predict(X2_crf)
-                            _ypr = np.array([tag for row in ypr for tag in row])
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
-                                                                                         labels=definitions.PLO_KLASSES.values())
-                            for k in range(len(P)):
-                                out_file.write(line % (
-                                'False', str(f_key), '1', definitions.PLO_KLASSES.get(k + 1), P[k], R[k], F[k], str(S[k]),
-                                'CRF_PA', ds1_name, ds2_name, 'NER'))
-
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(line % (
-                                    'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
-
-                        if runLSTM is True:
-                            print(1)
-                            #max_of_sentences = max(maxlen_1, maxlen_2)
-                            #X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
-                            #y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
-                            #run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1,
-                            #         embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
-                    else:
-                        # ---------------------------------------------------------- META ----------------------------------------------------------
-                        # _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
-                        #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
-                        # --------------------------------------------------------------------------------------------------------------------------
-                        for d in range(len(r)):
                             if runDT is True:
-                                Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size,
-                                                                      random_state=r[d])
-                                m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
-                                # print(m.feature_importances_)
-                                ypr = m.predict(np.array(Xte).astype(float))
-                                # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
-                                                                                             np.array(ypr).astype(int),
-                                                                                             labels=definitions.PLO_KLASSES.keys())
+                                m = _dt.fit(X1_token, Y1_token)
+                                ypr = m.predict(X2_token)
+                                # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
+                                P, R, F, S = \
+                                    sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                    labels=definitions.PLO_index2label.keys())
                                 for k in range(len(P)):
-                                    out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1),
-                                                P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NER'))
+                                    out_file.write(line % ('False', str(f_key), '1', definitions.PLO_index2label.get(k + 1),
+                                                           P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NER'))
 
                                 # entity detection only
-                                ypr_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in ypr]
-                                y2_bin = [1 if x in definitions.PLO_KLASSES.keys() else 0 for x in yte]
+                                ypr_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in ypr]
+                                y2_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in Y2_token]
                                 P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                 for k in range(len(P)):
-                                    out_file.write(line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
-                                                           'DT', ds1_name, ds2_name, 'NED'))
+                                    out_file.write(line % ('False', str(f_key), '1', k,
+                                                           P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NED'))
 
                                 # ---------------------------------------------------------- META ----------------------------------------------------------
-                                # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
-                                # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
+                                # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
+                                # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
                                 #                                                             labels=sorted_labels.keys(),
                                 #                                                             average=None)
                                 # for k in sorted_labels.keys():
@@ -923,67 +806,156 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                 # --------------------------------------------------------------------------------------------------------------------------
 
                             if runCRF is True:
-                                Xtr, Xte, ytr, yte = train_test_split(
-                                    X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
-
-                                m = _crf.fit(Xtr, ytr)
-                                ypr = m.predict(Xte)
+                                m = _crf.fit(X1_crf, Y1_sentence)
+                                ypr = m.predict(X2_crf)
+                                #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                                 _ypr = np.array([tag for row in ypr for tag in row])
-                                _yte = np.array([tag for row in yte for tag in row])
-                                #print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                             labels=definitions.PLO_KLASSES.values())
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
+                                                                                             labels=definitions.PLO_index2label.values())
                                 for k in range(len(P)):
                                     out_file.write(line % (
-                                        'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k],
-                                        F[k],
-                                        str(S[k]), 'CRF', ds1_name, ds2_name, 'NER'))
+                                    'False', str(f_key), '1', definitions.PLO_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                    'CRF', ds1_name, ds2_name, 'NER'))
 
                                 # entity detection only
-                                ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
-                                y2_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _yte]
+                                ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
+                                y2_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _Y2_sentence]
                                 P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                 for k in range(len(P)):
                                     out_file.write(line % (
-                                        'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
+                                        'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
 
-                                m = _crf2.fit(Xtr, ytr)
-                                ypr = m.predict(Xte)
+
+                                m = _crf2.fit(X1_crf, Y1_sentence)
+                                ypr = m.predict(X2_crf)
                                 _ypr = np.array([tag for row in ypr for tag in row])
-                                _yte = np.array([tag for row in yte for tag in row])
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                             labels=definitions.PLO_KLASSES.values())
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_Y2_sentence, _ypr,
+                                                                                             labels=definitions.PLO_index2label.values())
                                 for k in range(len(P)):
                                     out_file.write(line % (
-                                        'True', str(f_key), str(d + 1), definitions.PLO_KLASSES.get(k + 1), P[k], R[k],
-                                        F[k],
-                                        str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NER'))
+                                    'False', str(f_key), '1', definitions.PLO_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                    'CRF_PA', ds1_name, ds2_name, 'NER'))
 
                                 # entity detection only
-                                ypr_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _ypr]
-                                y2_bin = [1 if x in definitions.PLO_KLASSES.values() else 0 for x in _yte]
+                                ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
                                 P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                 for k in range(len(P)):
                                     out_file.write(line % (
-                                        'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
-
-                                # ---------------------------------------------------------- META ----------------------------------------------------------
-                                # _ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
-                                # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
-                                # for k in sorted_labels.keys():
-                                #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                                # _conf.add_execution(_ex)
-                                # _meta.add_configuration(_conf)
-                                # --------------------------------------------------------------------------------------------------------------------------
+                                        'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
 
                             if runLSTM is True:
                                 print(1)
-                                #Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size,
-                                #                                      random_state=42)  # 352|1440
-                                #run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size,
-                                #         hidden_size, batch_size, epochs, verbose, maxlen_1)
+                                #max_of_sentences = max(maxlen_1, maxlen_2)
+                                #X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
+                                #y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
+                                #run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1,
+                                #         embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
+                        else:
+                            # ---------------------------------------------------------- META ----------------------------------------------------------
+                            # _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
+                            #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
+                            # --------------------------------------------------------------------------------------------------------------------------
+                            if X1_token.empty is True:
+                                raise Exception('X1_token is empty!')
 
-                out_file.flush()
+                            for d in range(len(r)):
+                                if runDT is True:
+                                    Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size,
+                                                                          random_state=r[d])
+                                    m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                                    # print(m.feature_importances_)
+                                    ypr = m.predict(np.array(Xte).astype(float))
+                                    # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                                 np.array(ypr).astype(int),
+                                                                                                 labels=definitions.PLO_index2label.keys())
+                                    for k in range(len(P)):
+                                        out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_index2label.get(k + 1),
+                                                    P[k], R[k], F[k], str(S[k]), 'DT', ds1_name, ds2_name, 'NER'))
+
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in ypr]
+                                    y2_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in yte]
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
+                                                               'DT', ds1_name, ds2_name, 'NED'))
+
+                                    # ---------------------------------------------------------- META ----------------------------------------------------------
+                                    # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
+                                    # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
+                                    #                                                             labels=sorted_labels.keys(),
+                                    #                                                             average=None)
+                                    # for k in sorted_labels.keys():
+                                    #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                                    # _conf.add_execution(_ex)
+                                    # _meta.add_configuration(_conf)
+                                    # --------------------------------------------------------------------------------------------------------------------------
+
+                                if runCRF is True:
+                                    Xtr, Xte, ytr, yte = train_test_split(
+                                        X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
+
+                                    m = _crf.fit(Xtr, ytr)
+                                    ypr = m.predict(Xte)
+                                    _ypr = np.array([tag for row in ypr for tag in row])
+                                    _yte = np.array([tag for row in yte for tag in row])
+                                    #print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                                 labels=definitions.PLO_index2label.values())
+                                    for k in range(len(P)):
+                                        out_file.write(line % (
+                                            'True', str(f_key), str(d + 1), definitions.PLO_index2label.get(k + 1), P[k], R[k],
+                                            F[k],
+                                            str(S[k]), 'CRF', ds1_name, ds2_name, 'NER'))
+
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
+                                    y2_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _yte]
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(line % (
+                                            'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF', ds1_name, ds2_name, 'NED'))
+
+                                    m = _crf2.fit(Xtr, ytr)
+                                    ypr = m.predict(Xte)
+                                    _ypr = np.array([tag for row in ypr for tag in row])
+                                    _yte = np.array([tag for row in yte for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                                 labels=definitions.PLO_index2label.values())
+                                    for k in range(len(P)):
+                                        out_file.write(line % (
+                                            'True', str(f_key), str(d + 1), definitions.PLO_index2label.get(k + 1), P[k], R[k],
+                                            F[k],
+                                            str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NER'))
+
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
+                                    y2_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _yte]
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(line % (
+                                            'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', ds1_name, ds2_name, 'NED'))
+
+                                    # ---------------------------------------------------------- META ----------------------------------------------------------
+                                    # _ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
+                                    # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
+                                    # for k in sorted_labels.keys():
+                                    #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                                    # _conf.add_execution(_ex)
+                                    # _meta.add_configuration(_conf)
+                                    # --------------------------------------------------------------------------------------------------------------------------
+
+                                if runLSTM is True:
+                                    print(1)
+                                    #Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size,
+                                    #                                      random_state=42)  # 352|1440
+                                    #run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size,
+                                    #         hidden_size, batch_size, epochs, verbose, maxlen_1)
+
+                    out_file.flush()
+            except Exception as e:
+                config.logger.error(repr(e))
         out_file.close()
         #with open(_label + '.meta', 'wb') as handle:
         #    pickle.dump(_meta, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -998,7 +970,7 @@ def main():
 
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus ner.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
-    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus.short')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
     parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
     parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')

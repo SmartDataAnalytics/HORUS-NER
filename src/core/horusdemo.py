@@ -79,7 +79,7 @@ class HorusDemo(object):
                 features[0][0] = self.final_encoder.transform(features[0][0])
                 features[0][1] = self.final_encoder.transform(features[0][1])
                 features[0][2] = self.final_encoder.transform(features[0][2])
-                horus_matrix[index][40] = definitions.KLASSES[self.final.predict(features)[0]]
+                horus_matrix[index][40] = definitions.PLONone_index2label[self.final.predict(features)[0]]
 
         except Exception as error:
             raise error
