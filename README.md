@@ -19,52 +19,65 @@ at word-level to boost the task on noisy data.
 
 We are currently investigating Named Entity Recognition (NER) as use case. This version supports the identification of classical named-entity types (LOC, PER, ORG). 
 
-#### Easy Setup (Python 2.7 based)
+#### Easy Setup (Python 2.7)
 
-1. Run the bash script
-- bash scripts/setup_horus.sh
+- Setup the python environment
+    - setup [Anaconda](https://anaconda.org/)
+    - conda env create -f horus.v015.yml (tested for OSX) (*)
+    - source activate horus
 
-1. Setup the python environment
-- setup [Anaconda](https://anaconda.org/)
-- conda env create -f horus.v015.yml (tested for OSX) (*)
-- source activate horus_27_cv310
+- Run the bash script
+    - bash scripts/setup_horus.sh
 
-2. Setup the framework environment
-- setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/diegoesteves/horus-ner/blob/master/horus0.1.5.db.sql) to create the schema
-- get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
-- configure the parameters at the .ini file (copy _horus_dist.ini_ to _~/horus.ini_)
+- Setup the framework environment
+    - setup [SQLite](https://sqlite.org/) database and run [our script](https://github.com/diegoesteves/horus-ner/blob/master/horus0.1.5.db.sql) to create the schema
+    - get your [Microsoft Bing API Key](https://azure.microsoft.com/en-us/services/cognitive-services/) and [Microsoft Translator API Key](https://datamarket.azure.com/developer/applications/register) to query the Web.
+    - configure the parameters at the .ini file (and rename _horus_dist.ini_ to _horus.ini_)
 
-(*) - setup [openCV 3.1](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/): OSx users can benefit from anaconda, which provides a running version of OpenCV 3.1.0 ([see more at #issue 6](https://github.com/dnes85/horus-models/issues/6))
+- Setup [openCV 3.1.0](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/)
+    - [see more at #issue 6](https://github.com/dnes85/horus-models/issues/6)
 
 #### Demo
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 ```python
-python main.py --text="whitney houston has been honored in nyc"
+python demo.py --text="whitney houston has been honored in nyc"
 
-python main.py --file="sentences.txt" --ds_format=0
+python demo.py --file="sentences.txt" --ds_format=0
 
-python main.py --file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
+python demo.py --file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
 ```
 
 #### Experiments
 
+
+##### Caching webpages and images
+cache.py
+
+creates files:
+- _dataset_.horus_matrix_01 (the sentences)
+- _dataset_.horus_matrix_02 (01 + the images and texts IDs)
+
+
 ```python
-# X = conll file
-# 1. caching webpages and images (cache.py)
-X2 = cache_se_results_conll(X)
+dataset.horus_matrix_02 = cache_images_and_text(dataset)
+```
+##### Extracting horus features
 
-# 2. extracting horus features (features.py)
-X3 = extract_features_from_conll(X2, output_folder, label)
+features.py
 
-# 3. adding lexical features and benchmarking
-y = benchmark(X3)
+creates the file:
+- _dataset_.horus_matrix_03 (final full features file for benchmarking)
 
+```python
+dataset.horus_matrix_03 = extract_features_from_conll(dataset.horus_matrix_02, output_folder, label)
 ```
 
-##### 
-```python
+##### Adding lexical features and benchmarking
+benchmark.py
 
+```python
+y = benchmark(X3)
 ```
 
 #### Web Service

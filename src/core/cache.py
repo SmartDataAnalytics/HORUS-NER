@@ -1,23 +1,24 @@
 import csv
+import pickle
 
 import nltk
 import numpy
 
 from src.config import HorusConfig
-from src.core.util.definitions import INDEX_ID_TERM_TXT, INDEX_ID_TERM_IMG
-from src.core.util.definitions_sql import SQL_SENTENCE_SAVE, SQL_ALL_TERM_SEARCH_SEL
-from src.core.util import definitions
-from src.core.util.nlp_tools import NLPTools
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from time import gmtime, strftime
 import requests
-from src.core.util.search_engines import query_bing, query_flickr, query_wikipedia
-from src.core.util.sqlite_helper import SQLiteHelper, HorusDB
 import pandas as pd
 import re
-import cPickle as pickle
 import os
+
+from src.util import definitions
+from src.util.definitions import INDEX_ID_TERM_TXT, INDEX_ID_TERM_IMG
+from src.util.definitions_sql import SQL_ALL_TERM_SEARCH_SEL
+from src.util.nlp_tools import NLPTools
+from src.util.search_engines import query_flickr, query_wikipedia, query_bing
+from src.util.sqlite_helper import HorusDB, SQLiteHelper
 
 config = HorusConfig()
 tools = NLPTools(config)
@@ -362,21 +363,21 @@ def __get_horus_matrix_structure(sent_tokenize_list):
 
     return horus_matrix
         
-def cache_se_results_conll(conllfile, tokenindex=0, ner_index=1, sep='\t'):
+def cache_images_and_text(conll_file, tokenindex=0, ner_index=1, sep='\t'):
     '''
     given an input file, read the content and caches the results
-    :param conllfile: a conll inoutfile
+    :param conll_file: a conll inoutfile
     :param tokenindex: the position of the token in the file
     :return: True or False
     '''
     try:
-        if conllfile is None:
+        if conll_file is None:
             raise Exception("Provide an input file format to be annotated")
-        config.logger.info('caching file -> %s' % conllfile)
+        config.logger.info('caching file -> %s' % conll_file)
 
-        file = config.dir_datasets + conllfile
-        file_sentences = config.dir_datasets + conllfile + '.horus_matrix_01'
-        file_horus_matrix = config.dir_datasets + conllfile + '.horus_matrix_02'
+        file = config.dir_datasets + conll_file
+        file_sentences = config.dir_datasets + conll_file + '.horus_matrix_01'
+        file_horus_matrix = config.dir_datasets + conll_file + '.horus_matrix_02'
 
         if os.path.isfile(file_horus_matrix):
             config.logger.info('file %s has been processed successfully!' % (file_horus_matrix))
@@ -550,7 +551,7 @@ def __download_and_cache_results(horus_matrix):
             raise e
 
 if __name__ == "__main__":
-    files = ['broad/5d7c65d/h.conll', 'wnut/2015/data/train', 'wnut/2015/data/dev',
+    files = ['Ritter/ner.txt', 'broad/5d7c65d/h.conll', 'wnut/2015/data/train', 'wnut/2015/data/dev',
              'wnut/2016/data/train', 'wnut/2016/data/dev', 'wnut/2016/data/test',
              'wnut/2017/wnut17train.conll', 'wnut/2017/emerging.dev.conll', 'wnut/2017/emerging.test.annotated',
              'broad/5d7c65d/a.conll', 'broad/5d7c65d/b.conll', 'broad/5d7c65d/e.conll', 'broad/5d7c65d/f.conll',
@@ -558,6 +559,8 @@ if __name__ == "__main__":
 
     for file in files:
         try:
-            cache_se_results_conll(file)
+
+            cache_images_and_text(file)
+
         except Exception as e:
             config.logger.error(repr(e))

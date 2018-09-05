@@ -29,10 +29,11 @@ from horusner.components.systemlog import SystemLog
 from sklearn.externals import joblib
 
 from src.config import HorusConfig
-from src.core.feature_extraction.features import FeatureExtraction
-from src.core.util.util import Util
-from src.core.util import definitions
 import numpy as np
+
+from src.core.features import FeatureExtraction
+from src.util import definitions
+from src.util.util import Util
 
 
 class HorusDemo(object):

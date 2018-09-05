@@ -37,8 +37,9 @@ class HorusConfig(object):
                     print(parser.get('conf', 'code'))
                     self.log_level = parser.get('conf', 'log_level')
 
-                    self.src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-                    self.root_dir = os.path.abspath(os.path.join(self.src_dir, os.pardir)) + '/'
+                    #self.src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
+                    #self.root_dir = os.path.abspath(os.path.join(self.src_dir, os.pardir)) + '/'
+                    self.root_dir = parser.get('path', 'root_dir')
                     self.root_dir_output = self.root_dir + 'data/'
 
                     #models_rootdir = pkg_resources.resource_filename('horus.resources', 'models') + "/"

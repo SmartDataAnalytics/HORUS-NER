@@ -43,17 +43,19 @@ from src.classifiers.computer_vision.inception import InceptionCV
 from src.classifiers.computer_vision.places365 import Places365CV
 from src.classifiers.computer_vision.sift import SIFT
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
-from src.core.translation.bingtranslation import BingTranslator
-from src.core.util.definitions import INDEX_TOT_CV_LOC, INDEX_TOT_IMG
-from src.core.util.util import Util
-from src.core.translation.azure import *
-from src.core.util.nlp_tools import NLPTools
-from src.core.util.definitions_sql import *
 # print cv2.__version__
 from src.classifiers.text_classification.bow_tfidf import BowTfidf
-from src.core.util import definitions
 from nltk.corpus import wordnet as wn
 import os
+
+from src.config import HorusConfig
+from src.translation.azure import bing_detect_language, bing_translate_text
+from src.translation.bingtranslation import BingTranslator
+from src.util import definitions
+from src.util.definitions_sql import SQL_TEXT_CLASS_SEL, SQL_OBJECT_DETECTION_SEL, SQL_OBJECT_DETECTION_UPD, \
+    SQL_TEXT_CLASS_UPD
+from src.util.nlp_tools import NLPTools
+from src.util.util import Util
 
 
 class FeatureExtraction(object):
@@ -820,7 +822,7 @@ class FeatureExtraction(object):
         except Exception as error:
             self.config.logger.error('extract_features_from_text() error: ' + repr(error))
 
-    def extract_features_from_conll(self, horus_matrix_02_file, out_subfolder, ds_label, sep='\t'):
+    def extract_features_from_conll(self, horus_m2, output_folder, label, sep='\t'):
         """
         generates the feature_extraction data for HORUS
         do not use the config file to choose the models, exports all features (self.detect_objects())
@@ -831,23 +833,23 @@ class FeatureExtraction(object):
         :return: the feature file
         """
         try:
-            if horus_matrix_02_file is None:
+            if horus_m2 is None:
                 raise Exception("Provide an input file format to be annotated")
-            if not os.path.isfile(horus_matrix_02_file):
-                config.logger.info('file %s not found!' % (horus_matrix_02_file))
+            if not os.path.isfile(horus_m2):
+                config.logger.info('file %s not found!' % (horus_m2))
 
-            self.config.logger.info('extracting features from -> %s' % ds_label)
+            self.config.logger.info('extracting features from -> %s' % label)
             horus_matrix = None
 
-            with open(horus_matrix_02_file) as f:
+            with open(horus_m2) as f:
                 reader = csv.reader(f)
                 next(reader)
                 horus_matrix = [r for r in reader]
 
             if self.__extract_features(horus_matrix, features_vision=True, features_text=True) is True:
-                #filename = ds_label + "." + self.util.path_leaf(file) + ".horus_matrix_03"
-                filename = ds_label + ".horus_matrix_03"
-                path = self.config.dir_output + out_subfolder + filename
+                #filename = label + "." + self.util.path_leaf(file) + ".horus_matrix_03"
+                filename = label + ".horus_matrix_03"
+                path = self.config.dir_output + output_folder + filename
                 self.__export_data(path)
             else:
                 self.config.logger.warn('well, nothing to do today...')
@@ -858,29 +860,39 @@ class FeatureExtraction(object):
 
 if __name__ == "__main__":
 
+    config = HorusConfig()
+
     try:
-        config = HorusConfig()
 
         exp_folder = 'EXP_004/' #
 
         extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
 
         # Ritter
-        extractor.extract_features_from_conll(config.dir_datasets + 'Ritter/ner.horus_matrix_02', exp_folder,'ritter.train')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'Ritter/ner.horus_matrix_02',
+                                              output_folder=exp_folder, label='ritter.train')
 
         # WNUT-15
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2015/data/train.horus_matrix_02', exp_folder, 'wnut15.train')
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2015/data/dev.horus_matrix_02', exp_folder, 'wnut15.dev')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/train.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut15.train')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/dev.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut15.dev')
 
         # WNUT-16
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2016/data/train.horus_matrix_02', exp_folder, 'wnut16.train')
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2016/data/dev.horus_matrix_02', exp_folder, 'wnut16.dev')
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2016/data/test.horus_matrix_02', exp_folder, 'wnut16.test')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/train.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut16.train')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/dev.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut16.dev')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/test.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut16.test')
 
         # WNUT-17
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2017/wnut17train.conll.horus_matrix_02', exp_folder, 'wnut17.train')
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2017/emerging.dev.conll.horus_matrix_02', exp_folder, 'wnut17.dev')
-        extractor.extract_features_from_conll(config.dir_datasets + 'wnut/2017/emerging.test.annotated.horus_matrix_02', exp_folder, 'wnut17.test')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/wnut17train.conll.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut17.train')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.dev.conll.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut17.dev')
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.test.annotated.horus_matrix_02',
+                                              output_folder=exp_folder, label='wnut17.test')
 
         '''
         attention: change POS tag lib in the HORUS.ini to NLTK before run this
