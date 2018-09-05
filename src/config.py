@@ -22,7 +22,7 @@ class HorusConfig(object):
 
         self.logger = logging.getLogger('horus')
 
-        for ini_file in os.curdir, os.path.expanduser("~"), "/etc/horus", os.environ.get('HORUS_CONF'):
+        for ini_file in os.path.dirname(os.path.abspath(__file__)) + '/../', os.curdir, os.path.expanduser("~"), "/etc/horus", os.environ.get('HORUS_CONF'):
             try:
                 self.version = "0.2.0"
                 self.version_label = "HORUS 0.2.0"
