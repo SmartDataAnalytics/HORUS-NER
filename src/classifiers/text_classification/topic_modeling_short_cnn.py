@@ -5,7 +5,7 @@ import shorttext
 from src.config import HorusConfig
 import tensorflow as tf
 
-from src.core.util.nlp_tools import NLPTools
+from src.util.nlp_tools import NLPTools
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 nlp = en_core_web_sm.load()

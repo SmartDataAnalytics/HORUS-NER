@@ -223,13 +223,13 @@ def populate_matrix_new_columns():
     temp.extend([0] * (int(definitions.HORUS_TOT_FEATURES)-8))
     # do NOT append the last column here (y)
 
-    temp[18] = definitions.KLASSES2["O"]
-    temp[26] = definitions.KLASSES2["O"]
-    temp[26] = definitions.KLASSES2["O"]
-    temp[38] = definitions.KLASSES2["O"]
-    temp[39] = definitions.KLASSES2["O"]
-    temp[40] = definitions.KLASSES2["O"]
-    temp[41] = definitions.KLASSES2["O"]
+    temp[18] = definitions.PLONone_label2index["O"]
+    temp[26] = definitions.PLONone_label2index["O"]
+    temp[26] = definitions.PLONone_label2index["O"]
+    temp[38] = definitions.PLONone_label2index["O"]
+    temp[39] = definitions.PLONone_label2index["O"]
+    temp[40] = definitions.PLONone_label2index["O"]
+    temp[41] = definitions.PLONone_label2index["O"]
 
     return temp
 
@@ -250,9 +250,9 @@ def sentence_to_horus_matrix(sentences):
                 word_index_ref = sent[6][config.models_pos_tag_lib][c][0]
                 compound = sent[6][config.models_pos_tag_lib][c][1]
                 compound_size = sent[6][config.models_pos_tag_lib][c][2]
-                temp = [0, sent_index, word_index_ref, compound, '', '', definitions.KLASSES[4], 1, compound_size]
+                temp = [0, sent_index, word_index_ref, compound, '', '', definitions.PLONone_index2label[4], 1, compound_size]
                 temp.extend(populate_matrix_new_columns())
-                temp[definitions.INDEX_TARGET_NER] = definitions.KLASSES[4]
+                temp[definitions.INDEX_TARGET_NER] = definitions.PLONone_index2label[4]
                 converted.append(temp)
             word_index = 0
             starty = 0
@@ -277,24 +277,24 @@ def sentence_to_horus_matrix(sentences):
                 if len(sent[3][0]) > 0:
                     tag_ner_y = sent[3][0][ind_ner_real]
                     if tag_ner_y in definitions.NER_TAGS_LOC:
-                        tag_ner_y = definitions.KLASSES2["LOC"]
+                        tag_ner_y = definitions.PLONone_label2index["LOC"]
                     elif tag_ner_y in definitions.NER_TAGS_ORG:
-                        tag_ner_y = definitions.KLASSES2["ORG"]
+                        tag_ner_y = definitions.PLONone_label2index["ORG"]
                     elif tag_ner_y in definitions.NER_TAGS_PER:
-                        tag_ner_y = definitions.KLASSES2["PER"]
+                        tag_ner_y = definitions.PLONone_label2index["PER"]
                     else:
-                        tag_ner_y = definitions.KLASSES2["O"]
+                        tag_ner_y = definitions.PLONone_label2index["O"]
                 else:
-                    tag_ner_y = definitions.KLASSES2["O"]
+                    tag_ner_y = definitions.PLONone_label2index["O"]
 
                 if tag_ner in definitions.NER_TAGS_LOC:
-                    tag_ner = definitions.KLASSES2["LOC"]
+                    tag_ner = definitions.PLONone_label2index["LOC"]
                 elif tag_ner in definitions.NER_TAGS_ORG:
-                    tag_ner = definitions.KLASSES2["ORG"]
+                    tag_ner = definitions.PLONone_label2index["ORG"]
                 elif tag_ner in definitions.NER_TAGS_PER:
-                    tag_ner = definitions.KLASSES2["PER"]
+                    tag_ner = definitions.PLONone_label2index["PER"]
                 else:
-                    tag_ner = definitions.KLASSES2["O"]
+                    tag_ner = definitions.PLONone_label2index["O"]
 
                 temp = [has_NER, sent_index, word_index, term, tag_pos_uni, tag_pos, tag_ner, 0, 0]  # 0-8
                 temp.extend(populate_matrix_new_columns())
@@ -376,8 +376,8 @@ def cache_images_and_text(conll_file, tokenindex=0, ner_index=1, sep='\t'):
         config.logger.info('caching file -> %s' % conll_file)
 
         file = config.dir_datasets + conll_file
-        file_sentences = config.dir_datasets + conll_file + '.horus_matrix_01'
-        file_horus_matrix = config.dir_datasets + conll_file + '.horus_matrix_02'
+        file_sentences = config.dir_datasets + conll_file + '.horus1'
+        file_horus_matrix = config.dir_datasets + conll_file + '.horus2'
 
         if os.path.isfile(file_horus_matrix):
             config.logger.info('file %s has been processed successfully!' % (file_horus_matrix))
@@ -436,6 +436,7 @@ def __download_and_cache_results(horus_matrix):
         config.logger.info('caching results...')
         t = HorusDB(sqlcon)
         auxc = 1
+        download = False
         try:
             # getting list of cached terms
             values = (config.search_engine_api, config.search_engine_features_text)
@@ -451,6 +452,7 @@ def __download_and_cache_results(horus_matrix):
                             'caching token %s - %s [%s]' % (str(auxc), str(len(horus_matrix)), term))
                     res = df.loc[df['term'] == term]
                     if res is None or len(res) == 0:
+                        download = True
                         '''
                         --------------------------------------------------------------------------
                         Downloading resources...
@@ -540,12 +542,15 @@ def __download_and_cache_results(horus_matrix):
                             horus_matrix[index][INDEX_ID_TERM_IMG] = -1
 
                 auxc += 1
-            t.commit()
+
+            if download:
+                t.commit()
             return horus_matrix
 
         except Exception as e:
             try:
-                t.commit()
+                if download:
+                    t.commit()
             except:
                 pass
             raise e
@@ -561,6 +566,7 @@ if __name__ == "__main__":
         try:
 
             cache_images_and_text(file)
+            exit(0)
 
         except Exception as e:
             config.logger.error(repr(e))

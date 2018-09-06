@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.core.util import definitions
+from src.util import definitions
 import argparse
 from src.config import HorusConfig
 

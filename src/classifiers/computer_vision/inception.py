@@ -10,9 +10,9 @@ from tensorflow.contrib.slim.python.slim.nets import inception
 from nltk.corpus import wordnet as wn
 
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
-from src.classifiers.util.inception import dataset_utils, imagenet, inception_preprocessing
+from src.classifiers.inception import dataset_utils, imagenet, inception_preprocessing
 from src.config import HorusConfig
-from src.core.util import definitions
+from src.util import definitions
 
 
 class InceptionCV():

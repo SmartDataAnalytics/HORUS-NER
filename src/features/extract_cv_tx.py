@@ -47,6 +47,7 @@ from src.classifiers.text_classification.topic_modeling_short_cnn import TopicMo
 from src.classifiers.text_classification.bow_tfidf import BowTfidf
 from nltk.corpus import wordnet as wn
 import os
+from nltk import re
 
 from src.config import HorusConfig
 from src.translation.azure import bing_detect_language, bing_translate_text
@@ -847,8 +848,10 @@ class FeatureExtraction(object):
                 horus_matrix = [r for r in reader]
 
             if self.__extract_features(horus_matrix, features_vision=True, features_text=True) is True:
-                #filename = label + "." + self.util.path_leaf(file) + ".horus_matrix_03"
-                filename = label + ".horus_matrix_03"
+                #filename = label + "." + self.util.path_leaf(file) + ".horus3"
+                filename = label + ".horus3"
+                path = os.path.dirname(horus_m2)
+
                 path = self.config.dir_output + output_folder + filename
                 self.__export_data(path)
             else:
@@ -869,29 +872,29 @@ if __name__ == "__main__":
         extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
 
         # Ritter
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'Ritter/ner.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'Ritter/ner.horus2',
                                               output_folder=exp_folder, label='ritter.train')
 
         # WNUT-15
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/train.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/train.horus2',
                                               output_folder=exp_folder, label='wnut15.train')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/dev.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/dev.horus2',
                                               output_folder=exp_folder, label='wnut15.dev')
 
         # WNUT-16
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/train.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/train.horus2',
                                               output_folder=exp_folder, label='wnut16.train')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/dev.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/dev.horus2',
                                               output_folder=exp_folder, label='wnut16.dev')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/test.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/test.horus2',
                                               output_folder=exp_folder, label='wnut16.test')
 
         # WNUT-17
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/wnut17train.conll.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/wnut17train.conll.horus2',
                                               output_folder=exp_folder, label='wnut17.train')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.dev.conll.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.dev.conll.horus2',
                                               output_folder=exp_folder, label='wnut17.dev')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.test.annotated.horus_matrix_02',
+        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.test.annotated.horus2',
                                               output_folder=exp_folder, label='wnut17.test')
 
         '''

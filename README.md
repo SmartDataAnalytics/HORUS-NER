@@ -37,7 +37,8 @@ We are currently investigating Named Entity Recognition (NER) as use case. This 
 - Setup [openCV 3.1.0](http://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/)
     - [see more at #issue 6](https://github.com/dnes85/horus-models/issues/6)
 
-#### Demo
+Demo
+===========
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 ```python
@@ -48,36 +49,35 @@ python demo.py --file="sentences.txt" --ds_format=0
 python demo.py --file="ritter_ner.tsv" --ds_format=1 --output_file="metadata" --output_format="json"
 ```
 
-#### Experiments
+Experiments
+===========
+Do you want to collaborate? If you want to adapt/improve the feature extraction pipeline and train your own improved HORUS model, 
+we provide the following scripts to help. They generate incremental metadata dump files.
 
-
-##### Caching webpages and images
-cache.py
-
-creates files:
-- _dataset_.horus_matrix_01 (the sentences)
-- _dataset_.horus_matrix_02 (01 + the images and texts IDs)
-
-
+##### Caching Websites and Images
+- file: cache.py
+- outputs:
+    - _dataset_.horus1 (the sentences)
+    - _dataset_.horus2 (01 + the images and texts IDs)
+- example:
 ```python
-dataset.horus_matrix_02 = cache_images_and_text(dataset)
+dataset.horus2 = cache_images_and_text(dataset)
 ```
 ##### Extracting horus features
 
-features.py
-
-creates the file:
-- _dataset_.horus_matrix_03 (final full features file for benchmarking)
+- file: features.py
+- outputs:
+    - _dataset_.horus3 (final full features file for benchmarking)
 
 ```python
-dataset.horus_matrix_03 = extract_features_from_conll(dataset.horus_matrix_02, output_folder, label)
+dataset.horus3 = extract_features_from_conll(dataset.horus2, output_folder, label)
 ```
 
 ##### Adding lexical features and benchmarking
 benchmark.py
 
 ```python
-y = benchmark(X3)
+y = benchmark(dataset.horus3)
 ```
 
 #### Web Service

@@ -45,8 +45,7 @@ class HorusConfig(object):
                     #models_rootdir = pkg_resources.resource_filename('horus.resources', 'models') + "/"
 
                     # not attached to a root project directory, once it normally can be stored somewhere else (i.e., full path here)
-                    self.database_db = parser.get('path', 'database_path')
-                    self.dir_datasets = parser.get('path', 'dataset_path')
+                    #self.database_db = parser.get('path', 'database_path')
                     self.root_dir_tensorflow = parser.get('path', 'tensorflow_data')
 
                     # under \data folder
@@ -54,6 +53,8 @@ class HorusConfig(object):
                     self.dir_log = self.root_dir_output + 'log/'
                     self.dir_models = self.root_dir_output + 'models/'
                     self.dir_output = self.root_dir_output + 'output/'
+                    self.dir_datasets = self.root_dir_output + 'data/datasets/'
+                    self.database_db  = self.root_dir_output + 'cache/microsoft_bing/horus.db'
 
                     self.nr_thread = parser.get('conf', 'nr_thread')
 
