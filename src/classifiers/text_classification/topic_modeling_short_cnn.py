@@ -109,7 +109,7 @@ if __name__ == '__main__':
     tools = NLPTools(config)
     topic = TopicModelingShortCNN(config, tools.word2vec_google, mode='test')
     #topic.train()
-    #exit(0)
+
 
     print(topic.predict('orlando'))
     print(topic.predict('river'))

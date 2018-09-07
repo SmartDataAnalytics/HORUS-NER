@@ -100,7 +100,7 @@ def save_configuration_dump_file((_file_path, _file_name, ds, f_key, f_indexes))
 
     return _file_name
 
-def shape_data((file, path)):
+def shape_data((horus_m3_path, horus_m4_path)):
     '''
     shape the dataframe, adding further traditional features
     :param file: the horus features file
@@ -113,10 +113,9 @@ def shape_data((file, path)):
         ds_sentences, y_sentences_shape = [], []
         _sent_temp_feat, _sent_temp_y = [], []
 
-
-        fullpath=path+file
-        config.logger.info('reading horus features file: ' + fullpath)
-        df = pd.read_csv(fullpath, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
+        #fullpath=path+file
+        config.logger.info('reading horus features file: ' + horus_m3_path)
+        df = pd.read_csv(horus_m3_path, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
         df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
         oldsentid = df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
@@ -126,8 +125,6 @@ def shape_data((file, path)):
         config.logger.info(len(df))
         for row in df.itertuples():
             index=row.Index
-            if index==8:
-                a=1
             if index % 500 == 0: config.logger.info(index)
             #print(file + ' - ' + str(index))
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
@@ -431,37 +428,39 @@ def shape_data((file, path)):
 
         config.logger.info('total of sentences: ' + str(len(ds_sentences)))
         config.logger.info('total of tokens: ' + str(len(df)))
-        return file, (ds_sentences, y_sentences_shape), (df, y_tokens_shape)
+
+        data = file, (ds_sentences, y_sentences_shape), (df, y_tokens_shape)
+        with open(horus_m4_path, 'wb') as output:
+            pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
+        config.logger.info('file exported: ' + horus_m4_path)
+
+        return data
     except Exception as e:
         config.logger.error(repr(e))
         raise e
 
-def shape_datasets(experiment_folder, datasets):
-    ret = []
+def extract_lexical_and_shape_data():
     job_args = []
-
-    datasets = datasets.split()
-    for ds in datasets:
-        config.logger.info(ds)
-        _file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
-        if os.path.isfile(_file):
-            with open(_file, 'rb') as input:
-                ret.append(pickle.load(input))
+    for ds in definitions.NER_DATASETS:
+        horus_m3_path = ds[1].replace('.horusx', '.horus3')
+        config.logger.info(horus_m3_path)
+        if not os.path.isfile(horus_m3_path):
+            config.logger.error('file .horus3 does not exist!')
+            config.logger.error('please check the file extract_cv_tx.py to create it!')
         else:
-            job_args.append((ds, config.dir_output + experiment_folder))
+            horus_m4_path = horus_m3_path.replace('.horus3', '.horus4')
+            #_file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
+            if os.path.isfile(horus_m4_path):
+                config.logger.warn('file already exists: %s' % (horus_m4_path))
+            else:
+                job_args.append((horus_m3_path, None))
 
-    config.logger.info('job args created - raw datasets: ' + str(len(job_args)))
+    config.logger.info('job args created: ' + str(len(job_args)))
     if len(job_args) > 0:
         p = multiprocessing.Pool(multiprocessing.cpu_count())
         asyncres = p.map(shape_data, job_args)
         config.logger.info(len(asyncres))
-        for data in asyncres:
-            _file = config.dir_output + experiment_folder + '_' + data[0] + '_shaped.pkl'
-            with open(_file, 'wb') as output:
-                pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
-            ret.append(data)
-            config.logger.info('file exported: ' + _file)
-    return ret
+        config.logger.info('done: ' + str(len(asyncres)) + ' files exported!')
 
 if __name__ == "__main__":
 
@@ -479,13 +478,19 @@ if __name__ == "__main__":
     dict_brown_c1000 = joblib.load(config.dir_datasets + 'gha.500M-c1000-p1.paths_dict.pkl')
     dict_brown_c640 = joblib.load(config.dir_datasets + 'gha.64M-c640-p1.paths_dict.pkl')
     dict_brown_c320 = joblib.load(config.dir_datasets + 'gha.64M-c320-p1.paths_dict.pkl')
-    _SET_MASK = '_%s_config_%s.pkl'
-    datasets = '2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus ner.txt.horus emerging.test.annotated.horus'
+    #_SET_MASK = '_%s_config_%s.pkl'
+    #datasets = '2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus ner.txt.horus emerging.test.annotated.horus'
 
     try:
-        config.logger.info('shaping the datasets...')
-        shaped_datasets = shape_datasets(EXPERIMENT_FOLDER,
-                                         datasets)  # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
+        config.logger.info('extracting final feature files (lexical + cv + tx)')
+        # ds_name, (X1, y1 [DT-shape]), (X2, y2 [CRF-shape]), (X3, y3 [NN-shape])
+        extract_lexical_and_shape_data()
+
+        '''
+        # 
+        # -- REMOVING THIS UNECESSARY STEP --
+        # -- THIS CREATES LOT OF REDUNDANT DATA --
+        #
         config.logger.info('creating the dump files: configurations x datasets')
         # multithread to shape the datasets for all configurations in parallel
         job_args = []
@@ -503,6 +508,8 @@ if __name__ == "__main__":
             config.logger.info('creating dump files...')
             p = multiprocessing.Pool(multiprocessing.cpu_count())
             p.map(save_configuration_dump_file, job_args)
+        
+        '''
 
     except Exception as e:
         config.logger.error(repr(e))

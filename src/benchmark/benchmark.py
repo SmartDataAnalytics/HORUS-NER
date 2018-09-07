@@ -492,7 +492,7 @@ def main():
         usage='%(prog)s [options]',
         epilog='http://horus-ner.org')
 
-    parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus ner.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
+    #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus 2016.conll.freebase.ascii.txt.horus ner.txt.horus emerging.test.annotated.horus', help='the horus datasets files: e.g.: ritter.horus wnut15.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     #parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
@@ -506,7 +506,7 @@ def main():
     time.sleep(1)
 
     try:
-        benchmark(experiment_folder=args.exp, datasets=args.ds,
+        benchmark(experiment_folder=args.exp,
                   runCRF=bool(args.crf), runDT=bool(args.dt), runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford))
     except:
         raise

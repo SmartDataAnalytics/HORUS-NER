@@ -823,7 +823,7 @@ class FeatureExtraction(object):
         except Exception as error:
             self.config.logger.error('extract_features_from_text() error: ' + repr(error))
 
-    def extract_features_from_conll(self, horus_m2, output_folder, label, sep='\t'):
+    def extract_features_from_conll(self, horus_m2, label, sep='\t'):
         """
         generates the feature_extraction data for HORUS
         do not use the config file to choose the models, exports all features (self.detect_objects())
@@ -834,26 +834,33 @@ class FeatureExtraction(object):
         :return: the feature file
         """
         try:
+
             if horus_m2 is None:
                 raise Exception("Provide an input file format to be annotated")
             if not os.path.isfile(horus_m2):
                 config.logger.error('file %s not found!' % (horus_m2))
                 raise Exception
 
+            horus_m3_path = os.path.dirname(horus_m2) + '/' + os.path.basename(horus_m2).replace('.horusx', '.horus3')
+
             self.config.logger.info('extracting features from -> %s' % label)
-            horus_matrix = None
 
-            with open(horus_m2) as f:
-                reader = csv.reader(f, delimiter=sep)
-                next(reader)
-                horus_matrix = [r for r in reader]
-
-            if self.__extract_features(horus_matrix, features_vision=True, features_text=True) is True:
-                #filename = label + "." + self.util.path_leaf(file) + ".horus3"
-                #path = self.config.dir_output + output_folder + filename
-                self.__export_data(os.path.dirname(horus_m2) + '/' + os.path.basename(horus_m2).replace('horus2', 'horus3'))
+            if os.path.isfile(horus_m3_path):
+                config.logger.warn('file already exists: %s' % (horus_m3_path))
+                return
             else:
-                self.config.logger.warn('well, nothing to do today...')
+
+                with open(horus_m2) as f:
+                    reader = csv.reader(f, delimiter=sep)
+                    next(reader)
+                    horus_matrix = [r for r in reader]
+
+                if self.__extract_features(horus_matrix, features_vision=True, features_text=True) is True:
+                    #filename = label + "." + self.util.path_leaf(file) + ".horus3"
+                    #path = self.config.dir_output + output_folder + filename
+                    self.__export_data(horus_m3_path)
+                else:
+                    self.config.logger.warn('well, nothing to do today...')
         except Exception as error:
             self.config.logger.error('extract_features_from_conll() error: ' + repr(error))
 
@@ -865,24 +872,10 @@ if __name__ == "__main__":
 
     try:
 
-        datasets = [
-            ['ritter.train', 'Ritter/ner.txt.horus2'],
-            ['wnut15.train', 'wnut/2015/data/train.horus2'],
-            ['wnut15.dev',   'wnut/2015/data/dev.horus2'],
-            ['wnut16.train', 'wnut/2016/data/train.horus2'],
-            ['wnut16.dev',   'wnut/2016/data/dev.horus2'],
-            ['wnut16.test',  'wnut/2016/data/test.horus2'],
-            ['wnut17.train', 'wnut/2017/wnut17train.conll.horus2'],
-            ['wnut17.dev',   'wnut/2017/emerging.dev.conll.horus2'],
-            ['wnut17.test',  'wnut/2017/emerging.test.annotated.horus2']
-        ]
-
-        exp_folder = 'EXP_004/' #
         extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
 
-        for ds in datasets:
-            extractor.extract_features_from_conll(horus_m2=config.dir_datasets + ds[1], output_folder=exp_folder, label=ds[0])
-
+        for ds in definitions.NER_DATASETS:
+            extractor.extract_features_from_conll(horus_m2=ds[1].replace('.horusx', '.horus2'), label=ds[0])
 
         '''
         attention: change POS tag lib in the HORUS.ini to NLTK before run this

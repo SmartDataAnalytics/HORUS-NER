@@ -135,9 +135,6 @@ class HorusConfig(object):
 
                     self.cache_sentences = parser.get('cache', 'cache_sentences')
 
-                    self.dataset_ritter = parser.get('dataset', 'ds_ritter')
-                    self.dataset_conll = parser.get('dataset', 'ds_conll')
-
                     self.models_force_download = parser.get('models-param', 'force_download')
                     self.models_location_theta = parser.get('models-param', 'location_theta')
                     self.models_distance_theta = parser.get('models-param', 'distance_theta')
