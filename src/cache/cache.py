@@ -395,8 +395,7 @@ def cache_images_and_text(conll_file, tokenindex=0, ner_index=1, sep='\t'):
             if len(sent_tokenize_list) > 0:
                 horus_matrix = __get_horus_matrix_structure(sent_tokenize_list)
                 __download_and_cache_results(horus_matrix)
-                writer = csv.writer(open(file_horus_matrix, 'wb'),
-                                    dialect="excel", delimiter='\t', skipinitialspace=True)
+                writer = csv.writer(open(file_horus_matrix, 'wb'), dialect="excel", delimiter=sep, skipinitialspace=True)
                 writer.writerow(definitions.HORUS_MATRIX_HEADER)
                 writer.writerows(horus_matrix)
                 config.logger.info('process finished! horus_matrix exported: ' + file_horus_matrix)

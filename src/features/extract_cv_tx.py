@@ -837,23 +837,21 @@ class FeatureExtraction(object):
             if horus_m2 is None:
                 raise Exception("Provide an input file format to be annotated")
             if not os.path.isfile(horus_m2):
-                config.logger.info('file %s not found!' % (horus_m2))
+                config.logger.error('file %s not found!' % (horus_m2))
+                raise Exception
 
             self.config.logger.info('extracting features from -> %s' % label)
             horus_matrix = None
 
             with open(horus_m2) as f:
-                reader = csv.reader(f)
+                reader = csv.reader(f, delimiter=sep)
                 next(reader)
                 horus_matrix = [r for r in reader]
 
             if self.__extract_features(horus_matrix, features_vision=True, features_text=True) is True:
                 #filename = label + "." + self.util.path_leaf(file) + ".horus3"
-                filename = label + ".horus3"
-                path = os.path.dirname(horus_m2)
-
-                path = self.config.dir_output + output_folder + filename
-                self.__export_data(path)
+                #path = self.config.dir_output + output_folder + filename
+                self.__export_data(os.path.dirname(horus_m2) + '/' + os.path.basename(horus_m2).replace('horus2', 'horus3'))
             else:
                 self.config.logger.warn('well, nothing to do today...')
         except Exception as error:
@@ -867,35 +865,24 @@ if __name__ == "__main__":
 
     try:
 
-        exp_folder = 'EXP_004/' #
+        datasets = [
+            ['ritter.train', 'Ritter/ner.txt.horus2'],
+            ['wnut15.train', 'wnut/2015/data/train.horus2'],
+            ['wnut15.dev',   'wnut/2015/data/dev.horus2'],
+            ['wnut16.train', 'wnut/2016/data/train.horus2'],
+            ['wnut16.dev',   'wnut/2016/data/dev.horus2'],
+            ['wnut16.test',  'wnut/2016/data/test.horus2'],
+            ['wnut17.train', 'wnut/2017/wnut17train.conll.horus2'],
+            ['wnut17.dev',   'wnut/2017/emerging.dev.conll.horus2'],
+            ['wnut17.test',  'wnut/2017/emerging.test.annotated.horus2']
+        ]
 
+        exp_folder = 'EXP_004/' #
         extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
 
-        # Ritter
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'Ritter/ner.horus2',
-                                              output_folder=exp_folder, label='ritter.train')
+        for ds in datasets:
+            extractor.extract_features_from_conll(horus_m2=config.dir_datasets + ds[1], output_folder=exp_folder, label=ds[0])
 
-        # WNUT-15
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/train.horus2',
-                                              output_folder=exp_folder, label='wnut15.train')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2015/data/dev.horus2',
-                                              output_folder=exp_folder, label='wnut15.dev')
-
-        # WNUT-16
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/train.horus2',
-                                              output_folder=exp_folder, label='wnut16.train')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/dev.horus2',
-                                              output_folder=exp_folder, label='wnut16.dev')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2016/data/test.horus2',
-                                              output_folder=exp_folder, label='wnut16.test')
-
-        # WNUT-17
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/wnut17train.conll.horus2',
-                                              output_folder=exp_folder, label='wnut17.train')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.dev.conll.horus2',
-                                              output_folder=exp_folder, label='wnut17.dev')
-        extractor.extract_features_from_conll(horus_m2=config.dir_datasets + 'wnut/2017/emerging.test.annotated.horus2',
-                                              output_folder=exp_folder, label='wnut17.test')
 
         '''
         attention: change POS tag lib in the HORUS.ini to NLTK before run this

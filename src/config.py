@@ -53,8 +53,9 @@ class HorusConfig(object):
                     self.dir_log = self.root_dir_output + 'log/'
                     self.dir_models = self.root_dir_output + 'models/'
                     self.dir_output = self.root_dir_output + 'output/'
-                    self.dir_datasets = self.root_dir_output + 'data/datasets/'
+                    self.dir_datasets = self.root_dir_output + 'datasets/'
                     self.database_db  = self.root_dir_output + 'cache/microsoft_bing/horus.db'
+                    self.cache_img_folder = self.root_dir_output + 'cache/microsoft_bing/img/'
 
                     self.nr_thread = parser.get('conf', 'nr_thread')
 
@@ -131,7 +132,7 @@ class HorusConfig(object):
                     self.translation_id = parser.get('translation', 'microsoft_client_id')
                     self.translation_secret = parser.get('translation', 'microsoft_client_secret')
 
-                    self.cache_img_folder = parser.get('cache', 'img_folder')
+
                     self.cache_sentences = parser.get('cache', 'cache_sentences')
 
                     self.dataset_ritter = parser.get('dataset', 'ds_ritter')
