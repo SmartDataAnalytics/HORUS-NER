@@ -841,7 +841,7 @@ class FeatureExtraction(object):
                 config.logger.error('file %s not found!' % (horus_m2))
                 raise Exception
 
-            horus_m3_path = os.path.dirname(horus_m2) + '/' + os.path.basename(horus_m2).replace('.horusx', '.horus3')
+            horus_m3_path = os.path.dirname(horus_m2) + '/' + os.path.basename(horus_m2).replace('.horus2', '.horus3')
 
             self.config.logger.info('extracting features from -> %s' % label)
 

@@ -434,10 +434,10 @@ def shape_data((horus_m3_path, horus_m4_path)):
             pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
         config.logger.info('file exported: ' + horus_m4_path)
 
-        return data
+
     except Exception as e:
         config.logger.error(repr(e))
-        raise e
+
 
 def extract_lexical_and_shape_data():
     job_args = []
@@ -445,22 +445,22 @@ def extract_lexical_and_shape_data():
         horus_m3_path = ds[1].replace('.horusx', '.horus3')
         config.logger.info(horus_m3_path)
         if not os.path.isfile(horus_m3_path):
-            config.logger.error('file .horus3 does not exist!')
-            config.logger.error('please check the file extract_cv_tx.py to create it!')
+            config.logger.error(' -- file .horus3 does not exist!')
+            config.logger.error(' -- please check the file extract_cv_tx.py to create it!')
         else:
             horus_m4_path = horus_m3_path.replace('.horus3', '.horus4')
             #_file = config.dir_output + experiment_folder + '_' + ds + '_shaped.pkl'
             if os.path.isfile(horus_m4_path):
                 config.logger.warn('file already exists: %s' % (horus_m4_path))
             else:
-                job_args.append((horus_m3_path, None))
+                job_args.append((horus_m3_path, horus_m4_path))
 
     config.logger.info('job args created: ' + str(len(job_args)))
     if len(job_args) > 0:
         p = multiprocessing.Pool(multiprocessing.cpu_count())
         asyncres = p.map(shape_data, job_args)
-        config.logger.info(len(asyncres))
-        config.logger.info('done: ' + str(len(asyncres)) + ' files exported!')
+        #config.logger.info(len(asyncres))
+        #onfig.logger.info('done: ' + str(len(asyncres)) + ' files exported!')
 
 if __name__ == "__main__":
 
