@@ -565,7 +565,6 @@ if __name__ == "__main__":
         try:
 
             cache_images_and_text(file)
-            exit(0)
 
         except Exception as e:
             config.logger.error(repr(e))

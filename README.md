@@ -65,12 +65,20 @@ dataset.horus2 = cache_images_and_text(dataset)
 ```
 ##### Extracting horus features
 
-- file: features.py
+- file: extract_cv_tx.py and extract_lex.py
 - outputs:
-    - _dataset_.horus3 (final full features file for benchmarking)
+    - _dataset_.horus3
+    - _dataset_.horus4 (final dump features file)
 
 ```python
-dataset.horus3 = extract_features_from_conll(dataset.horus2, output_folder, label)
+# generates computer vision and text mining features 
+# (dataset.horus3) 
+extract_features_from_conll(dataset.horus2, out_folder, label)
+```
+
+```python
+# generates the final dump files (dataset.horus4)
+extract_lexical_and_shape_data()
 ```
 
 ##### Adding lexical features and benchmarking
