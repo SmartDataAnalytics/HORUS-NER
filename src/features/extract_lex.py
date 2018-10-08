@@ -53,28 +53,6 @@ def _append_word_lemma_stem(w, l, s):
 
     return t
 
-def sent2label(sent):
-    return [definitions.PLONone_index2label[y] for y in sent]
-
-def sent2features(sent):
-    return [features_to_crf_shape(sent, i) for i in range(len(sent))]
-
-def exclude_columns(df, f_indexes):
-    if isinstance(df, pd.DataFrame) == False:
-        df=pd.DataFrame(df)
-    dfret = df.copy()
-    for icol in dfret.columns:
-        if icol not in f_indexes:
-            dfret.drop(icol, axis=1, inplace=True)
-    return dfret
-
-def load_dumps_in_memory((_file, ds, _set_name)):
-    config.logger.info('loading dump file [%s]: %s' % (ds, _file))
-    f = open(_file, 'rb')
-    dump = pickle.load(f)
-    f.close()
-    return (_set_name, dump)
-
 def save_configuration_dump_file((_file_path, _file_name, ds, f_key, f_indexes)):
     try:
         config.logger.info(_file_name + ' dump creation starts!')

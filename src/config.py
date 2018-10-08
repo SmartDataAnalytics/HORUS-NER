@@ -24,9 +24,6 @@ class HorusConfig(object):
 
         for ini_file in os.path.dirname(os.path.abspath(__file__)) + '/../', os.curdir, os.path.expanduser("~"), "/etc/horus", os.environ.get('HORUS_CONF'):
             try:
-                self.version = "0.2.0"
-                self.version_label = "HORUS 0.2.0"
-                self.description = "A framework to boost NLP tasks"
 
                 with open(os.path.join(ini_file, "horus.ini")) as source:
 
@@ -35,6 +32,11 @@ class HorusConfig(object):
                     parser.read(source.name)
 
                     print(parser.get('conf', 'code'))
+
+                    self.version = parser.get('conf', 'version')
+                    self.version_label = parser.get('conf', 'version_label')
+                    self.description = "A framework to boost NLP tasks"
+
                     self.log_level = parser.get('conf', 'log_level')
 
                     #self.src_dir = os.path.dirname(os.path.abspath(__file__)) + '/'

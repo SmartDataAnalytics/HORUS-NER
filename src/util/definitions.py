@@ -10,7 +10,7 @@ else:
 
 RUN_TAGGER_CMD = config.models_tweetnlp_java_param + " -jar " + config.models_tweetnlp_jar + " --model " + config.models_tweetnlp_model
 
-_SET_MASK = '_%s_config_%s.pkl'
+SET_MASK = '_%s_config_%s.pkl'
 
 NER_BROAD_PER = ['B-PER', 'I-PER']
 NER_BROAD_LOC = ['B-LOC', 'I-LOC']
