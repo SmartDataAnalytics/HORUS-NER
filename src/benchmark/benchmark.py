@@ -36,7 +36,7 @@ from keras.layers import Embedding, LSTM, Dense, Merge
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 import pandas as pd
-import pickle
+import cPickle as pickle
 #import pickle
 import multiprocessing
 from functools import partial
@@ -218,42 +218,34 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
 
-def save_data_by_configuration((horus_m4_path, dump_path, file_name, f_key, f_indexes)):
+def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
 
     try:
-        if not os.path.isfile(horus_m4_path):
-            config.logger.error(' -- file .horus4 does not exist! please check the file extract_lex.py to create it...')
-            raise Exception
-        else:
-            config.logger.debug('loading: ' + horus_m4_path)
-            with open(horus_m4_path, 'rb') as input:
-                ds = pickle.load(input)
+        #temp = copy.deepcopy(ds)
+        config.logger.debug('removing columns: ' + file_name)
+        config.logger.debug(' -- X_sentence')
+        X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
+        Y_sentence = [sent2label(s) for s in ds[1][1]]
+        config.logger.debug(' -- X_token')
+        X_token = exclude_columns(ds[2][0], f_indexes)
+        X_token.replace('O', 0, inplace=True)
+        #Y_token = [definitions.PLONone_label2index[y] for y in ds[2][1]]
+        Y_token = [int(y) for y in ds[2][1]]
+        config.logger.debug(' -- X_crf')
+        X_crf = [sent2features(s) for s in X_sentence]
+        # trick for scikit-learn on CRF (for the precision_recall_f-score_support method)
+        _Y_sentence = np.array([x for s in Y_sentence for x in s])
+        config.logger.debug('done: ' + file_name)
 
-                #temp = copy.deepcopy(ds)
-                config.logger.debug('removing columns: ' + file_name)
-                config.logger.debug(' -- X_sentence')
-                X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
-                Y_sentence = [sent2label(s) for s in ds[1][1]]
-                config.logger.debug(' -- X_token')
-                X_token = exclude_columns(ds[2][0], f_indexes)
-                X_token.replace('O', 0, inplace=True)
-                #Y_token = [definitions.PLONone_label2index[y] for y in ds[2][1]]
-                Y_token = [int(y) for y in ds[2][1]]
-                config.logger.debug(' -- X_crf')
-                X_crf = [sent2features(s) for s in X_sentence]
-                # trick for scikit-learn on CRF (for the precision_recall_f-score_support method)
-                _Y_sentence = np.array([x for s in Y_sentence for x in s])
-                config.logger.debug('done: ' + file_name)
+        ## X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
+        ## X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
+        ## X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
+        ## y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
 
-                ## X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
-                ## X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
-                ## X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-                ## y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
-
-                with open(dump_path, 'wb') as output:
-                    pickle.dump((file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, _Y_sentence),
-                                output, pickle.HIGHEST_PROTOCOL)
-                config.logger.debug(dump_path + ' created!')
+        with open(dump_path, 'wb') as output:
+            pickle.dump((file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, _Y_sentence),
+                        output, pickle.HIGHEST_PROTOCOL)
+        config.logger.debug(dump_path + ' created!')
 
     except Exception as e:
         config.logger.error(repr(e))
@@ -263,20 +255,30 @@ def create_benchmark_dump_files():
     try:
         job_dumps = []
         for ds in definitions.NER_DATASETS:
-            for key, value in dict_exp_feat.items():
-                horus_m4_path_d1 = ds[1].replace('.horusx', '.horus4')
-                horus_m4_name_d1 = ds[0]
-                dump_name = SET_MASK % (horus_m4_name_d1, str(key))
-                dump_full_path = config.dir_output + dump_name
-                if not os.path.exists(dump_full_path):
-                    job_dumps.append((horus_m4_path_d1, dump_full_path, dump_name, key, value))
+            horus_m4_path = ds[1].replace('.horusx', '.horus4')
+            horus_m4_name = ds[0]
+            if not os.path.isfile(horus_m4_path):
+                config.logger.error(
+                    ' -- file .horus4 does not exist! please check the file extract_lex.py to create it...')
+                raise Exception
+            else:
+                config.logger.debug('loading: ' + horus_m4_path)
+                with open(horus_m4_path, 'rb') as input:
+                    data = pickle.load(input)
+                    for key, value in dict_exp_feat.items():
+                        dump_name = SET_MASK % (horus_m4_name, str(key))
+                        dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
+                        if not os.path.exists(dump_full_path):
+                            config.logger.debug(' -- key: ' + str(key))
+                            job_dumps.append((data, dump_full_path, dump_name, key, value))
 
-        if len(job_dumps) > 0:
-            config.logger.info('creating dump files: ' + str(len(job_dumps)) + ' jobs')
-            p = multiprocessing.Pool(multiprocessing.cpu_count())
-            p.map(save_data_by_configuration, job_dumps)
+                    if len(job_dumps) > 0:
+                        config.logger.info('creating dump files: ' + str(len(job_dumps)) + ' jobs')
+                        p = multiprocessing.Pool(multiprocessing.cpu_count())
+                        p.map(save_data_by_configuration, job_dumps)
+                        job_dumps = []
 
-        config.logger.info('dump files generated successfully')
+                config.logger.info('dump files generated successfully')
     except Exception as e:
         config.logger.error(repr(e))
 
@@ -323,8 +325,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     for f_key in range(RUN_PROCESS_KEY_STARTS, RUN_PROCESS_KEY_ENDS+1):
         config.logger.info('loading dumps for configuration: ' + str(f_key))
         try:
-
-
             for ds1 in datasets:
                 horus_m4_path_d1 = ds1[1].replace('.horusx', '.horus4')
                 horus_m4_name_d1 = ds1[0]
