@@ -252,7 +252,7 @@ def sentence_to_horus_matrix(sentences):
                 compound_size = sent[6][config.models_pos_tag_lib][c][2]
                 temp = [0, sent_index, word_index_ref, compound, '', '', definitions.PLONone_index2label[4], 1, compound_size]
                 temp.extend(populate_matrix_new_columns())
-                temp[definitions.INDEX_TARGET_NER] = definitions.PLONone_index2label[4]
+                temp[definitions.INDEX_TARGET_NER] = "O"
                 converted.append(temp)
             word_index = 0
             starty = 0
@@ -282,6 +282,8 @@ def sentence_to_horus_matrix(sentences):
                         tag_ner_y = definitions.PLONone_label2index["ORG"]
                     elif tag_ner_y in definitions.NER_TAGS_PER:
                         tag_ner_y = definitions.PLONone_label2index["PER"]
+                    elif tag_ner_y in definitions.NER_TAGS_MISC:
+                        tag_ner_y = definitions.PLONone_label2index["MISC"]
                     else:
                         tag_ner_y = definitions.PLONone_label2index["O"]
                 else:
@@ -293,6 +295,8 @@ def sentence_to_horus_matrix(sentences):
                     tag_ner = definitions.PLONone_label2index["ORG"]
                 elif tag_ner in definitions.NER_TAGS_PER:
                     tag_ner = definitions.PLONone_label2index["PER"]
+                elif tag_ner in definitions.NER_TAGS_MISC:
+                    tag_ner = definitions.PLONone_label2index["MISC"]
                 else:
                     tag_ner = definitions.PLONone_label2index["O"]
 

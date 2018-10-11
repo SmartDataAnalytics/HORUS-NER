@@ -383,11 +383,12 @@ def shape_data((horus_m3_path, horus_m4_path)):
             #    new += 1
 
             # NER class
-            if df.loc[index].at[definitions.INDEX_TARGET_NER] == 'O': y=u'O'
-            elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
-            elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
-            elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
-            else: y = u'O'
+            y = df.loc[index].at[definitions.INDEX_TARGET_NER]
+            #if df.loc[index].at[definitions.INDEX_TARGET_NER] == 'O': y=u'O'
+            #elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
+            #elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
+            #elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
+            #else: y = u'O'
 
             oldsentid = idsent
 
@@ -395,7 +396,7 @@ def shape_data((horus_m3_path, horus_m4_path)):
             #y_tokens_shape.append(definitions.KLASSES2[y])
 
             _sent_temp_feat.append(df.loc[index])
-            _sent_temp_y.append(definitions.PLONone_label2index[y])
+            _sent_temp_y.append(y)
 
         # adding last sentence
         ds_sentences.append(_sent_temp_feat)

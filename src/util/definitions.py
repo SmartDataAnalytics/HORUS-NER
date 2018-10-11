@@ -12,6 +12,7 @@ RUN_TAGGER_CMD = config.models_tweetnlp_java_param + " -jar " + config.models_tw
 
 SET_MASK = '_%s_config_%s.pkl'
 
+
 NER_BROAD_PER = ['B-PER', 'I-PER']
 NER_BROAD_LOC = ['B-LOC', 'I-LOC']
 NER_BROAD_ORG = ['B-ORG', 'I-ORG']
@@ -35,6 +36,8 @@ NER_NLTK_LOC = ['B-LOCATION', 'I-LOCATION', 'LOCATION', 'GPE'] # GPE = geo-polit
 NER_CONLL_PER = ['I-PER']
 NER_CONLL_ORG = ['I-ORG']
 NER_CONLL_LOC = ['I-LOC'] # GPE = geo-political entities such as city, state/province, and country
+
+NER_TAGS_MISC = ['MISC', 'other', 'B-other', 'I-other', 'B-misc', 'I-misc']
 
 NER_TAGS_PER = ['PER']
 NER_TAGS_PER.extend(NER_RITTER_PER)
@@ -98,9 +101,10 @@ NER_TAGS.extend(NER_TAGS_ORG)
 NER_TAGS.extend(NER_TAGS_PER)
 NER_TAGS.extend(NER_TAGS_LOC)
 
-PLO_index2label = {1: "LOC", 2: "ORG", 3: "PER"} #PLO_KLASSES
-PLONone_index2label = {1: "LOC", 2: "ORG", 3: "PER", 4: "O"} #KLASSES
-PLONone_label2index = {"LOC": 1, "ORG": 2, "PER": 3, "O": 4} #KLASSES2
+PLONone_index2label = {1: "LOC", 2: "ORG", 3: "PER", 4: "MISC", 5: "O"} #KLASSES
+PLONone_label2index = {"LOC": 1, "ORG": 2, "PER": 3, "MISC": 4, "O": 5} #KLASSES2
+PLO_index2label = PLONone_index2label
+del PLO_index2label[5]
 
 HORUS_MATRIX_HEADER = ["IS_NAMED_ENTITY", "ID_SENT", "ID_WORD", "TOKEN", "POS_UNI", "POS", "NER", "COMPOUND",
     "COMPOUND_SIZE", "ID_TERM_TXT", "ID_TERM_IMG", "TOT_IMG", "TOT_CV_LOC", "TOT_CV_ORG",
