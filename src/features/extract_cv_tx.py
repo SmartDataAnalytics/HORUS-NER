@@ -21,6 +21,12 @@ more info at: https://github.com/dnes85/components-models
 # Version: 1.0
 # Version Label: HORUS_NER_2016_1.0
 # License: BSD 3 clause
+from src.classifiers.computer_vision.sift import SIFT
+from src.classifiers.computer_vision.places365 import Places365CV
+
+
+
+
 import gensim
 import unicodecsv as csv
 import heapq
@@ -37,18 +43,12 @@ from sklearn import preprocessing
 from sklearn.preprocessing import normalize
 from tensorflow.python.keras._impl.keras.applications import InceptionV3
 from tensorflow.python.keras.preprocessing import image as ppimg
-from src.classifiers.computer_vision.cls_dlib import DLib_Classifier
-from src.classifiers.computer_vision.cnnlogo import CNNLogo
-from src.classifiers.computer_vision.inception import InceptionCV
-from src.classifiers.computer_vision.places365 import Places365CV
-from src.classifiers.computer_vision.sift import SIFT
 from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 # print cv2.__version__
 from src.classifiers.text_classification.bow_tfidf import BowTfidf
 from nltk.corpus import wordnet as wn
 import os
 from nltk import re
-
 from src.config import HorusConfig
 from src.translation.azure import bing_detect_language, bing_translate_text
 from src.translation.bingtranslation import BingTranslator
@@ -57,7 +57,9 @@ from src.util.definitions_sql import SQL_TEXT_CLASS_SEL, SQL_OBJECT_DETECTION_SE
     SQL_TEXT_CLASS_UPD
 from src.util.nlp_tools import NLPTools
 from src.util.util import Util
-
+from src.classifiers.computer_vision.cls_dlib import DLib_Classifier
+#from src.classifiers.computer_vision.cnnlogo import CNNLogo
+from src.classifiers.computer_vision.inception import InceptionCV
 
 class FeatureExtraction(object):
     def __init__(self, config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1):

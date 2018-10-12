@@ -1,13 +1,14 @@
 from __future__ import division
 
+#import cv2
+import matplotlib.image as mpimg
 import torch
 import torch.nn as nn
-import matplotlib.image as mpimg
 from torch.autograd import Variable
-import cv2
-
 from src.classifiers.computer_vision.places365 import Places365CV
 from src.config import HorusConfig
+#import PIL
+#from PIL import Image
 
 
 class CNNLogo(nn.Module):
@@ -47,11 +48,15 @@ class CNNLogo(nn.Module):
 
     def preprocess_image(self, img):
         try:
+            from skimage.transform import resize
+
             img = mpimg.imread(img)
             if len(img.shape) == 3:
                 r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
             img = 0.2989 * r + 0.5870 * g + 0.1140 * b
-            resized_image = cv2.resize(img, (28, 28))
+
+            #resized_image = cv2.resize(img, (28, 28))
+            resized_image = resize(img, (28, 28))
             return self.__postprocess_image(resized_image)
         except Exception as e:
             self.config.logger.error(e)
@@ -94,17 +99,23 @@ class CNNLogo(nn.Module):
 if __name__ == '__main__':
 
     config = HorusConfig()
-    image = config.cache_img_folder + '172_0_9.jpg'
+    imagefile = config.cache_img_folder + '172_0_9.jpg'
     classifier = CNNLogo(config)
 
     import pathlib
 
-
-    dir = pathlib.Path(config.cache_img_folder + '../temp-tests/not-logo/')
+    import os
+    tempdir = config.cache_img_folder + '../temp-tests/not-logo/'
+    if not os.path.exists(tempdir):
+        os.makedirs(tempdir)
+    dir = pathlib.Path(tempdir)
     pat = "*.jpg"
     max=9999999
     i=0
     tot_logo=0
+
+    print(classifier.predict(imagefile))
+    exit(0)
 
     for file in dir.glob(pat):
         if i>max:
