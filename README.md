@@ -81,7 +81,11 @@ extract_features_from_conll(dataset.horus2, out_folder, label)
 extract_lexical_and_shape_data()
 ```
 
-##### Adding lexical features and benchmarking
+##### Creating dump files
+
+```src/features/dumps.py```
+
+##### Benchmark
 benchmark.py
 
 ```python

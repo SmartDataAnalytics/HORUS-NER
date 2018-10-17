@@ -379,9 +379,9 @@ def cache_images_and_text(conll_file, tokenindex=0, ner_index=1, sep='\t'):
             raise Exception("Provide an input file format to be annotated")
         config.logger.info('caching file -> %s' % conll_file)
 
-        file = config.dir_datasets + conll_file
-        file_sentences = config.dir_datasets + conll_file + '.horus1'
-        file_horus_matrix = config.dir_datasets + conll_file + '.horus2'
+        file_sentences =  conll_file.replace('.horusx', '.horus1')
+        file_horus_matrix = conll_file.replace('.horusx', '.horus2')
+        conll_file = conll_file.replace('.horusx', '')
 
         if os.path.isfile(file_horus_matrix):
             config.logger.info('file %s has been processed successfully!' % (file_horus_matrix))
@@ -392,7 +392,7 @@ def cache_images_and_text(conll_file, tokenindex=0, ner_index=1, sep='\t'):
                     sent_tokenize_list=pickle.load(input)
             else:
                 config.logger.info('exporting *.horus1')
-                sent_tokenize_list = process_ds_conll_format(file, tokenindex, ner_index, sep)
+                sent_tokenize_list = process_ds_conll_format(conll_file, tokenindex, ner_index, sep)
                 with open(file_sentences, 'wb') as output:
                     pickle.dump(sent_tokenize_list, output, pickle.HIGHEST_PROTOCOL)
 
@@ -565,14 +565,9 @@ def __download_and_cache_results(horus_matrix):
 
 if __name__ == "__main__":
 
-    files = ['Ritter/ner.txt', 'wnut/2015/data/train', 'wnut/2015/data/dev',
-             'wnut/2016/data/train', 'wnut/2016/data/dev', 'wnut/2016/data/test',
-             'wnut/2017/wnut17train.conll', 'wnut/2017/emerging.dev.conll', 'wnut/2017/emerging.test.annotated',
-             'broad/5d7c65d/a.conll', 'broad/5d7c65d/b.conll', 'broad/5d7c65d/e.conll', 'broad/5d7c65d/f.conll',
-             'broad/5d7c65d/g.conll', 'broad/5d7c65d/h.conll']
-
-    for file in files:
+    for ds in definitions.NER_DATASETS:
         try:
-            cache_images_and_text(file)
+            cache_images_and_text(ds[1] + ds[2])
+            config.logger.info('---')
         except:
             continue

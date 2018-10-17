@@ -88,44 +88,10 @@ def load_dumps_in_memory((_file, ds, _set_name)):
     f.close()
     return (_set_name, dump)
 
-def features_to_crf_shape(sent, i):
 
-    features = {'bias': 1.0}
-    features.update(dict(('f'+str(key), sent.iloc[i].at[key]) for key in np.sort(sent.columns.values)))
 
-    if i > 0:
-        features_pre = dict(('-1:f'+str(key), sent.iloc[i-1].at[key]) for key in np.sort(sent.columns.values))
-        features.update(features_pre)
-    else:
-        features['BOS'] = True
 
-    if i < len(sent) - 1:
-        features_pos = dict(('+1:f'+str(key), sent.iloc[i+1].at[key]) for key in np.sort(sent.columns.values))
-        features.update(features_pos)
-    else:
-        features['EOS'] = True
 
-    return features
-
-def exclude_columns(df, f_indexes):
-    if isinstance(df, pd.DataFrame) == False:
-        df = pd.DataFrame(df)
-    #dfret = df.copy()
-    out = None
-    a = set(df.columns)
-    b = set(f_indexes)
-    out = df.drop(list(a-b), axis=1, inplace=False)
-
-    #for icol in df.columns:
-        #if icol not in f_indexes:
-
-    return out
-
-def sent2label(sent):
-    return [definitions.PLONone_index2label[y] for y in sent]
-
-def sent2features(sent):
-    return [features_to_crf_shape(sent, i) for i in range(len(sent))]
 
 def convert_lstm_shape(X, y, horus_feat = False):
 
@@ -218,82 +184,6 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
 
-def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
-
-    try:
-
-        config.logger.debug('removing columns: ' + file_name)
-
-        config.logger.debug(' -- X_sentence')
-        X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
-        Y_sentence = [sent2label(s) for s in ds[1][1]]
-        dump_path_type = dump_path.replace('.pkl', '.sentence.pkl')
-        with open(dump_path_type, 'wb') as output1:
-            pickle.dump((file_name, f_key, X_sentence, Y_sentence), output1, pickle.HIGHEST_PROTOCOL)
-        config.logger.debug(dump_path_type + ' created!')
-
-        config.logger.debug(' -- X_token')
-        X_token = exclude_columns(ds[2][0], f_indexes)
-        X_token.replace('O', 0, inplace=True)
-        #Y_token = [definitions.PLONone_label2index[y] for y in ds[2][1]]
-        Y_token = [int(y) for y in ds[2][1]]
-        dump_path_type = dump_path.replace('.pkl', '.token.pkl')
-        with open(dump_path_type, 'wb') as output2:
-            pickle.dump((file_name, f_key, X_token, Y_token), output2, pickle.HIGHEST_PROTOCOL)
-        config.logger.debug(dump_path_type + ' created!')
-
-        config.logger.debug(' -- X_crf')
-        X_crf = [sent2features(s) for s in X_sentence]
-        # trick for scikit-learn on CRF (for the precision_recall_f-score_support method)
-        Y_crf = np.array([x for s in Y_sentence for x in s])
-        dump_path_type = dump_path.replace('.pkl', '.crf.pkl')
-        with open(dump_path_type, 'wb') as output3:
-            pickle.dump((file_name, f_key, X_crf, Y_crf), output3, pickle.HIGHEST_PROTOCOL)
-        config.logger.debug(dump_path_type + ' created!')
-
-        ## X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
-        ## X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
-        ## X1_lstm = pad_sequences(X1_lstm, maxlen=max(maxlen_1, maxlen_2))
-        ## y1_lstm = pad_sequences(y1_lstm, maxlen=max(maxlen_1, maxlen_2))
-
-        #with open(dump_path, 'wb') as output:
-        #    pickle.dump((file_name, f_key, X_sentence, Y_sentence, X_token, Y_token, X_crf, _Y_sentence),
-        #                output, pickle.HIGHEST_PROTOCOL)
-        #config.logger.debug(dump_path + ' created!')
-
-    except Exception as e:
-        config.logger.error(repr(e))
-        raise e
-
-def create_benchmark_dump_files():
-    try:
-        job_dumps = []
-        for ds in definitions.NER_DATASETS:
-            horus_m4_path = ds[1].replace('.horusx', '.horus4')
-            horus_m4_name = ds[0]
-            if not os.path.isfile(horus_m4_path):
-                config.logger.error(
-                    ' -- file .horus4 does not exist! please check the file extract_lex.py to create it...')
-                raise Exception
-            else:
-                config.logger.debug('loading: ' + horus_m4_path)
-                with open(horus_m4_path, 'rb') as input:
-                    data = pickle.load(input)
-                    for key, value in dict_exp_feat.items():
-                        dump_name = SET_MASK % (horus_m4_name, str(key))
-                        dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
-                        if not os.path.exists(dump_full_path):
-                            config.logger.debug(' -- key: ' + str(key))
-                            job_dumps.append((data, dump_full_path, dump_name, key, value))
-
-        if len(job_dumps) > 0:
-            config.logger.info('creating dump files: ' + str(len(job_dumps)) + ' jobs')
-            p = multiprocessing.Pool(multiprocessing.cpu_count())
-            p.map(save_data_by_configuration, job_dumps)
-            config.logger.info('dump files generated successfully')
-
-    except Exception as e:
-        config.logger.error(repr(e))
 
 
 
@@ -339,8 +229,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
         config.logger.info('loading dumps for configuration: ' + str(f_key))
         try:
             for ds1 in datasets:
-                horus_m4_path_ds1 = ds1[1].replace('.horusx', '.horus4')
                 horus_m4_name_ds1 = ds1[0]
+                horus_m4_path_ds1 = ds1[1].replace('.horusx', '.horus4') + ds1[2]
+
                 dump_name = SET_MASK % (horus_m4_name_ds1, str(f_key))
 
                 dump_full_path_ds1_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
@@ -383,9 +274,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                     #pca = PCA(n_components=50)
                     #X1_token_PCA = pca.fit(X1_token)
                     for ds2 in datasets:
-
-                        horus_m4_path_ds2 = ds2[1].replace('.horusx', '.horus4')
                         horus_m4_name_ds2 = ds2[0]
+                        horus_m4_path_ds2 = ds2[1].replace('.horusx', '.horus4') + ds2[2]
                         dump_name = SET_MASK % (horus_m4_name_ds2, str(f_key))
 
                         dump_full_path_ds2_sentence = os.path.dirname(
@@ -666,8 +556,8 @@ def main():
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
-    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
-    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
+    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
+    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
@@ -676,11 +566,8 @@ def main():
     time.sleep(1)
 
     try:
-        create_benchmark_dump_files()
-        exit(0)
-        temp = [['ritter.train', config.dir_datasets + 'Ritter/ner.txt.horusx']]
 
-        benchmark(experiment_folder=args.exp, datasets=temp, runCRF=bool(args.crf), runDT=bool(args.dt),
+        benchmark(experiment_folder=args.exp, datasets=definitions.NER_DATASETS, runCRF=bool(args.crf), runDT=bool(args.dt),
                   runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford))
     except:
         raise

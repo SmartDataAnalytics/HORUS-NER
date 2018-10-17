@@ -421,7 +421,7 @@ def shape_data((horus_m3_path, horus_m4_path)):
 def extract_lexical_and_shape_data():
     job_args = []
     for ds in definitions.NER_DATASETS:
-        horus_m3_path = ds[1].replace('.horusx', '.horus3')
+        horus_m3_path = ds[1] + ds[2].replace('.horusx', '.horus3')
         config.logger.info(horus_m3_path)
         if not os.path.isfile(horus_m3_path):
             config.logger.error(' -- file .horus3 does not exist!')

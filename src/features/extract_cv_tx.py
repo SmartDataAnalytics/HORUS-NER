@@ -58,7 +58,7 @@ from src.util.definitions_sql import SQL_TEXT_CLASS_SEL, SQL_OBJECT_DETECTION_SE
 from src.util.nlp_tools import NLPTools
 from src.util.util import Util
 from src.classifiers.computer_vision.cls_dlib import DLib_Classifier
-#from src.classifiers.computer_vision.cnnlogo import CNNLogo
+from src.classifiers.computer_vision.cnnlogo import CNNLogo
 from src.classifiers.computer_vision.inception import InceptionCV
 
 class FeatureExtraction(object):
@@ -877,7 +877,7 @@ if __name__ == "__main__":
         extractor = FeatureExtraction(config, load_sift=1, load_tfidf=1, load_cnn=1, load_topic_modeling=1)
 
         for ds in definitions.NER_DATASETS:
-            extractor.extract_features_from_conll(horus_m2=ds[1].replace('.horusx', '.horus2'), label=ds[0])
+            extractor.extract_features_from_conll(horus_m2=ds[1] + ds[2].replace('.horusx', '.horus2'), label=ds[0])
 
         '''
         attention: change POS tag lib in the HORUS.ini to NLTK before run this
