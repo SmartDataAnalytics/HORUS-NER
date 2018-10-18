@@ -30,7 +30,7 @@ def features_to_crf_shape(sent, i):
 
 
 def sent2label(sent):
-    return [definitions.PLONone_index2label[int(y)] for y in sent]
+    return [definitions.PLOMNone_index2label[int(y)] for y in sent]
 
 def sent2features(sent):
     return [features_to_crf_shape(sent, i) for i in range(len(sent))]
@@ -66,7 +66,7 @@ def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
         config.logger.debug(' -- X_token')
         X_token = exclude_columns(ds[2][0], f_indexes)
         X_token.replace('O', 0, inplace=True)
-        #Y_token = [definitions.PLONone_label2index[y] for y in ds[2][1]]
+        #Y_token = [definitions.PLOMNone_label2index[y] for y in ds[2][1]]
         Y_token = [int(y) for y in ds[2][1]]
         dump_path_type = dump_path.replace('.pkl', '.token.pkl')
         with open(dump_path_type, 'wb') as output2:
@@ -99,7 +99,6 @@ def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
 
 def create_benchmark_dump_files():
     try:
-
         job_dumps = []
         for ds in definitions.NER_DATASETS:
             horus_m4_path = ds[1] + ds[2].replace('.horusx', '.horus4')

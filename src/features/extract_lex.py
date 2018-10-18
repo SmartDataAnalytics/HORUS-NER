@@ -60,7 +60,7 @@ def save_configuration_dump_file((_file_path, _file_name, ds, f_key, f_indexes))
         Y_sentence = [sent2label(s) for s in ds[1][1]]
         X_token = exclude_columns(ds[2][0], f_indexes)
         X_token.replace('O', 0, inplace=True)
-        Y_token = [definitions.PLONone_label2index[y] for y in ds[2][1]]
+        Y_token = [definitions.PLOMNone_label2index[y] for y in ds[2][1]]
         X_crf = [sent2features(s) for s in X_sentence]
         _Y_sentence = np.array([x for s in Y_sentence for x in s])  # trick for scikit_learn on CRF (for the precision_recall_fscore_support method)
 
@@ -94,17 +94,16 @@ def shape_data((horus_m3_path, horus_m4_path)):
         #fullpath=path+file
         config.logger.info('reading horus features file: ' + horus_m3_path)
         df = pd.read_csv(horus_m3_path, delimiter="\t", skiprows=1, header=None, keep_default_na=False, na_values=['_|_'])
-        df=df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
+        df = df.drop(df[df[definitions.INDEX_IS_COMPOUND]==1].index)
         oldsentid = df.iloc[0].at[definitions.INDEX_ID_SENTENCE]
         df = df.reset_index(drop=True)
         COLS = len(df.columns)
 
-        df=pd.concat([df, pd.DataFrame(columns=range(COLS, (COLS + definitions.STANDARD_FEAT_LEN)))], axis=1)
+        df = pd.concat([df, pd.DataFrame(columns=range(COLS, (COLS + definitions.STANDARD_FEAT_LEN)))], axis=1)
         config.logger.info(len(df))
         for row in df.itertuples():
             index=row.Index
             if index % 500 == 0: config.logger.info(index)
-            #print(file + ' - ' + str(index))
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []
@@ -113,16 +112,9 @@ def shape_data((horus_m3_path, horus_m4_path)):
 
             idsent = df.loc[index].at[definitions.INDEX_ID_SENTENCE]
             token = df.loc[index].at[definitions.INDEX_TOKEN]
-            token=token.decode('utf8', 'ignore')
+            token = token.decode('utf8', 'ignore')
 
-            lemma=''
-            stem=''
-            try:
-                lemma = wnl.lemmatize(token.lower())
-            except: pass
-            try:
-                stem = stemmer.stem(token.lower())
-            except: pass
+
             brown_1000_path = '{:<016}'.format(dict_brown_c1000.get(token, '0000000000000000'))
             brown_640_path = '{:<016}'.format(dict_brown_c640.get(token, '0000000000000000'))
             brown_320_path = '{:<016}'.format(dict_brown_c320.get(token, '0000000000000000'))
@@ -144,13 +136,14 @@ def shape_data((horus_m3_path, horus_m4_path)):
                 brown_320.append(brown_320_path[:k])
                 k += 1
 
-            if index > 1: prev_prev_serie = df.loc[index-2]
-            if index > 0: prev_serie = df.loc[index-1]
-            if index + 1 < len(df): next_serie = df.loc[index+1]
-            if index + 2 < len(df): next_next_serie = df.loc[index+2]
+            #if index > 1: prev_prev_serie = df.loc[index-2]
+            #if index > 0: prev_serie = df.loc[index-1]
+            #if index + 1 < len(df): next_serie = df.loc[index+1]
+            #if index + 2 < len(df): next_next_serie = df.loc[index+2]
 
             _t=[]
             # standard features
+            '''
             if index > 0 and prev_serie.at[definitions.INDEX_ID_SENTENCE] == idsent:
                 prev_pos = prev_serie.at[definitions.INDEX_POS]
                 prev_pos_uni = prev_serie.at[definitions.INDEX_POS_UNI]
@@ -290,7 +283,8 @@ def shape_data((horus_m3_path, horus_m4_path)):
                 next_next_small = -1
                 next_next_hyphen = -1
                 next_next_sh = -1
-
+            
+            
             # standard features [t-2, t-1, t, t+1, t+2] (12*5=60)
             _t.extend([le.transform(prev_prev_pos),
                        le.transform(prev_prev_pos_uni),
@@ -316,18 +310,35 @@ def shape_data((horus_m3_path, horus_m4_path)):
                        prev_small,
                        prev_hyphen,
                        prev_sh])
+            '''
+
+            # word, lemma, stem for [t-2, t-1, t, t+1, t+2] (3*5=15)
+            lemma = ''
+            stem = ''
+            try: lemma = lemmatize(token.lower())
+            except: pass
+            try: stem = stemo(token.lower())
+            except: pass
+            # _t.extend(_append_word_lemma_stem(prev_prev_token.lower(), prev_prev_lemma, prev_prev_stem))
+            # _t.extend(_append_word_lemma_stem(prev_token.lower(), prev_lemma, prev_stem))
+            _t.extend(_append_word_lemma_stem(token.lower(), lemma, stem))
+            # _t.extend(_append_word_lemma_stem(next_token.lower(), next_lemma, next_stem))
+            # _t.extend(_append_word_lemma_stem(next_next_token.lower(), next_next_lemma, next_next_stem))
+
+            # 12
             _t.extend([le.transform(df.loc[index].at[definitions.INDEX_POS]),
                        le.transform(df.loc[index].at[definitions.INDEX_POS_UNI]),
-                       int(len(token) == 1),
-                       int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0),
-                       int(token[0].isupper()),
-                       int(token.isupper()),
-                       int(token.istitle()),
-                       int(token.isdigit()),
-                       int(token in stop),
-                       int(len(token) <= 2),
-                       int('-' in token),
+                       (len(token) == 1),
+                       (len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token)) > 0),
+                       (token[0].isupper()),
+                       (token.isupper()),
+                       (token.istitle()),
+                       (token.isdigit()),
+                       (token in stop),
+                       (len(token) <= 2),
+                       ('-' in token),
                        shape(token)])
+            '''
             _t.extend([le.transform(next_pos),
                        le.transform(next_pos_uni),
                        next_one_char_token,
@@ -352,48 +363,20 @@ def shape_data((horus_m3_path, horus_m4_path)):
                        next_next_small,
                        next_next_hyphen,
                        next_next_sh])
-
-            _t.extend(_append_word_lemma_stem(prev_prev_token.lower(), prev_prev_lemma, prev_prev_stem))
-            _t.extend(_append_word_lemma_stem(prev_token.lower(), prev_lemma, prev_stem))
-            _t.extend(_append_word_lemma_stem(token.lower(), lemma, stem))
-            _t.extend(_append_word_lemma_stem(next_token.lower(), next_lemma, next_stem))
-            _t.extend(_append_word_lemma_stem(next_next_token.lower(), next_next_lemma, next_next_stem))
-            # word, lemma, stem for [t-2, t-1, t, t+1, t+2] (3*5=15)
+            '''
 
             # brown clusters [320, 640, 1000] (5*3=15)
             _t.extend(brown_320)
             _t.extend(brown_640)
             _t.extend(brown_1000)
 
-
-            #if len(f_indexes) !=0:
-            #    _t.extend(df.loc[index][f_indexes])
             df.iloc[[index], COLS:(COLS + definitions.STANDARD_FEAT_LEN)] = _t
 
-            #_t = pd.Series(_t, index=range(COLS, COLS+STANDARD_FEAT))
-            #a=df.iloc[index]
-            #a.update(_t)
-            #df.iloc[index]=a
-
-            #df.iloc[[index], COLS:(COLS+STANDARD_FEAT)+1] = _t
-
-            #new=COLS
-            #for i in range(len(_t)):
-            #    df.loc[index, new] = _t[i]
-            #    new += 1
-
             # NER class
-            y = df.loc[index].at[definitions.INDEX_TARGET_NER]
-            #if df.loc[index].at[definitions.INDEX_TARGET_NER] == 'O': y=u'O'
-            #elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_LOC: y = u'LOC'
-            #elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_ORG: y = u'ORG'
-            #elif df.loc[index].at[definitions.INDEX_TARGET_NER] in definitions.NER_TAGS_PER: y = u'PER'
-            #else: y = u'O'
+            y = int(df.loc[index].at[definitions.INDEX_TARGET_NER])
+
 
             oldsentid = idsent
-
-            #ds_tokens.append(_t)
-            #y_tokens_shape.append(definitions.KLASSES2[y])
 
             _sent_temp_feat.append(df.loc[index])
             _sent_temp_y.append(y)
@@ -444,16 +427,25 @@ def extract_lexical_and_shape_data():
 if __name__ == "__main__":
 
     config = HorusConfig()
+
+    config.logger.info('loading lemmatizers')
     stemmer = SnowballStemmer('english')
     stop = set(stopwords.words('english'))
     wnl = WordNetLemmatizer()
 
+    from functools32 import lru_cache
+    lemmatize = lru_cache(maxsize=50000)(wnl.lemmatize)
+    stemo = lru_cache(maxsize=50000)(stemmer.stem)
+
+    config.logger.info('loading encoders')
     enc_le1 = joblib.load(config.dir_encoders + definitions.encoder_le1_name)
     enc_le2 = joblib.load(config.dir_encoders + definitions.encoder_le2_name)
     enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
     enc_lemma = joblib.load(config.dir_encoders + definitions.encoder_int_lemma_name)
     enc_stem = joblib.load(config.dir_encoders + definitions.encoder_int_stem_name)
     le = joblib.load(config.dir_encoders + encoder_le1_name)
+
+    config.logger.info('loading brown corpus')
     dict_brown_c1000 = joblib.load(config.dir_datasets + 'gha.500M-c1000-p1.paths_dict.pkl')
     dict_brown_c640 = joblib.load(config.dir_datasets + 'gha.64M-c640-p1.paths_dict.pkl')
     dict_brown_c320 = joblib.load(config.dir_datasets + 'gha.64M-c320-p1.paths_dict.pkl')

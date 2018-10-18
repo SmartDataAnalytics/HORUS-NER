@@ -102,8 +102,8 @@ def convert_lstm_shape(X, y, horus_feat = False):
     word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
     ind2word = {index: word for index, word in enumerate(words)}
     #labels = list(set([c for x in y for c in x]))
-    label2ind = definitions.PLONone_label2index
-    ind2label = definitions.PLONone_index2label
+    label2ind = definitions.PLOMNone_label2index
+    ind2label = definitions.PLOMNone_index2label
     print('Vocabulary size:', len(word2ind), len(label2ind))
     lengths = [len(x) for x in Xclean]
     maxlen = max(lengths)
@@ -250,12 +250,20 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                     with open(dump_full_path_ds1_sentence, 'rb') as input:
                         file_name, f_key, X1_sentence, Y1_sentence = pickle.load(input)
+                        # just PLO
+                        temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y1_sentence]
+                        Y1_sentence = temp
 
                     with open(dump_full_path_ds1_token, 'rb') as input:
                         file_name, f_key, X1_token, Y1_token = pickle.load(input)
+                        # just PLO
+                        temp = [definitions.PLOMNone_label2index['O'] if y==definitions.PLOMNone_label2index['MISC']
+                                else y for y in Y1_token]
+                        Y1_token = temp
 
                     with open(dump_full_path_ds1_crf, 'rb') as input:
                         file_name, f_key, X1_crf, Y1_crf = pickle.load(input)
+                        Y1_crf = Y1_sentence
 
 
                     #_set_name = SET_MASK % (ds1, str(f_key))
@@ -297,12 +305,22 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                 with open(dump_full_path_ds2_sentence, 'rb') as input:
                                     file_name, f_key, X2_sentence, Y2_sentence = pickle.load(input)
+                                    # just PLO
+                                    temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y2_sentence]
+                                    Y2_sentence = temp
 
                                 with open(dump_full_path_ds2_token, 'rb') as input:
                                     file_name, f_key, X2_token, Y2_token = pickle.load(input)
+                                    # just PLO
+                                    temp = [
+                                        definitions.PLOMNone_label2index['O'] if y == definitions.PLOMNone_label2index[
+                                            'MISC']
+                                        else y for y in Y2_token]
+                                    Y2_token = temp
 
                                 with open(dump_full_path_ds2_crf, 'rb') as input:
                                     file_name, f_key, X2_crf, Y2_crf = pickle.load(input)
+                                    Y2_crf = Y2_sentence
 
 
                             if horus_m4_name_ds1 != horus_m4_name_ds2:
@@ -333,20 +351,20 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
                                     P, R, F, S = \
                                         sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                        labels=definitions.PLO_index2label.keys())
+                                                                                        labels=definitions.PLOM_index2label.keys())
                                     for k in range(len(P)):
-                                        out_file.write(line % ('False', str(f_key), '1', definitions.PLO_index2label.get(k + 1),
+                                        out_file.write(line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
                                                                P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # average
                                     P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                        labels=definitions.PLO_index2label.keys(), average='weighted')
+                                                                                                                 labels=definitions.PLOM_index2label.keys(), average='weighted')
                                     out_file.write(line % (
                                     'False', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # entity detection only
-                                    ypr_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in ypr]
-                                    y2_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in Y2_token]
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
+                                    y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in Y2_token]
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                     for k in range(len(P)):
                                         out_file.write(line % ('False', str(f_key), '1', k,
@@ -369,23 +387,23 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                                     _ypr = np.array([tag for row in ypr for tag in row])
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_sentence, _ypr,
-                                                                                                 labels=definitions.PLO_index2label.values())
+                                                                                                 labels=definitions.PLOM_index2label.values())
                                     for k in range(len(P)):
                                         out_file.write(line % (
-                                        'False', str(f_key), '1', definitions.PLO_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                        'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
                                         'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # average
                                     P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
                                         Y2_sentence, _ypr,
-                                        labels=definitions.PLO_index2label.keys(), average='weighted')
+                                        labels=definitions.PLOM_index2label.keys(), average='weighted')
                                     out_file.write(line % (
                                         'False', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF',
                                         horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # entity detection only
-                                    ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
-                                    y2_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in Y2_sentence]
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+                                    y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in Y2_sentence]
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                     for k in range(len(P)):
                                         out_file.write(line % (
@@ -396,14 +414,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     ypr = m.predict(X2_crf)
                                     _ypr = np.array([tag for row in ypr for tag in row])
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_sentence, _ypr,
-                                                                                                 labels=definitions.PLO_index2label.values())
+                                                                                                 labels=definitions.PLOM_index2label.values())
                                     for k in range(len(P)):
                                         out_file.write(line % (
-                                        'False', str(f_key), '1', definitions.PLO_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                        'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
                                         'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # entity detection only
-                                    ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                     for k in range(len(P)):
                                         out_file.write(line % (
@@ -436,18 +454,18 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
                                                                                                      np.array(ypr).astype(int),
-                                                                                                     labels=definitions.PLO_index2label.keys())
+                                                                                                     labels=definitions.PLOM_index2label.keys())
                                         for k in range(len(P)):
-                                            out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLO_index2label.get(k + 1),
+                                            out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
                                                         P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # average
-                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),np.array(ypr).astype(int), labels=definitions.PLO_index2label.keys(), average='weighted')
+                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLOM_index2label.keys(), average='weighted')
                                         out_file.write(line % ('True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
-                                        ypr_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in ypr]
-                                        y2_bin = [1 if x in definitions.PLO_index2label.keys() else 0 for x in yte]
+                                        ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
+                                        y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in yte]
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                         for k in range(len(P)):
                                             out_file.write(line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
@@ -474,20 +492,20 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         _yte = np.array([tag for row in yte for tag in row])
                                         #print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                                     labels=definitions.PLO_index2label.values())
+                                                                                                     labels=definitions.PLOM_index2label.values())
                                         for k in range(len(P)):
                                             out_file.write(line % (
-                                                'True', str(f_key), str(d + 1), definitions.PLO_index2label.get(k + 1), P[k], R[k],
+                                                'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
                                                 F[k],
                                                 str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # average
-                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,labels=definitions.PLO_index2label.keys(), average='weighted')
+                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.keys(), average='weighted')
                                         out_file.write(line % ('True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF',horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
-                                        ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
-                                        y2_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _yte]
+                                        ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+                                        y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                         for k in range(len(P)):
                                             out_file.write(line % (
@@ -498,24 +516,24 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         _ypr = np.array([tag for row in ypr for tag in row])
                                         _yte = np.array([tag for row in yte for tag in row])
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                                     labels=definitions.PLO_index2label.values())
+                                                                                                     labels=definitions.PLOM_index2label.values())
                                         for k in range(len(P)):
                                             out_file.write(line % (
-                                                'True', str(f_key), str(d + 1), definitions.PLO_index2label.get(k + 1), P[k], R[k],
+                                                'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
                                                 F[k],
                                                 str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # average
                                         P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                            _yte, _ypr, labels=definitions.PLO_index2label.keys(),
+                                            _yte, _ypr, labels=definitions.PLOM_index2label.keys(),
                                             average='weighted')
                                         out_file.write(line % (
                                         'True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF_PA',
                                         horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
-                                        ypr_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _ypr]
-                                        y2_bin = [1 if x in definitions.PLO_index2label.values() else 0 for x in _yte]
+                                        ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+                                        y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                         for k in range(len(P)):
                                             out_file.write(line % (
@@ -556,14 +574,16 @@ def main():
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
-    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=1, help='benchmarks DT')
-    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=0, help='benchmarks CRF')
+    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
+    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
     parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
     parser.print_help()
     args = parser.parse_args()
     time.sleep(1)
+
+
 
     try:
 
