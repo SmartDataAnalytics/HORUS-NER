@@ -9,7 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import OneHotEncoder
 
-from src.util.definitions import encoder_le1_name, dict_exp_feat, SET_MASK
+from src.util.definitions import encoder_le1_name, dict_exp_configurations, SET_MASK
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -207,7 +207,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     verbose = 0
     #_meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
     RUN_PROCESS_KEY_STARTS = 1
-    RUN_PROCESS_KEY_ENDS = max(dict_exp_feat.keys())
+    RUN_PROCESS_KEY_ENDS = max(dict_exp_configurations.keys())
     #RUN_PROCESS_KEY_ENDS = 30
     header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
     line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'

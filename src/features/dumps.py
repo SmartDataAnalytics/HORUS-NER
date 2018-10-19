@@ -1,7 +1,7 @@
 from src.config import HorusConfig
 import multiprocessing
 from src.util import definitions
-from src.util.definitions import SET_MASK, dict_exp_feat
+from src.util.definitions import SET_MASK, dict_exp_configurations
 import os
 import cPickle as pickle
 import pandas as pd
@@ -12,16 +12,16 @@ config = HorusConfig()
 def features_to_crf_shape(sent, i):
 
     features = {'bias': 1.0}
-    features.update(dict(('f'+str(key), sent.iloc[i].at[key]) for key in np.sort(sent.columns.values)))
+    features.update(dict((definitions.schemaindex2label[key], sent.iloc[i].at[key]) for key in np.sort(sent.columns.values)))
 
     if i > 0:
-        features_pre = dict(('-1:f'+str(key), sent.iloc[i-1].at[key]) for key in np.sort(sent.columns.values))
+        features_pre = dict(('-1:' + definitions.schemaindex2label[key], sent.iloc[i-1].at[key]) for key in np.sort(sent.columns.values))
         features.update(features_pre)
     else:
         features['BOS'] = True
 
     if i < len(sent) - 1:
-        features_pos = dict(('+1:f'+str(key), sent.iloc[i+1].at[key]) for key in np.sort(sent.columns.values))
+        features_pos = dict(('+1:' + definitions.schemaindex2label[key], sent.iloc[i+1].at[key]) for key in np.sort(sent.columns.values))
         features.update(features_pos)
     else:
         features['EOS'] = True
@@ -111,7 +111,7 @@ def create_benchmark_dump_files():
                 config.logger.debug('loading: ' + horus_m4_path)
                 with open(horus_m4_path, 'rb') as input:
                     data = pickle.load(input)
-                    for key, value in dict_exp_feat.items():
+                    for key, value in dict_exp_configurations.items():
                         dump_name = SET_MASK % (horus_m4_name, str(key))
                         dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
                         # this may lead to error, but I am considering pre-processing worked fine for now.

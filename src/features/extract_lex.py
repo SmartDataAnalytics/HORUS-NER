@@ -8,7 +8,7 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 from src.util import definitions
-from src.util.definitions import encoder_le1_name, dict_exp_feat
+from src.util.definitions import encoder_le1_name, dict_exp_configurations
 from src.config import HorusConfig
 from src.util.definitions import EXPERIMENT_FOLDER
 import numpy as np
@@ -99,16 +99,30 @@ def shape_data((horus_m3_path, horus_m4_path)):
         df = df.reset_index(drop=True)
         COLS = len(df.columns)
 
-        df = pd.concat([df, pd.DataFrame(columns=range(COLS, (COLS + definitions.STANDARD_FEAT_LEN)))], axis=1)
+        import operator
+        MAX_ITEM = max(definitions.schemaindex2label.iteritems(), key=operator.itemgetter(0))[0]
+        #df = pd.concat([df, pd.DataFrame(columns=range(COLS, (COLS + definitions.STANDARD_FEAT_LEN)))], axis=1)
+        df = pd.concat([df, pd.DataFrame(columns=range(COLS, MAX_ITEM + 1))], axis=1)
+
+
+
         config.logger.info(len(df))
+
+        # for test purpose
+        stop_next = False
+
         for row in df.itertuples():
             index=row.Index
             if index % 500 == 0: config.logger.info(index)
+            if index == 2000:
+                stop_next = True
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []
                 y_sentences_shape.append(_sent_temp_y)
                 _sent_temp_y = []
+                if stop_next:
+                    break
 
             idsent = df.loc[index].at[definitions.INDEX_ID_SENTENCE]
             token = df.loc[index].at[definitions.INDEX_TOKEN]
@@ -319,6 +333,9 @@ def shape_data((horus_m3_path, horus_m4_path)):
             except: pass
             try: stem = stemo(token.lower())
             except: pass
+
+            _t.extend([token.lower(), lemma.decode('utf-8'), stem.decode('utf-8')])
+
             # _t.extend(_append_word_lemma_stem(prev_prev_token.lower(), prev_prev_lemma, prev_prev_stem))
             # _t.extend(_append_word_lemma_stem(prev_token.lower(), prev_lemma, prev_stem))
             _t.extend(_append_word_lemma_stem(token.lower(), lemma, stem))
@@ -370,7 +387,7 @@ def shape_data((horus_m3_path, horus_m4_path)):
             _t.extend(brown_640)
             _t.extend(brown_1000)
 
-            df.iloc[[index], COLS:(COLS + definitions.STANDARD_FEAT_LEN)] = _t
+            df.iloc[[index], COLS:(COLS + MAX_ITEM + 1)] = _t
 
             # NER class
             y = int(df.loc[index].at[definitions.INDEX_TARGET_NER])
@@ -380,10 +397,6 @@ def shape_data((horus_m3_path, horus_m4_path)):
 
             _sent_temp_feat.append(df.loc[index])
             _sent_temp_y.append(y)
-
-        # adding last sentence
-        ds_sentences.append(_sent_temp_feat)
-        y_sentences_shape.append(_sent_temp_y)
 
         y_tokens_shape = df[definitions.INDEX_TARGET_NER].copy()
         del df[definitions.INDEX_TARGET_NER]
@@ -467,7 +480,7 @@ if __name__ == "__main__":
         job_args = []
         set_file_dump_names = []
         for ds in shaped_datasets:
-            for f_key, f_indexes in dict_exp_feat.iteritems():
+            for f_key, f_indexes in dict_exp_configurations.iteritems():
                 _set_name = _SET_MASK % (ds[0], str(f_key))
                 _file = config.dir_output + EXPERIMENT_FOLDER + _set_name
                 if os.path.isfile(_file) is False:
