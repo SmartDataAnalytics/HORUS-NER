@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import multiprocessing
 import os
 import pickle
@@ -43,13 +44,19 @@ def shape(word):
 def _append_word_lemma_stem(w, l, s):
     t=[]
     try: t.append(enc_word.transform(str(w)))
-    except: t.append(0)
+    except:
+        config.logger.warn('enc_word.transform error')
+        t.append(0)
 
     try: t.append(enc_lemma.transform(l.decode('utf-8')))
-    except: t.append(0)
+    except:
+        config.logger.warn('enc_lemma.transform error')
+        t.append(0)
 
     try: t.append(enc_stem.transform(s.decode('utf-8')))
-    except: t.append(0)
+    except:
+        config.logger.warn('enc_stem.transform error')
+        t.append(0)
 
     return t
 
@@ -87,6 +94,8 @@ def shape_data((horus_m3_path, horus_m4_path)):
     :return: an updated dataset and a sentence-shaped dataset
     '''
     try:
+        import unicodedata
+        from unicodedata import normalize, name
 
         ds_sentences, y_sentences_shape = [], []
         _sent_temp_feat, _sent_temp_y = [], []
@@ -103,8 +112,6 @@ def shape_data((horus_m3_path, horus_m4_path)):
         MAX_ITEM = max(definitions.schemaindex2label.iteritems(), key=operator.itemgetter(0))[0]
         #df = pd.concat([df, pd.DataFrame(columns=range(COLS, (COLS + definitions.STANDARD_FEAT_LEN)))], axis=1)
         df = pd.concat([df, pd.DataFrame(columns=range(COLS, MAX_ITEM + 1))], axis=1)
-
-
 
         config.logger.info(len(df))
 
@@ -126,6 +133,14 @@ def shape_data((horus_m3_path, horus_m4_path)):
 
             idsent = df.loc[index].at[definitions.INDEX_ID_SENTENCE]
             token = df.loc[index].at[definitions.INDEX_TOKEN]
+
+            if not isinstance(token, unicode):
+                token = unicodedata.normalize('NFKD', unicode(token, 'utf-8')).encode('ascii','ignore')
+                if len(token) == 0:
+                    token = "'"
+            #    a = 1
+            #if token == u'´':
+            #    token = "'"
             token = token.decode('utf8', 'ignore')
 
 
