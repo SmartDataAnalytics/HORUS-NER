@@ -49,6 +49,25 @@ def exclude_columns(df, f_indexes):
 
     return out
 
+
+def mapping_indexes_text2encoding(indexes):
+
+    import copy
+    f_indexes = copy.copy(indexes)
+
+    for i in range(len(f_indexes)):
+        if f_indexes[i] == 5:
+            f_indexes[i] = 91
+        elif f_indexes[i] == 4:
+            f_indexes[i] = 92
+        elif f_indexes[i] == 85:
+            f_indexes[i] = 88
+        elif f_indexes[i] == 86:
+            f_indexes[i] = 89
+        elif f_indexes[i] == 87:
+            f_indexes[i] = 90
+    return f_indexes
+
 def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
 
     try:
@@ -64,7 +83,8 @@ def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
         config.logger.debug(dump_path_type + ' created!')
 
         config.logger.debug(' -- X_token')
-        X_token = exclude_columns(ds[2][0], f_indexes)
+        f_indexes_token = mapping_indexes_text2encoding(f_indexes)
+        X_token = exclude_columns(ds[2][0], f_indexes_token)
         X_token.replace('O', 0, inplace=True)
         #Y_token = [definitions.PLOMNone_label2index[y] for y in ds[2][1]]
         Y_token = [int(y) for y in ds[2][1]]

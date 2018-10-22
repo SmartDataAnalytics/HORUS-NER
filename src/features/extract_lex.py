@@ -114,8 +114,8 @@ def shape_data((horus_m3_path, horus_m4_path)):
         for row in df.itertuples():
             index=row.Index
             if index % 500 == 0: config.logger.info(index)
-            if index == 2000:
-                stop_next = True
+            #if index == 15000:
+            #    stop_next = True
             if df.loc[index, definitions.INDEX_ID_SENTENCE] != oldsentid:
                 ds_sentences.append(_sent_temp_feat)
                 _sent_temp_feat = []

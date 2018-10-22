@@ -88,38 +88,39 @@ def load_dumps_in_memory((_file, ds, _set_name)):
     f.close()
     return (_set_name, dump)
 
+def get_lstm_parameters(X, y, encoder_word, index_word=85):
+    import copy
+    X_enc = copy.copy(X)
+    #all_text = [c[index_word] for x in X for c in x]
+    ##all_text.extend([c[1] for x in X for c in x])
 
-
-
-
-
-def convert_lstm_shape(X, y, horus_feat = False):
-
-    all_text = [c[0] for x in X for c in x]
-    all_text.extend([c[1] for x in X for c in x])
-
-    words = list(set(all_text))  # distinct tokens
-    word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
-    ind2word = {index: word for index, word in enumerate(words)}
-    #labels = list(set([c for x in y for c in x]))
-    label2ind = definitions.PLOMNone_label2index
-    ind2label = definitions.PLOMNone_index2label
-    print('Vocabulary size:', len(word2ind), len(label2ind))
-    lengths = [len(x) for x in Xclean]
+    #words = list(set(all_text))  # distinct tokens
+    #word2ind = {word: index for index, word in enumerate(words)}  # indexes of words
+    #ind2word = {index: word for index, word in enumerate(words)}
+    ##labels = list(set([c for x in y for c in x]))
+    #label2ind =
+    #ind2label = definitions.PLOMNone_index2label
+    #print('Vocabulary size:', len(word2ind), len(label2ind))
+    lengths = [len(x) for x in X]
     maxlen = max(lengths)
-    print('min sentence / max sentence: ', min(lengths), maxlen)
-    if horus_feat == False:
-        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8]] for c in x] for x in Xclean]
-    else:
-        X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
-                   c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]] for c in x] for x in Xclean]
+    #print('min sentence / max sentence: ', min(lengths), maxlen)
+    for i in range(len(X_enc)):
+        for t in range(len(X_enc[i])):
+            w = enc_word.transform([str(X_enc[i].iloc[t][index_word])])
+            X_enc[i].set_value(index=t, col=index_word, value=w[0])
+            #X_enc[i].iloc[t][index_word] = w[0]
 
-    max_label = max(label2ind.values()) + 1
-    y_enc = [[0] * (maxlen - len(ey)) + [label2ind[c] for c in ey] for ey in y]
+       ## X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
+       ##            c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]] for c in x] for x in Xclean]
+
+    max_label = max(definitions.PLOMNone_label2index.values()) + 1
+    y_enc = [[0] * (maxlen - len(ey)) + [definitions.PLOMNone_label2index[c] for c in ey] for ey in y]
     y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
 
-    max_features = len(word2ind)
-    out_size = len(label2ind) + 1
+    #max_features = len(word2ind)
+    max_features = len(enc_word.classes_)
+
+    out_size = len(definitions.PLOMNone_label2index) + 1
 
     return X_enc, y_enc, max_features, out_size, maxlen
 
@@ -203,6 +204,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     embedding_size = 128
     hidden_size = 32
     batch_size = 128
+    enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
     epochs = 50
     verbose = 0
     #_meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
@@ -386,7 +388,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     ypr = m.predict(X2_crf)
                                     #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
                                     _ypr = np.array([tag for row in ypr for tag in row])
-                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_sentence, _ypr,
+                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
                                                                                                  labels=definitions.PLOM_index2label.values())
                                     for k in range(len(P)):
                                         out_file.write(line % (
@@ -395,15 +398,15 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                     # average
                                     P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                        Y2_sentence, _ypr,
-                                        labels=definitions.PLOM_index2label.keys(), average='weighted')
+                                        _yte, _ypr,
+                                        labels=definitions.PLOM_index2label.values(), average='weighted')
                                     out_file.write(line % (
                                         'False', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF',
                                         horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # entity detection only
                                     ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
-                                    y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in Y2_sentence]
+                                    y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                     for k in range(len(P)):
                                         out_file.write(line % (
@@ -413,7 +416,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     m = _crf2.fit(X1_crf, Y1_sentence)
                                     ypr = m.predict(X2_crf)
                                     _ypr = np.array([tag for row in ypr for tag in row])
-                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(Y2_sentence, _ypr,
+                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
                                                                                                  labels=definitions.PLOM_index2label.values())
                                     for k in range(len(P)):
                                         out_file.write(line % (
@@ -422,6 +426,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                     # entity detection only
                                     ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                     for k in range(len(P)):
                                         out_file.write(line % (
@@ -460,7 +465,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                         P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # average
-                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLOM_index2label.keys(), average='weighted')
+                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                            np.array(yte).astype(int), np.array(ypr).astype(int),
+                                            labels=definitions.PLOM_index2label.keys(),
+                                            average='weighted')
                                         out_file.write(line % ('True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
@@ -500,7 +508,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                 str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # average
-                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.keys(), average='weighted')
+                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
                                         out_file.write(line % ('True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF',horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
@@ -525,7 +533,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                         # average
                                         P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                            _yte, _ypr, labels=definitions.PLOM_index2label.keys(),
+                                            _yte, _ypr, labels=definitions.PLOM_index2label.values(),
                                             average='weighted')
                                         out_file.write(line % (
                                         'True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF_PA',
@@ -549,11 +557,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         # --------------------------------------------------------------------------------------------------------------------------
 
                                     if runLSTM is True:
-                                        print(1)
-                                        #Xtr, Xte, ytr, yte = train_test_split(X1_lstm, y1_lstm, test_size=ds_test_size,
-                                        #                                      random_state=42)  # 352|1440
-                                        #run_lstm(Xtr, Xte, ytr, yte, max_features_1, max_features_2, out_size_1, embedding_size,
-                                        #         hidden_size, batch_size, epochs, verbose, maxlen_1)
+                                        X_enc, y_enc, max_features, out_size, maxlen = \
+                                            get_lstm_parameters(X1_sentence, Y1_sentence, enc_word)
+                                        Xtr, Xte, ytr, yte = train_test_split(X_enc, y_enc,
+                                                                              test_size=ds_test_size, random_state=r[d])
+                                        run_lstm(Xtr, Xte, ytr, yte, max_features, max_features, out_size, embedding_size,
+                                                 hidden_size, batch_size, epochs, verbose, maxlen)
 
                         out_file.flush()
         except Exception as e:
@@ -574,9 +583,9 @@ def main():
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
-    parser.add_argument('--dt', '--rundt', action='store_true', required=False, default=0, help='benchmarks DT')
-    parser.add_argument('--crf', '--runcrf', action='store_true', required=False, default=1, help='benchmarks CRF')
-    parser.add_argument('--lstm', '--runlstm', action='store_true', required=False, default=0, help='benchmarks LSTM')
+    parser.add_argument('--dt',       '--rundt',       action='store_true', required=False, default=0, help='benchmarks DT')
+    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=1, help='benchmarks CRF')
+    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
     parser.print_help()
