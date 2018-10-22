@@ -73,34 +73,47 @@ def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
     try:
 
         config.logger.debug('removing columns: ' + file_name)
-
-        config.logger.debug(' -- X_sentence')
-        X_sentence = [exclude_columns(s, f_indexes) for s in ds[1][0]]
-        Y_sentence = [sent2label(s) for s in ds[1][1]]
-        dump_path_type = dump_path.replace('.pkl', '.sentence.pkl')
-        with open(dump_path_type, 'wb') as output1:
-            pickle.dump((file_name, f_key, X_sentence, Y_sentence), output1, pickle.HIGHEST_PROTOCOL)
-        config.logger.debug(dump_path_type + ' created!')
-
-        config.logger.debug(' -- X_token')
         f_indexes_token = mapping_indexes_text2encoding(f_indexes)
-        X_token = exclude_columns(ds[2][0], f_indexes_token)
-        X_token.replace('O', 0, inplace=True)
-        #Y_token = [definitions.PLOMNone_label2index[y] for y in ds[2][1]]
-        Y_token = [int(y) for y in ds[2][1]]
-        dump_path_type = dump_path.replace('.pkl', '.token.pkl')
-        with open(dump_path_type, 'wb') as output2:
-            pickle.dump((file_name, f_key, X_token, Y_token), output2, pickle.HIGHEST_PROTOCOL)
-        config.logger.debug(dump_path_type + ' created!')
+        # this is shared
+        Y_sentence = [sent2label(s) for s in ds[1][1]]
 
-        config.logger.debug(' -- X_crf')
-        X_crf = [sent2features(s) for s in X_sentence]
-        # trick for scikit-learn on CRF (for the precision_recall_f-score_support method)
-        Y_crf = np.array([x for s in Y_sentence for x in s])
+        dump_path_type = dump_path.replace('.pkl', '.sentence.pkl')
+        if not os.path.exists(dump_path_type):
+            config.logger.debug(' -- X_sentence')
+            X_sentence_str = [exclude_columns(s, f_indexes) for s in ds[1][0]]
+            with open(dump_path_type, 'wb') as output1:
+                pickle.dump((file_name, f_key, X_sentence_str, Y_sentence), output1, pickle.HIGHEST_PROTOCOL)
+            config.logger.debug(dump_path_type + ' created!')
+
+        dump_path_type = dump_path.replace('.pkl', '.token.pkl')
+        if not os.path.exists(dump_path_type):
+            config.logger.debug(' -- X_token')
+            X_token = exclude_columns(ds[2][0], f_indexes_token)
+            X_token.replace('O', 0, inplace=True)
+            #Y_token = [definitions.PLOMNone_label2index[y] for y in ds[2][1]]
+            Y_token = [int(y) for y in ds[2][1]]
+
+            with open(dump_path_type, 'wb') as output2:
+                pickle.dump((file_name, f_key, X_token, Y_token), output2, pickle.HIGHEST_PROTOCOL)
+            config.logger.debug(dump_path_type + ' created!')
+
         dump_path_type = dump_path.replace('.pkl', '.crf.pkl')
-        with open(dump_path_type, 'wb') as output3:
-            pickle.dump((file_name, f_key, X_crf, Y_crf), output3, pickle.HIGHEST_PROTOCOL)
-        config.logger.debug(dump_path_type + ' created!')
+        if not os.path.exists(dump_path_type):
+            config.logger.debug(' -- X_crf')
+            X_crf = [sent2features(s) for s in X_sentence_str]
+            # trick for scikit-learn on CRF (for the precision_recall_f-score_support method)
+            Y_crf = np.array([x for s in Y_sentence for x in s])
+            with open(dump_path_type, 'wb') as output3:
+                pickle.dump((file_name, f_key, X_crf, Y_crf), output3, pickle.HIGHEST_PROTOCOL)
+            config.logger.debug(dump_path_type + ' created!')
+
+        dump_path_type = dump_path.replace('.pkl', '.sentence.enc.pkl')
+        if not os.path.exists(dump_path_type):
+            config.logger.debug(' -- X_sentence_encoded')
+            X_sentence_encoded = [exclude_columns(s, f_indexes_token) for s in ds[1][0]]
+            with open(dump_path_type, 'wb') as output2:
+                pickle.dump((file_name, f_key, X_sentence_encoded, Y_sentence), output2, pickle.HIGHEST_PROTOCOL)
+            config.logger.debug(dump_path_type + ' created!')
 
         ## X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
         ## X2_lstm, y2_lstm, max_features_2, out_size_2, maxlen_2 = convert_lstm_shape(ds2[1][0], ds2[1][1], f_indexes)
@@ -135,7 +148,7 @@ def create_benchmark_dump_files():
                         dump_name = SET_MASK % (horus_m4_name, str(key))
                         dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
                         # this may lead to error, but I am considering pre-processing worked fine for now.
-                        if not os.path.exists(dump_full_path.replace('.pkl', '.crf.pkl')):
+                        if not os.path.exists(dump_full_path.replace('.pkl', '.sentence.enc.pkl')):
                             config.logger.debug(' -- key: ' + str(key))
                             job_dumps.append((data, dump_full_path, dump_name, key, value))
 

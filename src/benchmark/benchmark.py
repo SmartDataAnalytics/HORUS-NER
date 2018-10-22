@@ -5,6 +5,7 @@ import time
 
 import gc
 import sklearn
+from keras.utils import to_categorical
 from sklearn.decomposition import PCA
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import OneHotEncoder
@@ -88,9 +89,9 @@ def load_dumps_in_memory((_file, ds, _set_name)):
     f.close()
     return (_set_name, dump)
 
-def get_lstm_parameters(X, y, encoder_word, index_word=85):
-    import copy
-    X_enc = copy.copy(X)
+def encode_labels(max_sentence, y1, y2):
+    #import copy
+    #X_enc = copy.copy(X)
     #all_text = [c[index_word] for x in X for c in x]
     ##all_text.extend([c[1] for x in X for c in x])
 
@@ -101,28 +102,30 @@ def get_lstm_parameters(X, y, encoder_word, index_word=85):
     #label2ind =
     #ind2label = definitions.PLOMNone_index2label
     #print('Vocabulary size:', len(word2ind), len(label2ind))
-    lengths = [len(x) for x in X]
-    maxlen = max(lengths)
+
     #print('min sentence / max sentence: ', min(lengths), maxlen)
-    for i in range(len(X_enc)):
-        for t in range(len(X_enc[i])):
-            w = enc_word.transform([str(X_enc[i].iloc[t][index_word])])
-            X_enc[i].set_value(index=t, col=index_word, value=w[0])
-            #X_enc[i].iloc[t][index_word] = w[0]
+    #for i in range(len(X_enc)):
+    #    for t in range(len(X_enc[i])):
+    #        w = enc_word.transform([str(X_enc[i].iloc[t][index_word])])
+    #       X_enc[i].set_value(index=t, col=index_word, value=w[0])
+    #        #X_enc[i].iloc[t][index_word] = w[0]
 
        ## X_enc = [[[word2ind[c[0]], word2ind[c[1]], c[2], c[3], c[4], c[5], c[6], c[7], c[8],
        ##            c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18]] for c in x] for x in Xclean]
 
     max_label = max(definitions.PLOMNone_label2index.values()) + 1
-    y_enc = [[0] * (maxlen - len(ey)) + [definitions.PLOMNone_label2index[c] for c in ey] for ey in y]
-    y_enc = [[encode(c, max_label) for c in ey] for ey in y_enc]
+    y_enc1 = [[0] * (max_sentence - len(ey)) + [definitions.PLOMNone_label2index[c] for c in ey] for ey in y1]
+    y_enc1 = [[encode(c, max_label) for c in ey] for ey in y_enc1]
+
+    y_enc2 = [[0] * (max_sentence - len(ey)) + [definitions.PLOMNone_label2index[c] for c in ey] for ey in y2]
+    y_enc2 = [[encode(c, max_label) for c in ey] for ey in y_enc2]
 
     #max_features = len(word2ind)
-    max_features = len(enc_word.classes_)
 
-    out_size = len(definitions.PLOMNone_label2index) + 1
 
-    return X_enc, y_enc, max_features, out_size, maxlen
+
+
+    return y_enc1, y_enc2
 
 def score2(yh, pr):
     #real-no-encoding x predicted
@@ -135,7 +138,8 @@ def score2(yh, pr):
     print set(fpr)
     return fyh, fpr
 
-def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embedding_size, hidden_size, batch_size, epochs=50, verbose = 0, maxsent = 0):
+def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embedding_size, hidden_size, batch_size,
+             epochs=50, verbose=0, maxsent=0):
 
     print('Training and testing tensor shapes:', Xtr.shape, Xte.shape, ytr.shape, yte.shape)
 
@@ -184,9 +188,6 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(' - precision, recall, f1, support:')
     print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
-
-
-
 
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
@@ -238,6 +239,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                 dump_full_path_ds1_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                               dump_name.replace('.pkl', '.sentence.pkl')
+                dump_full_path_ds1_sentence_enc = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
+                                              dump_name.replace('.pkl', '.sentence.enc.pkl')
                 dump_full_path_ds1_token = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                            dump_name.replace('.pkl', '.token.pkl')
                 dump_full_path_ds1_crf = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
@@ -255,6 +258,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         # just PLO
                         temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y1_sentence]
                         Y1_sentence = temp
+
+                    with open(dump_full_path_ds1_sentence_enc, 'rb') as input:
+                        file_name, f_key, X1_sentence_enc, Y1_sentence_enc = pickle.load(input)
 
                     with open(dump_full_path_ds1_token, 'rb') as input:
                         file_name, f_key, X1_token, Y1_token = pickle.load(input)
@@ -290,6 +296,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                         dump_full_path_ds2_sentence = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.pkl')
+                        dump_full_path_ds2_sentence_enc = os.path.dirname(
+                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.enc.pkl')
                         dump_full_path_ds2_token = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.token.pkl')
                         dump_full_path_ds2_crf = os.path.dirname(
@@ -310,6 +318,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     # just PLO
                                     temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y2_sentence]
                                     Y2_sentence = temp
+
+                                with open(dump_full_path_ds2_sentence_enc, 'rb') as input:
+                                    file_name, f_key, X2_sentence_enc, Y2_sentence_enc = pickle.load(input)
 
                                 with open(dump_full_path_ds2_token, 'rb') as input:
                                     file_name, f_key, X2_token, Y2_token = pickle.load(input)
@@ -557,11 +568,25 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         # --------------------------------------------------------------------------------------------------------------------------
 
                                     if runLSTM is True:
-                                        X_enc, y_enc, max_features, out_size, maxlen = \
-                                            get_lstm_parameters(X1_sentence, Y1_sentence, enc_word)
-                                        Xtr, Xte, ytr, yte = train_test_split(X_enc, y_enc,
+                                        lengths = [len(x) for x in X1_sentence_enc]
+                                        maxlen = max(lengths)
+                                        max_features = len(enc_word.classes_)
+                                        out_size = len(definitions.PLOMNone_label2index) + 1
+                                        X1_sentence_enc_pad = pad_sequences(X1_sentence_enc, maxlen=maxlen)
+                                        from sklearn.preprocessing import OneHotEncoder
+                                        enc = OneHotEncoder()
+                                        encoded_seqs = enc.fit_transform(Y1_sentence)
+
+                                        Y1_sentence_enc = to_categorical(Y1_sentence)
+                                        Xtr, Xte, ytr, yte = train_test_split(X1_sentence_enc_pad, Y1_sentence_enc,
                                                                               test_size=ds_test_size, random_state=r[d])
-                                        run_lstm(Xtr, Xte, ytr, yte, max_features, max_features, out_size, embedding_size,
+
+
+
+                                        #y1_enc, y2_enc = encode_labels(max_features, ytr, yte)
+
+                                        run_lstm(np.array(Xtr), np.array(Xte), ytr, yte,
+                                                 max_features, max_features, out_size, embedding_size,
                                                  hidden_size, batch_size, epochs, verbose, maxlen)
 
                         out_file.flush()
@@ -584,8 +609,8 @@ def main():
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
     parser.add_argument('--dt',       '--rundt',       action='store_true', required=False, default=0, help='benchmarks DT')
-    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=1, help='benchmarks CRF')
-    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=0, help='benchmarks LSTM')
+    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=0, help='benchmarks CRF')
+    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=1, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
     parser.print_help()
