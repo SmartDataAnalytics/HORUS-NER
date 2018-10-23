@@ -4,6 +4,8 @@ import os
 import time
 
 import gc
+
+import keras
 import sklearn
 from keras.utils import to_categorical
 from sklearn.decomposition import PCA
@@ -19,6 +21,8 @@ import sklearn_crfsuite
 from sklearn import ensemble
 from sklearn.cross_validation import train_test_split, KFold
 from sklearn_crfsuite import metrics
+from keras_contrib.layers import CRF
+
 
 plt.style.use('ggplot')
 from src.config import HorusConfig
@@ -29,11 +33,11 @@ from sklearn.metrics import make_scorer, accuracy_score, confusion_matrix, preci
 from sklearn.grid_search import RandomizedSearchCV
 import numpy as np
 from keras.engine import InputLayer
-from keras.models import Sequential
+from keras.models import Sequential, Model, Input
 from keras.layers.core import Activation
 from keras.layers.wrappers import TimeDistributed
 from keras.preprocessing.sequence import pad_sequences
-from keras.layers import Embedding, LSTM, Dense, Merge
+from keras.layers import Embedding, LSTM, Dense, Merge, Bidirectional, Concatenate
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 import pandas as pd
@@ -146,20 +150,26 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     mf = max(max_features, max_features2)
 
     model1 = Sequential()
-    model1.add(Embedding(input_dim=mf, output_dim=embedding_size, input_length=maxsent, mask_zero=True))
+    model1.add(Embedding(input_dim=mf, output_dim=embedding_size, input_length=maxsent, dropout=0.2)) # mask_zero=True
+    model1.add(LSTM(hidden_size, dropout = 0.2)) #return_sequences=True, input_shape=(maxsent, Xtr.shape[2] - 1)
+    model1.add(Dense(1, activation='softmax'))
+    model1.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model1.summary())
+    model1.fit(Xtr, ytr, epochs=3, batch_size=64)
+    scores = model1.evaluate(Xte, yte, verbose=0)
 
     model2 = Sequential()
     model2.add(InputLayer(input_shape=(maxsent, Xtr.shape[2] - 1)))
 
     model = Sequential()
     model.add(Merge([model1, model2], mode='concat'))
-    model.add(Dense(1))
 
-    model.add(LSTM(hidden_size, return_sequences=True, input_shape=(maxsent, Xtr.shape[2] - 1)))
+
+
     model.add(TimeDistributed(Dense(out_size)))
     model.add(Activation('softmax'))
 
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
     #print(model.summary())
     print('train...')
 
@@ -189,6 +199,16 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
     print(precision_recall_fscore_support(fyh, fpr))
     print('----------------------------------------------------------------------------------')
 
+def pred2label(pred):
+    out = []
+    for pred_i in pred:
+        out_i = []
+        for p in pred_i:
+            p_i = np.argmax(p)
+            out_i.append(definitions.PLOMNone_index2label[p_i])
+        out.append(out_i)
+    return out
+
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
 
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
@@ -202,6 +222,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     _crf = sklearn_crfsuite.CRF(algorithm='lbfgs', c1=0.088, c2=0.002, max_iterations=100, all_possible_transitions=True)
     _crf2 = sklearn_crfsuite.CRF(algorithm='pa', all_possible_transitions=True)
     _dt = ensemble.RandomForestClassifier(n_estimators=50)
+    one_hot_encode_y = to_categorical(definitions.PLOMNone_index2label.keys())
     embedding_size = 128
     hidden_size = 32
     batch_size = 128
@@ -568,26 +589,94 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         # --------------------------------------------------------------------------------------------------------------------------
 
                                     if runLSTM is True:
+                                        n_features = len(X1_sentence_enc[0].columns)
                                         lengths = [len(x) for x in X1_sentence_enc]
-                                        maxlen = max(lengths)
-                                        max_features = len(enc_word.classes_)
-                                        out_size = len(definitions.PLOMNone_label2index) + 1
-                                        X1_sentence_enc_pad = pad_sequences(X1_sentence_enc, maxlen=maxlen)
-                                        from sklearn.preprocessing import OneHotEncoder
-                                        enc = OneHotEncoder()
-                                        encoded_seqs = enc.fit_transform(Y1_sentence)
+                                        max_len = max(lengths)
+                                        n_words = len(enc_word.classes_)
+                                        out_size = len(definitions.PLOMNone_label2index)
+                                        X1_sentence_enc_pad = pad_sequences(sequences=[x.values.tolist() for x in X1_sentence_enc],
+                                                                            maxlen=max_len, padding='post',
+                                                                            value=0)
+                                        y = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1_sentence_enc]
+                                        Y1_sentence_enc_pad = pad_sequences(sequences=y, maxlen=max_len, padding='post',
+                                                                            value=definitions.PLOMNone_label2index['O'])
 
-                                        Y1_sentence_enc = to_categorical(Y1_sentence)
+                                        Y1_sentence_enc = [one_hot_encode_y[y-1] for y in Y1_sentence_enc_pad]
                                         Xtr, Xte, ytr, yte = train_test_split(X1_sentence_enc_pad, Y1_sentence_enc,
                                                                               test_size=ds_test_size, random_state=r[d])
+
+                                        # define the BiLSTM+CRF architecture
+
+
+
+                                        m1 = Sequential()
+                                        m1.add(Embedding(input_dim=n_words + 1, output_dim=20,
+                                                          input_length=max_len,
+                                                          mask_zero=True))
+
+                                        m2 = Sequential()
+                                        m2.add(InputLayer(input_shape=(max_len, 1)))
+
+
+                                        merged = Concatenate([m1, m2])
+                                        model = Model(merged, )
+
+                                        model.add(Bidirectional(LSTM(units=50, return_sequences=True,
+                                                                   recurrent_dropout=0.1,
+                                                                   input_shape=(max_len, n_features))))
+                                        model.add(TimeDistributed(Dense(50, activation='relu')))
+                                        model.add(CRF(out_size))
+                                        model.compile(optimizer='rmsprop', loss=crf.loss_function,
+                                                      metrics=[crf.accuracy])
+                                        print(model.summary())
+
+
+
+
+                                        #    keras.layers.concatenate([m1, m2])
+
+
+
+                                        input = Input(shape=(max_len, 1))
+                                        word_emb = Embedding(input_dim=n_words + 1, output_dim=20,
+                                                          input_length=max_len,
+                                                          mask_zero=True)(input)
+
+                                        feat_input = Input(shape=(max_len, n_features))
+                                        feat_emb = Embedding(input_dim=1000, output_dim=20, input_length=max_len,
+                                                             mask_zero=True)(feat_input)
+
+                                        model = keras.layers.concatenate([word_emb, feat_emb])
+
+                                        model = Bidirectional(LSTM(units=50, return_sequences=True,
+                                                                   recurrent_dropout=0.1,
+                                                                   input_shape=(max_len, n_features)))(model)
+                                        model = TimeDistributed(Dense(50, activation='relu'))(model)
+                                        crf = CRF(out_size)
+
+                                        out = crf(model)
+
+                                        model = Model(input, out)
+                                        model.compile(optimizer='rmsprop', loss=crf.loss_function, metrics=[crf.accuracy])
+                                        print(model.summary())
+
+                                        hist = model.fit(Xtr, np.array(ytr), batch_size=32, epochs=5, validation_split=0.1, verbose=1)
+
+                                        from seqeval.metrics import precision_score, recall_score, f1_score, classification_report
+                                        test_pred = model.predict(Xte, verbose=1)
+
+                                        pred_labels = pred2label(test_pred)
+                                        test_labels = pred2label(yte)
+                                        fone = f1_score(test_labels, pred_labels)
+                                        print(classification_report(test_labels, pred_labels))
 
 
 
                                         #y1_enc, y2_enc = encode_labels(max_features, ytr, yte)
 
-                                        run_lstm(np.array(Xtr), np.array(Xte), ytr, yte,
-                                                 max_features, max_features, out_size, embedding_size,
-                                                 hidden_size, batch_size, epochs, verbose, maxlen)
+                                        run_lstm(Xtr, Xte, np.array(ytr), np.array(yte),
+                                                 n_words, n_words, out_size, embedding_size,
+                                                 hidden_size, batch_size, epochs, verbose, max_len)
 
                         out_file.flush()
         except Exception as e:
