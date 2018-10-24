@@ -607,6 +607,31 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                         # define the BiLSTM+CRF architecture
 
+                                        #input1 = Input(shape=(max_len,))
+                                        #word_emb = Embedding(input_dim=n_words + 1, output_dim=150,
+                                        #                     input_length=max_len,
+                                        #                     mask_zero=True)(input1)
+
+                                        input2 = Input(shape=(Xtr.shape[0], Xtr.shape[1]))
+                                        horus_emb = Embedding(input_dim=100000, output_dim=150,
+                                                              mask_zero=True)(input2)
+
+                                        #concat_layer = keras.layers.concatenate([word_emb, horus_emb], axis=1)
+
+                                        model = Bidirectional(LSTM(units=50, return_sequences=True,
+                                                                   recurrent_dropout=0.1))(horus_emb)
+                                        model = TimeDistributed(Dense(50, activation='relu'))(model)
+                                        crf = CRF(out_size)
+                                        out = crf(model)
+
+                                        #model = Model(inputs=[input1, input2], outputs=[out])
+                                        model = Model(inputs=input2, outputs=out)
+                                        model.compile(optimizer='rmsprop', loss=crf.loss_function,
+                                                      metrics=[crf.accuracy])
+                                        print(model.summary())
+
+                                        hist = model.fit(Xtr[:, :, 0], np.array(ytr), batch_size=32, epochs=3, validation_split=0.1, verbose=1)
+
 
 
                                         m1 = Sequential()
@@ -634,7 +659,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
 
                                         #    keras.layers.concatenate([m1, m2])
-
 
 
                                         input = Input(shape=(max_len, 1))
