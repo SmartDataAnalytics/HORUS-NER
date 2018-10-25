@@ -201,12 +201,18 @@ def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embeddin
 
 def pred2label(pred):
     out = []
-    for pred_i in pred:
-        out_i = []
-        for p in pred_i:
-            p_i = np.argmax(p)
-            out_i.append(definitions.PLOMNone_index2label[p_i])
-        out.append(out_i)
+    try:
+        for pred_i in pred:
+            out_i = []
+            for p in pred_i:
+                p_i = np.argmax(p)
+                if p_i == 0:
+                    out_i.append('O')
+                else:
+                    out_i.append(definitions.PLOMNone_index2label[p_i])
+            out.append(out_i)
+    except Exception as e:
+        config.logger.error(repr(e))
     return out
 
 def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
@@ -217,12 +223,15 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     #sorted_labels = definitions.KLASSES.copy()
     #del sorted_labels[4]
     sorted_labels={'PER': 'PER', 'ORG': 'ORG', 'LOC': 'LOC'}
-    r = [42, 39, 10, 5, 50]
+    r = [42, 19, 10] #3 folds cross validation
     # hyper-parameters
     _crf = sklearn_crfsuite.CRF(algorithm='lbfgs', c1=0.088, c2=0.002, max_iterations=100, all_possible_transitions=True)
     _crf2 = sklearn_crfsuite.CRF(algorithm='pa', all_possible_transitions=True)
     _dt = ensemble.RandomForestClassifier(n_estimators=50)
-    one_hot_encode_y = to_categorical(definitions.PLOMNone_index2label.keys())
+    # 0 should be different to idx of 'O' IMO! so I keep 0 for data padding.
+    temp = [0]
+    temp.extend(definitions.PLOMNone_index2label.keys())
+    one_hot_encode_y = to_categorical(temp)
     embedding_size = 128
     hidden_size = 32
     batch_size = 128
@@ -593,16 +602,16 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         lengths = [len(x) for x in X1_sentence_enc]
                                         max_len = max(lengths)
                                         n_words = len(enc_word.classes_)
-                                        out_size = len(definitions.PLOMNone_label2index)
+                                        out_size = len(definitions.PLOMNone_label2index) + 1
                                         X1_sentence_enc_pad = pad_sequences(sequences=[x.values.tolist() for x in X1_sentence_enc],
                                                                             maxlen=max_len, padding='post',
                                                                             value=0)
-                                        y = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1_sentence_enc]
-                                        Y1_sentence_enc_pad = pad_sequences(sequences=y, maxlen=max_len, padding='post',
-                                                                            value=definitions.PLOMNone_label2index['O'])
+                                        y1_idx = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1_sentence_enc]
+                                        y1_idx_pad = pad_sequences(sequences=y1_idx, maxlen=max_len, padding='post',
+                                                                            value=0) #value=definitions.PLOMNone_label2index['O']
 
-                                        Y1_sentence_enc = [one_hot_encode_y[y-1] for y in Y1_sentence_enc_pad]
-                                        Xtr, Xte, ytr, yte = train_test_split(X1_sentence_enc_pad, Y1_sentence_enc,
+                                        y1_idx_pad_enc = [one_hot_encode_y[y] for y in y1_idx_pad]
+                                        Xtr, Xte, ytr, yte = train_test_split(X1_sentence_enc_pad, y1_idx_pad_enc,
                                                                               test_size=ds_test_size, random_state=r[d])
 
                                         # define the BiLSTM+CRF architecture
@@ -612,8 +621,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         #                     input_length=max_len,
                                         #                     mask_zero=True)(input1)
 
-                                        input2 = Input(shape=(Xtr.shape[0], Xtr.shape[1]))
-                                        horus_emb = Embedding(input_dim=100000, output_dim=150,
+                                        input2 = Input(shape=(max_len,))
+                                        horus_emb = Embedding(input_dim=100000, output_dim=20,
+                                                              input_length=max_len,
                                                               mask_zero=True)(input2)
 
                                         #concat_layer = keras.layers.concatenate([word_emb, horus_emb], axis=1)
@@ -630,10 +640,24 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                       metrics=[crf.accuracy])
                                         print(model.summary())
 
-                                        hist = model.fit(Xtr[:, :, 0], np.array(ytr), batch_size=32, epochs=3, validation_split=0.1, verbose=1)
+                                        hist = model.fit(Xtr[:, :, 0], np.array(ytr), batch_size=32, epochs=50,
+                                                         validation_split=0.1, verbose=0)
+                                        from seqeval.metrics import precision_score, recall_score, f1_score, \
+                                            classification_report
+                                        test_pred = model.predict(Xte[:, :, 0], verbose=1)
+
+                                        pred_labels = pred2label(test_pred)
+                                        test_labels = pred2label(yte)
+                                        fone = f1_score(test_labels, pred_labels)
+                                        print(classification_report(test_labels, pred_labels, digits=3))
 
 
 
+
+
+
+
+                                        '''
                                         m1 = Sequential()
                                         m1.add(Embedding(input_dim=n_words + 1, output_dim=20,
                                                           input_length=max_len,
@@ -686,21 +710,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                         hist = model.fit(Xtr, np.array(ytr), batch_size=32, epochs=5, validation_split=0.1, verbose=1)
 
-                                        from seqeval.metrics import precision_score, recall_score, f1_score, classification_report
-                                        test_pred = model.predict(Xte, verbose=1)
-
-                                        pred_labels = pred2label(test_pred)
-                                        test_labels = pred2label(yte)
-                                        fone = f1_score(test_labels, pred_labels)
-                                        print(classification_report(test_labels, pred_labels))
-
-
-
                                         #y1_enc, y2_enc = encode_labels(max_features, ytr, yte)
 
                                         run_lstm(Xtr, Xte, np.array(ytr), np.array(yte),
                                                  n_words, n_words, out_size, embedding_size,
                                                  hidden_size, batch_size, epochs, verbose, max_len)
+                                        '''
 
                         out_file.flush()
         except Exception as e:
