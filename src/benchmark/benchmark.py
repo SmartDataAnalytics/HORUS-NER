@@ -785,9 +785,9 @@ def main():
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
-    parser.add_argument('--dt',       '--rundt',       action='store_true', required=False, default=0, help='benchmarks DT')
-    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=0, help='benchmarks CRF')
-    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=1, help='benchmarks LSTM')
+    parser.add_argument('--dt',       '--rundt',       action='store_true', required=False, default=1, help='benchmarks DT')
+    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=1, help='benchmarks CRF')
+    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=0, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
     parser.print_help()
