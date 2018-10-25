@@ -12,7 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import OneHotEncoder
 
-from src.util.definitions import encoder_le1_name, dict_exp_configurations, SET_MASK
+from src.util.definitions import encoder_le1_name, dict_exp_configurations, SET_MASK, schemaindex2label
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -37,7 +37,7 @@ from keras.models import Sequential, Model, Input
 from keras.layers.core import Activation
 from keras.layers.wrappers import TimeDistributed
 from keras.preprocessing.sequence import pad_sequences
-from keras.layers import Embedding, LSTM, Dense, Merge, Bidirectional, Concatenate
+from keras.layers import Embedding, LSTM, Dense, Merge, Bidirectional, Concatenate, Dropout
 from nltk.corpus import stopwords
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 import pandas as pd
@@ -269,7 +269,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                 dump_full_path_ds1_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                               dump_name.replace('.pkl', '.sentence.pkl')
-                dump_full_path_ds1_sentence_enc = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
+                dump_full_path_ds1_sentence_idx = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                               dump_name.replace('.pkl', '.sentence.enc.pkl')
                 dump_full_path_ds1_token = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                            dump_name.replace('.pkl', '.token.pkl')
@@ -289,8 +289,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                         temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y1_sentence]
                         Y1_sentence = temp
 
-                    with open(dump_full_path_ds1_sentence_enc, 'rb') as input:
-                        file_name, f_key, X1_sentence_enc, Y1_sentence_enc = pickle.load(input)
+                    with open(dump_full_path_ds1_sentence_idx, 'rb') as input:
+                        file_name, f_key, X1_sentence_idx, Y1_sentence_idx = pickle.load(input)
+                        # just PLO
+                        #temp = [[definitions.PLOMNone_label2index['O'] if item == definitions.PLOMNone_label2index['MISC']
+                        #         else item for item in lst] for lst in Y1_sentence_idx]
+                        #Y1_sentence_idx = temp
 
                     with open(dump_full_path_ds1_token, 'rb') as input:
                         file_name, f_key, X1_token, Y1_token = pickle.load(input)
@@ -326,7 +330,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                         dump_full_path_ds2_sentence = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.pkl')
-                        dump_full_path_ds2_sentence_enc = os.path.dirname(
+                        dump_full_path_ds2_sentence_idx = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.enc.pkl')
                         dump_full_path_ds2_token = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.token.pkl')
@@ -349,8 +353,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y2_sentence]
                                     Y2_sentence = temp
 
-                                with open(dump_full_path_ds2_sentence_enc, 'rb') as input:
-                                    file_name, f_key, X2_sentence_enc, Y2_sentence_enc = pickle.load(input)
+                                with open(dump_full_path_ds2_sentence_idx, 'rb') as input:
+                                    file_name, f_key, X2_sentence_idx, Y2_sentence_idx = pickle.load(input)
+                                    # just PLO
+                                    #temp = [[definitions.PLOMNone_label2index['O'] if item ==
+                                    #                                                  definitions.PLOMNone_label2index[
+                                    #                                                      'MISC']
+                                    #         else item for item in lst] for lst in Y2_sentence_idx]
+                                    #Y2_sentence_idx = temp
 
                                 with open(dump_full_path_ds2_token, 'rb') as input:
                                     file_name, f_key, X2_token, Y2_token = pickle.load(input)
@@ -510,7 +520,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                             np.array(yte).astype(int), np.array(ypr).astype(int),
                                             labels=definitions.PLOM_index2label.keys(),
                                             average='weighted')
-                                        out_file.write(line % ('True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                        out_file.write(line % ('True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
                                         ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
@@ -550,7 +560,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                         # average
                                         P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
-                                        out_file.write(line % ('True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF',horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                        out_file.write(line % ('True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF',horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
                                         ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
@@ -577,7 +587,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                             _yte, _ypr, labels=definitions.PLOM_index2label.values(),
                                             average='weighted')
                                         out_file.write(line % (
-                                        'True', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF_PA',
+                                        'True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF_PA',
                                         horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
@@ -598,20 +608,38 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         # --------------------------------------------------------------------------------------------------------------------------
 
                                     if runLSTM is True:
-                                        n_features = len(X1_sentence_enc[0].columns)
-                                        lengths = [len(x) for x in X1_sentence_enc]
+                                        n_features = len(X1_sentence_idx[0].columns)
+                                        lengths = [len(x) for x in X1_sentence_idx]
                                         max_len = max(lengths)
                                         n_words = len(enc_word.classes_)
                                         out_size = len(definitions.PLOMNone_label2index) + 1
-                                        X1_sentence_enc_pad = pad_sequences(sequences=[x.values.tolist() for x in X1_sentence_enc],
+
+                                        # idx word = 85 (word.lemma)
+                                        seq_words = [S[85].tolist() for S in X1_sentence]
+                                        import itertools
+                                        flatt = list(itertools.chain(*seq_words))
+                                        flatt = list(set(flatt))
+                                        flatt.append("ENDPAD")
+
+                                        len_words = len(flatt)
+                                        word2idx = {w: i + 1 for i, w in enumerate(flatt)}
+                                        X1_sentence_words = [[word2idx[w] for w in s] for s in seq_words]
+                                        X1_sentence_words_pad = pad_sequences(sequences=X1_sentence_words,
+                                                                              maxlen=max_len, padding='post',
+                                                                              value=len_words-1)
+
+                                        #horus features
+
+
+                                        X1_sentence_idx_pad = pad_sequences(sequences=[x.values.tolist() for x in X1_sentence_idx],
                                                                             maxlen=max_len, padding='post',
                                                                             value=0)
-                                        y1_idx = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1_sentence_enc]
+                                        y1_idx = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1_sentence]
                                         y1_idx_pad = pad_sequences(sequences=y1_idx, maxlen=max_len, padding='post',
                                                                             value=0) #value=definitions.PLOMNone_label2index['O']
 
                                         y1_idx_pad_enc = [one_hot_encode_y[y] for y in y1_idx_pad]
-                                        Xtr, Xte, ytr, yte = train_test_split(X1_sentence_enc_pad, y1_idx_pad_enc,
+                                        Xtr, Xte, ytr, yte = train_test_split(X1_sentence_idx_pad, y1_idx_pad_enc,
                                                                               test_size=ds_test_size, random_state=r[d])
 
                                         # define the BiLSTM+CRF architecture
@@ -630,7 +658,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
 
                                         model = Bidirectional(LSTM(units=50, return_sequences=True,
                                                                    recurrent_dropout=0.1))(horus_emb)
-                                        model = TimeDistributed(Dense(50, activation='relu'))(model)
+                                        model = Dense(150, activation='relu')(model)
+                                        model = Dropout(0.1, noise_shape=None, seed=None)(model)
+                                        model = Dense(150, activation='relu')(model)
+                                        #model = TimeDistributed(Dense(50, activation='relu'))(model)
                                         crf = CRF(out_size)
                                         out = crf(model)
 
@@ -640,22 +671,40 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                       metrics=[crf.accuracy])
                                         print(model.summary())
 
-                                        hist = model.fit(Xtr[:, :, 0], np.array(ytr), batch_size=32, epochs=50,
-                                                         validation_split=0.1, verbose=0)
+                                        hist = model.fit(Xtr[:, :, 0], np.array(ytr), batch_size=64, epochs=50,
+                                                         validation_split=0.2, verbose=0)
                                         from seqeval.metrics import precision_score, recall_score, f1_score, \
                                             classification_report
                                         test_pred = model.predict(Xte[:, :, 0], verbose=1)
 
                                         pred_labels = pred2label(test_pred)
                                         test_labels = pred2label(yte)
-                                        fone = f1_score(test_labels, pred_labels)
-                                        print(classification_report(test_labels, pred_labels, digits=3))
+                                        #fone = f1_score(test_labels, pred_labels)
+                                        #print(classification_report(test_labels, pred_labels, digits=3))
 
+                                        _ypr_nn = np.array([tag for row in pred_labels for tag in row])
+                                        _yte_nn = np.array([tag for row in test_labels for tag in row])
+                                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte_nn, _ypr_nn,
+                                                                        labels=definitions.PLOM_index2label.values())
 
+                                        print(sklearn.metrics.classification_report(_yte_nn, _ypr_nn,
+                                                                                 labels=definitions.PLOM_index2label.values(),
+                                                                                 digits=3))
 
+                                        for k in range(len(P)):
+                                            out_file.write(line % (
+                                                'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
+                                                P[k], R[k],
+                                                F[k],
+                                                str(S[k]), 'BiLSTM+CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-
-
+                                        # average
+                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                            _yte_nn, _ypr_nn, labels=definitions.PLOM_index2label.values(),
+                                            average='weighted')
+                                        out_file.write(line % (
+                                        'True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'BiLSTM+CRF',
+                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         '''
                                         m1 = Sequential()

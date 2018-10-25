@@ -107,12 +107,12 @@ def save_data_by_configuration((ds, dump_path, file_name, f_key, f_indexes)):
                 pickle.dump((file_name, f_key, X_crf, Y_crf), output3, pickle.HIGHEST_PROTOCOL)
             config.logger.debug(dump_path_type + ' created!')
 
-        dump_path_type = dump_path.replace('.pkl', '.sentence.enc.pkl')
+        dump_path_type = dump_path.replace('.pkl', '.sentence.idx.pkl')
         if not os.path.exists(dump_path_type):
             config.logger.debug(' -- X_sentence_encoded')
-            X_sentence_encoded = [exclude_columns(s, f_indexes_token) for s in ds[1][0]]
+            X_sentence_idx = [exclude_columns(s, f_indexes_token) for s in ds[1][0]]
             with open(dump_path_type, 'wb') as output2:
-                pickle.dump((file_name, f_key, X_sentence_encoded, Y_sentence), output2, pickle.HIGHEST_PROTOCOL)
+                pickle.dump((file_name, f_key, X_sentence_idx, Y_sentence), output2, pickle.HIGHEST_PROTOCOL)
             config.logger.debug(dump_path_type + ' created!')
 
         ## X_lstm, y_lstm, max_features, out_size, maxlen = convert_lstm_shape(X_sentence, Y_sentence, f_indexes)
