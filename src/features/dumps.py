@@ -148,7 +148,7 @@ def create_benchmark_dump_files():
                         dump_name = SET_MASK % (horus_m4_name, str(key))
                         dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
                         # this may lead to error, but I am considering pre-processing worked fine for now.
-                        if not os.path.exists(dump_full_path.replace('.pkl', '.sentence.enc.pkl')):
+                        if not os.path.exists(dump_full_path.replace('.pkl', '.sentence.idx.pkl')):
                             config.logger.debug(' -- key: ' + str(key))
                             job_dumps.append((data, dump_full_path, dump_name, key, value))
 

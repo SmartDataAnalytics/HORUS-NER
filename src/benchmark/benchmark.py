@@ -142,6 +142,189 @@ def score2(yh, pr):
     print set(fpr)
     return fyh, fpr
 
+def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
+               f_key, line, random_state=None, X2_word=None, X2_feat=None, Y2=None, ds2_label=None):
+    # X1_sentence, X1_sentence_idxc, Y1_sentence,
+    # horus_m4_name_ds1, horus_m4_name_ds2
+    # r[d]
+    import itertools
+    try:
+
+        assert ((X2_word is not None and X2_feat is not None) or (X2_word is None and X2_feat is None))
+        cross_val = False
+        if X2_word is None:
+            cross_val = True
+            ds2_label = ds1_label
+
+
+        # excluding word index
+        if 88 in X1_feat[0].keys():
+            for df in X1_feat:
+                del df[88]
+        lengths1 = [len(x) for x in X1_feat]
+        max_len1 = max(lengths1)
+        out_size = len(definitions.PLOMNone_label2index) + 1
+        y1_idx = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1]
+
+
+        max_len2 = 0
+        if cross_val is False:
+            if 88 in X2_feat[0].keys():
+                for df in X2_feat:
+                    del df[88]
+            lengths2 = [len(x) for x in X2_feat]
+            max_len2 = max(lengths2)
+            y2_idx = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y2]
+
+        max_len = max(max_len1, max_len2)
+        # n_features = len(X1_sentence_idxc[0].columns)
+        # n_words = len(enc_word.classes_)
+        y1_idx_pad = pad_sequences(sequences=y1_idx, maxlen=max_len, padding='post', value=0)  # value=definitions.PLOMNone_label2index['O']
+        y1_idx_pad_enc = [one_hot_encode_y[y] for y in y1_idx_pad]
+        X1_feat_pad = pad_sequences(sequences=[x.values.tolist() for x in X1_feat], maxlen=max_len, padding='post', value=0)
+        # word embedding layer - idx word = 85 (word.lemma)
+        seq_words_X1 = [S[85].tolist() for S in X1_word]
+        flatt1 = list(itertools.chain(*seq_words_X1))
+        flatt1 = list(set(flatt1))
+        flatt1.append("ENDPAD")
+        len_words_X1 = len(flatt1)
+
+        flatt2 = []
+        if cross_val is False:
+            y2_idx_pad = pad_sequences(sequences=y2_idx, maxlen=max_len, padding='post', value=0)
+            y2_idx_pad_enc = [one_hot_encode_y[y] for y in y2_idx_pad]
+
+            X2_feat_pad = pad_sequences(sequences=[x.values.tolist() for x in X2_feat], maxlen=max_len, padding='post', value=0)
+            seq_words_X2 = [S[85].tolist() for S in X2_word]
+            flatt2 = list(itertools.chain(*seq_words_X2))
+            flatt2 = list(set(flatt2))
+            flatt2.append("ENDPAD")
+            len_words_X2 = len(flatt2)
+
+        flatt = flatt1 + flatt2
+
+        word2idx = {w: i + 1 for i, w in enumerate(flatt)}
+
+        X1_sentence_only_words = [[word2idx[w] for w in s] for s in seq_words_X1]
+        X1_sentence_only_words_pad = pad_sequences(sequences=X1_sentence_only_words, maxlen=max_len, padding='post', value=0)
+
+        if cross_val is False:
+            X2_sentence_only_words = [[word2idx[w] for w in s] for s in seq_words_X2]
+            X2_sentence_only_words_pad = pad_sequences(sequences=X2_sentence_only_words, maxlen=max_len, padding='post', value=0)
+
+        if cross_val is True:
+            # words split
+            Xtr, Xte, ytr, yte = train_test_split(X1_sentence_only_words_pad, y1_idx_pad_enc, test_size=ds_test_size, random_state=random_state)
+
+            # feat split
+            Xtr_h, Xte_h, ytr, yte = train_test_split(X1_feat_pad, y1_idx_pad_enc, test_size=ds_test_size, random_state=random_state)
+        else:
+            Xtr = X1_sentence_only_words_pad
+            Xtr_h = X1_feat_pad
+            ytr = y1_idx_pad_enc
+
+            Xte = X2_sentence_only_words_pad
+            Xte_h = X2_feat_pad
+            yte = y2_idx_pad_enc
+
+
+        '''
+        word features
+        '''
+        input1 = Input(shape=(max_len,))
+        word_emb = Embedding(input_dim=len_words_X1 + 1, output_dim=20,
+                             input_length=max_len,
+                             mask_zero=True)(input1)
+        # model = Bidirectional(LSTM(units=50, return_sequences=True,
+        #                           recurrent_dropout=0.1))(word_emb)
+        # model = TimeDistributed(Dense(50, activation='relu'))(model)
+        # crf = CRF(out_size)
+        # out = crf(model)
+        # model = Model(input1, out)
+        # model.compile(optimizer='rmsprop', loss=crf.loss_function,
+        #              metrics=[crf.accuracy])
+        # print(model.summary())
+
+        # hist = model.fit(Xtr, np.array(ytr), batch_size=64, epochs=50,
+        #                 validation_split=0.2, verbose=0)
+        # from seqeval.metrics import precision_score, recall_score, f1_score, \
+        #    classification_report
+        # test_pred = model.predict(Xte, verbose=1)
+
+        # pred_labels = pred2label(test_pred)
+        # test_labels = pred2label(yte)
+
+
+        # _ypr_nn = np.array([tag for row in pred_labels for tag in row])
+        # _yte_nn = np.array([tag for row in test_labels for tag in row])
+        # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte_nn, _ypr_nn,
+        #                                                             labels=definitions.PLOM_index2label.values())
+
+        # print(sklearn.metrics.classification_report(_yte_nn, _ypr_nn,
+        #                                            labels=definitions.PLOM_index2label.values(),
+        #                                            digits=3))
+
+        '''
+        horus features
+        '''
+        input2 = Input(shape=(max_len,))
+        horus_emb = Embedding(input_dim=100000, output_dim=20,
+                              input_length=max_len,
+                              mask_zero=True)(input2)
+
+        concat_layer = keras.layers.concatenate([word_emb, horus_emb])
+
+        model = Bidirectional(LSTM(units=50, return_sequences=True,
+                                   recurrent_dropout=0.1))(concat_layer)
+        model = Dense(150, activation='relu')(model)
+        model = Dropout(0.1, noise_shape=None, seed=None)(model)
+        model = Dense(150, activation='relu')(model)
+        # model = TimeDistributed(Dense(50, activation='relu'))(model)
+        crf = CRF(out_size)
+        out = crf(model)
+
+        model = Model(inputs=[input1, input2], outputs=[out])
+        # model = Model(inputs=input2, outputs=out)
+        model.compile(optimizer='rmsprop', loss=crf.loss_function,
+                      metrics=[crf.accuracy])
+        # print(model.summary())
+
+        hist = model.fit([Xtr, Xtr_h[:, :, 0]], np.array(ytr), batch_size=64, epochs=50, validation_split=0.2, verbose=0)
+        from seqeval.metrics import precision_score, recall_score, f1_score, \
+            classification_report
+        test_pred = model.predict([Xte, Xte_h[:, :, 0]], verbose=1)
+
+        pred_labels = pred2label(test_pred)
+        test_labels = pred2label(yte)
+        # fone = f1_score(test_labels, pred_labels)
+        # print(classification_report(test_labels, pred_labels, digits=3))
+
+        _ypr_nn = np.array([tag for row in pred_labels for tag in row])
+        _yte_nn = np.array([tag for row in test_labels for tag in row])
+        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte_nn, _ypr_nn,
+                                                                     labels=definitions.PLOM_index2label.values())
+
+        # print(sklearn.metrics.classification_report(_yte_nn, _ypr_nn,
+        #            labels=definitions.PLOM_index2label.values(), digits=3))
+
+        for k in range(len(P)):
+            out_file.write(line % (
+                'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
+                P[k], R[k],
+                F[k],
+                str(S[k]), 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
+
+        # average
+        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+            _yte_nn, _ypr_nn, labels=definitions.PLOM_index2label.values(),
+            average='weighted')
+        out_file.write(line % (
+            'True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
+        out_file.flush()
+    except Exception as e:
+        config.logger.error(repr(e))
+        raise
+
 def run_lstm(Xtr, Xte, ytr, yte, max_features, max_features2, out_size, embedding_size, hidden_size, batch_size,
              epochs=50, verbose=0, maxsent=0):
 
@@ -215,9 +398,9 @@ def pred2label(pred):
         config.logger.error(repr(e))
     return out
 
-def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLSTM = False, runSTANFORD_NER = False):
+def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLSTM = False, runSTANFORD_NER = False):
 
-    config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runDT), str(runLSTM), str(runSTANFORD_NER)))
+    config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runRF), str(runLSTM), str(runSTANFORD_NER)))
     experiment_folder+='/'
 
     #sorted_labels = definitions.KLASSES.copy()
@@ -225,9 +408,16 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     sorted_labels={'PER': 'PER', 'ORG': 'ORG', 'LOC': 'LOC'}
     r = [42, 19, 10] #3 folds cross validation
     # hyper-parameters
+
+    '''
+    classifiers
+    '''
     _crf = sklearn_crfsuite.CRF(algorithm='lbfgs', c1=0.088, c2=0.002, max_iterations=100, all_possible_transitions=True)
     _crf2 = sklearn_crfsuite.CRF(algorithm='pa', all_possible_transitions=True)
-    _dt = ensemble.RandomForestClassifier(n_estimators=50)
+    _rf50 = ensemble.RandomForestClassifier(n_estimators=50)
+    '''
+    end classifiers
+    '''
     # 0 should be different to idx of 'O' IMO! so I keep 0 for data padding.
     temp = [0]
     temp.extend(definitions.PLOMNone_index2label.keys())
@@ -250,7 +440,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
     # benchmark starts
     name='metadata_'
     if runCRF: name+='crf_'
-    if runDT: name+='dt_'
+    if runRF: name+= 'rf50_'
     if runLSTM: name+='lstm_'
     assert name != 'metadata_'
 
@@ -270,7 +460,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                 dump_full_path_ds1_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                               dump_name.replace('.pkl', '.sentence.pkl')
                 dump_full_path_ds1_sentence_idx = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
-                                              dump_name.replace('.pkl', '.sentence.enc.pkl')
+                                              dump_name.replace('.pkl', '.sentence.idx.pkl')
                 dump_full_path_ds1_token = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
                                            dump_name.replace('.pkl', '.token.pkl')
                 dump_full_path_ds1_crf = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
@@ -398,8 +588,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                 # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
                                 #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
                                 # --------------------------------------------------------------------------------------------------------------------------
-                                if runDT is True:
-                                    m = _dt.fit(X1_token, Y1_token)
+                                if runRF is True:
+                                    m = _rf50.fit(X1_token, Y1_token)
                                     ypr = m.predict(X2_token)
                                     # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
                                     P, R, F, S = \
@@ -407,13 +597,13 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                                                         labels=definitions.PLOM_index2label.keys())
                                     for k in range(len(P)):
                                         out_file.write(line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
-                                                               P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                                               P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # average
                                     P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
                                                                                                                  labels=definitions.PLOM_index2label.keys(), average='weighted')
                                     out_file.write(line % (
-                                    'False', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # entity detection only
                                     ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
@@ -421,10 +611,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                     P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                     for k in range(len(P)):
                                         out_file.write(line % ('False', str(f_key), '1', k,
-                                                               P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+                                                               P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
                                     # ---------------------------------------------------------- META ----------------------------------------------------------
-                                    # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='DT', phase='test', random_state=r[d])
+                                    # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='RF50', phase='test', random_state=r[d])
                                     # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
                                     #                                                             labels=sorted_labels.keys(),
                                     #                                                             average=None)
@@ -452,7 +642,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         _yte, _ypr,
                                         labels=definitions.PLOM_index2label.values(), average='weighted')
                                     out_file.write(line % (
-                                        'False', str(f_key), '1', 'average', P_avg, R_avg, F_avg, 0, 'CRF',
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF',
                                         horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                     # entity detection only
@@ -475,6 +665,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
                                         'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                        _yte, _ypr,
+                                        labels=definitions.PLOM_index2label.values(), average='weighted')
+                                    out_file.write(line % (
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF-PA',
+                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+
                                     # entity detection only
                                     ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
 
@@ -484,15 +682,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                             'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
                                 if runLSTM is True:
-                                    print(1)
-                                    #max_of_sentences = max(maxlen_1, maxlen_2)
-                                    #X2_lstm = pad_sequences(X2_lstm, maxlen=max_of_sentences)
-                                    #y2_lstm = pad_sequences(y2_lstm, maxlen=max_of_sentences)
-                                    #run_lstm(X1_lstm, X2_lstm, y1_lstm, y2_lstm, max_features_1, max_features_2, out_size_1,
-                                    #         embedding_size, hidden_size, batch_size, epochs, verbose, max_of_sentences)
+                                    run_bisltm(X1_sentence, X1_sentence_idxc, Y1_sentence, one_hot_encode_y,
+                                               out_file, horus_m4_name_ds1, f_key, line)
                             else:
                                 # same dataset (cross-validation)
-
                                 # ---------------------------------------------------------- META ----------------------------------------------------------
                                 # _conf = MEXConfiguration(id=len(_meta.configurations)+1, horus_enabled=int(horus_feat),
                                 #                                dataset_train=ds1[0], dataset_test=ds1[0], dataset_validation=None, features=None, cross_validation=1)
@@ -500,11 +693,15 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                 if X1_token.empty is True:
                                     raise Exception('X1_token is empty!')
 
+                                if runLSTM is True:
+                                    import copy
+                                    X1_sentence_idxc = copy.deepcopy(X1_sentence_idx)
+
                                 for d in range(len(r)):
-                                    if runDT is True:
+                                    if runRF is True:
                                         Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size,
                                                                               random_state=r[d])
-                                        m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                                        m = _rf50.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
                                         # print(m.feature_importances_)
                                         ypr = m.predict(np.array(Xte).astype(float))
                                         # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
@@ -513,14 +710,14 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                                                                                      labels=definitions.PLOM_index2label.keys())
                                         for k in range(len(P)):
                                             out_file.write(line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
-                                                        P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                                        P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # average
                                         P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
                                             np.array(yte).astype(int), np.array(ypr).astype(int),
                                             labels=definitions.PLOM_index2label.keys(),
                                             average='weighted')
-                                        out_file.write(line % ('True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                        out_file.write(line % ('True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
                                         # entity detection only
                                         ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
@@ -528,10 +725,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
                                         for k in range(len(P)):
                                             out_file.write(line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
-                                                                   'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+                                                                   'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
                                         # ---------------------------------------------------------- META ----------------------------------------------------------
-                                        # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='DT', phase='test', random_state=r[d])
+                                        # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='RF50', phase='test', random_state=r[d])
                                         # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
                                         #                                                             labels=sorted_labels.keys(),
                                         #                                                             average=None)
@@ -608,163 +805,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runDT = False, runLST
                                         # --------------------------------------------------------------------------------------------------------------------------
 
                                     if runLSTM is True:
-                                        n_features = len(X1_sentence_idx[0].columns)
-                                        lengths = [len(x) for x in X1_sentence_idx]
-                                        max_len = max(lengths)
-                                        n_words = len(enc_word.classes_)
-                                        out_size = len(definitions.PLOMNone_label2index) + 1
-
-                                        # idx word = 85 (word.lemma)
-                                        seq_words = [S[85].tolist() for S in X1_sentence]
-                                        import itertools
-                                        flatt = list(itertools.chain(*seq_words))
-                                        flatt = list(set(flatt))
-                                        flatt.append("ENDPAD")
-
-                                        len_words = len(flatt)
-                                        word2idx = {w: i + 1 for i, w in enumerate(flatt)}
-                                        X1_sentence_words = [[word2idx[w] for w in s] for s in seq_words]
-                                        X1_sentence_words_pad = pad_sequences(sequences=X1_sentence_words,
-                                                                              maxlen=max_len, padding='post',
-                                                                              value=len_words-1)
-
-                                        #horus features
+                                        run_bisltm(X1_sentence, X1_sentence_idxc, Y1_sentence, one_hot_encode_y,
+                                                   out_file, horus_m4_name_ds1, f_key, line, d, X2_sentence,
+                                                   X2_sentence_idx, Y2_sentence, horus_m4_name_ds2)
 
 
-                                        X1_sentence_idx_pad = pad_sequences(sequences=[x.values.tolist() for x in X1_sentence_idx],
-                                                                            maxlen=max_len, padding='post',
-                                                                            value=0)
-                                        y1_idx = [[definitions.PLOMNone_label2index[y] for y in s] for s in Y1_sentence]
-                                        y1_idx_pad = pad_sequences(sequences=y1_idx, maxlen=max_len, padding='post',
-                                                                            value=0) #value=definitions.PLOMNone_label2index['O']
-
-                                        y1_idx_pad_enc = [one_hot_encode_y[y] for y in y1_idx_pad]
-                                        Xtr, Xte, ytr, yte = train_test_split(X1_sentence_idx_pad, y1_idx_pad_enc,
-                                                                              test_size=ds_test_size, random_state=r[d])
-
-                                        # define the BiLSTM+CRF architecture
-
-                                        #input1 = Input(shape=(max_len,))
-                                        #word_emb = Embedding(input_dim=n_words + 1, output_dim=150,
-                                        #                     input_length=max_len,
-                                        #                     mask_zero=True)(input1)
-
-                                        input2 = Input(shape=(max_len,))
-                                        horus_emb = Embedding(input_dim=100000, output_dim=20,
-                                                              input_length=max_len,
-                                                              mask_zero=True)(input2)
-
-                                        #concat_layer = keras.layers.concatenate([word_emb, horus_emb], axis=1)
-
-                                        model = Bidirectional(LSTM(units=50, return_sequences=True,
-                                                                   recurrent_dropout=0.1))(horus_emb)
-                                        model = Dense(150, activation='relu')(model)
-                                        model = Dropout(0.1, noise_shape=None, seed=None)(model)
-                                        model = Dense(150, activation='relu')(model)
-                                        #model = TimeDistributed(Dense(50, activation='relu'))(model)
-                                        crf = CRF(out_size)
-                                        out = crf(model)
-
-                                        #model = Model(inputs=[input1, input2], outputs=[out])
-                                        model = Model(inputs=input2, outputs=out)
-                                        model.compile(optimizer='rmsprop', loss=crf.loss_function,
-                                                      metrics=[crf.accuracy])
-                                        print(model.summary())
-
-                                        hist = model.fit(Xtr[:, :, 0], np.array(ytr), batch_size=64, epochs=50,
-                                                         validation_split=0.2, verbose=0)
-                                        from seqeval.metrics import precision_score, recall_score, f1_score, \
-                                            classification_report
-                                        test_pred = model.predict(Xte[:, :, 0], verbose=1)
-
-                                        pred_labels = pred2label(test_pred)
-                                        test_labels = pred2label(yte)
-                                        #fone = f1_score(test_labels, pred_labels)
-                                        #print(classification_report(test_labels, pred_labels, digits=3))
-
-                                        _ypr_nn = np.array([tag for row in pred_labels for tag in row])
-                                        _yte_nn = np.array([tag for row in test_labels for tag in row])
-                                        P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte_nn, _ypr_nn,
-                                                                        labels=definitions.PLOM_index2label.values())
-
-                                        print(sklearn.metrics.classification_report(_yte_nn, _ypr_nn,
-                                                                                 labels=definitions.PLOM_index2label.values(),
-                                                                                 digits=3))
-
-                                        for k in range(len(P)):
-                                            out_file.write(line % (
-                                                'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
-                                                P[k], R[k],
-                                                F[k],
-                                                str(S[k]), 'BiLSTM+CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
-
-                                        # average
-                                        P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                            _yte_nn, _ypr_nn, labels=definitions.PLOM_index2label.values(),
-                                            average='weighted')
-                                        out_file.write(line % (
-                                        'True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'BiLSTM+CRF',
-                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
-
-                                        '''
-                                        m1 = Sequential()
-                                        m1.add(Embedding(input_dim=n_words + 1, output_dim=20,
-                                                          input_length=max_len,
-                                                          mask_zero=True))
-
-                                        m2 = Sequential()
-                                        m2.add(InputLayer(input_shape=(max_len, 1)))
-
-
-                                        merged = Concatenate([m1, m2])
-                                        model = Model(merged, )
-
-                                        model.add(Bidirectional(LSTM(units=50, return_sequences=True,
-                                                                   recurrent_dropout=0.1,
-                                                                   input_shape=(max_len, n_features))))
-                                        model.add(TimeDistributed(Dense(50, activation='relu')))
-                                        model.add(CRF(out_size))
-                                        model.compile(optimizer='rmsprop', loss=crf.loss_function,
-                                                      metrics=[crf.accuracy])
-                                        print(model.summary())
-
-
-
-
-                                        #    keras.layers.concatenate([m1, m2])
-
-
-                                        input = Input(shape=(max_len, 1))
-                                        word_emb = Embedding(input_dim=n_words + 1, output_dim=20,
-                                                          input_length=max_len,
-                                                          mask_zero=True)(input)
-
-                                        feat_input = Input(shape=(max_len, n_features))
-                                        feat_emb = Embedding(input_dim=1000, output_dim=20, input_length=max_len,
-                                                             mask_zero=True)(feat_input)
-
-                                        model = keras.layers.concatenate([word_emb, feat_emb])
-
-                                        model = Bidirectional(LSTM(units=50, return_sequences=True,
-                                                                   recurrent_dropout=0.1,
-                                                                   input_shape=(max_len, n_features)))(model)
-                                        model = TimeDistributed(Dense(50, activation='relu'))(model)
-                                        crf = CRF(out_size)
-
-                                        out = crf(model)
-
-                                        model = Model(input, out)
-                                        model.compile(optimizer='rmsprop', loss=crf.loss_function, metrics=[crf.accuracy])
-                                        print(model.summary())
-
-                                        hist = model.fit(Xtr, np.array(ytr), batch_size=32, epochs=5, validation_split=0.1, verbose=1)
-
-                                        #y1_enc, y2_enc = encode_labels(max_features, ytr, yte)
-
-                                        run_lstm(Xtr, Xte, np.array(ytr), np.array(yte),
-                                                 n_words, n_words, out_size, embedding_size,
-                                                 hidden_size, batch_size, epochs, verbose, max_len)
-                                        '''
 
                         out_file.flush()
         except Exception as e:
@@ -785,9 +830,9 @@ def main():
     #parser.add_argument('--ds', '--datasets', nargs='+', default='test.horus')
     parser.add_argument('--ds', '--datasets', nargs='+', default='2015.conll.freebase.horus')
     parser.add_argument('--exp', '--experiment_folder', default='EXP_005', action='store_true', required=False, help='the sub-folder name where the input file is located')
-    parser.add_argument('--dt',       '--rundt',       action='store_true', required=False, default=1, help='benchmarks DT')
-    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=1, help='benchmarks CRF')
-    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=0, help='benchmarks LSTM')
+    parser.add_argument('--dt',       '--rundt',       action='store_true', required=False, default=0, help='benchmarks DT')
+    parser.add_argument('--crf',      '--runcrf',      action='store_true', required=False, default=0, help='benchmarks CRF')
+    parser.add_argument('--lstm',     '--runlstm',     action='store_true', required=False, default=1, help='benchmarks LSTM')
     parser.add_argument('--stanford', '--runstanford', action='store_true', required=False, default=0, help='benchmarks Stanford NER')
 
     parser.print_help()
@@ -798,7 +843,7 @@ def main():
 
     try:
 
-        benchmark(experiment_folder=args.exp, datasets=definitions.NER_DATASETS, runCRF=bool(args.crf), runDT=bool(args.dt),
+        benchmark(experiment_folder=args.exp, datasets=definitions.NER_DATASETS, runCRF=bool(args.crf), runRF=bool(args.dt),
                   runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford))
     except:
         raise
