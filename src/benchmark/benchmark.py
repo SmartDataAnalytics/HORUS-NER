@@ -143,7 +143,8 @@ def score2(yh, pr):
     return fyh, fpr
 
 def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
-               f_key, line, random_state=None, X2_word=None, X2_feat=None, Y2=None, ds2_label=None):
+               f_key, line, random_state = None, random_state_i=None,
+               X2_word=None, X2_feat=None, Y2=None, ds2_label=None):
     # X1_sentence, X1_sentence_idxc, Y1_sentence,
     # horus_m4_name_ds1, horus_m4_name_ds2
     # r[d]
@@ -168,7 +169,8 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
 
 
         max_len2 = 0
-        if cross_val is False:
+        if cross_val\
+                is False:
             if 88 in X2_feat[0].keys():
                 for df in X2_feat:
                     del df[88]
@@ -190,6 +192,7 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
         len_words_X1 = len(flatt1)
 
         flatt2 = []
+        len_words_X2 = 0
         if cross_val is False:
             y2_idx_pad = pad_sequences(sequences=y2_idx, maxlen=max_len, padding='post', value=0)
             y2_idx_pad_enc = [one_hot_encode_y[y] for y in y2_idx_pad]
@@ -202,6 +205,7 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
             len_words_X2 = len(flatt2)
 
         flatt = flatt1 + flatt2
+        len_words_X = len_words_X1 + len_words_X2
 
         word2idx = {w: i + 1 for i, w in enumerate(flatt)}
 
@@ -232,7 +236,7 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
         word features
         '''
         input1 = Input(shape=(max_len,))
-        word_emb = Embedding(input_dim=len_words_X1 + 1, output_dim=20,
+        word_emb = Embedding(input_dim=len_words_X + 1, output_dim=20,
                              input_length=max_len,
                              mask_zero=True)(input1)
         # model = Bidirectional(LSTM(units=50, return_sequences=True,
@@ -309,7 +313,7 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
 
         for k in range(len(P)):
             out_file.write(line % (
-                'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
+                'True', str(f_key), str(random_state_i + 1), definitions.PLOM_index2label.get(k + 1),
                 P[k], R[k],
                 F[k],
                 str(S[k]), 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
@@ -683,7 +687,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
 
                                 if runLSTM is True:
                                     run_bisltm(X1_sentence, X1_sentence_idxc, Y1_sentence, one_hot_encode_y,
-                                               out_file, horus_m4_name_ds1, f_key, line)
+                                               out_file, horus_m4_name_ds1, f_key, line, random_state=None,
+                                               random_state_i=None, X2_word=X2_sentence, X2_feat=X2_sentence_idx,
+                                               Y2=Y2_sentence, ds2_label=horus_m4_name_ds2)
+
+
                             else:
                                 # same dataset (cross-validation)
                                 # ---------------------------------------------------------- META ----------------------------------------------------------
@@ -806,8 +814,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
 
                                     if runLSTM is True:
                                         run_bisltm(X1_sentence, X1_sentence_idxc, Y1_sentence, one_hot_encode_y,
-                                                   out_file, horus_m4_name_ds1, f_key, line, d, X2_sentence,
-                                                   X2_sentence_idx, Y2_sentence, horus_m4_name_ds2)
+                                                   out_file, horus_m4_name_ds1, f_key, line, r[d], d)
 
 
 
