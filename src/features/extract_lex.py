@@ -421,7 +421,7 @@ def shape_data((horus_m3_path, horus_m4_path)):
 
         data = file, (ds_sentences, y_sentences_shape), (df, y_tokens_shape)
         with open(horus_m4_path, 'wb') as output:
-            pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(data, output, pickle.HIGHEST_PROTOCOL) # pickle.HIGHEST_PROTOCOL raising EOFError when loading
         config.logger.info('file exported: ' + horus_m4_path)
 
 

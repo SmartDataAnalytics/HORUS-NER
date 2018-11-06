@@ -3,7 +3,8 @@ import multiprocessing
 from src.util import definitions
 from src.util.definitions import SET_MASK, dict_exp_configurations
 import os
-import cPickle as pickle
+#import cPickle as pickle
+import pickle
 import pandas as pd
 import numpy as np
 
@@ -139,18 +140,19 @@ def create_benchmark_dump_files():
             if not os.path.isfile(horus_m4_path):
                 config.logger.error(
                     ' -- file .horus4 does not exist! please check the file extract_lex.py to create it...')
-                raise Exception
             else:
-                config.logger.debug('loading: ' + horus_m4_path)
-                with open(horus_m4_path, 'rb') as input:
-                    data = pickle.load(input)
-                    for key, value in dict_exp_configurations.items():
-                        dump_name = SET_MASK % (horus_m4_name, str(key))
-                        dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
-                        # this may lead to error, but I am considering pre-processing worked fine for now.
-                        if not os.path.exists(dump_full_path.replace('.pkl', '.sentence.idx.pkl')):
-                            config.logger.debug(' -- key: ' + str(key))
-                            job_dumps.append((data, dump_full_path, dump_name, key, value))
+                data = None
+                for key, value in dict_exp_configurations.items():
+                    dump_name = SET_MASK % (horus_m4_name, str(key))
+                    dump_full_path = os.path.dirname(os.path.realpath(horus_m4_path)) + '/' +  dump_name
+                    # this may lead to error, but I am considering pre-processing worked fine for now.
+                    if not os.path.exists(dump_full_path.replace('.pkl', '.sentence.idx.pkl')):
+                        config.logger.debug(' -- key: ' + str(key))
+                        if data is None:
+                            config.logger.debug('loading: ' + horus_m4_path)
+                            with open(horus_m4_path, 'rb') as input:
+                                data = pickle.load(input)
+                        job_dumps.append((data, dump_full_path, dump_name, key, value))
 
             if len(job_dumps) > 0:
                 config.logger.info('creating dump files: ' + str(len(job_dumps)) + ' jobs')

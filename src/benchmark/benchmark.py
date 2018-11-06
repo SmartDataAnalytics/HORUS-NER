@@ -148,10 +148,21 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
     # X1_sentence, X1_sentence_idxc, Y1_sentence,
     # horus_m4_name_ds1, horus_m4_name_ds2
     # r[d]
+
+    embedding_size = 128
+    hidden_size = 32
+    batch_size = 64
+    epochs = 2
+    verbose = 0
+
     import itertools
     try:
 
-        assert ((X2_word is not None and X2_feat is not None) or (X2_word is None and X2_feat is None))
+        assert ((X2_word is not None and X2_feat is not None and Y2 is not None) or
+                (X2_word is None and X2_feat is None and Y2 is None))
+
+        assert len(X1_feat) == len(X1_word) == len(Y1)
+
         cross_val = False
         if X2_word is None:
             cross_val = True
@@ -293,10 +304,10 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
                       metrics=[crf.accuracy])
         # print(model.summary())
 
-        hist = model.fit([Xtr, Xtr_h[:, :, 0]], np.array(ytr), batch_size=64, epochs=50, validation_split=0.2, verbose=0)
+        hist = model.fit([Xtr, Xtr_h[:, :, 0]], np.array(ytr), batch_size=batch_size, epochs=epochs, validation_split=0.2, verbose=verbose)
         from seqeval.metrics import precision_score, recall_score, f1_score, \
             classification_report
-        test_pred = model.predict([Xte, Xte_h[:, :, 0]], verbose=1)
+        test_pred = model.predict([Xte, Xte_h[:, :, 0]], verbose=verbose)
 
         pred_labels = pred2label(test_pred)
         test_labels = pred2label(yte)
@@ -311,19 +322,26 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
         # print(sklearn.metrics.classification_report(_yte_nn, _ypr_nn,
         #            labels=definitions.PLOM_index2label.values(), digits=3))
 
-        for k in range(len(P)):
-            out_file.write(line % (
-                'True', str(f_key), str(random_state_i + 1), definitions.PLOM_index2label.get(k + 1),
-                P[k], R[k],
-                F[k],
-                str(S[k]), 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
+        cross_str = 'False'
+        if cross_val:
+            cross_str = 'True'
+            for k in range(len(P)):
+                out_file.write(line % (
+                    'True', str(f_key), str(random_state_i + 1), definitions.PLOM_index2label.get(k + 1),
+                    P[k], R[k],
+                    F[k],
+                    str(S[k]), 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
 
         # average
+
         P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
             _yte_nn, _ypr_nn, labels=definitions.PLOM_index2label.values(),
             average='weighted')
         out_file.write(line % (
-            'True', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
+            cross_str, str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
+
+
+
         out_file.flush()
     except Exception as e:
         config.logger.error(repr(e))
@@ -426,12 +444,7 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
     temp = [0]
     temp.extend(definitions.PLOMNone_index2label.keys())
     one_hot_encode_y = to_categorical(temp)
-    embedding_size = 128
-    hidden_size = 32
-    batch_size = 128
     enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
-    epochs = 50
-    verbose = 0
     #_meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
     RUN_PROCESS_KEY_STARTS = 1
     RUN_PROCESS_KEY_ENDS = max(dict_exp_configurations.keys())
@@ -475,7 +488,12 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                     config.logger.error(' -- configuration file does not exist! check its creation')
                     raise Exception
                 else:
-                    config.logger.debug('loading: ' + dump_name + ' dump files')
+                    config.logger.debug('(DS1) loading: ' + dump_name + ' dump files')
+                    config.logger.debug(' - ' + dump_full_path_ds1_sentence)
+                    config.logger.debug(' - ' + dump_full_path_ds1_sentence_idx)
+                    config.logger.debug(' - ' + dump_full_path_ds1_token)
+                    config.logger.debug(' - ' + dump_full_path_ds1_crf)
+                    config.logger.debug('--------------------------------------------')
 
                     with open(dump_full_path_ds1_sentence, 'rb') as input:
                         file_name, f_key, X1_sentence, Y1_sentence = pickle.load(input)
@@ -501,6 +519,9 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                         file_name, f_key, X1_crf, Y1_crf = pickle.load(input)
                         Y1_crf = Y1_sentence
 
+                    config.logger.debug('checking dump files (X1)')
+                    assert (len(X1_sentence) == len(Y1_sentence) == len(X1_sentence_idx) == len(Y1_sentence_idx))
+
 
                     #_set_name = SET_MASK % (ds1, str(f_key))
                     ##_file = config.dir_output + experiment_folder + _set_name
@@ -525,12 +546,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                         dump_full_path_ds2_sentence = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.pkl')
                         dump_full_path_ds2_sentence_idx = os.path.dirname(
-                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.enc.pkl')
+                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.idx.pkl')
                         dump_full_path_ds2_token = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.token.pkl')
                         dump_full_path_ds2_crf = os.path.dirname(
                             os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.crf.pkl')
-
 
                         if not os.path.isfile(dump_full_path_ds2_sentence):
                             config.logger.info(dump_full_path_ds2_sentence)
@@ -539,7 +559,11 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                         else:
                             config.logger.info('%s -> %s' % (horus_m4_name_ds1, horus_m4_name_ds2))
                             if horus_m4_name_ds1 != horus_m4_name_ds2:
-                                config.logger.debug('loading: ' + dump_name + ' dump files')
+                                config.logger.debug(' - ' + dump_full_path_ds2_sentence)
+                                config.logger.debug(' - ' + dump_full_path_ds2_sentence_idx)
+                                config.logger.debug(' - ' + dump_full_path_ds2_token)
+                                config.logger.debug(' - ' + dump_full_path_ds2_crf)
+                                config.logger.debug('--------------------------------------------')
 
                                 with open(dump_full_path_ds2_sentence, 'rb') as input:
                                     file_name, f_key, X2_sentence, Y2_sentence = pickle.load(input)
@@ -568,6 +592,10 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                                 with open(dump_full_path_ds2_crf, 'rb') as input:
                                     file_name, f_key, X2_crf, Y2_crf = pickle.load(input)
                                     Y2_crf = Y2_sentence
+
+                                config.logger.debug('checking dump files (X2)')
+                                assert (len(X2_sentence) == len(Y2_sentence) == len(X2_sentence_idx) == len(
+                                    Y2_sentence_idx))
 
 
                             if horus_m4_name_ds1 != horus_m4_name_ds2:
@@ -704,6 +732,8 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                                 if runLSTM is True:
                                     import copy
                                     X1_sentence_idxc = copy.deepcopy(X1_sentence_idx)
+                                else:
+                                    X1_sentence_idxc = None
 
                                 for d in range(len(r)):
                                     if runRF is True:
