@@ -4,7 +4,7 @@ import os
 import time
 
 import gc
-
+import copy
 import keras
 import sklearn
 from keras.utils import to_categorical
@@ -145,14 +145,11 @@ def score2(yh, pr):
 def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
                f_key, line, random_state = None, random_state_i=None,
                X2_word=None, X2_feat=None, Y2=None, ds2_label=None):
-    # X1_sentence, X1_sentence_idxc, Y1_sentence,
-    # horus_m4_name_ds1, horus_m4_name_ds2
-    # r[d]
 
     embedding_size = 128
     hidden_size = 32
     batch_size = 64
-    epochs = 2
+    epochs = 50
     verbose = 0
 
     import itertools
@@ -340,8 +337,6 @@ def run_bisltm(X1_word, X1_feat, Y1, one_hot_encode_y, out_file, ds1_label,
         out_file.write(line % (
             cross_str, str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'BiLSTM+CRF', ds1_label, ds2_label, 'NER'))
 
-
-
         out_file.flush()
     except Exception as e:
         config.logger.error(repr(e))
@@ -471,24 +466,18 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
             for ds1 in datasets:
                 horus_m4_name_ds1 = ds1[0]
                 horus_m4_path_ds1 = ds1[1].replace('.horusx', '.horus4') + ds1[2]
-
                 dump_name = SET_MASK % (horus_m4_name_ds1, str(f_key))
-
-                dump_full_path_ds1_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
-                                              dump_name.replace('.pkl', '.sentence.pkl')
-                dump_full_path_ds1_sentence_idx = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
-                                              dump_name.replace('.pkl', '.sentence.idx.pkl')
-                dump_full_path_ds1_token = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
-                                           dump_name.replace('.pkl', '.token.pkl')
-                dump_full_path_ds1_crf = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + \
-                                         dump_name.replace('.pkl', '.crf.pkl')
+                dump_full_path_ds1_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + dump_name.replace('.pkl', '.sentence.pkl')
+                dump_full_path_ds1_sentence_idx = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + dump_name.replace('.pkl', '.sentence.idx.pkl')
+                dump_full_path_ds1_token = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + dump_name.replace('.pkl', '.token.pkl')
+                dump_full_path_ds1_crf = os.path.dirname(os.path.realpath(horus_m4_path_ds1)) + '/' + dump_name.replace('.pkl', '.crf.pkl')
 
                 if not os.path.isfile(dump_full_path_ds1_sentence):
                     config.logger.info(dump_full_path_ds1_sentence)
                     config.logger.error(' -- configuration file does not exist! check its creation')
                     raise Exception
                 else:
-                    config.logger.debug('(DS1) loading: ' + dump_name + ' dump files')
+                    config.logger.debug('(ds1) loading: ' + dump_name + ' dump files')
                     config.logger.debug(' - ' + dump_full_path_ds1_sentence)
                     config.logger.debug(' - ' + dump_full_path_ds1_sentence_idx)
                     config.logger.debug(' - ' + dump_full_path_ds1_token)
@@ -497,60 +486,33 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
 
                     with open(dump_full_path_ds1_sentence, 'rb') as input:
                         file_name, f_key, X1_sentence, Y1_sentence = pickle.load(input)
-                        # just PLO
                         temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y1_sentence]
                         Y1_sentence = temp
 
                     with open(dump_full_path_ds1_sentence_idx, 'rb') as input:
                         file_name, f_key, X1_sentence_idx, Y1_sentence_idx = pickle.load(input)
-                        # just PLO
-                        #temp = [[definitions.PLOMNone_label2index['O'] if item == definitions.PLOMNone_label2index['MISC']
-                        #         else item for item in lst] for lst in Y1_sentence_idx]
-                        #Y1_sentence_idx = temp
 
                     with open(dump_full_path_ds1_token, 'rb') as input:
                         file_name, f_key, X1_token, Y1_token = pickle.load(input)
-                        # just PLO
-                        temp = [definitions.PLOMNone_label2index['O'] if y==definitions.PLOMNone_label2index['MISC']
-                                else y for y in Y1_token]
+                        temp = [definitions.PLOMNone_label2index['O'] if y==definitions.PLOMNone_label2index['MISC'] else y for y in Y1_token]
                         Y1_token = temp
 
                     with open(dump_full_path_ds1_crf, 'rb') as input:
                         file_name, f_key, X1_crf, Y1_crf = pickle.load(input)
                         Y1_crf = Y1_sentence
 
-                    config.logger.debug('checking dump files (X1)')
+                    config.logger.debug('checking dump files (ds1)')
                     assert (len(X1_sentence) == len(Y1_sentence) == len(X1_sentence_idx) == len(Y1_sentence_idx))
+                    config.logger.debug('ok!')
 
-
-                    #_set_name = SET_MASK % (ds1, str(f_key))
-                    ##_file = config.dir_output + experiment_folder + _set_name
-                    ##config.logger.info('ds1: loading [%s]: %s' % (ds1_name, _file))
-                    ##with open(_file, 'rb') as input:
-                    #    #shaped = pickle.load(input)
-                    #ds1_config_name = dump_configs[_set_name][0]
-                    #ds1_key = dump_configs[_set_name][1]
-                    #X1_sentence = dump_configs[_set_name][2]
-                    #Y1_sentence = dump_configs[_set_name][3]
-                    #X1_token = dump_configs[_set_name][4]
-                    #Y1_token = dump_configs[_set_name][5]
-                    #X1_crf = dump_configs[_set_name][6]
-                    #_Y1_sentence = dump_configs[_set_name][7]
-                    #pca = PCA(n_components=50)
-                    #X1_token_PCA = pca.fit(X1_token)
                     for ds2 in datasets:
                         horus_m4_name_ds2 = ds2[0]
                         horus_m4_path_ds2 = ds2[1].replace('.horusx', '.horus4') + ds2[2]
                         dump_name = SET_MASK % (horus_m4_name_ds2, str(f_key))
-
-                        dump_full_path_ds2_sentence = os.path.dirname(
-                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.pkl')
-                        dump_full_path_ds2_sentence_idx = os.path.dirname(
-                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.idx.pkl')
-                        dump_full_path_ds2_token = os.path.dirname(
-                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.token.pkl')
-                        dump_full_path_ds2_crf = os.path.dirname(
-                            os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.crf.pkl')
+                        dump_full_path_ds2_sentence = os.path.dirname(os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.pkl')
+                        dump_full_path_ds2_sentence_idx = os.path.dirname(os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.sentence.idx.pkl')
+                        dump_full_path_ds2_token = os.path.dirname(os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.token.pkl')
+                        dump_full_path_ds2_crf = os.path.dirname(os.path.realpath(horus_m4_path_ds2)) + '/' + dump_name.replace('.pkl', '.crf.pkl')
 
                         if not os.path.isfile(dump_full_path_ds2_sentence):
                             config.logger.info(dump_full_path_ds2_sentence)
@@ -558,7 +520,13 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                             raise Exception
                         else:
                             config.logger.info('%s -> %s' % (horus_m4_name_ds1, horus_m4_name_ds2))
-                            if horus_m4_name_ds1 != horus_m4_name_ds2:
+                            if horus_m4_name_ds1 == horus_m4_name_ds2:
+                                X2_sentence, Y2_sentence = None, None
+                                X2_sentence_idx, Y2_sentence_idx = None, None
+                                X2_token, Y2_token = None, None
+                                X2_crf, Y2_crf = None, None
+                            else:
+                                config.logger.debug('(ds2) loading: ' + dump_name + ' dump files')
                                 config.logger.debug(' - ' + dump_full_path_ds2_sentence)
                                 config.logger.debug(' - ' + dump_full_path_ds2_sentence_idx)
                                 config.logger.debug(' - ' + dump_full_path_ds2_token)
@@ -567,26 +535,15 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
 
                                 with open(dump_full_path_ds2_sentence, 'rb') as input:
                                     file_name, f_key, X2_sentence, Y2_sentence = pickle.load(input)
-                                    # just PLO
                                     temp = [['O' if item == 'MISC' else item for item in lst] for lst in Y2_sentence]
                                     Y2_sentence = temp
 
                                 with open(dump_full_path_ds2_sentence_idx, 'rb') as input:
                                     file_name, f_key, X2_sentence_idx, Y2_sentence_idx = pickle.load(input)
-                                    # just PLO
-                                    #temp = [[definitions.PLOMNone_label2index['O'] if item ==
-                                    #                                                  definitions.PLOMNone_label2index[
-                                    #                                                      'MISC']
-                                    #         else item for item in lst] for lst in Y2_sentence_idx]
-                                    #Y2_sentence_idx = temp
 
                                 with open(dump_full_path_ds2_token, 'rb') as input:
                                     file_name, f_key, X2_token, Y2_token = pickle.load(input)
-                                    # just PLO
-                                    temp = [
-                                        definitions.PLOMNone_label2index['O'] if y == definitions.PLOMNone_label2index[
-                                            'MISC']
-                                        else y for y in Y2_token]
+                                    temp = [definitions.PLOMNone_label2index['O'] if y == definitions.PLOMNone_label2index['MISC'] else y for y in Y2_token]
                                     Y2_token = temp
 
                                 with open(dump_full_path_ds2_crf, 'rb') as input:
@@ -594,28 +551,19 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                                     Y2_crf = Y2_sentence
 
                                 config.logger.debug('checking dump files (X2)')
-                                assert (len(X2_sentence) == len(Y2_sentence) == len(X2_sentence_idx) == len(
-                                    Y2_sentence_idx))
+                                assert (len(X2_sentence) == len(Y2_sentence) == len(X2_sentence_idx) == len(Y2_sentence_idx))
+                                assert (X2_token is not None and not X2_token.empty)
+                                config.logger.debug('ok!')
 
+                            if horus_m4_name_ds1 == 'wnut15.train':
+                                a = 1
+
+                            if runLSTM is True:
+                                X1_sentence_idxc = copy.deepcopy(X1_sentence_idx)
+                            else:
+                                X1_sentence_idxc = None
 
                             if horus_m4_name_ds1 != horus_m4_name_ds2:
-                                #_set_name = SET_MASK % (ds2_name, str(f_key))
-                                ##_file = config.dir_output + experiment_folder + _set_name
-                                ##config.logger.info('ds2: loading [%s]: %s' % (ds2_name, _file))
-                                ##with open(_file, 'rb') as input:
-                                ##    shaped = pickle.load(input)
-                                #ds2_config_name = dump_configs[_set_name][0]
-                                #ds2_key = dump_configs[_set_name][1]
-                                #X2_sentence = dump_configs[_set_name][2]
-                                #Y2_sentence = dump_configs[_set_name][3]
-                                #X2_token = dump_configs[_set_name][4]
-                                #Y2_token = dump_configs[_set_name][5]
-                                #X2_crf = dump_configs[_set_name][6]
-                                #_Y2_sentence = dump_configs[_set_name][7]
-
-                                if (X2_token is None or X2_token.empty or X2_token.empty) is True:
-                                    raise Exception('X_token error!')
-
                                 # ---------------------------------------------------------- META ----------------------------------------------------------
                                 # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
                                 #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
@@ -719,7 +667,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                                                random_state_i=None, X2_word=X2_sentence, X2_feat=X2_sentence_idx,
                                                Y2=Y2_sentence, ds2_label=horus_m4_name_ds2)
 
-
                             else:
                                 # same dataset (cross-validation)
                                 # ---------------------------------------------------------- META ----------------------------------------------------------
@@ -728,12 +675,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                                 # --------------------------------------------------------------------------------------------------------------------------
                                 if X1_token.empty is True:
                                     raise Exception('X1_token is empty!')
-
-                                if runLSTM is True:
-                                    import copy
-                                    X1_sentence_idxc = copy.deepcopy(X1_sentence_idx)
-                                else:
-                                    X1_sentence_idxc = None
 
                                 for d in range(len(r)):
                                     if runRF is True:
@@ -845,8 +786,6 @@ def benchmark(experiment_folder, datasets, runCRF = False, runRF = False, runLST
                                     if runLSTM is True:
                                         run_bisltm(X1_sentence, X1_sentence_idxc, Y1_sentence, one_hot_encode_y,
                                                    out_file, horus_m4_name_ds1, f_key, line, r[d], d)
-
-
 
                         out_file.flush()
         except Exception as e:
