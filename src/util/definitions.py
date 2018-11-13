@@ -405,6 +405,8 @@ STANDARD FEATURES
 '''
 
 # label, path, file
+
+'''
 NER_DATASETS = [
             ['ritter.train', config.dir_datasets + 'Ritter/', 'ner.txt.horusx'],
             ['wnut15.train', config.dir_datasets + 'wnut/2015/data/', 'train.horusx'],
@@ -416,6 +418,27 @@ NER_DATASETS = [
             ['wnut17.dev',   config.dir_datasets + 'wnut/2017/', 'emerging.dev.conll.horusx'],
             ['wnut17.test',  config.dir_datasets + 'wnut/2017/', 'emerging.test.annotated.horusx']
         ]
+'''
+
+# [[train], [dev]]
+NER_DATASETS_TRAIN_DEV = [
+            [['ritter.train', config.dir_datasets + 'Ritter/', 'ner.txt.horusx'],
+             [None, None, None]],
+            [['wnut15.train', config.dir_datasets + 'wnut/2015/data/', 'train.horusx'],
+             [None, None, None]],
+            [['wnut16.train', config.dir_datasets + 'wnut/2016/data/', 'train.horusx'],
+             ['wnut16.dev', config.dir_datasets + 'wnut/2016/data/', 'dev.horusx']],
+            [['wnut17.train', config.dir_datasets + 'wnut/2017/', 'wnut17train.conll.horusx'],
+             ['wnut17.dev', config.dir_datasets + 'wnut/2017/', 'emerging.dev.conll.horusx']]
+        ]
+
+NER_DATASETS_TEST = [
+            ['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'], #wnut15.dev ==wnut test set
+            ['wnut16.test',  config.dir_datasets + 'wnut/2016/data/', 'test.horusx'],
+            ['wnut17.test',  config.dir_datasets + 'wnut/2017/', 'emerging.test.annotated.horusx']
+        ]
+
+
 
 # 'broad/5d7c65d/a.conll', 'broad/5d7c65d/b.conll', 'broad/5d7c65d/e.conll', 'broad/5d7c65d/f.conll',
 #              'broad/5d7c65d/g.conll', 'broad/5d7c65d/h.conll'
@@ -445,36 +468,44 @@ FEATURES_HORUS_STATS_TX      = [INDEX_TX_CNN_STAT_SUM_LOC, INDEX_TX_CNN_STAT_SUM
 FEATURES_HORUS_TX            = FEATURES_HORUS_BASIC_TX + FEATURES_HORUS_CNN_TX
 FEATURES_HORUS_TX_EMB        = FEATURES_HORUS_TX       + FEATURES_HORUS_EMB_TX   + FEATURES_HORUS_STATS_TX
 FEATURES_HORUS_CV            = FEATURES_HORUS_BASIC_CV + FEATURES_HORUS_CNN_CV
-FEATURES_HORUS_BASIC_AND_CNN = FEATURES_HORUS_TX       + FEATURES_HORUS_BASIC_CV + FEATURES_HORUS_CNN_CV
+FEATURES_HORUS_BASIC_AND_CNN = FEATURES_HORUS_BASIC_TX + FEATURES_HORUS_BASIC_CV + FEATURES_HORUS_CNN_CV
 
 
-dict_exp_configurations = {1:  FEATURES_STANDARD,
-                           2:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA)),
-                           3:  list(set().union(FEATURES_STANDARD, FEATURES_BROWN_64M_c320)),
-                           4:  list(set().union(FEATURES_STANDARD, FEATURES_BROWN_64M_c640)),
-                           5:  list(set().union(FEATURES_STANDARD, FEATURES_BROWN_500M_c1000)),
-                           6:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_BROWN_64M_c320)),
-                           7:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_BROWN_64M_c640)),
-                           8:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_BROWN_500M_c1000)),
-                           9:  list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_CV)),
-                           10: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_TX)),
-                           11: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_CNN_CV)),
-                           12: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_CNN_TX)),
-                           13: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_EMB_TX)),
-                           14: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_STATS_TX)),
-                           15: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_TX)),
-                           16: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_TX_EMB)),
-                           17: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_CV)),
-                           18: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_AND_CNN)),
-                           19: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_TX, FEATURES_HORUS_CV)),
-                           20: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_CV)),
-                           21: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_TX)),
-                           22: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_CNN_CV)),
-                           23: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_CNN_TX)),
-                           24: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_EMB_TX)),
-                           25: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_STATS_TX)),
-                           26: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_TX)),
-                           27: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_TX_EMB)),
-                           28: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_CV)),
-                           29: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_AND_CNN)),
-                           30: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_TX, FEATURES_HORUS_CV))}
+dict_exp_configurations = { 1:  FEATURES_STANDARD,
+                            2:  list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_TX)),
+                            3:  list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_CV)),
+                            4:  list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_TX, FEATURES_HORUS_BASIC_CV)),
+                            5:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA)),
+                            6:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_HORUS_BASIC_TX)), #igual a 2
+                            7:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_HORUS_BASIC_CV)), #melhor que 3
+                            8:  list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_HORUS_BASIC_TX, FEATURES_HORUS_BASIC_CV)), #nao eh melhor que 4
+                            9:  list(set().union(FEATURES_STANDARD, FEATURES_BROWN_64M_c320)),
+                            10: list(set().union(FEATURES_STANDARD, FEATURES_BROWN_64M_c640)),
+                            11: list(set().union(FEATURES_STANDARD, FEATURES_BROWN_500M_c1000)),
+                            12: list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_BROWN_64M_c320)),
+                            13: list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_BROWN_64M_c640)),
+                            14: list(set().union(FEATURES_STANDARD, FEATURES_LEMMA, FEATURES_BROWN_500M_c1000)),
+                            15: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_CV)),
+                            16: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_TX)),
+                            17: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_CV, FEATURES_HORUS_BASIC_TX)),
+
+
+                           18: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_CNN_CV)),
+                           19: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_CNN_TX)),
+                           20: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_EMB_TX)),
+                           21: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_STATS_TX)),
+                           22: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_TX)),
+                           23: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_TX_EMB)),
+                           24: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_CV)),
+                           25: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_BASIC_AND_CNN)),
+                           26: list(set().union(FEATURES_STANDARD, FEATURES_HORUS_TX, FEATURES_HORUS_CV)),
+
+                           27: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_CNN_CV)),
+                           28: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_CNN_TX)),
+                           29: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_EMB_TX)),
+                           30: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_STATS_TX)),
+                           31: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_TX)),
+                           32: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_TX_EMB)),
+                           33: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_CV)),
+                           34: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_BASIC_AND_CNN)),
+                           35: list(set().union(FEATURES_STANDARD_BROWN_BEST, FEATURES_HORUS_TX, FEATURES_HORUS_CV))}
