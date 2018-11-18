@@ -110,6 +110,21 @@ del PLOM_index2label[5]
 # not testing MISC for now
 del PLOM_index2label[4]
 
+header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
+line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
+
+def tags_to_3muc_simple(tags):
+    for i in range(len(tags)):
+        if tags[i] in NER_TAGS_PER:
+            tags[i] = PLOMNone_label2index['PER']
+        elif tags[i] in NER_TAGS_ORG:
+            tags[i] = PLOMNone_label2index['ORG']
+        elif tags[i] in NER_TAGS_LOC:
+            tags[i] = PLOMNone_label2index['LOC']
+        else:
+            tags[i] = PLOMNone_label2index['O']
+    return tags
+
 
 
 HORUS_MATRIX_HEADER = ["IS_NAMED_ENTITY", "ID_SENT", "ID_WORD", "TOKEN", "POS_UNI", "POS", "NER", "COMPOUND",
