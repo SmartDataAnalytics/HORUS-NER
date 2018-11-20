@@ -544,7 +544,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                     labels=definitions.PLOM_index2label.keys(),
                                     average='weighted')
                                 out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-
+                                out_file.flush()
 
                             else:
                                 m = _rf50.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
@@ -634,9 +634,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                 # average
                                 P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
                                 out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-
-
-
+                                out_file.flush()
 
                             else:
 
@@ -781,7 +779,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                                                                                                  labels=definitions.PLOM_index2label.keys(), average='weighted')
                                     out_file.write(definitions.line % (
                                         'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
-
+                                    out_file.flush()
 
                                 else:
                                     m = _rf50.fit(X1_token, Y1_token)
@@ -865,6 +863,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                     out_file.write(definitions.line % (
                                         'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim',
                                         horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    out_file.flush()
                                 else:
                                     m = _crf.fit(X1_crf, Y1_sentence)
                                     ypr = m.predict(X2_crf)
@@ -1017,16 +1016,16 @@ def main():
         # RUN_PROCESS_KEY_ENDS = 14
 
         k = range(RUN_PROCESS_KEY_STARTS, RUN_PROCESS_KEY_ENDS+1)
-        k = [10, 4, 41] # best standard + horus 1.0 + horus 2.0
+        k = [41] # best standard + horus 1.0 + horus 2.0
 
         #benchmark(experiment_folder=args.exp, runCRF=bool(args.crf), runRF=bool(args.dt),
         #          runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford), optimization=True, keys=k)
-        benchmark(experiment_folder=args.exp, runCRF=True, runRF=True,
+        benchmark(experiment_folder=args.exp, runCRF=True, runRF=False,
                   runLSTM=False, runSTANFORD_NER=False, optimization=True, keys=k)
     except:
         raise
 
 if __name__ == "__main__":
-    benchmark_no_train()
-    exit(0)
+    #benchmark_no_train()
+
     main()
