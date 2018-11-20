@@ -1,5 +1,10 @@
 import os
 
+import sklearn_crfsuite
+from sklearn import ensemble
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.grid_search import RandomizedSearchCV
+
 from src.config import HorusConfig
 
 config = HorusConfig()
@@ -420,7 +425,31 @@ STANDARD FEATURES
 '''
 
 # label, path, file
+import numpy as np
+trees_param_bootstrap = {"max_features": ['auto', 'sqrt'],
+                     "max_depth": [int(x) for x in np.linspace(10, 110, num=11)],
+                     "min_samples_split": [2, 5, 10],
+                     "min_samples_leaf": [1, 2, 4],
+                     "n_estimators": [10, 25, 50, 100, 200, 400, 600, 800],
+                     "bootstrap": [True, False]
+}
 
+import scipy
+crf_param = {'c1': scipy.stats.expon(scale=0.5),
+         'c2': scipy.stats.expon(scale=0.05),
+        'algorithm': ['lbfgs', 'pa'],
+}
+
+optim_clf_rf = RandomizedSearchCV(RandomForestClassifier(),
+                                  trees_param_bootstrap,
+                                  verbose=1,
+                                  cv=5, scoring=['precision', 'recall', 'f1'],
+                                  n_jobs=-1, refit='f1', n_iter=20)
+optim_clf_crf = RandomizedSearchCV(sklearn_crfsuite.CRF(all_possible_transitions=True, max_iterations=100),
+                        crf_param,
+                         verbose=1,
+                         cv=5, scoring=['precision', 'recall', 'f1'],
+                         n_jobs=-1, refit='f1', n_iter=20)
 
 NER_DATASETS = [
             ['ritter.train', config.dir_datasets + 'Ritter/', 'ner.txt.horusx'],

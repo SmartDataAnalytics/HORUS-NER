@@ -12,7 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.tree import DecisionTreeClassifier
-from src.util.definitions import encoder_le1_name, dict_exp_configurations, SET_MASK, schemaindex2label, NER_DATASETS_TRAIN_DEV, NER_DATASETS_TEST
+from src.util.definitions import encoder_le1_name, dict_exp_configurations, SET_MASK, schemaindex2label, NER_DATASETS_TRAIN_DEV, NER_DATASETS_TEST, optim_clf_rf, optim_clf_crf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
@@ -422,7 +422,8 @@ def pred2label(pred):
 from nltk.tag.stanford import StanfordNERTagger
 import nltk
 
-def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False, runSTANFORD_NER = False):
+def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
+              runSTANFORD_NER = False, optimization = False, keys = []):
 
     config.logger.info('models: CRF=%s, DT=%s, LSTM=%s, Stanford=%s' % (str(runCRF), str(runRF), str(runLSTM), str(runSTANFORD_NER)))
     experiment_folder+='/'
@@ -449,9 +450,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
     one_hot_encode_y = to_categorical(temp)
     enc_word = joblib.load(config.dir_encoders + definitions.encoder_int_words_name)
     #_meta = MEX('HORUS_EMNLP', _label, 'meta and multi-level machine learning for NLP')
-    RUN_PROCESS_KEY_STARTS = 1
-    RUN_PROCESS_KEY_ENDS = max(dict_exp_configurations.keys())
-    #RUN_PROCESS_KEY_ENDS = 14
+
 
     config.logger.info('running benchmark...')
     # benchmark starts
@@ -462,11 +461,11 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
     if runSTANFORD_NER: name+='stanford_'
     assert name != 'metadata_'
 
-    name += ''.join(map(str,(range(RUN_PROCESS_KEY_STARTS, RUN_PROCESS_KEY_ENDS+1))))
+    name += ''.join(map(str,(keys)))
     name +='.txt'
     out_file = open(config.dir_output + name, 'w+')
     out_file.write(definitions.header)
-    for f_key in range(RUN_PROCESS_KEY_STARTS, RUN_PROCESS_KEY_ENDS+1):
+    for f_key in keys:
         config.logger.info('loading dumps for configuration: ' + str(f_key))
         try:
             for ds1 in NER_DATASETS_TRAIN_DEV:
@@ -526,137 +525,182 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                             '''
                             Random Forest
                             '''
-                            m = _rf50.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
-                            # print(m.feature_importances_)
-                            ypr = m.predict(np.array(Xte).astype(float))
-                            # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
-                                                                                         np.array(ypr).astype(int),
-                                                                                         labels=definitions.PLOM_index2label.keys())
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
-                                                       P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+                            if optimization:
+                                config.logger.info('training')
+                                optim_clf_rf.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                                #config.logger.info(clf.best_params_)
+                                #config.logger.info(clf.best_score_)
+                                ypr = optim_clf_rf.best_estimator_.predict(np.array(Xte).astype(float))
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                             np.array(ypr).astype(int),
+                                                                                             labels=definitions.PLOM_index2label.keys())
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
+                                                                       P[k], R[k], F[k], str(S[k]), 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
 
-                            # average
-                            P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                np.array(yte).astype(int), np.array(ypr).astype(int),
-                                labels=definitions.PLOM_index2label.keys(),
-                                average='weighted')
-                            out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'RF50', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+                                # average
+                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                    np.array(yte).astype(int), np.array(ypr).astype(int),
+                                    labels=definitions.PLOM_index2label.keys(),
+                                    average='weighted')
+                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
 
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
-                            y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in yte]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
-                                                       'RF50', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
 
-                            '''
-                            Decision Trees
-                            '''
-                            m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
-                            # print(m.feature_importances_)
-                            ypr = m.predict(np.array(Xte).astype(float))
-                            # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
-                                                                                         np.array(ypr).astype(int),
-                                                                                         labels=definitions.PLOM_index2label.keys())
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
-                                                       P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+                            else:
+                                m = _rf50.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                                # print(m.feature_importances_)
+                                ypr = m.predict(np.array(Xte).astype(float))
+                                # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                             np.array(ypr).astype(int),
+                                                                                             labels=definitions.PLOM_index2label.keys())
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
+                                                           P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
 
-                            # average
-                            P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                np.array(yte).astype(int), np.array(ypr).astype(int),
-                                labels=definitions.PLOM_index2label.keys(),
-                                average='weighted')
-                            out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+                                # average
+                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                    np.array(yte).astype(int), np.array(ypr).astype(int),
+                                    labels=definitions.PLOM_index2label.keys(),
+                                    average='weighted')
+                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'RF50', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
 
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
-                            y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in yte]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
-                                                       'DT', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
+                                # entity detection only
+                                ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
+                                y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in yte]
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
+                                                           'RF50', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
 
-                            # ---------------------------------------------------------- META ----------------------------------------------------------
-                            # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='RF50', phase='test', random_state=r[d])
-                            # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
-                            #                                                             labels=sorted_labels.keys(),
-                            #                                                             average=None)
-                            # for k in sorted_labels.keys():
-                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            # _conf.add_execution(_ex)
-                            # _meta.add_configuration(_conf)
-                            # --------------------------------------------------------------------------------------------------------------------------
+                                '''
+                                Decision Trees
+                                '''
+                                m = _dt.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
+                                # print(m.feature_importances_)
+                                ypr = m.predict(np.array(Xte).astype(float))
+                                # print(skmetrics.classification_report(np.array(yte).astype(int), np.array(ypr).astype(int), labels=definitions.PLO_KLASSES.keys(), target_names=definitions.PLO_KLASSES.values(), digits=3))
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
+                                                                                             np.array(ypr).astype(int),
+                                                                                             labels=definitions.PLOM_index2label.keys())
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
+                                                           P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+                                # average
+                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                    np.array(yte).astype(int), np.array(ypr).astype(int),
+                                    labels=definitions.PLOM_index2label.keys(),
+                                    average='weighted')
+                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+                                # entity detection only
+                                ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
+                                y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in yte]
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % ('True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]),
+                                                           'DT', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
+
+                                # ---------------------------------------------------------- META ----------------------------------------------------------
+                                # _ex = MEXExecution(id=len(_conf.executions) + 1, model='', alg='RF50', phase='test', random_state=r[d])
+                                # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr,
+                                #                                                             labels=sorted_labels.keys(),
+                                #                                                             average=None)
+                                # for k in sorted_labels.keys():
+                                #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                                # _conf.add_execution(_ex)
+                                # _meta.add_configuration(_conf)
+                                # --------------------------------------------------------------------------------------------------------------------------
 
                         if runCRF is True:
                             Xtr, Xte, ytr, yte = \
                                 train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
 
-                            m = _crf.fit(Xtr, ytr)
-                            ypr = m.predict(Xte)
-                            _ypr = np.array([tag for row in ypr for tag in row])
-                            _yte = np.array([tag for row in yte for tag in row])
-                            # print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                         labels=definitions.PLOM_index2label.values())
-                            for k in range(len(P)):
+                            if optimization:
+                                config.logger.info('training')
+                                optim_clf_crf.fit(Xtr, ytr)
+                                ypr = optim_clf_crf.best_estimator_.predict(Xte)
+                                _ypr = np.array([tag for row in ypr for tag in row])
+                                _yte = np.array([tag for row in yte for tag in row])
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                             labels=definitions.PLOM_index2label.values())
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % (
+                                        'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
+                                        F[k],
+                                        str(S[k]), 'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+                                # average
+                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
+                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+
+
+
+                            else:
+
+                                m = _crf.fit(Xtr, ytr)
+                                ypr = m.predict(Xte)
+                                _ypr = np.array([tag for row in ypr for tag in row])
+                                _yte = np.array([tag for row in yte for tag in row])
+                                # print(metrics.flat_classification_report(yte, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                             labels=definitions.PLOM_index2label.values())
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % (
+                                        'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
+                                        F[k],
+                                        str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+                                # average
+                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
+                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+                                # entity detection only
+                                ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+                                y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % (
+                                        'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
+
+                                m = _crf2.fit(Xtr, ytr)
+                                ypr = m.predict(Xte)
+                                _ypr = np.array([tag for row in ypr for tag in row])
+                                _yte = np.array([tag for row in yte for tag in row])
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                             labels=definitions.PLOM_index2label.values())
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % (
+                                        'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
+                                        F[k],
+                                        str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+
+                                # average
+                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                    _yte, _ypr, labels=definitions.PLOM_index2label.values(),
+                                    average='weighted')
                                 out_file.write(definitions.line % (
-                                    'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
-                                    F[k],
-                                    str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+                                    'True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF_PA',
+                                    horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
 
-                            # average
-                            P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
-                            out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
+                                # entity detection only
+                                ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+                                y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
+                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                for k in range(len(P)):
+                                    out_file.write(definitions.line % (
+                                        'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
 
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
-                            y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % (
-                                    'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
-
-                            m = _crf2.fit(Xtr, ytr)
-                            ypr = m.predict(Xte)
-                            _ypr = np.array([tag for row in ypr for tag in row])
-                            _yte = np.array([tag for row in yte for tag in row])
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                         labels=definitions.PLOM_index2label.values())
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % (
-                                    'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
-                                    F[k],
-                                    str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-
-                            # average
-                            P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                _yte, _ypr, labels=definitions.PLOM_index2label.values(),
-                                average='weighted')
-                            out_file.write(definitions.line % (
-                                'True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF_PA',
-                                horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-
-                            # entity detection only
-                            ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
-                            y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
-                            P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                            for k in range(len(P)):
-                                out_file.write(definitions.line % (
-                                    'True', str(f_key), str(d + 1), k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds1, 'NED'))
-
-                            # ---------------------------------------------------------- META ----------------------------------------------------------
-                            # _ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
-                            # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
-                            # for k in sorted_labels.keys():
-                            #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                            # _conf.add_execution(_ex)
-                            # _meta.add_configuration(_conf)
-                            # --------------------------------------------------------------------------------------------------------------------------
+                                # ---------------------------------------------------------- META ----------------------------------------------------------
+                                # _ex = MEXExecution(id=len(_conf.executions)+1, model='', alg='CRF', phase='test', random_state=r[d])
+                                # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(yte, ypr, labels=sorted_labels.keys(), average=None)
+                                # for k in sorted_labels.keys():
+                                #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                                # _conf.add_execution(_ex)
+                                # _meta.add_configuration(_conf)
+                                # --------------------------------------------------------------------------------------------------------------------------
 
                         if runLSTM is True:
                             run_bisltm(X1_sentence, X1_sentence_idx, Y1_sentence, one_hot_encode_y,
@@ -722,124 +766,161 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                 '''
                                 Random Forest
                                 '''
+                                if optimization:
+                                    optim_clf_rf.fit(X1_token, Y1_token)
+                                    ypr = optim_clf_rf.best_estimator_.predict(X2_token)
+                                    P, R, F, S = \
+                                        sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                        labels=definitions.PLOM_index2label.keys())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
+                                                                           P[k], R[k], F[k], str(S[k]), 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                m = _rf50.fit(X1_token, Y1_token)
-                                ypr = m.predict(X2_token)
-                                # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
-                                P, R, F, S = \
-                                    sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                    labels=definitions.PLOM_index2label.keys())
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
-                                                           P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                                                 labels=definitions.PLOM_index2label.keys(), average='weighted')
+                                    out_file.write(definitions.line % (
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                # average
-                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                                             labels=definitions.PLOM_index2label.keys(), average='weighted')
-                                out_file.write(definitions.line % (
-                                'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                # entity detection only
-                                ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
-                                y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in Y2_token]
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % ('False', str(f_key), '1', k,
-                                                           P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+                                else:
+                                    m = _rf50.fit(X1_token, Y1_token)
+                                    ypr = m.predict(X2_token)
+                                    # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
+                                    P, R, F, S = \
+                                        sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                        labels=definitions.PLOM_index2label.keys())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
+                                                               P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                '''
-                                Decision Trees
-                                '''
-                                m = _dt.fit(X1_token, Y1_token)
-                                ypr = m.predict(X2_token)
-                                P, R, F, S = \
-                                    sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                    labels=definitions.PLOM_index2label.keys())
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
-                                                           P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                                                 labels=definitions.PLOM_index2label.keys(), average='weighted')
+                                    out_file.write(definitions.line % (
+                                    'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                # average
-                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
-                                                                                                             labels=definitions.PLOM_index2label.keys(), average='weighted')
-                                out_file.write(definitions.line % (
-                                    'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
+                                    y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in Y2_token]
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % ('False', str(f_key), '1', k,
+                                                               P[k], R[k], F[k], str(S[k]), 'RF50', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
-                                # entity detection only
-                                ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
-                                y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in Y2_token]
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % ('False', str(f_key), '1', k,
-                                                           P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+                                    '''
+                                    Decision Trees
+                                    '''
+                                    m = _dt.fit(X1_token, Y1_token)
+                                    ypr = m.predict(X2_token)
+                                    P, R, F, S = \
+                                        sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                        labels=definitions.PLOM_index2label.keys())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % ('False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1),
+                                                               P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                            # ---------------------------------------------------------- META ----------------------------------------------------------
-                                # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='RF50', phase='test', random_state=r[d])
-                                # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
-                                #                                                             labels=sorted_labels.keys(),
-                                #                                                             average=None)
-                                # for k in sorted_labels.keys():
-                                #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
-                                # _conf.add_execution(_ex)
-                                # _meta.add_configuration(_conf)
-                                # --------------------------------------------------------------------------------------------------------------------------
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(Y2_token, np.array(ypr).astype(int),
+                                                                                                                 labels=definitions.PLOM_index2label.keys(), average='weighted')
+                                    out_file.write(definitions.line % (
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in ypr]
+                                    y2_bin = [1 if x in definitions.PLOM_index2label.keys() else 0 for x in Y2_token]
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % ('False', str(f_key), '1', k,
+                                                               P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+
+                                # ---------------------------------------------------------- META ----------------------------------------------------------
+                                    # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='RF50', phase='test', random_state=r[d])
+                                    # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
+                                    #                                                             labels=sorted_labels.keys(),
+                                    #                                                             average=None)
+                                    # for k in sorted_labels.keys():
+                                    #    _ex.add_performance(MEXPerformance(k, P[k], R[k], F[k], 0.0, S[k]))
+                                    # _conf.add_execution(_ex)
+                                    # _meta.add_configuration(_conf)
+                                    # --------------------------------------------------------------------------------------------------------------------------
 
                             if runCRF is True:
-                                m = _crf.fit(X1_crf, Y1_sentence)
-                                ypr = m.predict(X2_crf)
-                                #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
-                                _ypr = np.array([tag for row in ypr for tag in row])
-                                _yte = np.array([tag for row in Y2_sentence for tag in row])
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                             labels=definitions.PLOM_index2label.values())
-                                for k in range(len(P)):
+                                if optimization:
+                                    optim_clf_crf.fit(X1_crf, Y1_sentence)
+                                    ypr = optim_clf_crf.best_estimator_.predict(X2_crf)
+                                    _ypr = np.array([tag for row in ypr for tag in row])
+                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                                 labels=definitions.PLOM_index2label.values())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % (
+                                            'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                            'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                        _yte, _ypr,
+                                        labels=definitions.PLOM_index2label.values(), average='weighted')
                                     out_file.write(definitions.line % (
-                                    'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
-                                    'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim',
+                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                else:
+                                    m = _crf.fit(X1_crf, Y1_sentence)
+                                    ypr = m.predict(X2_crf)
+                                    #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
+                                    _ypr = np.array([tag for row in ypr for tag in row])
+                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                                 labels=definitions.PLOM_index2label.values())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % (
+                                        'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                        'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                # average
-                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                    _yte, _ypr,
-                                    labels=definitions.PLOM_index2label.values(), average='weighted')
-                                out_file.write(definitions.line % (
-                                    'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF',
-                                    horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
-
-                                # entity detection only
-                                ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
-                                y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                                for k in range(len(P)):
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                        _yte, _ypr,
+                                        labels=definitions.PLOM_index2label.values(), average='weighted')
                                     out_file.write(definitions.line % (
-                                        'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF',
+                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
+                                    y2_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _yte]
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % (
+                                            'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
 
-                                m = _crf2.fit(X1_crf, Y1_sentence)
-                                ypr = m.predict(X2_crf)
-                                _ypr = np.array([tag for row in ypr for tag in row])
-                                _yte = np.array([tag for row in Y2_sentence for tag in row])
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                             labels=definitions.PLOM_index2label.values())
-                                for k in range(len(P)):
+                                    m = _crf2.fit(X1_crf, Y1_sentence)
+                                    ypr = m.predict(X2_crf)
+                                    _ypr = np.array([tag for row in ypr for tag in row])
+                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                                 labels=definitions.PLOM_index2label.values())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % (
+                                        'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                        'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                        _yte, _ypr,
+                                        labels=definitions.PLOM_index2label.values(), average='weighted')
                                     out_file.write(definitions.line % (
-                                    'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
-                                    'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF-PA',
+                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
 
-                                # average
-                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                    _yte, _ypr,
-                                    labels=definitions.PLOM_index2label.values(), average='weighted')
-                                out_file.write(definitions.line % (
-                                    'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF-PA',
-                                    horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    # entity detection only
+                                    ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
 
-                                # entity detection only
-                                ypr_bin = [1 if x in definitions.PLOM_index2label.values() else 0 for x in _ypr]
-
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % (
-                                        'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(y2_bin, ypr_bin)
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % (
+                                            'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
                             if runLSTM is True:
                                 run_bisltm(X1_sentence, X1_sentence_idx, Y1_sentence, one_hot_encode_y,
@@ -874,16 +955,24 @@ def benchmark_no_train():
             y = []
             predicted = []
             real = []
+            i=0
             with open(path, 'r') as fset:
                 for rec in fset:
+                    #if i>100:
+                    #    break
                     if rec == '\n':
+                        i+=1
+                        if len(w) != len(y):
+                            a=1
                         out = stanford_ner_tagger.tag(w)
                         out = definitions.tags_to_3muc_simple(out)
                         y = definitions.tags_to_3muc_simple(y)
+                        assert len(out) == len(y)
                         predicted.extend(out)
                         real.extend(y)
                         w = []
                         y = []
+                        out = []
                     else:
                         rec = rec.split('\t')
                         w.append(rec[0])
@@ -894,6 +983,7 @@ def benchmark_no_train():
             for k in range(len(P)):
                 out_file.write(definitions.line % ('True', '0', '0', definitions.PLOM_index2label.get(k + 1),
                                        P[k], R[k], F[k], str(S[k]), 'stanford', label, label, 'NER'))
+            out_file.flush()
 
     except:
         raise
@@ -922,8 +1012,17 @@ def main():
 
     try:
 
-        benchmark(experiment_folder=args.exp, runCRF=bool(args.crf), runRF=bool(args.dt),
-                  runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford))
+        RUN_PROCESS_KEY_STARTS = 1
+        RUN_PROCESS_KEY_ENDS = max(dict_exp_configurations.keys())
+        # RUN_PROCESS_KEY_ENDS = 14
+
+        k = range(RUN_PROCESS_KEY_STARTS, RUN_PROCESS_KEY_ENDS+1)
+        k = [10, 4, 41] # best standard + horus 1.0 + horus 2.0
+
+        #benchmark(experiment_folder=args.exp, runCRF=bool(args.crf), runRF=bool(args.dt),
+        #          runLSTM=bool(args.lstm), runSTANFORD_NER=bool(args.stanford), optimization=True, keys=k)
+        benchmark(experiment_folder=args.exp, runCRF=True, runRF=True,
+                  runLSTM=False, runSTANFORD_NER=False, optimization=True, keys=k)
     except:
         raise
 
