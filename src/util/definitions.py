@@ -3,7 +3,7 @@ import os
 import sklearn_crfsuite
 from sklearn import ensemble
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.grid_search import RandomizedSearchCV
+from sklearn.grid_search import RandomizedSearchCV, GridSearchCV
 from sklearn.metrics import make_scorer
 from sklearn_crfsuite import metrics, scorers
 
@@ -445,22 +445,21 @@ crf_param = {'c1': scipy.stats.expon(scale=0.5),
 optim_clf_rf = RandomizedSearchCV(RandomForestClassifier(),
                                   trees_param_bootstrap,
                                   verbose=0,
-                                  cv=3,
+                                  cv=5,
                                   scoring='f1',
                                   #scoring=['precision', 'recall', 'f1'],
                                   n_jobs=-1,
                                   refit='f1',
-                                  n_iter=1)
+                                  n_iter=10)
 
 f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted')
 
-optim_clf_crf = RandomizedSearchCV(sklearn_crfsuite.CRF(all_possible_transitions=True, max_iterations=300),
+optim_clf_crf = RandomizedSearchCV(sklearn_crfsuite.CRF(all_possible_transitions=True, max_iterations=100),
                                    crf_param,
-                                   verbose=0,
-                                   cv=3,
+                                   verbose=1,
                                    n_jobs=-1,
                                    scoring=f1_scorer,
-                                   n_iter=1)
+                                   n_iter=10)
  #scoring=['precision', 'recall', 'f1'],
  #n_jobs=-1,
 
@@ -491,7 +490,7 @@ NER_DATASETS_TRAIN_DEV = [
         ]
 
 NER_DATASETS_TEST = [
-            ['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'], #wnut15.dev ==wnut test set
+            #['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'], #wnut15.dev ==wnut test set
             ['wnut16.test',  config.dir_datasets + 'wnut/2016/data/', 'test.horusx'],
             ['wnut17.test',  config.dir_datasets + 'wnut/2017/', 'emerging.test.annotated.horusx']
         ]

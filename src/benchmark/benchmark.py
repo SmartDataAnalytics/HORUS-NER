@@ -518,35 +518,14 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                     if X1_token.empty is True:
                         raise Exception('X1_token is empty!')
 
-                    for d in range(len(r)):
-                        if runRF is True:
-                            Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size,
-                                                                  random_state=r[d])
-                            '''
-                            Random Forest
-                            '''
-                            if optimization:
-                                config.logger.info('training')
-                                optim_clf_rf.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
-                                #config.logger.info(clf.best_params_)
-                                #config.logger.info(clf.best_score_)
-                                ypr = optim_clf_rf.best_estimator_.predict(np.array(Xte).astype(float))
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(np.array(yte).astype(int),
-                                                                                             np.array(ypr).astype(int),
-                                                                                             labels=definitions.PLOM_index2label.keys())
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % ('True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1),
-                                                                       P[k], R[k], F[k], str(S[k]), 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-
-                                # average
-                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                    np.array(yte).astype(int), np.array(ypr).astype(int),
-                                    labels=definitions.PLOM_index2label.keys(),
-                                    average='weighted')
-                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-                                out_file.flush()
-
-                            else:
+                    if not optimization:
+                        for d in range(len(r)):
+                            if runRF is True:
+                                Xtr, Xte, ytr, yte = train_test_split(X1_token, Y1_token, test_size=ds_test_size,
+                                                                      random_state=r[d])
+                                '''
+                                Random Forest
+                                '''
                                 m = _rf50.fit(np.array(Xtr).astype(float), np.array(ytr).astype(int))
                                 # print(m.feature_importances_)
                                 ypr = m.predict(np.array(Xte).astype(float))
@@ -613,30 +592,9 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                 # _meta.add_configuration(_conf)
                                 # --------------------------------------------------------------------------------------------------------------------------
 
-                        if runCRF is True:
-                            Xtr, Xte, ytr, yte = \
-                                train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
-
-                            if optimization:
-                                config.logger.info('training')
-                                optim_clf_crf.fit(Xtr, ytr)
-                                ypr = optim_clf_crf.best_estimator_.predict(Xte)
-                                _ypr = np.array([tag for row in ypr for tag in row])
-                                _yte = np.array([tag for row in yte for tag in row])
-                                P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                             labels=definitions.PLOM_index2label.values())
-                                for k in range(len(P)):
-                                    out_file.write(definitions.line % (
-                                        'True', str(f_key), str(d + 1), definitions.PLOM_index2label.get(k + 1), P[k], R[k],
-                                        F[k],
-                                        str(S[k]), 'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-
-                                # average
-                                P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr, labels=definitions.PLOM_index2label.values(), average='weighted')
-                                out_file.write(definitions.line % ('True', str(f_key), str(d + 1), 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds1, 'NER'))
-                                out_file.flush()
-
-                            else:
+                            if runCRF is True:
+                                Xtr, Xte, ytr, yte = \
+                                    train_test_split(X1_crf, Y1_sentence, test_size=ds_test_size, random_state=r[d])
 
                                 m = _crf.fit(Xtr, ytr)
                                 ypr = m.predict(Xte)
@@ -700,9 +658,9 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                 # _meta.add_configuration(_conf)
                                 # --------------------------------------------------------------------------------------------------------------------------
 
-                        if runLSTM is True:
-                            run_bisltm(X1_sentence, X1_sentence_idx, Y1_sentence, one_hot_encode_y,
-                                       out_file, horus_m4_name_ds1, f_key, definitions.line, r[d], d)
+                            if runLSTM is True:
+                                run_bisltm(X1_sentence, X1_sentence_idx, Y1_sentence, one_hot_encode_y,
+                                           out_file, horus_m4_name_ds1, f_key, definitions.line, r[d], d)
 
 
                     for ds2 in NER_DATASETS_TEST:
@@ -755,16 +713,14 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                 assert (X2_token is not None and not X2_token.empty)
                                 config.logger.debug('ok!')
 
+
                             # ---------------------------------------------------------- META ----------------------------------------------------------
                             # _conf = MEXConfiguration(id=len(_meta.configurations) + 1, horus_enabled=int(horus_feat),
                             #                         dataset_train=ds1[0], dataset_test=ds2[0] ,features=ds1[1], cross_validation=0)
                             # --------------------------------------------------------------------------------------------------------------------------
-                            if runRF is True:
 
-                                '''
-                                Random Forest
-                                '''
-                                if optimization:
+                            if optimization:
+                                if runRF:
                                     optim_clf_rf.fit(X1_token, Y1_token)
                                     ypr = optim_clf_rf.best_estimator_.predict(X2_token)
                                     P, R, F, S = \
@@ -781,7 +737,31 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                         'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'RF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
                                     out_file.flush()
 
-                                else:
+                                if runCRF:
+                                    optim_clf_crf.fit(X1_crf, Y1_sentence)
+                                    ypr = optim_clf_crf.best_estimator_.predict(X2_crf)
+                                    _ypr = np.array([tag for row in ypr for tag in row])
+                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
+                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
+                                                                                                 labels=definitions.PLOM_index2label.values())
+                                    for k in range(len(P)):
+                                        out_file.write(definitions.line % (
+                                            'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
+                                            'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+
+                                    # average
+                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
+                                        _yte, _ypr,
+                                        labels=definitions.PLOM_index2label.values(), average='weighted')
+                                    out_file.write(definitions.line % (
+                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim',
+                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
+                                    out_file.flush()
+                            else:
+                                if runRF is True:
+                                    '''
+                                    Random Forest
+                                    '''
                                     m = _rf50.fit(X1_token, Y1_token)
                                     ypr = m.predict(X2_token)
                                     # print(skmetrics.classification_report(Y2_token , ypr, labels=PLO_KLASSES.keys(), target_names=PLO_KLASSES.values(), digits=3))
@@ -831,8 +811,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                     for k in range(len(P)):
                                         out_file.write(definitions.line % ('False', str(f_key), '1', k,
                                                                P[k], R[k], F[k], str(S[k]), 'DT', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
-
-                                # ---------------------------------------------------------- META ----------------------------------------------------------
+                                    # ---------------------------------------------------------- META ----------------------------------------------------------
                                     # _ex = MEXExecution(id=len(_conf.executions) + 1, alg='RF50', phase='test', random_state=r[d])
                                     # P, R, F, S = sklearn.metrics.precision_recall_fscore_support(ds2[1][3] , ypr,
                                     #                                                             labels=sorted_labels.keys(),
@@ -843,28 +822,7 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                     # _meta.add_configuration(_conf)
                                     # --------------------------------------------------------------------------------------------------------------------------
 
-                            if runCRF is True:
-                                if optimization:
-                                    optim_clf_crf.fit(X1_crf, Y1_sentence)
-                                    ypr = optim_clf_crf.best_estimator_.predict(X2_crf)
-                                    _ypr = np.array([tag for row in ypr for tag in row])
-                                    _yte = np.array([tag for row in Y2_sentence for tag in row])
-                                    P, R, F, S = sklearn.metrics.precision_recall_fscore_support(_yte, _ypr,
-                                                                                                 labels=definitions.PLOM_index2label.values())
-                                    for k in range(len(P)):
-                                        out_file.write(definitions.line % (
-                                            'False', str(f_key), '1', definitions.PLOM_index2label.get(k + 1), P[k], R[k], F[k], str(S[k]),
-                                            'CRF_optim', horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
-
-                                    # average
-                                    P_avg, R_avg, F_avg, S_avg = sklearn.metrics.precision_recall_fscore_support(
-                                        _yte, _ypr,
-                                        labels=definitions.PLOM_index2label.values(), average='weighted')
-                                    out_file.write(definitions.line % (
-                                        'False', str(f_key), '0', 'average', P_avg, R_avg, F_avg, 0, 'CRF_optim',
-                                        horus_m4_name_ds1, horus_m4_name_ds2, 'NER'))
-                                    out_file.flush()
-                                else:
+                                if runCRF is True:
                                     m = _crf.fit(X1_crf, Y1_sentence)
                                     ypr = m.predict(X2_crf)
                                     #print(metrics.flat_classification_report(Y2_sentence, ypr, labels=sorted_labels.keys(), target_names=sorted_labels.values(), digits=3))
@@ -921,11 +879,11 @@ def benchmark(experiment_folder, runCRF = False, runRF = False, runLSTM = False,
                                         out_file.write(definitions.line % (
                                             'False', str(f_key), '1', k, P[k], R[k], F[k], str(S[k]), 'CRF_PA', horus_m4_name_ds1, horus_m4_name_ds2, 'NED'))
 
-                            if runLSTM is True:
-                                run_bisltm(X1_sentence, X1_sentence_idx, Y1_sentence, one_hot_encode_y,
-                                           out_file, horus_m4_name_ds1, f_key, definitions.line, random_state=None,
-                                           random_state_i=None, X2_word=X2_sentence, X2_feat=X2_sentence_idx,
-                                           Y2=Y2_sentence, ds2_label=horus_m4_name_ds2)
+                                if runLSTM is True:
+                                    run_bisltm(X1_sentence, X1_sentence_idx, Y1_sentence, one_hot_encode_y,
+                                               out_file, horus_m4_name_ds1, f_key, definitions.line, random_state=None,
+                                               random_state_i=None, X2_word=X2_sentence, X2_feat=X2_sentence_idx,
+                                               Y2=Y2_sentence, ds2_label=horus_m4_name_ds2)
 
 
 
