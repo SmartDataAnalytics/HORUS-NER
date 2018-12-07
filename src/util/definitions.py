@@ -1,5 +1,12 @@
 import os
 
+import sklearn_crfsuite
+from sklearn import ensemble
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.grid_search import RandomizedSearchCV, GridSearchCV
+from sklearn.metrics import make_scorer
+from sklearn_crfsuite import metrics, scorers
+
 from src.config import HorusConfig
 
 config = HorusConfig()
@@ -109,6 +116,21 @@ PLOM_index2label = PLOMNone_index2label.copy()
 del PLOM_index2label[5]
 # not testing MISC for now
 del PLOM_index2label[4]
+
+header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
+line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
+
+def tags_to_3muc_simple(tags):
+    for i in range(len(tags)):
+        if tags[i] in NER_TAGS_PER:
+            tags[i] = PLOMNone_label2index['PER']
+        elif tags[i] in NER_TAGS_ORG:
+            tags[i] = PLOMNone_label2index['ORG']
+        elif tags[i] in NER_TAGS_LOC:
+            tags[i] = PLOMNone_label2index['LOC']
+        else:
+            tags[i] = PLOMNone_label2index['O']
+    return tags
 
 
 
@@ -405,6 +427,41 @@ STANDARD FEATURES
 '''
 
 # label, path, file
+import numpy as np
+trees_param_bootstrap = {"max_features": ['auto', 'sqrt'],
+                     "max_depth": [int(x) for x in np.linspace(10, 110, num=11)],
+                     "min_samples_split": [2, 5, 10],
+                     "min_samples_leaf": [1, 2, 4],
+                     "n_estimators": [10, 25, 50, 100, 200, 400, 600, 800],
+                     "bootstrap": [True, False]
+}
+
+import scipy
+crf_param = {'c1': scipy.stats.expon(scale=0.5),
+             'c2': scipy.stats.expon(scale=0.05),
+        'algorithm': ['lbfgs'],
+}
+
+optim_clf_rf = RandomizedSearchCV(RandomForestClassifier(),
+                                  trees_param_bootstrap,
+                                  verbose=0,
+                                  cv=5,
+                                  scoring='f1',
+                                  #scoring=['precision', 'recall', 'f1'],
+                                  n_jobs=-1,
+                                  refit='f1',
+                                  n_iter=10)
+
+f1_scorer = make_scorer(metrics.flat_f1_score, average='weighted')
+
+optim_clf_crf = RandomizedSearchCV(sklearn_crfsuite.CRF(all_possible_transitions=True, max_iterations=100),
+                                   crf_param,
+                                   verbose=1,
+                                   n_jobs=-1,
+                                   scoring=f1_scorer,
+                                   n_iter=10)
+ #scoring=['precision', 'recall', 'f1'],
+ #n_jobs=-1,
 
 
 NER_DATASETS = [
@@ -433,7 +490,7 @@ NER_DATASETS_TRAIN_DEV = [
         ]
 
 NER_DATASETS_TEST = [
-            ['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'], #wnut15.dev ==wnut test set
+            #['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'], #wnut15.dev ==wnut test set
             ['wnut16.test',  config.dir_datasets + 'wnut/2016/data/', 'test.horusx'],
             ['wnut17.test',  config.dir_datasets + 'wnut/2017/', 'emerging.test.annotated.horusx']
         ]
