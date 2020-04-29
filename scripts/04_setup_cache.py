@@ -195,7 +195,7 @@ if __name__ == '__main__':
 
             horus.update_status(PRE_PROCESSING_STATUS["CACHE"])
 
-            config.logger.info(' -- done! saving files')
+            config.logger.info('done! saving files')
 
             horus_file_stage2_simple_json = conll_file.replace('.horusx', '.horus2.simple.json')
             horus_file_stage2 = conll_file.replace('.horusx', '.horus2.json')
@@ -205,7 +205,7 @@ if __name__ == '__main__':
             HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage2_simple_json, simple_json=True)
             HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage2, simple_json=False)
 
-            config.logger.info('---')
+            config.logger.info('ok')
 
         except Exception as e:
             config.logger.error(str(e))
