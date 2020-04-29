@@ -134,3 +134,5 @@ dmypy.json
 resources/data/horus.db
 
 horus.ini
+
+scripts/00_initialize.py
