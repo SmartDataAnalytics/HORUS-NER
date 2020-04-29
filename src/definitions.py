@@ -487,14 +487,14 @@ PRE_PROCESSING_STATUS = {
 
 NER_DATASETS = [
             ['ritter.train', config.dir_datasets + 'Ritter/', 'ner.txt.horusx'],
-            #['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'],
-            #['wnut15.train', config.dir_datasets + 'wnut/2015/data/', 'train.horusx'],
-            #['wnut16.train', config.dir_datasets + 'wnut/2016/data/', 'train.horusx'],
-            #['wnut16.dev',   config.dir_datasets + 'wnut/2016/data/', 'dev.horusx'],
-            #['wnut16.test',  config.dir_datasets + 'wnut/2016/data/', 'test.horusx'],
-            #['wnut17.train', config.dir_datasets + 'wnut/2017/', 'wnut17train.conll.horusx'],
-            #['wnut17.dev',   config.dir_datasets + 'wnut/2017/', 'emerging.dev.conll.horusx'],
-            #['wnut17.test',  config.dir_datasets + 'wnut/2017/', 'emerging.test.annotated.horusx']
+            ['wnut15.dev',   config.dir_datasets + 'wnut/2015/data/', 'dev.horusx'],
+            ['wnut15.train', config.dir_datasets + 'wnut/2015/data/', 'train.horusx'],
+            ['wnut16.train', config.dir_datasets + 'wnut/2016/data/', 'train.horusx'],
+            ['wnut16.dev',   config.dir_datasets + 'wnut/2016/data/', 'dev.horusx'],
+            ['wnut16.test',  config.dir_datasets + 'wnut/2016/data/', 'test.horusx'],
+            ['wnut17.train', config.dir_datasets + 'wnut/2017/', 'wnut17train.conll.horusx'],
+            ['wnut17.dev',   config.dir_datasets + 'wnut/2017/', 'emerging.dev.conll.horusx'],
+            ['wnut17.test',  config.dir_datasets + 'wnut/2017/', 'emerging.test.annotated.horusx']
         ]
 
 
