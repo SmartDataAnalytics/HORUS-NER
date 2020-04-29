@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
             config.logger.info(' caching')
             # cache images and news and update the horus metadata with database ids.
-            horus = cache_images_and_news(horus)
+            cache_images_and_news(horus)
 
             horus.update_status(PRE_PROCESSING_STATUS["CACHE"])
 
@@ -202,8 +202,8 @@ if __name__ == '__main__':
 
             # TODO: for now I am saving in a different json file just to compare and check things are fine.
             # later just update the status of the horus file (definitions.PRE_PROCESSING_STATUS)
-            HorusDataLoader.save_metadata_to_file(file=horus_file_stage2_simple_json, simple_json=True)
-            HorusDataLoader.save_metadata_to_file(file=horus_file_stage2, simple_json=False)
+            HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage2_simple_json, simple_json=True)
+            HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage2, simple_json=False)
 
             config.logger.info('---')
 
