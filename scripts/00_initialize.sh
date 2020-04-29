@@ -66,6 +66,6 @@ chmod 755 00_initialize.py
 
 pipenv run python ./00_initialize.py
 
-pipenv run python /Users/diego.esteves/git/horus/src/utils/CMUTweetTagger.py
+pipenv run python /Users/diego.esteves/git/horus-ner/src/utils/CMUTweetTagger.py
 
 echo "end bash ok"
