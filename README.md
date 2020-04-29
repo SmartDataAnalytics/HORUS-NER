@@ -5,8 +5,6 @@
 
 - HORUS 1.0 (SIFT binary + CRF)
 - HORUS 2.0 (B-LSTM + CRF)
-- HORUS 3.0 (+attention)
-- HORUS 4.0: (+linking) = OCTOPUS
 
 ### Data log
 
