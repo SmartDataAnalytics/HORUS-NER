@@ -1,5 +1,4 @@
 import logging
-import urllib2
 import urllib
 import requests
 import json
