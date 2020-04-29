@@ -89,16 +89,16 @@ def cache_images_and_news(horus: Horus):
                                 --------------------------------------------------------------------------
                                 '''
                                 config.logger.debug('caching %s web sites -> [%s]' % (len(result_txts), term))
-                                id_term_search = t.save_term(term, config.search_engine_tot_resources,
+                                id_term_search = horus_db.save_term(term, config.search_engine_tot_resources,
                                                              len(result_txts), config.search_engine_api,
                                                              1, config.search_engine_features_text,
                                                              str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
-                                horus.sentences[s].tokens[t].features.text_features.id = id_term_search
+                                horus.sentences[s].tokens[t].features.text.db_id = id_term_search
                                 seq = 0
                                 for web_result_txt in result_txts:
                                     config.logger.info('caching (web site) -> [%s]' % web_result_txt['displayUrl'])
                                     seq += 1
-                                    t.save_website_data(id_term_search, seq, web_result_txt['id'],
+                                    horus_db.save_website_data(id_term_search, seq, web_result_txt['id'],
                                                         web_result_txt['displayUrl'],
                                                         web_result_txt['name'], web_result_txt['snippet'])
                                 '''
@@ -107,11 +107,11 @@ def cache_images_and_news(horus: Horus):
                                 --------------------------------------------------------------------------
                                 '''
                                 config.logger.info('caching %s web images -> [%s]' % (len(result_imgs), term))
-                                id_term_img = t.save_term(term, config.search_engine_tot_resources,
+                                id_term_img = horus_db.save_term(term, config.search_engine_tot_resources,
                                                           len(result_imgs), config.search_engine_api,
                                                           2, config.search_engine_features_img,
                                                           str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), metaquery)
-                                horus.sentences[s].tokens[t].features.image_features.id = id_term_img
+                                horus.sentences[s].tokens[t].features.image.db_id = id_term_img
                                 seq = 0
                                 for web_result_img in result_imgs:
                                     config.logger.debug('downloading image [%s]' % (web_result_img['name']))
@@ -122,12 +122,12 @@ def cache_images_and_news(horus: Horus):
                                                                      web_result_img['encodingFormat'], id_term_img, 0,
                                                                      seq)
                                     config.logger.debug('caching image  ...')
-                                    t.save_image_data(id_term_img, seq, web_result_img['contentUrl'],
+                                    horus_db.save_image_data(id_term_img, seq, web_result_img['contentUrl'],
                                                       web_result_img['name'],
                                                       web_result_img['encodingFormat'], web_result_img['height'],
                                                       web_result_img['width'], web_result_img['thumbnailUrl'],
                                                       str(auxtype))
-                                # t.commit()
+                                # horus_db.commit()
                                 # adding the new item to the cache dataframe
                                 config.logger.debug('updating local cache  ...')
                                 cols = ['id', 'term', 'id_search_type', 'tot_results_returned']
@@ -146,16 +146,16 @@ def cache_images_and_news(horus: Horus):
                                     raise Exception("that should not happen! check db integrity")
 
                                 if 1 in set(df.loc[(df['term'] == term)]['id_search_type']):
-                                    horus.sentences[s].tokens[t].features.text_features.id = \
+                                    horus.sentences[s].tokens[t].features.text.db_id = \
                                         int(df.loc[(df['term'] == term) & (df['id_search_type'] == 1)].index.values)
                                 else:
-                                    horus.sentences[s].tokens[t].features.text_features.id = -1
+                                    horus.sentences[s].tokens[t].features.text.db_id = -1
 
                                 if 2 in set(df.loc[(df['term'] == term)]['id_search_type']):
-                                    horus.sentences[s].tokens[t].features.image_features.id = \
+                                    horus.sentences[s].tokens[t].features.image.db_id = \
                                         int(df.loc[(df['term'] == term) & (df['id_search_type'] == 2)].index.values)
                                 else:
-                                    horus.sentences[s].tokens[t].features.image_features.id = -1
+                                    horus.sentences[s].tokens[t].features.image.db_id = -1
 
                         auxc += 1
 
