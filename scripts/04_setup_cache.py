@@ -41,19 +41,19 @@ def cache_images_and_news(horus: Horus):
     try:
         with SQLiteHelper(config.database_db) as sqlcon:
             config.logger.info('caching results...')
-            t = HorusDB(sqlcon)
+            horus_db = HorusDB(sqlcon)
             auxc = 1
             download = False
             nr_tokens = 0
-            for s in horus.sentences:
-                for t in s.tokens:
-                    if t.label_pos in definitions.POS_NOUN_TAGS or t.is_compound == 1:
+            for sentence in horus.sentences:
+                for token in sentence.tokens:
+                    if token.label_pos in definitions.POS_NOUN_TAGS or token.is_compound == 1:
                         nr_tokens += 1
 
             try:
                 # getting list of cached terms
                 values = (config.search_engine_api, config.search_engine_features_text)
-                df = pd.read_sql_query(sql=SQL_ALL_TERM_SEARCH_SEL, con=t.conn, params=values)
+                df = pd.read_sql_query(sql=SQL_ALL_TERM_SEARCH_SEL, con=horus_db.conn, params=values)
                 df.set_index("id", inplace=True)
                 for s in range(0, len(horus.sentences)):
                     for t in range(0, len(horus.sentences[s].tokens)):
@@ -160,19 +160,19 @@ def cache_images_and_news(horus: Horus):
                         auxc += 1
 
                     if download:
-                        t.commit()
+                        horus_db.commit()
                 return horus
 
-            except Exception as e:
+            except Exception as e1:
                 try:
                     if download:
-                        t.commit()
-                except Exception:
+                        horus_db.commit()
+                except Exception as e2:
                     pass
-                raise e
-    except Exception as e:
-        config.logger.error(repr(e))
-        raise e
+                raise e1
+    except Exception as e3:
+        config.logger.error(repr(e3))
+        raise e3
 
 
 if __name__ == '__main__':
@@ -186,10 +186,10 @@ if __name__ == '__main__':
             assert '.horusx' in conll_file
             horus_file_stage1 = conll_file.replace('.horusx', '.horus1.json')
 
-            config.logger.info(' loading horus file')
+            config.logger.info('loading horus file')
             horus = HorusDataLoader.load_metadata_from_file(file=horus_file_stage1)
 
-            config.logger.info(' caching')
+            config.logger.info('caching')
             # cache images and news and update the horus metadata with database ids.
             cache_images_and_news(horus)
 

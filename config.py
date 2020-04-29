@@ -205,7 +205,7 @@ class HorusConfig(object):
         self.logger.info('==================================================================')
         self.logger.info('HORUS Framework')
         self.logger.info('version: ' + self.version)
-        self.logger.info('more info: http://horus-ner.org/')
+        self.logger.info('http://horus-ner.org/')
         self.logger.info('==================================================================')
 
     @staticmethod
