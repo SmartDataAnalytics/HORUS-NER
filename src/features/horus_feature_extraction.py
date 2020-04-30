@@ -1,3 +1,4 @@
+import heapq
 from abc import ABC, abstractmethod, ABCMeta
 import gensim as gensim
 from src import definitions
@@ -23,7 +24,7 @@ import sqlite3
 from sklearn import preprocessing
 from sklearn.preprocessing import normalize
 
-from src.utils.definitions_sql import SQL_TEXT_CLASS_SEL
+from src.utils.definitions_sql import SQL_TEXT_CLASS_SEL, SQL_TEXT_CLASS_UPD
 from src.utils.nlp_tools import NLPTools
 from src.utils.translation.azure import bing_detect_language, bing_translate_text
 from src.utils.translation.bingtranslation import BingTranslator
@@ -276,14 +277,14 @@ class HorusExtractorText(HorusFeatureExtractor):
 
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
                             tot_error_translation = 0
-                            embs, top5_sim = self.__get_number_classes_in_embeedings(term)
+                            embs, top5_sim = self.__get_number_classes_in_embeedings(token.text)
 
                             klass_top = []
                             tm_cnn_w = []
                             tm_cnn_w_exp = []
                             if self.text_tm is not None:
                                 # TM+CNN - term
-                                tm_cnn_w = self.text_tm.detect_text_klass(term)
+                                tm_cnn_w = self.text_tm.detect_text_klass(token.text)
                                 tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
 
                             if self.text_tm is not None and top5_sim is not None:
@@ -333,8 +334,6 @@ class HorusExtractorText(HorusFeatureExtractor):
                                         embs.append(rows[itxt][19])
                                         embs.append(rows[itxt][20])
 
-
-
                                 except Exception as e:
                                     self.config.logger.error(str(e.message))
                                     pass
@@ -364,90 +363,97 @@ class HorusExtractorText(HorusFeatureExtractor):
 
                             horus_tx_ner = gpb.index(max(gpb)) + 1
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_RESULTS_TX] = limit_txt
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC] = gpb[0]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG] = gpb[1]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER] = gpb[2]
-                            self.horus_matrix[index][definitions.INDEX_TOT_ERR_TRANS] = tot_error_translation
+                            token.features.text.values[tx_dict_reversed.get('total.retrieved.results.search_engine')] \
+                                = limit_txt
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(tm_cnn_w) == 0 else \
-                            tm_cnn_w[0]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(tm_cnn_w) == 0 else \
-                            tm_cnn_w[1]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(tm_cnn_w) == 0 else \
-                            tm_cnn_w[2]
-                            self.horus_matrix[index][definitions.INDEX_TOT_TX_NONE_TM_CNN] = 0 if len(
-                                tm_cnn_w) == 0 else tm_cnn_w[3]
+                            token.features.text.values[tx_dict_reversed.get('total.binary.k.loc')] = gpb[0]
+                            token.features.text.values[tx_dict_reversed.get('total.binary.k.org')] = gpb[1]
+                            token.features.text.values[tx_dict_reversed.get('total.binary.k.per')] = gpb[2]
+                            token.features.text.values[tx_dict_reversed.get('total.binary.k.other')] = 0
+                            token.features.text.values[tx_dict_reversed.get('total.error.translation')] = \
+                                tot_error_translation
+
+                            token.features.text.values[tx_dict_reversed.get('total.topic.k.loc')] = \
+                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[0]
+                            token.features.text.values[tx_dict_reversed.get('total.topic.k.org')] = \
+                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[1]
+                            token.features.text.values[tx_dict_reversed.get('total.topic.k.per')] = \
+                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[2]
+                            token.features.text.values[tx_dict_reversed.get('total.topic.k.other')] = \
+                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[3]
 
                             maxs_tx = heapq.nlargest(2, gpb)
                             maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
                             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
                             dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
 
-                            self.horus_matrix[index][definitions.INDEX_DIST_TX_I] = dist_tx_indicator
-                            self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_TX] = nr_results_txt
-                            self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN] = dist_tx_indicator_tm
+                            token.features.text.values[tx_dict_reversed.get('dist.k')] = dist_tx_indicator
+                            token.features.text.values[tx_dict_reversed.get('dist.k.topic_model')] = \
+                                dist_tx_indicator_tm
+                            token.features.text.values[tx_dict_reversed.get('total.results.search_engine')] = \
+                                nr_results_txt
 
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC] = embs[0]
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG] = embs[1]
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER] = embs[2]
-                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE] = embs[3]
+                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.loc')] = embs[0]
+                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.org')] = embs[1]
+                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.per')] = embs[2]
+                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.other')] = embs[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_LOC] = \
-                            topic_klass_top_sums[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_ORG] = \
-                            topic_klass_top_sums[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_PER] = \
-                            topic_klass_top_sums[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_NONE] = \
-                            topic_klass_top_sums[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.loc')] = \
+                                topic_klass_top_sums[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.org')] = \
+                                topic_klass_top_sums[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.per')] = \
+                                topic_klass_top_sums[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.other')] = \
+                                topic_klass_top_sums[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_LOC] = \
-                            topic_klass_top_avg[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_ORG] = \
-                            topic_klass_top_avg[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_PER] = \
-                            topic_klass_top_avg[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_NONE] = \
-                            topic_klass_top_avg[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.loc')] = \
+                                topic_klass_top_avg[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.org')] = \
+                                topic_klass_top_avg[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.per')] = \
+                                topic_klass_top_avg[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.other')] = \
+                                topic_klass_top_avg[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_LOC] = \
-                            topic_klass_top_max[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_ORG] = \
-                            topic_klass_top_max[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_PER] = \
-                            topic_klass_top_max[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_NONE] = \
-                            topic_klass_top_max[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.loc')] = \
+                                topic_klass_top_max[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.org')] = \
+                                topic_klass_top_max[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.per')] = \
+                                topic_klass_top_max[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.other')] = \
+                                topic_klass_top_max[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_LOC] = \
-                            topic_klass_top_min[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_ORG] = \
-                            topic_klass_top_min[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_PER] = \
-                            topic_klass_top_min[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_NONE] = \
-                            topic_klass_top_min[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.loc')] = \
+                                topic_klass_top_min[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.org')] = \
+                                topic_klass_top_min[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.per')] = \
+                                topic_klass_top_min[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.other')] = \
+                                topic_klass_top_min[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_LOC] = topic_sums[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_ORG] = topic_sums[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_PER] = topic_sums[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_NONE] = topic_sums[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.loc')] = topic_sums[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.org')] = topic_sums[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.per')] = topic_sums[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.other')] = topic_sums[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_LOC] = topic_avg[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_ORG] = topic_avg[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_PER] = topic_avg[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_NONE] = topic_avg[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.loc')] = topic_avg[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.org')] = topic_avg[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.per')] = topic_avg[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.other')] = topic_avg[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_LOC] = topic_max[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_ORG] = topic_max[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_PER] = topic_max[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_NONE] = topic_max[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.loc')] = topic_max[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.org')] = topic_max[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.per')] = topic_max[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.other')] = topic_max[3]
 
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_LOC] = topic_min[0]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_ORG] = topic_min[1]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_PER] = topic_min[2]
-                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_NONE] = topic_min[3]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.loc')] = topic_min[0]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.org')] = topic_min[1]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.per')] = topic_min[2]
+                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.other')] = topic_min[3]
+
 
                             if limit_txt != 0:
                                 self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = \
