@@ -36,8 +36,8 @@ import os
 from six.moves import urllib
 import tensorflow as tf
 
-from src.classifiers.inception import dataset_utils
-from src.config import HorusConfig
+from config import HorusConfig
+from src.algorithms.inception import dataset_utils
 
 slim = tf.contrib.slim
 

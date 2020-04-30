@@ -25,6 +25,7 @@ from sklearn.preprocessing import normalize
 
 from src.utils.definitions_sql import SQL_TEXT_CLASS_SEL
 from src.utils.nlp_tools import NLPTools
+from src.utils.translation.azure import bing_detect_language, bing_translate_text
 from src.utils.translation.bingtranslation import BingTranslator
 from src.utils.util import Util
 #from tensorflow.python.keras._impl.keras.applications import InceptionV3
@@ -35,6 +36,7 @@ from keras.applications.inception_v3 import preprocess_input, InceptionV3
 from src.algorithms.computer_vision.cls_dlib import DLib_Classifier
 from src.algorithms.computer_vision.cnnlogo import CNNLogo
 from src.algorithms.computer_vision.inception import InceptionCV
+
 
 class HorusFeatureExtractor(metaclass=ABCMeta):
 
@@ -52,8 +54,8 @@ class HorusFeatureExtractor(metaclass=ABCMeta):
 
 class HorusExtractorImage(HorusFeatureExtractor):
 
-    def __init__(self, p3):
-        super().__init__()
+    def __init__(self, config: HorusConfig):
+        super().__init__(config)
         self.image_sift = SIFT(self.config)
         self.image_cnn_placesCNN = Places365CV(self.config)
         # self.image_cnn_incep_model = InceptionCV(self.config, version='V3')
@@ -72,8 +74,10 @@ class HorusExtractorImage(HorusFeatureExtractor):
         except:
             pass
 
+
 class HorusExtractorText(HorusFeatureExtractor):
-    def __init__(self):
+    def __init__(self, config: HorusConfig):
+        super().__init__(config)
         self.translator = BingTranslator(self.config)
         self.config.logger.info('loading word2vec embeedings...')
         self.text_bow = BowTfidf(self.config)
@@ -86,76 +90,6 @@ class HorusExtractorText(HorusFeatureExtractor):
         self.min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
         self.config.logger.info('setting the seeds ')
         self.__set_str_extended_seeds()
-        self.config.logger.info('loading encoders')
-        self.enc_le1 = joblib.load(self.config.dir_encoders + definitions.encoder_le1_name)
-        self.enc_le2 = joblib.load(self.config.dir_encoders + definitions.encoder_le2_name)
-        self.enc_word = joblib.load(self.config.dir_encoders + definitions.encoder_int_words_name)
-        self.enc_lemma = joblib.load(self.config.dir_encoders + definitions.encoder_int_lemma_name)
-        self.enc_stem = joblib.load(self.config.dir_encoders + definitions.encoder_int_stem_name)
-        self.le = joblib.load(self.config.dir_encoders + encoder_le1_name)
-        self.config.logger.info('loading brown corpus')
-        self.dict_brown_c1000 = joblib.load(self.config.dir_clusters + 'gha.500M-c1000-p1.paths_dict.pkl')
-        self.dict_brown_c640 = joblib.load(self.config.dir_clusters + 'gha.64M-c640-p1.paths_dict.pkl')
-        self.dict_brown_c320 = joblib.load(self.config.dir_clusters + 'gha.64M-c320-p1.paths_dict.pkl')
-
-        self.config.logger.info('loading lemmatizers')
-        stemmer = SnowballStemmer('english')
-        self.stop = set(stopwords.words('english'))
-        wnl = WordNetLemmatizer()
-
-        self.lemmatize = lru_cache(maxsize=50000)(wnl.lemmatize)
-        self.stemo = lru_cache(maxsize=50000)(stemmer.stem)
-
-        super().__init__()
-
-    def _append_word_lemma_stem(self, w, l, s):
-        t = []
-        try:
-            t.append(self.enc_word.transform(str(w)))
-        except:
-            self.config.logger.warn('enc_word.transform error')
-            t.append(0)
-
-        try:
-            t.append(self.enc_lemma.transform(l.decode('utf-8')))
-        except:
-            self.config.logger.warn('enc_lemma.transform error')
-            t.append(0)
-
-        try:
-            t.append(self.enc_stem.transform(s.decode('utf-8')))
-        except:
-            self.config.logger.warn('enc_stem.transform error')
-            t.append(0)
-
-        return t
-
-    def _shape(self, word):
-        word_shape = 0  # 'other'
-        if re.match('[0-9]+(\.[0-9]*)?|[0-9]*\.[0-9]+$', word):
-            word_shape = 1  # 'number'
-        elif re.match('\W+$', word):
-            word_shape = 2  # 'punct'
-        elif re.match('[A-Z][a-z]+$', word):
-            word_shape = 3  # 'capitalized'
-        elif re.match('[A-Z]+$', word):
-            word_shape = 4  # 'uppercase'
-        elif re.match('[a-z]+$', word):
-            word_shape = 5  # 'lowercase'
-        elif re.match('[A-Z][a-z]+[A-Z][a-z]+[A-Za-z]*$', word):
-            word_shape = 6  # 'camelcase'
-        elif re.match('[A-Za-z]+$', word):
-            word_shape = 7  # 'mixedcase'
-        elif re.match('__.+__$', word):
-            word_shape = 8  # 'wildcard'
-        elif re.match('[A-Za-z0-9]+\.$', word):
-            word_shape = 9  # 'ending-dot'
-        elif re.match('[A-Za-z0-9]+\.[A-Za-z0-9\.]+\.$', word):
-            word_shape = 10  # 'abbreviation'
-        elif re.match('[A-Za-z0-9]+\-[A-Za-z0-9\-]+.*$', word):
-            word_shape = 11  # 'contains-hyphen'
-
-        return word_shape
 
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
         try:
@@ -174,8 +108,6 @@ class HorusExtractorText(HorusFeatureExtractor):
                     else:
                         temp = t1
                     sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_title_en = ? WHERE id = ?"""
-                    if not isinstance(temp, unicode):
-                        temp = temp.decode('utf-8')
                     c.execute(sql, (temp, id))
                     t1en = temp
                 except Exception as e:
@@ -191,8 +123,6 @@ class HorusExtractorText(HorusFeatureExtractor):
                     else:
                         temp = t2
                     sql = """UPDATE HORUS_SEARCH_RESULT_TEXT SET result_description_en = ? WHERE id = ?"""
-                    if not isinstance(temp, unicode):
-                        temp = temp.decode('utf-8')
                     c.execute(sql, (temp, id))  # .encode("utf-8")
                     t2en = temp
                 except Exception as e:
@@ -531,9 +461,25 @@ class HorusExtractorText(HorusFeatureExtractor):
 
 
 class HorusExtractorLexical(HorusFeatureExtractor):
-    def __init__(self, p3):
-        self.p3 = p3
-        super().__init__()
+    def __init__(self, config: HorusConfig):
+        super().__init__(config)
+        self.config.logger.info('loading encoders')
+        self.enc_le1 = joblib.load(self.config.dir_encoders + definitions.encoder_le1_name)
+        self.enc_le2 = joblib.load(self.config.dir_encoders + definitions.encoder_le2_name)
+        self.enc_word = joblib.load(self.config.dir_encoders + definitions.encoder_int_words_name)
+        self.enc_lemma = joblib.load(self.config.dir_encoders + definitions.encoder_int_lemma_name)
+        self.enc_stem = joblib.load(self.config.dir_encoders + definitions.encoder_int_stem_name)
+        self.le = joblib.load(self.config.dir_encoders + encoder_le1_name)
+        self.config.logger.info('loading brown corpus')
+        self.dict_brown_c1000 = joblib.load(self.config.dir_clusters + 'gha.500M-c1000-p1.paths_dict.pkl')
+        self.dict_brown_c640 = joblib.load(self.config.dir_clusters + 'gha.64M-c640-p1.paths_dict.pkl')
+        self.dict_brown_c320 = joblib.load(self.config.dir_clusters + 'gha.64M-c320-p1.paths_dict.pkl')
+        self.config.logger.info('loading lemmatizers')
+        stemmer = SnowballStemmer('english')
+        self.stop = set(stopwords.words('english'))
+        wnl = WordNetLemmatizer()
+        self.lemmatize = lru_cache(maxsize=50000)(wnl.lemmatize)
+        self.stemo = lru_cache(maxsize=50000)(stemmer.stem)
 
     def extract_features(self, horus: Horus) -> bool:
         try:
@@ -588,6 +534,54 @@ class HorusExtractorLexical(HorusFeatureExtractor):
         except Exception as e:
             raise e
 
+    def _append_word_lemma_stem(self, w, l, s):
+        t = []
+        try:
+            t.append(self.enc_word.transform(str(w)))
+        except:
+            self.config.logger.warn('enc_word.transform error')
+            t.append(0)
+
+        try:
+            t.append(self.enc_lemma.transform(l.decode('utf-8')))
+        except:
+            self.config.logger.warn('enc_lemma.transform error')
+            t.append(0)
+
+        try:
+            t.append(self.enc_stem.transform(s.decode('utf-8')))
+        except:
+            self.config.logger.warn('enc_stem.transform error')
+            t.append(0)
+
+        return t
+
+    def _shape(self, word):
+        word_shape = 0  # 'other'
+        if re.match('[0-9]+(\.[0-9]*)?|[0-9]*\.[0-9]+$', word):
+            word_shape = 1  # 'number'
+        elif re.match('\W+$', word):
+            word_shape = 2  # 'punct'
+        elif re.match('[A-Z][a-z]+$', word):
+            word_shape = 3  # 'capitalized'
+        elif re.match('[A-Z]+$', word):
+            word_shape = 4  # 'uppercase'
+        elif re.match('[a-z]+$', word):
+            word_shape = 5  # 'lowercase'
+        elif re.match('[A-Z][a-z]+[A-Z][a-z]+[A-Za-z]*$', word):
+            word_shape = 6  # 'camelcase'
+        elif re.match('[A-Za-z]+$', word):
+            word_shape = 7  # 'mixedcase'
+        elif re.match('__.+__$', word):
+            word_shape = 8  # 'wildcard'
+        elif re.match('[A-Za-z0-9]+\.$', word):
+            word_shape = 9  # 'ending-dot'
+        elif re.match('[A-Za-z0-9]+\.[A-Za-z0-9\.]+\.$', word):
+            word_shape = 10  # 'abbreviation'
+        elif re.match('[A-Za-z0-9]+\-[A-Za-z0-9\-]+.*$', word):
+            word_shape = 11  # 'contains-hyphen'
+
+        return word_shape
 
 
 

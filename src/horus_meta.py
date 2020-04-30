@@ -17,9 +17,12 @@ class WordFeaturesInterface:
 
     @staticmethod
     def get_visual() -> dict:
-        return {
+        features = {
             0: 'blah'
         }
+        reversed_features = dict([(value, key) for key, value in features.items()])
+
+        return features, reversed_features
 
     @staticmethod
     def get_textual() -> dict:
@@ -311,7 +314,8 @@ class Horus(object):
 
     def update_status(self, status: int = PRE_PROCESSING_STATUS):
         # concatenate the status so that we known which step went through without needing to perform a specific order
-        self.processing_status += str(status)
+        status = str(status)
+        self.processing_status += status
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)

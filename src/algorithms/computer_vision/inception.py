@@ -8,14 +8,11 @@ import numpy as np
 from tensorflow.contrib.framework import arg_scope
 from tensorflow.contrib.slim.python.slim.nets import inception
 from nltk.corpus import wordnet as wn
-
-from src.classifiers.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
-from src.classifiers.inception import dataset_utils, imagenet, inception_preprocessing
-from src.config import HorusConfig
-from src.util import definitions
+from src.algorithms.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
+from src.algorithms.inception import dataset_utils, imagenet, inception_preprocessing
 
 
-class InceptionCV():
+class InceptionCV(object):
     def __init__(self, config, version='V3'):
         try:
             self.config = config

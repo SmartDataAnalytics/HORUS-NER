@@ -18,11 +18,11 @@ if __name__ == '__main__':
     _extractor_image = None
 
     if EXTRACT_LEXICAL:
-        _extractor_lexical = HorusExtractorLexical()
+        _extractor_lexical = HorusExtractorLexical(config)
     if EXTRACT_TEXT:
-        _extractor_text = HorusExtractorText()
+        _extractor_text = HorusExtractorText(config)
     if EXTRACT_IMAGE:
-        _extractor_image = HorusExtractorImage()
+        _extractor_image = HorusExtractorImage(config)
 
     # initialize the horus metadata file for each dataset
     for ds in definitions.NER_DATASETS:
@@ -34,7 +34,7 @@ if __name__ == '__main__':
             config.logger.info('loading horus file: ' + horus_file_stage2)
             horus = HorusDataLoader.load_metadata_from_file(file=horus_file_stage2)
 
-            if EXTRACT_LEXICAL and (PRE_PROCESSING_STATUS["FEATURE_LEXICAL"] not in horus.processing_status):
+            if EXTRACT_LEXICAL and (str(PRE_PROCESSING_STATUS["FEATURE_LEXICAL"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (lexical)')
                 out = _extractor_lexical.extract_features(horus)
                 config.logger.info(f'finish ok?: {out}')
@@ -42,7 +42,7 @@ if __name__ == '__main__':
             else:
                 config.logger.info('feature extraction (lexical): either not active or already cached')
 
-            if EXTRACT_IMAGE and (PRE_PROCESSING_STATUS["FEATURE_IMAGE"] not in horus.processing_status):
+            if EXTRACT_IMAGE and (str(PRE_PROCESSING_STATUS["FEATURE_IMAGE"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (image)')
                 out = _extractor_image.extract_features(horus)
                 config.logger.info(f'finish ok?: {out}')
@@ -50,7 +50,7 @@ if __name__ == '__main__':
             else:
                 config.logger.info('feature extraction (image): either not active or already cached')
 
-            if EXTRACT_TEXT and (PRE_PROCESSING_STATUS["FEATURE_TEXT"] not in horus.processing_status):
+            if EXTRACT_TEXT and (str(PRE_PROCESSING_STATUS["FEATURE_TEXT"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (text)')
                 out = _extractor_text.extract_features(horus)
                 config.logger.info(f'finish ok?: {out}')
