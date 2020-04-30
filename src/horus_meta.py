@@ -154,7 +154,7 @@ class HorusFeaturesSet(object):
                  image: HorusWordFeatures = None):
 
         if lexical is None:
-            d, dv = WordFeaturesInterface.get_lexical()
+            d, dr = WordFeaturesInterface.get_lexical()
             self.lexical = HorusWordFeatures(alias='Lexical',
                                              acronym='LX',
                                              dictionary_size=len(d))
@@ -162,7 +162,7 @@ class HorusFeaturesSet(object):
             self.lexical = lexical
 
         if text is None:
-            d, dv = WordFeaturesInterface.get_textual()
+            d, dr = WordFeaturesInterface.get_textual()
             self.text = HorusWordFeatures(alias='Text',
                                           acronym='TX',
                                           dictionary_size=len(d))
@@ -170,7 +170,7 @@ class HorusFeaturesSet(object):
             self.text = text
 
         if image is None:
-            d, dv = WordFeaturesInterface.get_visual()
+            d, dr = WordFeaturesInterface.get_visual()
             self.image = HorusWordFeatures(alias='Image',
                                            acronym='CV',
                                            dictionary_size=len(d))
@@ -297,7 +297,7 @@ class Horus(object):
                  dataset: str,
                  language: str,
                  sentences: [] = [],
-                 status: int = PRE_PROCESSING_STATUS["TOKENIZATION_POS"],
+                 status: str = str(PRE_PROCESSING_STATUS["TOKENIZATION_POS"]),
                  train_on_features_lx: [] = [],
                  train_on_features_tx: [] = [],
                  train_on_features_cv: [] = []):
@@ -310,7 +310,8 @@ class Horus(object):
         self.train_on_features_cv = train_on_features_cv
 
     def update_status(self, status: int = PRE_PROCESSING_STATUS):
-        self.processing_status = status
+        # concatenate the status so that we known which step went through without needing to perform a specific order
+        self.processing_status += str(status)
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)
