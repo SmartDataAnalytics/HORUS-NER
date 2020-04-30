@@ -157,6 +157,9 @@ Here we perform feature extraction. This updates the metadata file with ```lexic
 The metadata file (```*.horus.json```) can now be used to train your own NER model. See the folder ```/notebooks``` for
 examples and experiments.
 
+- Make sure you have the following libs installed:
+    - cmake
+
  
 
 

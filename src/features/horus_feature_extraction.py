@@ -1,5 +1,12 @@
 from abc import ABC, abstractmethod, ABCMeta
+import gensim as gensim
 from src import definitions
+from src.algorithms.computer_vision.cls_dlib import DLib_Classifier
+from src.algorithms.computer_vision.cnnlogo import CNNLogo
+from src.algorithms.computer_vision.places365 import Places365CV
+from src.algorithms.computer_vision.sift import SIFT
+from src.algorithms.text_classification.bow_tfidf import BowTfidf
+from src.algorithms.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
 from src.horus_meta import Horus, WordFeaturesInterface
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 from nltk import WordNetLemmatizer, SnowballStemmer
@@ -15,8 +22,19 @@ from nltk.corpus import wordnet as wn
 import sqlite3
 from sklearn import preprocessing
 from sklearn.preprocessing import normalize
-from src.utils.nlp_tools import NLPTools
 
+from src.utils.definitions_sql import SQL_TEXT_CLASS_SEL
+from src.utils.nlp_tools import NLPTools
+from src.utils.translation.bingtranslation import BingTranslator
+from src.utils.util import Util
+#from tensorflow.python.keras._impl.keras.applications import InceptionV3
+#from tensorflow.python.keras._impl.keras.applications import InceptionV3
+from tensorflow.python.keras.preprocessing import image as ppimg
+from keras.applications.imagenet_utils import decode_predictions
+from keras.applications.inception_v3 import preprocess_input, InceptionV3
+from src.algorithms.computer_vision.cls_dlib import DLib_Classifier
+from src.algorithms.computer_vision.cnnlogo import CNNLogo
+from src.algorithms.computer_vision.inception import InceptionCV
 
 class HorusFeatureExtractor(metaclass=ABCMeta):
 
@@ -35,13 +53,13 @@ class HorusFeatureExtractor(metaclass=ABCMeta):
 class HorusExtractorImage(HorusFeatureExtractor):
 
     def __init__(self, p3):
-        self.image_sift = SIFT(config)
-        self.image_cnn_placesCNN = Places365CV(config)
+        super().__init__()
+        self.image_sift = SIFT(self.config)
+        self.image_cnn_placesCNN = Places365CV(self.config)
         # self.image_cnn_incep_model = InceptionCV(self.config, version='V3')
         self.image_cnn_incep_model = InceptionV3(weights='imagenet')
-        self.image_cnn_logo = CNNLogo(config)
-        self.dlib_cnn = DLib_Classifier(config)
-        super().__init__()
+        self.image_cnn_logo = CNNLogo(self.config)
+        self.dlib_cnn = DLib_Classifier(self.config)
 
     def extract_features(self, horus: Horus) -> bool:
         pass
@@ -287,10 +305,10 @@ class HorusExtractorText(HorusFeatureExtractor):
 
     def extract_features(self, horus: Horus) -> bool:
         '''
-                Please see src/training/ for more information
-                :param horus:
-                :return:
-                '''
+        Please see src/training/ for more information
+        :param horus:
+        :return:
+        '''
         try:
             tx_dict, tx_dict_reversed = WordFeaturesInterface.get_textual()
 
@@ -314,6 +332,199 @@ class HorusExtractorText(HorusFeatureExtractor):
                         tot_geral_faces_cnn = 0
                         tot_geral_logos_cnn = 0
                         out_geral_cnn_features_loc = []
+
+                        with self.conn:
+                            cursor = self.conn.cursor()
+                            y_bow = [[0] * 5] * int(self.config.search_engine_tot_resources)
+                            y_tm = [[0] * 5] * int(self.config.search_engine_tot_resources)
+                            cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
+                            rows = cursor.fetchall()
+
+                            nr_results_txt = len(rows)
+                            if nr_results_txt == 0:
+                                self.config.logger.debug("token/term has not returned web sites!")
+
+                            limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
+                            tot_error_translation = 0
+                            embs, top5_sim = self.__get_number_classes_in_embeedings(term)
+
+                            klass_top = []
+                            tm_cnn_w = []
+                            tm_cnn_w_exp = []
+                            if self.text_tm is not None:
+                                # TM+CNN - term
+                                tm_cnn_w = self.text_tm.detect_text_klass(term)
+                                tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
+
+                            if self.text_tm is not None and top5_sim is not None:
+                                for top in top5_sim:
+                                    klass_top.append(self.text_tm.detect_text_klass(top[0]))
+                            else:
+                                klass_top = [[np.math.pow(10, -5)] * 5] * 5
+
+                            klass_top.append(tm_cnn_w_exp)
+
+                            if limit_txt > 0:
+                                y_bow = []
+                                y_tm = []
+                            for itxt in range(limit_txt):
+                                try:
+                                    if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
+                                        merged_en, error_translation = self.__detect_and_translate(rows[itxt][2],
+                                                                                                   rows[itxt][3],
+                                                                                                   rows[itxt][0],
+                                                                                                   rows[itxt][4],
+                                                                                                   rows[itxt][5])
+                                        tot_error_translation += error_translation
+                                        ret_bow = [0.0] * 5
+                                        ret_tm = [0.0] * 5
+                                        if merged_en != '':
+                                            if self.text_bow is not None:
+                                                ret_bow = self.text_bow.detect_text_klass(merged_en)
+                                            if self.text_tm is not None:
+                                                ret_tm = self.text_tm.detect_text_klass(merged_en)
+
+                                        y_bow.append(ret_bow)
+
+                                        # ret_tm = self.min_max_scaler.fit_transform(np.array(ret_tm).reshape(1,-1))[0]
+
+                                        y_tm.append(ret_tm)
+
+                                        cursor.execute(SQL_TEXT_CLASS_UPD % (
+                                        ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
+                                        ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
+                                        embs[0], embs[1], embs[2], embs[3], rows[itxt][0]))
+                                    else:
+                                        y_bow.append(rows[itxt][7:11])
+                                        y_tm.append(rows[itxt][12:16])
+                                        embs = []
+                                        embs.append(rows[itxt][17])
+                                        embs.append(rows[itxt][18])
+                                        embs.append(rows[itxt][19])
+                                        embs.append(rows[itxt][20])
+
+
+
+                                except Exception as e:
+                                    self.config.logger.error(str(e.message))
+                                    pass
+
+                            self.conn.commit()
+
+                            yyb = np.array(y_bow)
+                            yytm = np.array(y_tm)
+                            klass_top = np.array(klass_top)
+                            gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
+
+                            topic_klass_top_sums = [np.sum(klass_top[:, 0]), np.sum(klass_top[:, 1]),
+                                                    np.sum(klass_top[:, 2]), np.sum(klass_top[:, 3])]
+                            topic_klass_top_avg = [np.average(klass_top[:, 0]), np.average(klass_top[:, 1]),
+                                                   np.average(klass_top[:, 2]), np.average(klass_top[:, 3])]
+                            topic_klass_top_max = [np.max(klass_top[:, 0]), np.max(klass_top[:, 1]),
+                                                   np.max(klass_top[:, 2]), np.max(klass_top[:, 3])]
+                            topic_klass_top_min = [np.min(klass_top[:, 0]), np.min(klass_top[:, 1]),
+                                                   np.min(klass_top[:, 2]), np.min(klass_top[:, 3])]
+
+                            topic_sums = [np.sum(yytm[:, 0]), np.sum(yytm[:, 1]), np.sum(yytm[:, 2]),
+                                          np.sum(yytm[:, 3])]
+                            topic_avg = [np.average(yytm[:, 0]), np.average(yytm[:, 1]), np.average(yytm[:, 2]),
+                                         np.average(yytm[:, 3])]
+                            topic_max = [np.max(yytm[:, 0]), np.max(yytm[:, 1]), np.max(yytm[:, 2]), np.max(yytm[:, 3])]
+                            topic_min = [np.min(yytm[:, 0]), np.min(yytm[:, 1]), np.min(yytm[:, 2]), np.min(yytm[:, 3])]
+
+                            horus_tx_ner = gpb.index(max(gpb)) + 1
+
+                            self.horus_matrix[index][definitions.INDEX_TOT_RESULTS_TX] = limit_txt
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC] = gpb[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG] = gpb[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER] = gpb[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_ERR_TRANS] = tot_error_translation
+
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_LOC_TM_CNN] = 0 if len(tm_cnn_w) == 0 else \
+                            tm_cnn_w[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_ORG_TM_CNN] = 0 if len(tm_cnn_w) == 0 else \
+                            tm_cnn_w[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_PER_TM_CNN] = 0 if len(tm_cnn_w) == 0 else \
+                            tm_cnn_w[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_TX_NONE_TM_CNN] = 0 if len(
+                                tm_cnn_w) == 0 else tm_cnn_w[3]
+
+                            maxs_tx = heapq.nlargest(2, gpb)
+                            maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
+                            dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
+                            dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
+
+                            self.horus_matrix[index][definitions.INDEX_DIST_TX_I] = dist_tx_indicator
+                            self.horus_matrix[index][definitions.INDEX_NR_RESULTS_SE_TX] = nr_results_txt
+                            self.horus_matrix[index][definitions.INDEX_DIST_TX_I_TM_CNN] = dist_tx_indicator_tm
+
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_LOC] = embs[0]
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_ORG] = embs[1]
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_PER] = embs[2]
+                            self.horus_matrix[index][definitions.INDEX_TOT_EMB_SIMILAR_NONE] = embs[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_LOC] = \
+                            topic_klass_top_sums[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_ORG] = \
+                            topic_klass_top_sums[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_PER] = \
+                            topic_klass_top_sums[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_SUM_NONE] = \
+                            topic_klass_top_sums[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_LOC] = \
+                            topic_klass_top_avg[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_ORG] = \
+                            topic_klass_top_avg[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_PER] = \
+                            topic_klass_top_avg[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_AVG_NONE] = \
+                            topic_klass_top_avg[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_LOC] = \
+                            topic_klass_top_max[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_ORG] = \
+                            topic_klass_top_max[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_PER] = \
+                            topic_klass_top_max[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MAX_NONE] = \
+                            topic_klass_top_max[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_LOC] = \
+                            topic_klass_top_min[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_ORG] = \
+                            topic_klass_top_min[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_PER] = \
+                            topic_klass_top_min[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_T_PLUS_TOP5_K_MIN_NONE] = \
+                            topic_klass_top_min[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_LOC] = topic_sums[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_ORG] = topic_sums[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_PER] = topic_sums[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_SUM_NONE] = topic_sums[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_LOC] = topic_avg[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_ORG] = topic_avg[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_PER] = topic_avg[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_AVG_NONE] = topic_avg[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_LOC] = topic_max[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_ORG] = topic_max[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_PER] = topic_max[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MAX_NONE] = topic_max[3]
+
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_LOC] = topic_min[0]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_ORG] = topic_min[1]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_PER] = topic_min[2]
+                            self.horus_matrix[index][definitions.INDEX_TX_CNN_STAT_MIN_NONE] = topic_min[3]
+
+                            if limit_txt != 0:
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = \
+                                definitions.PLOMNone_index2label[horus_tx_ner]
+                            else:
+                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = \
+                                definitions.PLOMNone_index2label[4]
 
         except Exception as e:
             raise e
