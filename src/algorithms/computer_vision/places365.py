@@ -6,7 +6,7 @@ from torch.nn import functional as F
 import os
 from PIL import Image
 
-from src.config import HorusConfig
+from config import HorusConfig
 
 
 class Places365CV():

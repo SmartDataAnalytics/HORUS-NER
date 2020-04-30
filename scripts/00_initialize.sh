@@ -68,4 +68,6 @@ pipenv run python ./00_initialize.py
 
 pipenv run python /Users/diego.esteves/git/horus-ner/src/utils/CMUTweetTagger.py
 
+python -m spacy download en_core_web_sm
+
 echo "end bash ok"

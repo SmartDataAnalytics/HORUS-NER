@@ -2,16 +2,17 @@ import spacy
 import en_core_web_sm
 import os
 import shorttext
-from src.config import HorusConfig
 import tensorflow as tf
-
-from src.util.nlp_tools import NLPTools
+from config import HorusConfig
+from src.utils.nlp_tools import NLPTools
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 nlp = en_core_web_sm.load()
 #spacy.load('en')
 
-class TopicModelingShortCNN():
+
+class TopicModelingShortCNN(object):
+
     def __init__(self, config, w2v, mode='test'):
         try:
             self.config = config
@@ -109,7 +110,6 @@ if __name__ == '__main__':
     tools = NLPTools(config)
     topic = TopicModelingShortCNN(config, tools.word2vec_google, mode='test')
     #topic.train()
-
 
     print(topic.predict('orlando'))
     print(topic.predict('river'))

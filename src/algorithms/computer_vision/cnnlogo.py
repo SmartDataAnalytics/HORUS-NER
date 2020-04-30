@@ -5,8 +5,9 @@ import matplotlib.image as mpimg
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from src.classifiers.computer_vision.places365 import Places365CV
-from src.config import HorusConfig
+
+from config import HorusConfig
+from src.algorithms.computer_vision.places365 import Places365CV
 #import PIL
 #from PIL import Image
 
