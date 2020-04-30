@@ -29,8 +29,8 @@ from src.utils.nlp_tools import NLPTools
 from src.utils.translation.azure import bing_detect_language, bing_translate_text
 from src.utils.translation.bingtranslation import BingTranslator
 from src.utils.util import Util
-#from tensorflow.python.keras._impl.keras.applications import InceptionV3
-#from tensorflow.python.keras._impl.keras.applications import InceptionV3
+# from tensorflow.python.keras._impl.keras.applications import InceptionV3
+# from tensorflow.python.keras._impl.keras.applications import InceptionV3
 from tensorflow.python.keras.preprocessing import image as ppimg
 from keras.applications.imagenet_utils import decode_predictions
 from keras.applications.inception_v3 import preprocess_input, InceptionV3
@@ -251,7 +251,7 @@ class HorusExtractorText(HorusFeatureExtractor):
                     i_token += 1
                     if token.label_pos in definitions.POS_NOUN_TAGS or token.is_compound == 1:
                         self.config.logger.debug(f'token: {token.text} ({i_token}/{len(sentence.tokens)}) | '
-                                            f'sentence ({i_sent}/{len(horus.sentences)})')
+                                                 f'sentence ({i_sent}/{len(horus.sentences)})')
 
                         id_term_txt = token.features.text.values[tx_dict_reversed.get('id_db')]
                         id_ner_type = 0
@@ -322,9 +322,9 @@ class HorusExtractorText(HorusFeatureExtractor):
                                         y_tm.append(ret_tm)
 
                                         cursor.execute(SQL_TEXT_CLASS_UPD % (
-                                        ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
-                                        ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
-                                        embs[0], embs[1], embs[2], embs[3], rows[itxt][0]))
+                                            ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
+                                            ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
+                                            embs[0], embs[1], embs[2], embs[3], rows[itxt][0]))
                                     else:
                                         y_bow.append(rows[itxt][7:11])
                                         y_tm.append(rows[itxt][12:16])
@@ -381,6 +381,8 @@ class HorusExtractorText(HorusFeatureExtractor):
                                 0 if len(tm_cnn_w) == 0 else tm_cnn_w[2]
                             token.features.text.values[tx_dict_reversed.get('total.topic.k.other')] = \
                                 0 if len(tm_cnn_w) == 0 else tm_cnn_w[3]
+
+                            horus_tx_ner_cnn = gpb.index(max(tm_cnn_w)) + 1
 
                             maxs_tx = heapq.nlargest(2, gpb)
                             maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
@@ -454,13 +456,16 @@ class HorusExtractorText(HorusFeatureExtractor):
                             token.features.text.values[tx_dict_reversed.get('stats.topic.min.per')] = topic_min[2]
                             token.features.text.values[tx_dict_reversed.get('stats.topic.min.other')] = topic_min[3]
 
-
                             if limit_txt != 0:
-                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = \
-                                definitions.PLOMNone_index2label[horus_tx_ner]
+                                token.features.text.values[tx_dict_reversed.get('top.binary.k')] = \
+                                    definitions.PLOMNone_index2label[horus_tx_ner]
+                                token.features.text.values[tx_dict_reversed.get('top.topic.k')] = \
+                                    definitions.PLOMNone_index2label[horus_tx_ner_cnn]
                             else:
-                                self.horus_matrix[index][definitions.INDEX_MAX_KLASS_PREDICT_TX] = \
-                                definitions.PLOMNone_index2label[4]
+                                token.features.text.values[tx_dict_reversed.get('top.binary.k')] = \
+                                    definitions.PLOMNone_index2label[4]
+                                token.features.text.values[tx_dict_reversed.get('top.topic.k')] = \
+                                    definitions.PLOMNone_index2label[4]
 
         except Exception as e:
             raise e
@@ -588,12 +593,3 @@ class HorusExtractorLexical(HorusFeatureExtractor):
             word_shape = 11  # 'contains-hyphen'
 
         return word_shape
-
-
-
-
-
-
-
-
-

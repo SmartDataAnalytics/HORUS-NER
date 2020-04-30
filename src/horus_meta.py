@@ -89,7 +89,7 @@ class WordFeaturesInterface:
             58: 'stats.topic.min.org',
             59: 'stats.topic.min.per',
             60: 'stats.topic.min.misc',
-            61: 'stats.topic.min.other',
+            61: 'stats.topic.min.other'
         }
 
         reversed_features = dict([(value, key) for key, value in features.items()])
