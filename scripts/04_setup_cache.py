@@ -40,7 +40,7 @@ def __download_image_local(image_url, image_type, thumbs_url, thumbs_type, term_
 def cache_images_and_news(horus: Horus):
     try:
         with SQLiteHelper(config.database_db) as sqlcon:
-            config.logger.info('caching results...')
+            config.logger.info('Im on it! keep calm and take a coffee! :)')
             horus_db = HorusDB(sqlcon)
             auxc = 1
             download = False

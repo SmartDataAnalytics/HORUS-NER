@@ -10,18 +10,21 @@ from nltk.corpus import stopwords
 
 
 def _append_word_lemma_stem(w, l, s):
-    t=[]
-    try: t.append(enc_word.transform(str(w)))
+    t = []
+    try:
+        t.append(enc_word.transform(str(w)))
     except:
         config.logger.warn('enc_word.transform error')
         t.append(0)
 
-    try: t.append(enc_lemma.transform(l.decode('utf-8')))
+    try:
+        t.append(enc_lemma.transform(l.decode('utf-8')))
     except:
         config.logger.warn('enc_lemma.transform error')
         t.append(0)
 
-    try: t.append(enc_stem.transform(s.decode('utf-8')))
+    try:
+        t.append(enc_stem.transform(s.decode('utf-8')))
     except:
         config.logger.warn('enc_stem.transform error')
         t.append(0)
@@ -30,35 +33,34 @@ def _append_word_lemma_stem(w, l, s):
 
 
 def _shape(word):
-    word_shape = 0 #'other'
+    word_shape = 0  # 'other'
     if re.match('[0-9]+(\.[0-9]*)?|[0-9]*\.[0-9]+$', word):
-        word_shape = 1 #'number'
+        word_shape = 1  # 'number'
     elif re.match('\W+$', word):
-        word_shape = 2 #'punct'
+        word_shape = 2  # 'punct'
     elif re.match('[A-Z][a-z]+$', word):
-        word_shape = 3 #'capitalized'
+        word_shape = 3  # 'capitalized'
     elif re.match('[A-Z]+$', word):
-        word_shape = 4 # 'uppercase'
+        word_shape = 4  # 'uppercase'
     elif re.match('[a-z]+$', word):
-        word_shape = 5 #'lowercase'
+        word_shape = 5  # 'lowercase'
     elif re.match('[A-Z][a-z]+[A-Z][a-z]+[A-Za-z]*$', word):
-        word_shape = 6 #'camelcase'
+        word_shape = 6  # 'camelcase'
     elif re.match('[A-Za-z]+$', word):
-        word_shape = 7 #'mixedcase'
+        word_shape = 7  # 'mixedcase'
     elif re.match('__.+__$', word):
-        word_shape = 8 # 'wildcard'
+        word_shape = 8  # 'wildcard'
     elif re.match('[A-Za-z0-9]+\.$', word):
-        word_shape = 9 # 'ending-dot'
+        word_shape = 9  # 'ending-dot'
     elif re.match('[A-Za-z0-9]+\.[A-Za-z0-9\.]+\.$', word):
-        word_shape = 10 # 'abbreviation'
+        word_shape = 10  # 'abbreviation'
     elif re.match('[A-Za-z0-9]+\-[A-Za-z0-9\-]+.*$', word):
-        word_shape = 11 #'contains-hyphen'
+        word_shape = 11  # 'contains-hyphen'
 
     return word_shape
 
 
 def _extract_lexical(horus: Horus) -> Horus:
-
     try:
         lx_dict = WordFeaturesInterface.get_lexical()
         tot_slide_brown_cluster = 5
@@ -70,10 +72,13 @@ def _extract_lexical(horus: Horus) -> Horus:
                 brown_640_path = '{:<016}'.format(dict_brown_c640.get(token.text, '0000000000000000'))
                 brown_320_path = '{:<016}'.format(dict_brown_c320.get(token.text, '0000000000000000'))
 
-                for i in range(0, tot_slide_brown_cluster-1):
-                    token.features.lexical.values[lx_dict_reversed.get('brown_1000.' + str(i+1))] = brown_1000_path[:i+1]
-                    token.features.lexical.values[lx_dict_reversed.get('brown_640.' + str(i+1))] = brown_640_path[:i+1]
-                    token.features.lexical.values[lx_dict_reversed.get('brown_320.' + str(i+1))] = brown_320_path[:i+1]
+                for i in range(0, tot_slide_brown_cluster - 1):
+                    token.features.lexical.values[lx_dict_reversed.get('brown_1000.' + str(i + 1))] = brown_1000_path[
+                                                                                                      :i + 1]
+                    token.features.lexical.values[lx_dict_reversed.get('brown_640.' + str(i + 1))] = brown_640_path[
+                                                                                                     :i + 1]
+                    token.features.lexical.values[lx_dict_reversed.get('brown_320.' + str(i + 1))] = brown_320_path[
+                                                                                                     :i + 1]
 
                 token.features.lexical.values[lx_dict_reversed.get('word.lower')] = token.text.lower()
 
@@ -92,7 +97,8 @@ def _extract_lexical(horus: Horus) -> Horus:
                 token.features.lexical.values[lx_dict_reversed.get('word.lemma')] = lemma
                 token.features.lexical.values[lx_dict_reversed.get('word.stem')] = stem
                 token.features.lexical.values[lx_dict_reversed.get('word.len.1')] = int(len(token.text) == 1)
-                token.features.lexical.values[lx_dict_reversed.get('word.has.special')] = int(len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token.text)) > 0)
+                token.features.lexical.values[lx_dict_reversed.get('word.has.special')] = int(
+                    len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token.text)) > 0)
                 token.features.lexical.values[lx_dict_reversed.get('word[0].isupper')] = int(token.text[0].isupper())
                 token.features.lexical.values[lx_dict_reversed.get('word.isupper')] = int(token.text.isupper())
                 token.features.lexical.values[lx_dict_reversed.get('word.istitle')] = int(token.text.istitle())
@@ -143,13 +149,18 @@ def extract_features(horus: Horus, lexical: bool = False, text: bool = False, im
         return True
 
     except Exception as e:
-        config.logger.error(str(e))
-        return e
+        config.logger.exception(str(e))
+        return False
 
 
 if __name__ == '__main__':
 
     config = HorusConfig()
+
+    # define the feature sets you want to extract
+    EXTRACT_LEXICAL = True
+    EXTRACT_TEXT = False
+    EXTRACT_IMAGE = False
 
     config.logger.info('loading lemmatizers')
     stemmer = SnowballStemmer('english')
@@ -179,13 +190,14 @@ if __name__ == '__main__':
         try:
             conll_file = ds[1] + ds[2]
             assert '.horusx' in conll_file
-            horus_file_stage2 = conll_file.replace('.horusx', '.horus1.json')
+            horus_file_stage2 = conll_file.replace('.horusx', '.horus2.json')
 
             config.logger.info('loading horus file: ' + horus_file_stage2)
             horus = HorusDataLoader.load_metadata_from_file(file=horus_file_stage2)
 
-            config.logger.info('feature extraction')
-            ok = extract_features(horus, lexical=True)
+            config.logger.info(f'feature extraction: '
+                               f'lexical: {EXTRACT_LEXICAL}, text: {EXTRACT_TEXT}, image: {EXTRACT_IMAGE}')
+            ok = extract_features(horus, lexical=EXTRACT_LEXICAL, text=EXTRACT_TEXT, image=EXTRACT_IMAGE)
             if not ok:
                 config.logger.warn('feature extraction: something went wrong...')
 
