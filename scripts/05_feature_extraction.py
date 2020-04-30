@@ -60,12 +60,11 @@ def _shape(word):
     return word_shape
 
 
-def _extract_lexical(horus: Horus) -> Horus:
-    try:
-        lx_dict = WordFeaturesInterface.get_lexical()
-        tot_slide_brown_cluster = 5
-        lx_dict_reversed = dict([(value, key) for key, value in lx_dict.items()])
+def _extract_lexical(horus: Horus) -> bool:
 
+    try:
+        lx_dict, lx_dict_reversed = WordFeaturesInterface.get_lexical()
+        tot_slide_brown_cluster = 5
         for sentence in horus.sentences:
             for token in sentence.tokens:
                 brown_1000_path = '{:<016}'.format(dict_brown_c1000.get(token.text, '0000000000000000'))
@@ -120,7 +119,54 @@ def _extract_text(horus: Horus) -> bool:
     :param horus:
     :return:
     '''
-    return True
+    try:
+        tx_dict, tx_dict_reversed = WordFeaturesInterface.get_textual()
+        for sentence in horus.sentences:
+            for token in sentence.tokens:
+                brown_1000_path = '{:<016}'.format(dict_brown_c1000.get(token.text, '0000000000000000'))
+                brown_640_path = '{:<016}'.format(dict_brown_c640.get(token.text, '0000000000000000'))
+                brown_320_path = '{:<016}'.format(dict_brown_c320.get(token.text, '0000000000000000'))
+
+                for i in range(0, tot_slide_brown_cluster - 1):
+                    token.features.lexical.values[lx_dict_reversed.get('brown_1000.' + str(i + 1))] = brown_1000_path[
+                                                                                                      :i + 1]
+                    token.features.lexical.values[lx_dict_reversed.get('brown_640.' + str(i + 1))] = brown_640_path[
+                                                                                                     :i + 1]
+                    token.features.lexical.values[lx_dict_reversed.get('brown_320.' + str(i + 1))] = brown_320_path[
+                                                                                                     :i + 1]
+
+                token.features.lexical.values[lx_dict_reversed.get('word.lower')] = token.text.lower()
+
+                lemma = ''
+                try:
+                    lemma = lemmatize(token.text.lower())
+                except:
+                    pass
+
+                stem = ''
+                try:
+                    stem = stemo(token.text.lower())
+                except:
+                    pass
+
+                token.features.lexical.values[lx_dict_reversed.get('word.lemma')] = lemma
+                token.features.lexical.values[lx_dict_reversed.get('word.stem')] = stem
+                token.features.lexical.values[lx_dict_reversed.get('word.len.1')] = int(len(token.text) == 1)
+                token.features.lexical.values[lx_dict_reversed.get('word.has.special')] = int(
+                    len(re.findall('(http://\S+|\S*[^\w\s]\S*)', token.text)) > 0)
+                token.features.lexical.values[lx_dict_reversed.get('word[0].isupper')] = int(token.text[0].isupper())
+                token.features.lexical.values[lx_dict_reversed.get('word.isupper')] = int(token.text.isupper())
+                token.features.lexical.values[lx_dict_reversed.get('word.istitle')] = int(token.text.istitle())
+                token.features.lexical.values[lx_dict_reversed.get('word.isdigit')] = int(token.text.isdigit())
+                token.features.lexical.values[lx_dict_reversed.get('word.len.issmall')] = int(len(token.text) <= 2)
+                token.features.lexical.values[lx_dict_reversed.get('word.has.minus')] = int('-' in token.text)
+                token.features.lexical.values[lx_dict_reversed.get('word.stop')] = int(token.text in stop)
+                token.features.lexical.values[lx_dict_reversed.get('word.shape')] = _shape(token.text)
+
+        return True
+
+    except Exception as e:
+        raise e
 
 
 def _extract_visual(horus: Horus) -> bool:
@@ -138,7 +184,6 @@ def extract_features(horus: Horus, lexical: bool = False, text: bool = False, im
         if lexical:
             _extract_lexical(horus)
 
-        # TODO: implement
         if text:
             _extract_text(horus)
 

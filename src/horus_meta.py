@@ -23,7 +23,8 @@ class WordFeaturesInterface:
 
     @staticmethod
     def get_textual() -> dict:
-        return {
+
+        features = {
             0: 'total.global.results.search_engine',
             1: 'total.retrieved.results.search_engine',
             2: 'total.error.translation',
@@ -75,12 +76,15 @@ class WordFeaturesInterface:
             48: 'stats.topic.min.org',
             49: 'stats.topic.min.per',
             50: 'stats.topic.min.other',
-
         }
+
+        reversed_features = dict([(value, key) for key, value in features.items()])
+
+        return features, reversed_features
 
     @staticmethod
     def get_lexical() -> dict:
-        return {
+        features =  {
             0: 'word.lower',
             1: 'word.lemma',
             2: 'word.stem',
@@ -110,6 +114,10 @@ class WordFeaturesInterface:
             26: 'brown_1000.4',
             27: 'brown_1000.5'
         }
+
+        reversed_features = dict([(value, key) for key, value in features.items()])
+
+        return features, reversed_features
 
 
 class HorusWordFeatures(object):
@@ -146,23 +154,26 @@ class HorusFeaturesSet(object):
                  image: HorusWordFeatures = None):
 
         if lexical is None:
+            d, dv = WordFeaturesInterface.get_lexical()
             self.lexical = HorusWordFeatures(alias='Lexical',
                                              acronym='LX',
-                                             dictionary_size=len(WordFeaturesInterface.get_lexical()))
+                                             dictionary_size=len(d))
         else:
             self.lexical = lexical
 
         if text is None:
+            d, dv = WordFeaturesInterface.get_textual()
             self.text = HorusWordFeatures(alias='Text',
                                           acronym='TX',
-                                          dictionary_size=len(WordFeaturesInterface.get_textual()))
+                                          dictionary_size=len(d))
         else:
             self.text = text
 
         if image is None:
+            d, dv = WordFeaturesInterface.get_visual()
             self.image = HorusWordFeatures(alias='Image',
                                            acronym='CV',
-                                           dictionary_size=len(WordFeaturesInterface.get_visual()))
+                                           dictionary_size=len(d))
         else:
             self.image = image
 
