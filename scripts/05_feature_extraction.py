@@ -9,8 +9,8 @@ if __name__ == '__main__':
 
     config = HorusConfig()
 
-    EXTRACT_LEXICAL = True
-    EXTRACT_TEXT = False
+    EXTRACT_LEXICAL = False
+    EXTRACT_TEXT = True
     EXTRACT_IMAGE = False
 
     _extractor_lexical = None
