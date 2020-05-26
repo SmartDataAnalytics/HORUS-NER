@@ -11,7 +11,7 @@ nltk.download('universal_tagset')
 nltk.download('wordnet')
 
 import sys
-sys.path.append('/Users/diego.esteves/git/horus')
+sys.path.append('/Users/diego.esteves/git/horus-ner/')
 
 from config import HorusConfig
 config = HorusConfig()

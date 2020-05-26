@@ -92,6 +92,13 @@ class HorusExtractorText(HorusFeatureExtractor):
         self.config.logger.info('setting the seeds ')
         self.__set_str_extended_seeds()
 
+    def __get_translated_text(self, id):
+        try:
+            c = self.conn.cursor()
+
+        except Exception as e:
+            raise e
+
     def __detect_and_translate(self, t1, t2, id, t1en, t2en):
         try:
             # if isinstance(t1, str):
@@ -300,6 +307,8 @@ class HorusExtractorText(HorusFeatureExtractor):
                                 y_tm = []
                             for itxt in range(limit_txt):
                                 try:
+                                    # not save models output in the DB anymore, instead just use it
+                                    # to store the translation
                                     if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
                                         merged_en, error_translation = self.__detect_and_translate(rows[itxt][2],
                                                                                                    rows[itxt][3],

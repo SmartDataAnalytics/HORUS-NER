@@ -7,24 +7,19 @@ class BowTfidf(object):
         try:
             self.config = config
             self.config.logger.debug('loading TF-IDF')
-            # TODO: retrain all models (Python2to3 issue on joblib) and remove the encoding parameter
+            self.tfidf_transformer = joblib.load(config.models_0_text)
             self.text_checking_model_1 = joblib.load(config.models_1_text)
             self.text_checking_model_2 = joblib.load(config.models_2_text)
-            self.text_checking_model_3 = joblib.load(config.models_3_text)
-            self.text_checking_model_4 = joblib.load(config.models_4_text)
-            self.text_checking_model_5 = joblib.load(config.models_5_text)
-            # self.tfidf_transformer = TfidfTransformer()
+
         except Exception as e:
             raise e
 
     def detect_text_klass(self, text):
         try:
-            predictions = [self.text_checking_model_1.predict(text)[0],
-                           self.text_checking_model_2.predict(text)[0],
-                           self.text_checking_model_3.predict(text)[0],
-                           self.text_checking_model_4.predict(text)[0],
-                           self.text_checking_model_5.predict(text)[0]]
-
+            features = self.tfidf_transformer.transform([text])
+            predictions = []
+            predictions.extend(self.text_checking_model_1.predict(features)[0])
+            predictions.extend(self.text_checking_model_2.predict(features)[0])
             return predictions
         except Exception as e:
             raise e
