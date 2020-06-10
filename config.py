@@ -121,9 +121,12 @@ class HorusConfig(object):
                     self.models_cv_org_dict = self.dir_models + parser.get('models-cv', 'horus_org_voc')
                     self.models_cv_per = self.dir_models + parser.get('models-cv', 'horus_per')
 
+                    self.categories_encoder = self.dir_models + parser.get('models-text', 'horus_textchecking_enc')
+                    self.models_tfidf = self.dir_models + parser.get('models-text', 'horus_textchecking_tfidf')
                     self.models_0_text = self.dir_models + parser.get('models-text', 'horus_textchecking_0')
                     self.models_1_text = self.dir_models + parser.get('models-text', 'horus_textchecking_1')
                     self.models_2_text = self.dir_models + parser.get('models-text', 'horus_textchecking_2')
+
 
                     self.models_1_text_cnn = self.dir_models + parser.get('models-text', 'horus_texthecking_tm_cnn')
 

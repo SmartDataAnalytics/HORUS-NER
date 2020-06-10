@@ -34,7 +34,7 @@ class Util(object):
 
     def __init__(self, config):
         self.config = config
-        self.config.logger.info('loading utils ...')
+        self.config.logger.info('Loading utils ...')
         self.html_escape_table = {
             "&": "&amp;",
             '"': "&quot;",
