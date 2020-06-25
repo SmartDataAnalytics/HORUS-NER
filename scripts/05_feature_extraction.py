@@ -13,16 +13,16 @@ if __name__ == '__main__':
     EXTRACT_TEXT = True
     EXTRACT_IMAGE = False
 
-    _extractor_lexical = None
-    _extractor_text = None
-    _extractor_image = None
+    fe_lexical = None
+    fe_text = None
+    fe_image = None
 
     if EXTRACT_LEXICAL:
-        _extractor_lexical = HorusExtractorLexical(config)
+        fe_lexical = HorusExtractorLexical(config)
     if EXTRACT_TEXT:
-        _extractor_text = HorusExtractorText(config)
+        fe_text = HorusExtractorText(config)
     if EXTRACT_IMAGE:
-        _extractor_image = HorusExtractorImage(config)
+        fe_image = HorusExtractorImage(config)
 
     # initialize the horus metadata file for each dataset
     for ds in definitions.NER_DATASETS:
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
             if EXTRACT_LEXICAL and (str(PRE_PROCESSING_STATUS["FEATURE_LEXICAL"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (lexical)')
-                out = _extractor_lexical.extract_features(horus)
+                out = fe_lexical.extract_features(horus)
                 config.logger.info(f'finish ok?: {out}')
                 horus.update_status(PRE_PROCESSING_STATUS["FEATURE_LEXICAL"])
             else:
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
             if EXTRACT_IMAGE and (str(PRE_PROCESSING_STATUS["FEATURE_IMAGE"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (image)')
-                out = _extractor_image.extract_features(horus)
+                out = fe_image.extract_features(horus)
                 config.logger.info(f'finish ok?: {out}')
                 horus.update_status(PRE_PROCESSING_STATUS["FEATURE_IMAGE"])
             else:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
             if EXTRACT_TEXT and (str(PRE_PROCESSING_STATUS["FEATURE_TEXT"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (text)')
-                out = _extractor_text.extract_features(horus)
+                out = fe_text.extract_features(horus)
                 config.logger.info(f'finish ok?: {out}')
                 horus.update_status(PRE_PROCESSING_STATUS["FEATURE_TEXT"])
             else:

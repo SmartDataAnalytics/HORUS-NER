@@ -1,3 +1,4 @@
+import gensim
 import spacy
 import en_core_web_sm
 import os
@@ -19,35 +20,35 @@ class TopicModelingShortCNN(object):
             self.config.logger.info('loading TopicModelingShortCNN')
             self.wvmodel = w2v
             self.mode = mode
-            self.trainclassdict = {'per': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
-                'students', 'education', 'coach', 'football', 'turkish',
-                'albanian', 'romanian', 'professor', 'lawyer', 'president',
-                'king', 'man', 'woman', 'danish', 'we', 'he', 'their', 'born',
-                'directed', 'died', 'lives', 'boss', 'syrian', 'elected',
-                'minister', 'candidate', 'daniel', 'robert', 'dude', 'guy',
-                'girl', 'woman', 'husband', 'actor', 'people', 'celebrity'],
-        'loc': ['china', 'usa', 'germany', 'leipzig', 'alaska', 'poland',
-                'jakarta', 'kitchen', 'house', 'brazil', 'fuji', 'prison',
-                'portugal', 'lisbon', 'france', 'oslo', 'airport', 'road',
-                'highway', 'forest', 'sea', 'lake', 'stadium', 'hospital',
-                'temple', 'beach', 'hotel', 'country', 'city', 'state', 'home',
-                'world', 'mountain', 'landscape', 'island', 'land' ,'waterfall',
-                'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle',
-                'flag', 'map'],
-        'org': ['microsoft', 'bloomberg', 'google', 'company', 'business',
-                'contract', 'project', 'research', 'office', 'startup',
-                'enterprise', 'venture', 'capital', 'milestones', 'risk',
-                'funded', 'idea', 'industry', 'headquarters', 'product',
-                'client', 'investment', 'certification', 'news', 'logo',
-                'trademark', 'job', 'foundation'],
-        'none': ['frog', 'animal', 'monkey', 'dog', 'skate', 'cup', 'money', 'cash',
-                 'mouse', 'snake', 'telephone', 'glass', 'monitor', 'bible', 'book',
-                 'dictionary', 'religion', 'politics', 'sports', 'question', 'linux',
-                 'java', 'python', 'months', 'time', 'wallet', 'umbrella', 'cable',
-                 'internet', 'connection', 'pencil', 'earphone', 'shopping', 'buy',
-                 'headphones', 'bread', 'food', 'cake', 'bottle', 'table', 'jacket',
-                 'politics', 'computer', 'laptop', 'blue', 'green', 'bucket', 'orange', 'rose',
-                 'key', 'clock', 'connector']}
+            self.trainclassdict = {
+                'PER': ['arnett', 'david', 'richard', 'james', 'frank', 'george', 'misha',
+                        'students', 'education', 'coach', 'football', 'turkish',
+                        'albanian', 'romanian', 'professor', 'lawyer', 'president',
+                        'king', 'man', 'woman', 'danish', 'we', 'he', 'their', 'born',
+                        'directed', 'died', 'lives', 'boss', 'syrian', 'elected',
+                        'minister', 'candidate', 'daniel', 'robert', 'dude', 'guy',
+                        'girl', 'woman', 'husband', 'actor', 'people', 'celebrity'],
+                'LOC': ['china', 'usa', 'germany', 'leipzig', 'alaska', 'poland',
+                        'jakarta', 'kitchen', 'house', 'brazil', 'fuji', 'prison',
+                        'portugal', 'lisbon', 'france', 'oslo', 'airport', 'road',
+                        'highway', 'forest', 'sea', 'lake', 'stadium', 'hospital',
+                        'temple', 'beach', 'hotel', 'country', 'city', 'state', 'home',
+                        'world', 'mountain', 'landscape', 'island', 'land', 'waterfall',
+                        'kitchen', 'room', 'office', 'bedroom', 'bathroom', 'hall', 'castle',
+                        'flag', 'map', 'street', 'location'],
+                'ORG': ['microsoft', 'bloomberg', 'google', 'company', 'business',
+                        'contract', 'project', 'research', 'office', 'startup',
+                        'enterprise', 'venture', 'capital', 'milestones', 'risk',
+                        'funded', 'idea', 'industry', 'headquarters', 'product',
+                        'client', 'investment', 'certification', 'news', 'logo',
+                        'trademark', 'job', 'foundation'],
+                'NONE': ['java', 'python', 'months', 'time', 'wallet', 'umbrella', 'cable',
+                         'internet', 'connection', 'pencil', 'earphone', 'shopping', 'buy',
+                         'politics', 'computer', 'laptop', 'blue', 'green', 'bucket',
+                         'orange', 'rose', 'key', 'clock', 'connector', 'christmas',
+                         'itunes', 'team', 'music', 'stock', 'game', 'snake', 'telephone',
+                         'glass', 'monitor', 'bible', 'book']
+            }
             #self.config.logger.debug('loading embeedings')
             #self.wvmodel = shorttext.utils.load_word2vec_model(config.embeddings_path)
             if mode=='test':
@@ -55,7 +56,6 @@ class TopicModelingShortCNN(object):
             self.graph = tf.get_default_graph()
         except Exception as e:
             raise e
-
 
     def predict(self, text):
         try:
@@ -68,10 +68,10 @@ class TopicModelingShortCNN(object):
         predictions = []
         try:
             dict = self.classifier.score(text)
-            predictions.append(dict.get('loc'))
-            predictions.append(dict.get('org'))
-            predictions.append(dict.get('per'))
-            predictions.append(dict.get('none'))
+            predictions.append(dict.get('LOC'))
+            predictions.append(dict.get('ORG'))
+            predictions.append(dict.get('PER'))
+            predictions.append(dict.get('NONE'))
             predictions.append(0)
             return predictions
         except Exception as e:
@@ -107,8 +107,8 @@ class TopicModelingShortCNN(object):
 if __name__ == '__main__':
 
     config = HorusConfig()
-    tools = NLPTools(config)
-    topic = TopicModelingShortCNN(config, tools.word2vec_google, mode='test')
+    emb = gensim.models.KeyedVectors.load_word2vec_format(config.embeddings_path, binary=True)
+    topic = TopicModelingShortCNN(config, emb, mode='test')
     #topic.train()
 
     print(topic.predict('orlando'))

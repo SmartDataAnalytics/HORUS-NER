@@ -8,7 +8,7 @@ from src.algorithms.computer_vision.places365 import Places365CV
 from src.algorithms.computer_vision.sift import SIFT
 from src.algorithms.text_classification.bow_tfidf import BowTfidf
 from src.algorithms.text_classification.topic_modeling_short_cnn import TopicModelingShortCNN
-from src.horus_meta import Horus, WordFeaturesInterface
+from src.horus_meta import Horus, WordFeaturesInterface, HorusToken
 from nltk import LancasterStemmer, re, WordNetLemmatizer
 from nltk import WordNetLemmatizer, SnowballStemmer
 import numpy as np
@@ -45,7 +45,7 @@ class HorusFeatureExtractor(metaclass=ABCMeta):
         self.config = config
         self.util = Util(config)
         self.tools = NLPTools(config)
-        self.config.logger.info('database connecting ...')
+        self.config.logger.info('Database ping')
         self.conn = sqlite3.connect(self.config.database_db)
 
     @abstractmethod
@@ -65,7 +65,24 @@ class HorusExtractorImage(HorusFeatureExtractor):
         self.dlib_cnn = DLib_Classifier(self.config)
 
     def extract_features(self, horus: Horus) -> bool:
-        pass
+        try:
+            cv_dict, cv_dict_reversed = WordFeaturesInterface.get_visual()
+
+            i_sent = 0
+            for sentence in horus.sentences:
+                i_sent += 1
+                i_token = 0
+                for token in sentence.tokens:
+                    i_token += 1
+                    if token.label_pos in definitions.POS_NOUN_TAGS or token.is_compound == 1:
+                        self.config.logger.debug(f'token: {token.text} ({i_token}/{len(sentence.tokens)}) | '
+                                                 f'sentence ({i_sent}/{len(horus.sentences)})')
+
+                        id_term_txt = token.features.text.values[cv_dict_reversed.get('id_db')]
+                        id_ner_type = 0
+
+        except:
+            pass
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -80,16 +97,17 @@ class HorusExtractorText(HorusFeatureExtractor):
     def __init__(self, config: HorusConfig):
         super().__init__(config)
         self.translator = BingTranslator(self.config)
-        self.config.logger.info('loading word2vec embeedings...')
         self.text_bow = BowTfidf(self.config)
+        self.config.logger.info('Loading Word2Vec embeddings...')
         self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)
+        self.config.logger.info('Loading Topic Modeling')
         self.text_tm = TopicModelingShortCNN(self.config, w2v=self.word2vec_google)
         self.extended_seeds_PER = []
         self.extended_seeds_ORG = []
         self.extended_seeds_LOC = []
         self.extended_seeds_NONE = []
         self.min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
-        self.config.logger.info('setting the seeds ')
+        self.config.logger.info('Setting the seeds ')
         self.__set_str_extended_seeds()
 
     def __get_translated_text(self, id):
@@ -99,14 +117,9 @@ class HorusExtractorText(HorusFeatureExtractor):
         except Exception as e:
             raise e
 
-    def __detect_and_translate(self, t1, t2, id, t1en, t2en):
+    def __detect_lang_and_translate(self, t1, t2, id, t1en, t2en):
         try:
-            # if isinstance(t1, str):
-            #    t1 = unicode(t1, "utf-8")
-            # if isinstance(t2, str):
-            #    t2 = unicode(t2, "utf-8")
             error = 0
-
             c = self.conn.cursor()
             if t1en is None or t1en == '':
                 try:
@@ -194,6 +207,7 @@ class HorusExtractorText(HorusFeatureExtractor):
                             np.average(np.array(aP)), np.average(np.array(aN))])
 
             return np.average(np.array(out), axis=0), most_similar_to_w
+
         except:
             raise
 
@@ -202,8 +216,8 @@ class HorusExtractorText(HorusFeatureExtractor):
             if not definitions.seeds_dict_img_classes:
                 raise ('image seeds is empty!')
 
-            self.config.logger.debug('extending seeds')
-            for k, V in definitions.seeds_dict_img_classes.iteritems():
+            self.config.logger.debug('Extending seeds')
+            for k, V in definitions.seeds_dict_img_classes.items():
                 for v in V:
                     for i, syns in enumerate(wn.synsets(v)):
                         # print(' hypernyms = ', ' '.join(list(chain(*[l.lemma_names() for l in syns.hypernyms()]))))
@@ -241,6 +255,163 @@ class HorusExtractorText(HorusFeatureExtractor):
         except:
             raise
 
+    def __set_token_statistics(self, token: HorusToken, y_bow: [], y_tm: [], limit_txt: int, nr_results_txt: int,
+                               tx_dict: dict, tx_dict_reversed: dict):
+        try:
+
+
+            # -- TOKEN STATISTICS --
+            tot_error_translation = 0
+            klass_top = []
+            tm_cnn_w = []
+            tm_cnn_w_exp = []
+
+            embs, top5_sim = self.__get_number_classes_in_embeedings(token.text)
+            if self.text_tm is not None:
+                # TM+CNN - term
+                tm_cnn_w = self.text_tm.detect_text_klass(token.text)
+                tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
+            if self.text_tm is not None and top5_sim is not None:
+                for top in top5_sim:
+                    klass_top.append(self.text_tm.detect_text_klass(top[0]))
+            else:
+                klass_top = [[np.math.pow(10, -5)] * 5] * 5
+            klass_top.append(tm_cnn_w_exp)
+
+            y_bow = np.array(y_bow)
+            # get OvR predictions
+            yyb = np.array(y_bow[:, 0])
+            # get probs model 1
+            yym1 = np.array(y_bow[:, 1])
+            # get probs model 2
+            yym2 = np.array(y_bow[:, 2])
+
+            yytm = np.array(y_tm)
+            klass_top = np.array(klass_top)
+            gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
+
+            topic_klass_top_sums = [np.sum(klass_top[:, 0]), np.sum(klass_top[:, 1]),
+                                    np.sum(klass_top[:, 2]), np.sum(klass_top[:, 3])]
+            topic_klass_top_avg = [np.average(klass_top[:, 0]), np.average(klass_top[:, 1]),
+                                   np.average(klass_top[:, 2]), np.average(klass_top[:, 3])]
+            topic_klass_top_max = [np.max(klass_top[:, 0]), np.max(klass_top[:, 1]),
+                                   np.max(klass_top[:, 2]), np.max(klass_top[:, 3])]
+            topic_klass_top_min = [np.min(klass_top[:, 0]), np.min(klass_top[:, 1]),
+                                   np.min(klass_top[:, 2]), np.min(klass_top[:, 3])]
+
+            topic_sums = [np.sum(yytm[:, 0]), np.sum(yytm[:, 1]), np.sum(yytm[:, 2]), np.sum(yytm[:, 3])]
+            topic_avg = [np.average(yytm[:, 0]), np.average(yytm[:, 1]), np.average(yytm[:, 2]),
+                         np.average(yytm[:, 3])]
+            topic_max = [np.max(yytm[:, 0]), np.max(yytm[:, 1]), np.max(yytm[:, 2]), np.max(yytm[:, 3])]
+            topic_min = [np.min(yytm[:, 0]), np.min(yytm[:, 1]), np.min(yytm[:, 2]), np.min(yytm[:, 3])]
+
+            horus_tx_ner = gpb.index(max(gpb)) + 1
+
+            avg_probs_model1 = [np.average(yym1[:, 0]),
+                                np.average(yym1[:, 1]),
+                                np.average(yym1[:, 2]),
+                                np.average(yym1[:, 3])]
+
+            avg_probs_model2 = [np.average(yym2[:, 0]),
+                                np.average(yym2[:, 1]),
+                                np.average(yym2[:, 2]),
+                                np.average(yym2[:, 3])]
+
+            token.features.text.values[tx_dict_reversed.get('total.retrieved.results.search_engine')] = limit_txt
+
+            token.features.text.values[tx_dict_reversed.get('total.ovr.k.loc')] = gpb[self.text_bow.category2idx['LOC']]
+            token.features.text.values[tx_dict_reversed.get('total.ovr.k.org')] = gpb[self.text_bow.category2idx['ORG']]
+            token.features.text.values[tx_dict_reversed.get('total.ovr.k.per')] = gpb[self.text_bow.category2idx['PER']]
+            token.features.text.values[tx_dict_reversed.get('total.ovr.k.other')] = gpb[self.text_bow.category2idx['OTHER']]
+            token.features.text.values[tx_dict_reversed.get('total.error.translation')] = tot_error_translation
+
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.per')] = avg_probs_model1[0]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.org')] = avg_probs_model1[1]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.loc')] = avg_probs_model1[2]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.other')] = avg_probs_model1[3]
+
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.per')] = avg_probs_model2[0]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.org')] = avg_probs_model2[1]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.loc')] = avg_probs_model2[2]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.other')] = avg_probs_model2[3]
+
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.loc')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[0]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.org')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[1]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.per')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[2]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.other')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[3]
+
+            horus_tx_ner_cnn = gpb.index(max(tm_cnn_w)) + 1
+
+            maxs_tx = heapq.nlargest(2, gpb)
+            maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
+            dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
+            dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
+
+            token.features.text.values[tx_dict_reversed.get('dist.k')] = dist_tx_indicator
+            token.features.text.values[tx_dict_reversed.get('dist.k.topic_model')] = dist_tx_indicator_tm
+            token.features.text.values[tx_dict_reversed.get('total.results.search_engine')] = nr_results_txt
+
+            token.features.text.values[tx_dict_reversed.get('total.emb.similar.loc')] = embs[0]
+            token.features.text.values[tx_dict_reversed.get('total.emb.similar.org')] = embs[1]
+            token.features.text.values[tx_dict_reversed.get('total.emb.similar.per')] = embs[2]
+            token.features.text.values[tx_dict_reversed.get('total.emb.similar.other')] = embs[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.loc')] = topic_klass_top_sums[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.org')] = topic_klass_top_sums[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.per')] = topic_klass_top_sums[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.other')] = topic_klass_top_sums[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.loc')] = topic_klass_top_avg[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.org')] = topic_klass_top_avg[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.per')] = topic_klass_top_avg[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.other')] = topic_klass_top_avg[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.loc')] = topic_klass_top_max[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.org')] = topic_klass_top_max[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.per')] = topic_klass_top_max[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.other')] = topic_klass_top_max[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.loc')] = topic_klass_top_min[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.org')] = topic_klass_top_min[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.per')] = topic_klass_top_min[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.other')] = topic_klass_top_min[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.loc')] = topic_sums[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.org')] = topic_sums[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.per')] = topic_sums[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.other')] = topic_sums[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.loc')] = topic_avg[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.org')] = topic_avg[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.per')] = topic_avg[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.other')] = topic_avg[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.max.loc')] = topic_max[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.max.org')] = topic_max[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.max.per')] = topic_max[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.max.other')] = topic_max[3]
+
+            token.features.text.values[tx_dict_reversed.get('stats.topic.min.loc')] = topic_min[0]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.min.org')] = topic_min[1]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.min.per')] = topic_min[2]
+            token.features.text.values[tx_dict_reversed.get('stats.topic.min.other')] = topic_min[3]
+
+            if limit_txt != 0:
+                token.features.text.values[tx_dict_reversed.get('top.binary.k')] = \
+                    definitions.PLOMNone_index2label[horus_tx_ner]
+                token.features.text.values[tx_dict_reversed.get('top.topic.k')] = \
+                    definitions.PLOMNone_index2label[horus_tx_ner_cnn]
+            else:
+                token.features.text.values[tx_dict_reversed.get('top.binary.k')] = \
+                    definitions.PLOMNone_index2label[4]
+                token.features.text.values[tx_dict_reversed.get('top.topic.k')] = \
+                    definitions.PLOMNone_index2label[4]
+
+            return token
+
+        except Exception:
+            raise
+
     def extract_features(self, horus: Horus) -> bool:
         '''
         Please see src/training/ for more information
@@ -248,233 +419,117 @@ class HorusExtractorText(HorusFeatureExtractor):
         :return:
         '''
         try:
-            tx_dict, tx_dict_reversed = WordFeaturesInterface.get_textual()
-
             i_sent = 0
+            tx_dict, tx_dict_reversed = WordFeaturesInterface.get_textual()
             for sentence in horus.sentences:
                 i_sent += 1
                 i_token = 0
+                # -- PERFORMS THE PREDICTIONS PER TOKEN --
                 for token in sentence.tokens:
                     i_token += 1
                     if token.label_pos in definitions.POS_NOUN_TAGS or token.is_compound == 1:
                         self.config.logger.debug(f'token: {token.text} ({i_token}/{len(sentence.tokens)}) | '
                                                  f'sentence ({i_sent}/{len(horus.sentences)})')
-
-                        id_term_txt = token.features.text.values[tx_dict_reversed.get('id_db')]
-                        id_ner_type = 0
-                        tot_geral_faces = 0
-                        tot_geral_logos = 0
-                        tot_geral_locations = 0
-                        tot_geral_pos_locations = 0
-                        tot_geral_neg_locations = 0
-                        tot_geral_faces_cnn = 0
-                        tot_geral_logos_cnn = 0
-                        out_geral_cnn_features_loc = []
-
                         with self.conn:
                             cursor = self.conn.cursor()
-                            y_bow = [[0] * 5] * int(self.config.search_engine_tot_resources)
-                            y_tm = [[0] * 5] * int(self.config.search_engine_tot_resources)
-                            cursor.execute(SQL_TEXT_CLASS_SEL % (id_term_txt, id_ner_type))
+                            predictions_bow = [[0 * 4] * 2] * int(self.config.search_engine_tot_resources)
+                            predictions_topic = [[0 * 4] * 2] * int(self.config.search_engine_tot_resources)
+                            cursor.execute(SQL_TEXT_CLASS_SEL % (token.features.text.db_id, 0))
                             rows = cursor.fetchall()
-
                             nr_results_txt = len(rows)
                             if nr_results_txt == 0:
                                 self.config.logger.debug("token/term has not returned web sites!")
-
                             limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
-                            tot_error_translation = 0
-                            embs, top5_sim = self.__get_number_classes_in_embeedings(token.text)
 
-                            klass_top = []
-                            tm_cnn_w = []
-                            tm_cnn_w_exp = []
-                            if self.text_tm is not None:
-                                # TM+CNN - term
-                                tm_cnn_w = self.text_tm.detect_text_klass(token.text)
-                                tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
-
-                            if self.text_tm is not None and top5_sim is not None:
-                                for top in top5_sim:
-                                    klass_top.append(self.text_tm.detect_text_klass(top[0]))
-                            else:
-                                klass_top = [[np.math.pow(10, -5)] * 5] * 5
-
-                            klass_top.append(tm_cnn_w_exp)
-
-                            if limit_txt > 0:
-                                y_bow = []
-                                y_tm = []
+                            # -- PERFORMS THE PREDICTIONS FOR EACH ASSOCIATED DOCUMENT, PER TOKEN --
                             for itxt in range(limit_txt):
                                 try:
-                                    # not save models output in the DB anymore, instead just use it
-                                    # to store the translation
-                                    if rows[itxt][6] == 0 or rows[itxt][6] is None:  # not processed yet
-                                        merged_en, error_translation = self.__detect_and_translate(rows[itxt][2],
-                                                                                                   rows[itxt][3],
-                                                                                                   rows[itxt][0],
-                                                                                                   rows[itxt][4],
-                                                                                                   rows[itxt][5])
+                                    text_title = rows[itxt][2]
+                                    text_description = rows[itxt][3]
+                                    text_title_en = rows[itxt][4]
+                                    text_description_en = rows[itxt][5]
+                                    merged_en = text_title_en + '. ' + text_description_en
+                                    if merged_en.strip() == '':
+                                        self.config.logger.warn('[merged_en] field should not be empty!')
+                                    ret_bow = [0.0] * 9 #ovr, model1 and model2 probs
+                                    ret_tm = [0.0] * 5 #LOC, ORG, PER, NONE, free-slot for OTHER
+                                    # TODO: for now we do not store each document's prediction (e.g., 10 documents
+                                    # per token, we do not have 10 predictions, but instead the average.
+                                    # maybe in the future, we can create a VO object to save that info.
+                                    if self.text_bow is not None:
+                                        pred_model_ovr, idx_k_model1, pred_model_1, idx_k_model2, pred_model_2 = \
+                                            self.text_bow.detect_text_klass(merged_en)
+                                        ret_bow.extend([pred_model_ovr]) #1
+                                        #ret_bow.extend([idx_k_model1])  #1
+                                        #ret_bow.extend([idx_k_model2])  #1
+                                        ret_bow.extend(pred_model_1) #4
+                                        ret_bow.extend(pred_model_2) #4
+                                    if self.text_tm is not None:
+                                        ret_tm = self.text_tm.detect_text_klass(merged_en)
+
+                                    predictions_bow.append(ret_bow)
+                                    predictions_topic.append(ret_tm)
+
+                                    # TODO: fix and create a new cache mechanism later, as models have changed.
+                                    '''
+                                    index based is not the best approach, without a dictionary. 
+                                    I will just comment this and always reprocess, also, removing the language detection
+                                    and translation, I am supposed to have all text already translated in the DB
+                                    
+                                    if rows[itxt][6] is None or rows[itxt][6] == 0:  # not processed yet
+                                        merged_en, error_translation = \
+                                            self.__detect_lang_and_translate(text_title,
+                                                                             text_description,
+                                                                             rows[itxt][0],
+                                                                             text_title_en,
+                                                                             text_description_en)
                                         tot_error_translation += error_translation
-                                        ret_bow = [0.0] * 5
+                                        ret_bow = [0.0] * 3
                                         ret_tm = [0.0] * 5
-                                        if merged_en != '':
+                                        if merged_en.strip() != '':
                                             if self.text_bow is not None:
-                                                ret_bow = self.text_bow.detect_text_klass(merged_en)
+                                                pred_model_ovr, idx_k_model1, pred_model_1, idx_k_model2, pred_model_2 = \
+                                                    self.text_bow.detect_text_klass(merged_en)
+                                                ret_bow = [pred_model_ovr, pred_model_1, pred_model_2]
                                             if self.text_tm is not None:
                                                 ret_tm = self.text_tm.detect_text_klass(merged_en)
 
                                         y_bow.append(ret_bow)
-
-                                        # ret_tm = self.min_max_scaler.fit_transform(np.array(ret_tm).reshape(1,-1))[0]
-
                                         y_tm.append(ret_tm)
 
                                         cursor.execute(SQL_TEXT_CLASS_UPD % (
-                                            ret_bow[0], ret_bow[1], ret_bow[2], ret_bow[3], ret_bow[4],
+                                            pred_model_ovr, str(ret_bow[0]), str(ret_bow[1]),
                                             ret_tm[0], ret_tm[1], ret_tm[2], ret_tm[3], ret_tm[4],
                                             embs[0], embs[1], embs[2], embs[3], rows[itxt][0]))
                                     else:
-                                        y_bow.append(rows[itxt][7:11])
+                                        # these are old models predictions, I will keep it to not mess up the index
+                                        # based solution, which should be revised at some point
+                                        # y_bow.append(rows[itxt][7:11])
+
+                                        ret_bow = [rows[itxt][21], list(rows[itxt][22]), list(rows[itxt][23])]
+                                        y_bow.append(ret_bow)
+
                                         y_tm.append(rows[itxt][12:16])
                                         embs = []
                                         embs.append(rows[itxt][17])
                                         embs.append(rows[itxt][18])
                                         embs.append(rows[itxt][19])
                                         embs.append(rows[itxt][20])
-
+                                    '''
                                 except Exception as e:
                                     self.config.logger.error(str(e.message))
                                     pass
 
-                            self.conn.commit()
+                            #self.conn.commit()
 
-                            yyb = np.array(y_bow)
-                            yytm = np.array(y_tm)
-                            klass_top = np.array(klass_top)
-                            gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
-
-                            topic_klass_top_sums = [np.sum(klass_top[:, 0]), np.sum(klass_top[:, 1]),
-                                                    np.sum(klass_top[:, 2]), np.sum(klass_top[:, 3])]
-                            topic_klass_top_avg = [np.average(klass_top[:, 0]), np.average(klass_top[:, 1]),
-                                                   np.average(klass_top[:, 2]), np.average(klass_top[:, 3])]
-                            topic_klass_top_max = [np.max(klass_top[:, 0]), np.max(klass_top[:, 1]),
-                                                   np.max(klass_top[:, 2]), np.max(klass_top[:, 3])]
-                            topic_klass_top_min = [np.min(klass_top[:, 0]), np.min(klass_top[:, 1]),
-                                                   np.min(klass_top[:, 2]), np.min(klass_top[:, 3])]
-
-                            topic_sums = [np.sum(yytm[:, 0]), np.sum(yytm[:, 1]), np.sum(yytm[:, 2]),
-                                          np.sum(yytm[:, 3])]
-                            topic_avg = [np.average(yytm[:, 0]), np.average(yytm[:, 1]), np.average(yytm[:, 2]),
-                                         np.average(yytm[:, 3])]
-                            topic_max = [np.max(yytm[:, 0]), np.max(yytm[:, 1]), np.max(yytm[:, 2]), np.max(yytm[:, 3])]
-                            topic_min = [np.min(yytm[:, 0]), np.min(yytm[:, 1]), np.min(yytm[:, 2]), np.min(yytm[:, 3])]
-
-                            horus_tx_ner = gpb.index(max(gpb)) + 1
-
-                            token.features.text.values[tx_dict_reversed.get('total.retrieved.results.search_engine')] \
-                                = limit_txt
-
-                            token.features.text.values[tx_dict_reversed.get('total.binary.k.loc')] = gpb[0]
-                            token.features.text.values[tx_dict_reversed.get('total.binary.k.org')] = gpb[1]
-                            token.features.text.values[tx_dict_reversed.get('total.binary.k.per')] = gpb[2]
-                            token.features.text.values[tx_dict_reversed.get('total.binary.k.other')] = 0
-                            token.features.text.values[tx_dict_reversed.get('total.error.translation')] = \
-                                tot_error_translation
-
-                            token.features.text.values[tx_dict_reversed.get('total.topic.k.loc')] = \
-                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[0]
-                            token.features.text.values[tx_dict_reversed.get('total.topic.k.org')] = \
-                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[1]
-                            token.features.text.values[tx_dict_reversed.get('total.topic.k.per')] = \
-                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[2]
-                            token.features.text.values[tx_dict_reversed.get('total.topic.k.other')] = \
-                                0 if len(tm_cnn_w) == 0 else tm_cnn_w[3]
-
-                            horus_tx_ner_cnn = gpb.index(max(tm_cnn_w)) + 1
-
-                            maxs_tx = heapq.nlargest(2, gpb)
-                            maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
-                            dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
-                            dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
-
-                            token.features.text.values[tx_dict_reversed.get('dist.k')] = dist_tx_indicator
-                            token.features.text.values[tx_dict_reversed.get('dist.k.topic_model')] = \
-                                dist_tx_indicator_tm
-                            token.features.text.values[tx_dict_reversed.get('total.results.search_engine')] = \
-                                nr_results_txt
-
-                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.loc')] = embs[0]
-                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.org')] = embs[1]
-                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.per')] = embs[2]
-                            token.features.text.values[tx_dict_reversed.get('total.emb.similar.other')] = embs[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.loc')] = \
-                                topic_klass_top_sums[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.org')] = \
-                                topic_klass_top_sums[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.per')] = \
-                                topic_klass_top_sums[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.sum.other')] = \
-                                topic_klass_top_sums[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.loc')] = \
-                                topic_klass_top_avg[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.org')] = \
-                                topic_klass_top_avg[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.per')] = \
-                                topic_klass_top_avg[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.avg.other')] = \
-                                topic_klass_top_avg[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.loc')] = \
-                                topic_klass_top_max[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.org')] = \
-                                topic_klass_top_max[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.per')] = \
-                                topic_klass_top_max[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.max.other')] = \
-                                topic_klass_top_max[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.loc')] = \
-                                topic_klass_top_min[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.org')] = \
-                                topic_klass_top_min[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.per')] = \
-                                topic_klass_top_min[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.top.k.min.other')] = \
-                                topic_klass_top_min[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.loc')] = topic_sums[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.org')] = topic_sums[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.per')] = topic_sums[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.sum.other')] = topic_sums[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.loc')] = topic_avg[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.org')] = topic_avg[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.per')] = topic_avg[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.avg.other')] = topic_avg[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.loc')] = topic_max[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.org')] = topic_max[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.per')] = topic_max[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.max.other')] = topic_max[3]
-
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.loc')] = topic_min[0]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.org')] = topic_min[1]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.per')] = topic_min[2]
-                            token.features.text.values[tx_dict_reversed.get('stats.topic.min.other')] = topic_min[3]
-
-                            if limit_txt != 0:
-                                token.features.text.values[tx_dict_reversed.get('top.binary.k')] = \
-                                    definitions.PLOMNone_index2label[horus_tx_ner]
-                                token.features.text.values[tx_dict_reversed.get('top.topic.k')] = \
-                                    definitions.PLOMNone_index2label[horus_tx_ner_cnn]
-                            else:
-                                token.features.text.values[tx_dict_reversed.get('top.binary.k')] = \
-                                    definitions.PLOMNone_index2label[4]
-                                token.features.text.values[tx_dict_reversed.get('top.topic.k')] = \
-                                    definitions.PLOMNone_index2label[4]
+                            # -- SAVE PREDICTIONS AND GENERATE OTHER STATS --
+                            self.__set_token_statistics(token=token,
+                                                        y_bow=predictions_bow,
+                                                        y_tm=predictions_topic,
+                                                        limit_txt=limit_txt,
+                                                        nr_results_txt=nr_results_txt,
+                                                        tx_dict=tx_dict,
+                                                        tx_dict_reversed=tx_dict_reversed)
 
         except Exception as e:
             raise e

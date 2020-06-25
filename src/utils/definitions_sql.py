@@ -44,7 +44,7 @@ SQL_TEXT_CLASS_SEL   = """SELECT id, result_seq, result_title, result_descriptio
                                  text_1_klass, text_2_klass, text_3_klass, text_4_klass, text_5_klass,
                                  text_1_klass_cnn, text_2_klass_cnn, text_3_klass_cnn, text_4_klass_cnn, 0, 
                                  tot_union_emb_per, tot_union_emb_loc, tot_union_emb_org, tot_union_emb_none,
-                                 text_0_klass_ovr, text_1_klass_prob, text_2_klass_prob, 
+                                 text_0_klass_ovr, text_1_klass_prob, text_2_klass_prob 
                           FROM HORUS_SEARCH_RESULT_TEXT WHERE id_term_search = %s AND id_ner_type = %s"""
 
 SQL_TEXT_CLASS_UPD   = """UPDATE HORUS_SEARCH_RESULT_TEXT SET processed = 1, 
