@@ -99,9 +99,9 @@ class HorusExtractorText(HorusFeatureExtractor):
         self.translator = BingTranslator(self.config)
         self.text_bow = BowTfidf(self.config)
         self.config.logger.info('Loading Word2Vec embeddings...')
-        self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)
+        self.word2vec_google = None #gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)
         self.config.logger.info('Loading Topic Modeling')
-        self.text_tm = TopicModelingShortCNN(self.config, w2v=self.word2vec_google)
+        self.text_tm = TopicModelingShortCNN(self.config, w2v=self.word2vec_google, mode='pass')
         self.extended_seeds_PER = []
         self.extended_seeds_ORG = []
         self.extended_seeds_LOC = []
@@ -169,6 +169,9 @@ class HorusExtractorText(HorusFeatureExtractor):
         :param w: an input word
         :return:
         '''
+        if self.word2vec_google is None:
+            return np.array([0.0, 0.0, 0.0, 0.0]), None
+
         try:
             out = []
 
@@ -255,8 +258,8 @@ class HorusExtractorText(HorusFeatureExtractor):
         except:
             raise
 
-    def __set_token_statistics(self, token: HorusToken, y_bow: [], y_tm: [], limit_txt: int, nr_results_txt: int,
-                               tx_dict: dict, tx_dict_reversed: dict):
+    def __set_token_statistics(self, token: HorusToken, y_bow: np.array, y_tm: np.array, limit_txt: int,
+                               nr_results_txt: int, tx_dict: dict, tx_dict_reversed: dict):
         try:
 
 
@@ -267,28 +270,32 @@ class HorusExtractorText(HorusFeatureExtractor):
             tm_cnn_w_exp = []
 
             embs, top5_sim = self.__get_number_classes_in_embeedings(token.text)
-            if self.text_tm is not None:
+            if self.text_tm.wvmodel is not None:
                 # TM+CNN - term
                 tm_cnn_w = self.text_tm.detect_text_klass(token.text)
                 tm_cnn_w_exp = [np.math.pow(i, 2) for i in tm_cnn_w]
-            if self.text_tm is not None and top5_sim is not None:
+                klass_top.append(tm_cnn_w_exp)
+            if self.text_tm.wvmodel is not None and top5_sim is not None:
                 for top in top5_sim:
                     klass_top.append(self.text_tm.detect_text_klass(top[0]))
             else:
                 klass_top = [[np.math.pow(10, -5)] * 5] * 5
-            klass_top.append(tm_cnn_w_exp)
+            #klass_top.append(tm_cnn_w_exp)
 
-            y_bow = np.array(y_bow)
+
             # get OvR predictions
             yyb = np.array(y_bow[:, 0])
             # get probs model 1
             yym1 = np.array(y_bow[:, 1])
             # get probs model 2
             yym2 = np.array(y_bow[:, 2])
-
-            yytm = np.array(y_tm)
+            # top 5 most similar predictions
             klass_top = np.array(klass_top)
-            gpb = [np.count_nonzero(yyb == 1), np.count_nonzero(yyb == 2), np.count_nonzero(yyb == 3)]
+
+            gpb = [np.count_nonzero(yyb == 1),
+                   np.count_nonzero(yyb == 2),
+                   np.count_nonzero(yyb == 3),
+                   np.count_nonzero(yyb == 4)]
 
             topic_klass_top_sums = [np.sum(klass_top[:, 0]), np.sum(klass_top[:, 1]),
                                     np.sum(klass_top[:, 2]), np.sum(klass_top[:, 3])]
@@ -299,53 +306,62 @@ class HorusExtractorText(HorusFeatureExtractor):
             topic_klass_top_min = [np.min(klass_top[:, 0]), np.min(klass_top[:, 1]),
                                    np.min(klass_top[:, 2]), np.min(klass_top[:, 3])]
 
-            topic_sums = [np.sum(yytm[:, 0]), np.sum(yytm[:, 1]), np.sum(yytm[:, 2]), np.sum(yytm[:, 3])]
-            topic_avg = [np.average(yytm[:, 0]), np.average(yytm[:, 1]), np.average(yytm[:, 2]),
-                         np.average(yytm[:, 3])]
-            topic_max = [np.max(yytm[:, 0]), np.max(yytm[:, 1]), np.max(yytm[:, 2]), np.max(yytm[:, 3])]
-            topic_min = [np.min(yytm[:, 0]), np.min(yytm[:, 1]), np.min(yytm[:, 2]), np.min(yytm[:, 3])]
+            topic_sums = [np.sum(y_tm[:, 0]), np.sum(y_tm[:, 1]), np.sum(y_tm[:, 2]), np.sum(y_tm[:, 3])]
+            topic_avg = [np.average(y_tm[:, 0]), np.average(y_tm[:, 1]), np.average(y_tm[:, 2]),
+                         np.average(y_tm[:, 3])]
+            topic_max = [np.max(y_tm[:, 0]), np.max(y_tm[:, 1]), np.max(y_tm[:, 2]), np.max(y_tm[:, 3])]
+            topic_min = [np.min(y_tm[:, 0]), np.min(y_tm[:, 1]), np.min(y_tm[:, 2]), np.min(y_tm[:, 3])]
 
             horus_tx_ner = gpb.index(max(gpb)) + 1
 
-            avg_probs_model1 = [np.average(yym1[:, 0]),
-                                np.average(yym1[:, 1]),
-                                np.average(yym1[:, 2]),
-                                np.average(yym1[:, 3])]
-
-            avg_probs_model2 = [np.average(yym2[:, 0]),
-                                np.average(yym2[:, 1]),
-                                np.average(yym2[:, 2]),
-                                np.average(yym2[:, 3])]
+            avg_probs_model1 = np.average(yym1)
+            avg_probs_model2 = np.average(yym2)
 
             token.features.text.values[tx_dict_reversed.get('total.retrieved.results.search_engine')] = limit_txt
+            token.features.text.values[tx_dict_reversed.get('total.error.translation')] = tot_error_translation
 
             token.features.text.values[tx_dict_reversed.get('total.ovr.k.loc')] = gpb[self.text_bow.category2idx['LOC']]
             token.features.text.values[tx_dict_reversed.get('total.ovr.k.org')] = gpb[self.text_bow.category2idx['ORG']]
             token.features.text.values[tx_dict_reversed.get('total.ovr.k.per')] = gpb[self.text_bow.category2idx['PER']]
-            token.features.text.values[tx_dict_reversed.get('total.ovr.k.other')] = gpb[self.text_bow.category2idx['OTHER']]
-            token.features.text.values[tx_dict_reversed.get('total.error.translation')] = tot_error_translation
+            token.features.text.values[tx_dict_reversed.get('total.ovr.k.other')] = gpb[
+                self.text_bow.category2idx['OTHER']]
 
-            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.per')] = avg_probs_model1[0]
-            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.org')] = avg_probs_model1[1]
-            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.loc')] = avg_probs_model1[2]
-            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.other')] = avg_probs_model1[3]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.loc')] = avg_probs_model1[
+                self.text_bow.category2idx['LOC']]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.org')] = avg_probs_model1[
+                self.text_bow.category2idx['ORG']]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.per')] = avg_probs_model1[
+                self.text_bow.category2idx['PER']]
+            token.features.text.values[tx_dict_reversed.get('avg.probs1.k.other')] = avg_probs_model1[
+                self.text_bow.category2idx['OTHER']]
 
-            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.per')] = avg_probs_model2[0]
-            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.org')] = avg_probs_model2[1]
-            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.loc')] = avg_probs_model2[2]
-            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.other')] = avg_probs_model2[3]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.per')] = avg_probs_model2[
+                self.text_bow.category2idx['PER']]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.org')] = avg_probs_model2[
+                self.text_bow.category2idx['ORG']]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.loc')] = avg_probs_model2[
+                self.text_bow.category2idx['LOC']]
+            token.features.text.values[tx_dict_reversed.get('avg.probs2.k.other')] = avg_probs_model2[
+                self.text_bow.category2idx['OTHER']]
 
-            token.features.text.values[tx_dict_reversed.get('total.topic.k.loc')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[0]
-            token.features.text.values[tx_dict_reversed.get('total.topic.k.org')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[1]
-            token.features.text.values[tx_dict_reversed.get('total.topic.k.per')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[2]
-            token.features.text.values[tx_dict_reversed.get('total.topic.k.other')] = 0 if len(tm_cnn_w) == 0 else tm_cnn_w[3]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.loc')] = 0 if len(tm_cnn_w) == 0 else \
+            tm_cnn_w[0]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.org')] = 0 if len(tm_cnn_w) == 0 else \
+            tm_cnn_w[1]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.per')] = 0 if len(tm_cnn_w) == 0 else \
+            tm_cnn_w[2]
+            token.features.text.values[tx_dict_reversed.get('total.topic.k.other')] = 0 if len(tm_cnn_w) == 0 else \
+            tm_cnn_w[3]
 
-            horus_tx_ner_cnn = gpb.index(max(tm_cnn_w)) + 1
+            if len(tm_cnn_w) != 0:
+                horus_tx_ner_cnn = gpb.index(max(tm_cnn_w)) + 1
+            else:
+                horus_tx_ner_cnn = self.text_bow.category2idx['NONE'] # forcing NONE
 
             maxs_tx = heapq.nlargest(2, gpb)
             maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
-            dist_tx_indicator_tm = 0 if len(yytm) == 0 else (max(maxs_tm) - min(maxs_tm))
+            dist_tx_indicator_tm = 0 if len(y_tm) == 0 else (max(maxs_tm) - min(maxs_tm))
 
             token.features.text.values[tx_dict_reversed.get('dist.k')] = dist_tx_indicator
             token.features.text.values[tx_dict_reversed.get('dist.k.topic_model')] = dist_tx_indicator_tm
@@ -429,19 +445,27 @@ class HorusExtractorText(HorusFeatureExtractor):
                     i_token += 1
                     if token.label_pos in definitions.POS_NOUN_TAGS or token.is_compound == 1:
                         self.config.logger.debug(f'token: {token.text} ({i_token}/{len(sentence.tokens)}) | '
+                                                 f'POS: {token.label_pos} ({token.label_pos_prob}) | '
                                                  f'sentence ({i_sent}/{len(horus.sentences)})')
+
                         with self.conn:
                             cursor = self.conn.cursor()
-                            predictions_bow = [[0 * 4] * 2] * int(self.config.search_engine_tot_resources)
-                            predictions_topic = [[0 * 4] * 2] * int(self.config.search_engine_tot_resources)
                             cursor.execute(SQL_TEXT_CLASS_SEL % (token.features.text.db_id, 0))
                             rows = cursor.fetchall()
                             nr_results_txt = len(rows)
+                            limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
                             if nr_results_txt == 0:
                                 self.config.logger.debug("token/term has not returned web sites!")
-                            limit_txt = min(nr_results_txt, int(self.config.search_engine_tot_resources))
+                                # (OvR, 4-MUC model1, 4-MUC model2) * max documents
+                                predictions_bow = [[np.zeros(1), np.zeros(4), np.zeros(4)]] * int(self.config.search_engine_tot_resources)
+                                predictions_topic = [[0] * 5] * int(self.config.search_engine_tot_resources)
+                            else:
+                                predictions_bow = []
+                                predictions_topic = []
 
                             # -- PERFORMS THE PREDICTIONS FOR EACH ASSOCIATED DOCUMENT, PER TOKEN --
+                            ret_bow = []
+                            ret_tm = []
                             for itxt in range(limit_txt):
                                 try:
                                     text_title = rows[itxt][2]
@@ -451,22 +475,24 @@ class HorusExtractorText(HorusFeatureExtractor):
                                     merged_en = text_title_en + '. ' + text_description_en
                                     if merged_en.strip() == '':
                                         self.config.logger.warn('[merged_en] field should not be empty!')
-                                    ret_bow = [0.0] * 9 #ovr, model1 and model2 probs
-                                    ret_tm = [0.0] * 5 #LOC, ORG, PER, NONE, free-slot for OTHER
                                     # TODO: for now we do not store each document's prediction (e.g., 10 documents
                                     # per token, we do not have 10 predictions, but instead the average.
                                     # maybe in the future, we can create a VO object to save that info.
                                     if self.text_bow is not None:
+                                        ret_bow = []
                                         pred_model_ovr, idx_k_model1, pred_model_1, idx_k_model2, pred_model_2 = \
                                             self.text_bow.detect_text_klass(merged_en)
-                                        ret_bow.extend([pred_model_ovr]) #1
-                                        #ret_bow.extend([idx_k_model1])  #1
-                                        #ret_bow.extend([idx_k_model2])  #1
-                                        ret_bow.extend(pred_model_1) #4
-                                        ret_bow.extend(pred_model_2) #4
-                                    if self.text_tm is not None:
+                                        ret_bow.append(np.array([pred_model_ovr])) #1
+                                        ret_bow.append(np.array(pred_model_1)) #4
+                                        ret_bow.append(np.array(pred_model_2)) #4
+                                    else:
+                                        ret_bow = np.zeros(9)  # ovr, model1 and model2 probs
+                                    if self.text_tm.wvmodel is not None:
                                         ret_tm = self.text_tm.detect_text_klass(merged_en)
+                                    else:
+                                        ret_tm = [0.0] * 5  # LOC, ORG, PER, NONE, free-slot for OTHER
 
+                                    ret_bow = np.array(ret_bow)
                                     predictions_bow.append(ret_bow)
                                     predictions_topic.append(ret_tm)
 
@@ -523,6 +549,8 @@ class HorusExtractorText(HorusFeatureExtractor):
                             #self.conn.commit()
 
                             # -- SAVE PREDICTIONS AND GENERATE OTHER STATS --
+                            predictions_topic = np.array(predictions_topic)
+                            predictions_bow = np.array(predictions_bow)
                             self.__set_token_statistics(token=token,
                                                         y_bow=predictions_bow,
                                                         y_tm=predictions_topic,
