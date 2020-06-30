@@ -99,9 +99,9 @@ class HorusExtractorText(HorusFeatureExtractor):
         self.translator = BingTranslator(self.config)
         self.text_bow = BowTfidf(self.config)
         self.config.logger.info('Loading Word2Vec embeddings...')
-        self.word2vec_google = None #gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)
+        self.word2vec_google = gensim.models.KeyedVectors.load_word2vec_format(self.config.embeddings_path, binary=True)
         self.config.logger.info('Loading Topic Modeling')
-        self.text_tm = TopicModelingShortCNN(self.config, w2v=self.word2vec_google, mode='pass')
+        self.text_tm = TopicModelingShortCNN(self.config, w2v=self.word2vec_google, mode='test')
         self.extended_seeds_PER = []
         self.extended_seeds_ORG = []
         self.extended_seeds_LOC = []
@@ -262,6 +262,7 @@ class HorusExtractorText(HorusFeatureExtractor):
                                nr_results_txt: int, tx_dict: dict, tx_dict_reversed: dict):
         try:
 
+            self.config.logger.info("token statistics")
 
             # -- TOKEN STATISTICS --
             tot_error_translation = 0
@@ -356,12 +357,12 @@ class HorusExtractorText(HorusFeatureExtractor):
             if len(tm_cnn_w) != 0:
                 horus_tx_ner_cnn = gpb.index(max(tm_cnn_w)) + 1
             else:
-                horus_tx_ner_cnn = self.text_bow.category2idx['NONE'] # forcing NONE
+                horus_tx_ner_cnn = self.text_bow.category2idx['OTHER'] # forcing NONE
 
             maxs_tx = heapq.nlargest(2, gpb)
             maxs_tm = 0 if len(tm_cnn_w) == 0 else heapq.nlargest(2, tm_cnn_w)
             dist_tx_indicator = max(maxs_tx) - min(maxs_tx)
-            dist_tx_indicator_tm = 0 if len(y_tm) == 0 else (max(maxs_tm) - min(maxs_tm))
+            dist_tx_indicator_tm = 0 if np.sum(y_tm[:,]) == 0 else (max(maxs_tm) - min(maxs_tm))
 
             token.features.text.values[tx_dict_reversed.get('dist.k')] = dist_tx_indicator
             token.features.text.values[tx_dict_reversed.get('dist.k.topic_model')] = dist_tx_indicator_tm
@@ -425,8 +426,8 @@ class HorusExtractorText(HorusFeatureExtractor):
 
             return token
 
-        except Exception:
-            raise
+        except Exception as e:
+            raise e
 
     def extract_features(self, horus: Horus) -> bool:
         '''
@@ -472,9 +473,16 @@ class HorusExtractorText(HorusFeatureExtractor):
                                     text_description = rows[itxt][3]
                                     text_title_en = rows[itxt][4]
                                     text_description_en = rows[itxt][5]
+                                    if text_title_en is None:
+                                        self.config.logger.warn("english translation [title] not available")
+                                        text_title_en = text_title
+                                    if text_description_en is None:
+                                        self.config.logger.warn("english translation [description] not available")
+                                        text_description_en = text_description
                                     merged_en = text_title_en + '. ' + text_description_en
                                     if merged_en.strip() == '':
                                         self.config.logger.warn('[merged_en] field should not be empty!')
+                                    self.config.logger.debug(" -- text --> " + merged_en)
                                     # TODO: for now we do not store each document's prediction (e.g., 10 documents
                                     # per token, we do not have 10 predictions, but instead the average.
                                     # maybe in the future, we can create a VO object to save that info.

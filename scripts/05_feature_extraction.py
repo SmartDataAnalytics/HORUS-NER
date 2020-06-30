@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
             # TODO: for now I am saving in a different json file just to compare and check things are fine.
             # later just update the status of the horus file (definitions.PRE_PROCESSING_STATUS)
-            HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage3_simple_json, simple_json=True)
+            #HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage3_simple_json, simple_json=True)
             HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage3, simple_json=False)
 
             config.logger.info('hooray!')
