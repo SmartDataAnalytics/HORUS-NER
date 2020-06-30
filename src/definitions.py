@@ -127,13 +127,13 @@ NER_TAGS.extend(NER_TAGS_PER)
 NER_TAGS.extend(NER_TAGS_LOC)
 NER_TAGS.extend(NER_TAGS_MISC)
 
-# PER, LOC, ORG and MISC
-PLOMNone_index2label = {1: "LOC", 2: "ORG", 3: "PER", 4: "MISC", 5: "O"} #KLASSES
-PLOMNone_label2index = {"LOC": 1, "ORG": 2, "PER": 3, "MISC": 4, "O": 5} #KLASSES2
-PLOM_index2label = PLOMNone_index2label.copy()
-del PLOM_index2label[5]
-# not testing MISC for now
-del PLOM_index2label[4]
+# PER, ORG, LOC and MISC
+encoder_4MUC_NER_idx2category = {0: "O", 1: "PER", 2: "ORG", 3: "LOC", 4: "MISC"} #KLASSES
+encoder_4MUC_NER_category2idx = {"O": 0, "PER": 1, "ORG": 2, "LOC": 3, "MISC": 4} #KLASSES2
+#PLOM_index2label = encoder_4MUC_NER_idx2category.copy()
+#del PLOM_index2label[5]
+## not testing MISC for now
+#del PLOM_index2label[4]
 
 header = 'cross-validation\tconfig\trun\tlabel\tprecision\trecall\tf1\tsupport\talgo\tdataset1\tdataset2\ttask\n'
 line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
@@ -141,13 +141,13 @@ line = '%s\t%s\t%s\t%s\t%.5f\t%.5f\t%.5f\t%s\t%s\t%s\t%s\t%s\n'
 def tags_to_3muc_simple(tags):
     for i in range(len(tags)):
         if tags[i] in NER_TAGS_PER:
-            tags[i] = PLOMNone_label2index['PER']
+            tags[i] = encoder_4MUC_NER_category2idx['PER']
         elif tags[i] in NER_TAGS_ORG:
-            tags[i] = PLOMNone_label2index['ORG']
+            tags[i] = encoder_4MUC_NER_category2idx['ORG']
         elif tags[i] in NER_TAGS_LOC:
-            tags[i] = PLOMNone_label2index['LOC']
+            tags[i] = encoder_4MUC_NER_category2idx['LOC']
         else:
-            tags[i] = PLOMNone_label2index['O']
+            tags[i] = encoder_4MUC_NER_category2idx['O']
     return tags
 
 

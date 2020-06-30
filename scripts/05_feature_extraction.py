@@ -40,7 +40,7 @@ if __name__ == '__main__':
                 config.logger.info(f'finish ok?: {out}')
                 horus.update_status(PRE_PROCESSING_STATUS["FEATURE_LEXICAL"])
             else:
-                config.logger.info('feature extraction (lexical): either not active or already cached')
+                config.logger.info('feature extraction (lexical): either not active or already processed')
 
             if EXTRACT_IMAGE and (str(PRE_PROCESSING_STATUS["FEATURE_IMAGE"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (image)')
@@ -48,7 +48,7 @@ if __name__ == '__main__':
                 config.logger.info(f'finish ok?: {out}')
                 horus.update_status(PRE_PROCESSING_STATUS["FEATURE_IMAGE"])
             else:
-                config.logger.info('feature extraction (image): either not active or already cached')
+                config.logger.info('feature extraction (image): either not active or already processed')
 
             if EXTRACT_TEXT and (str(PRE_PROCESSING_STATUS["FEATURE_TEXT"]) not in str(horus.processing_status)):
                 config.logger.info('feature extraction (text)')
@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 config.logger.info(f'finish ok?: {out}')
                 horus.update_status(PRE_PROCESSING_STATUS["FEATURE_TEXT"])
             else:
-                config.logger.info('feature extraction (text): either not active or already cached')
+                config.logger.info('feature extraction (text): either not active or already processed')
 
             config.logger.info('done! saving files')
             horus_file_stage3_simple_json = conll_file.replace('.horusx', '.horus3.simple.json')
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
             # TODO: for now I am saving in a different json file just to compare and check things are fine.
             # later just update the status of the horus file (definitions.PRE_PROCESSING_STATUS)
-            #HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage3_simple_json, simple_json=True)
+            HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage3_simple_json, simple_json=True)
             HorusDataLoader.save_metadata_to_file(horus=horus, file=horus_file_stage3, simple_json=False)
 
             config.logger.info('hooray!')
